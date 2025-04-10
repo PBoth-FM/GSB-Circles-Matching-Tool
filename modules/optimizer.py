@@ -123,7 +123,7 @@ def run_matching_algorithm(data, config):
                     'circle_id': circle_id,
                     'region': current_region,
                     'subregion': current_subregion,
-                    'meeting_time': current_meeting_time,
+                    'meeting_time': formatted_day_time,
                     'member_count': len(member_ids),
                     'new_members': 0,  # No new members in directly continued circles
                     'always_hosts': always_hosts,
@@ -349,13 +349,20 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if host_requirement_met:
                     # Get subregion and time if available
                     subregion = members[0].get('Current_Subregion', '')
+                    meeting_day = members[0].get('Current_Meeting_Day', '')
                     meeting_time = members[0].get('Current_Meeting_Time', '')
+                    
+                    # Format the day/time combination for proposed_NEW_DayTime
+                    if meeting_day and meeting_time:
+                        formatted_meeting_time = f"{meeting_day} ({meeting_time})"
+                    else:
+                        formatted_meeting_time = meeting_day or meeting_time
                     
                     # Create circle data with member list and metadata
                     circle_data = {
                         'members': [m['Encoded ID'] for m in members],
                         'subregion': subregion,
-                        'meeting_time': meeting_time,
+                        'meeting_time': formatted_meeting_time,
                         'always_hosts': sum(1 for m in members if m.get('host', '').lower() in ['always', 'always host']),
                         'sometimes_hosts': sum(1 for m in members if m.get('host', '').lower() in ['sometimes', 'sometimes host']),
                         'is_in_person': is_in_person,
