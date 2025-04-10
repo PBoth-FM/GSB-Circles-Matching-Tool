@@ -109,10 +109,16 @@ def normalize_regions(region):
     Returns:
         Normalized region name
     """
+    # Handle null values and empty strings
     if pd.isna(region) or not region:
         return ''
     
-    region = str(region).strip()
+    # Ensure we have a string
+    try:
+        region = str(region).strip()
+    except Exception as e:
+        print(f"Error converting region to string: {e}")
+        return str(region) if region is not None else ''
     
     # Direct mapping lookup
     if region in REGION_MAPPING:
@@ -120,7 +126,7 @@ def normalize_regions(region):
     
     # Try case-insensitive matching
     for key, value in REGION_MAPPING.items():
-        if region.lower() == key.lower():
+        if isinstance(key, str) and region.lower() == key.lower():
             return value
     
     # If no match, apply basic normalization and return
@@ -139,10 +145,16 @@ def normalize_subregions(subregion):
     Returns:
         Normalized subregion name
     """
+    # Handle null values and empty strings
     if pd.isna(subregion) or not subregion:
         return ''
-        
-    subregion = str(subregion).strip()
+    
+    # Ensure we have a string
+    try:
+        subregion = str(subregion).strip()
+    except Exception as e:
+        print(f"Error converting subregion to string: {e}")
+        return str(subregion) if subregion is not None else ''
     
     # Direct mapping lookup
     if subregion in SUBREGION_MAPPING:
@@ -150,7 +162,7 @@ def normalize_subregions(subregion):
     
     # Try case-insensitive matching
     for key, value in SUBREGION_MAPPING.items():
-        if subregion.lower() == key.lower():
+        if isinstance(key, str) and subregion.lower() == key.lower():
             return value
     
     # If no match, apply basic normalization and return

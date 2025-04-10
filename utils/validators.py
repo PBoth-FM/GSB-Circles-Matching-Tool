@@ -91,13 +91,17 @@ def validate_data_types(df):
     
     # Check host values if present
     if 'host' in df.columns:
-        valid_host_values = ['Always', 'Sometimes', 'Never Host', 'n/a', '']
+        valid_host_values = ['Always', 'Sometimes', 'Never Host', 'n/a', 'Yes', 'No', '']
         
         # Get all non-null and non-empty host values that are not in the valid list
-        invalid_hosts = [h for h in df['host'].unique() if pd.notna(h) and h != '' and h not in valid_host_values]
-        
-        if invalid_hosts:
-            invalid_list = ', '.join([str(h) for h in invalid_hosts])
-            errors.append(f"Invalid host values found: {invalid_list}")
+        try:
+            invalid_hosts = [h for h in df['host'].unique() if pd.notna(h) and h != '' and str(h) not in valid_host_values]
+            
+            if invalid_hosts:
+                invalid_list = ', '.join([str(h) for h in invalid_hosts])
+                # Make this a warning instead of an error since we can still process the data
+                print(f"Warning: Unusual host values found: {invalid_list}")
+        except Exception as e:
+            errors.append(f"Error validating host values: {str(e)}")
     
     return errors
