@@ -1,0 +1,162 @@
+import pandas as pd
+import numpy as np
+import re
+import os
+
+# Load normalization tables
+def load_normalization_tables():
+    """
+    Load the region and subregion normalization tables
+    
+    Returns:
+        Tuple of (region_mapping, subregion_mapping)
+    """
+    # First try to load from CSV files (for production)
+    region_mapping = {}
+    subregion_mapping = {}
+    
+    try:
+        # Try to load region normalization
+        if os.path.exists('attached_assets/Appendix2-RegionNormalizationCodes.csv'):
+            region_df = pd.read_csv('attached_assets/Appendix2-RegionNormalizationCodes.csv')
+            region_mapping = dict(zip(region_df['All unique Region variations'], region_df['Normalized Region']))
+    except Exception as e:
+        print(f"Could not load region normalization table: {str(e)}")
+        
+    try:
+        # Try to load subregion normalization
+        if os.path.exists('attached_assets/Appendix1-SubregionNormalization.csv'):
+            subregion_df = pd.read_csv('attached_assets/Appendix1-SubregionNormalization.csv')
+            subregion_mapping = dict(zip(subregion_df['All unique variations'], subregion_df['Normalized']))
+    except Exception as e:
+        print(f"Could not load subregion normalization table: {str(e)}")
+    
+    # If files not found, use hardcoded fallback (minimal version)
+    if not region_mapping:
+        region_mapping = {
+            'South Florida': 'South Florida',
+            'Boston': 'Boston',
+            'New York': 'New York',
+            'Washington DC': 'Washington DC',
+            'Atlanta': 'Atlanta',
+            'Chicago': 'Chicago',
+            'Houston': 'Houston',
+            'Austin': 'Austin',
+            'San Francisco': 'San Francisco',
+            'East Bay': 'East Bay',
+            'Peninsula': 'Peninsula',
+            'Marin': 'Marin County',
+            'Marin County': 'Marin County',
+            'Napa Sonoma': 'Napa-Sonoma',
+            'Napa/Sonoma': 'Napa-Sonoma',
+            'Napa-Sonoma': 'Napa-Sonoma',
+            'Los Angeles': 'Los Angeles',
+            'San Diego': 'San Diego',
+            'Seattle': 'Seattle',
+            'London': 'London',
+            'Sao Paulo': 'Sao Paulo',
+            'SÃ£o Paulo': 'Sao Paulo',
+            'Mexico City': 'Mexico City',
+            'Singapore': 'Singapore',
+            'Shanghai': 'Shanghai',
+            'Nairobi': 'Nairobi',
+            'Virtual-Only Americas': 'Virtual-Only Americas',
+            'Virtual-Only APAC+EMEA': 'Virtual-Only APAC+EMEA'
+        }
+    
+    if not subregion_mapping:
+        subregion_mapping = {
+            'Miami': 'Miami',
+            'Fort Lauderdale': 'Fort Lauderdale',
+            'Palm Beach': 'Palm Beach',
+            'West Palm Beach': 'West Palm Beach',
+            'Boston': 'Boston',
+            'Cambridge/Somerville': 'Cambridge/Somerville',
+            'Brookline/Newton': 'Brookline/Newton',
+            'North of Boston': 'North of Boston',
+            'South of Boston': 'South of Boston',
+            'West of Boston (e.g. Needham/Wellesley/Natick)': 'West of Boston (e.g. Needham/Wellesley/Natick)',
+            'West Boston (e.g. Needham/Wellesley/Natick)': 'West of Boston (e.g. Needham/Wellesley/Natick)',
+            'Northwest of Boston (e.g. Belmont/Lexington/Concord)': 'Northwest of Boston (e.g. Belmont/Lexington/Concord)',
+            'San Francisco': 'San Francisco',
+            'Pac Heights/Marina': 'Pac Heights/Marina',
+            'Presidio/Marina/Pacific Heights': 'Presidio/Marina/Pacific Heights',
+            'Hayes/Nopa/Haight': 'Hayes/Nopa/Haight',
+            'Hayes/Napa/Haight': 'Hayes/Nopa/Haight',
+            'Mid Market/SoMa': 'Mid Market/SoMa',
+            'Mid Market/SOMA': 'Mid Market/SoMa',
+            'Mission Bay/Potrero': 'Mission Bay/Potrero',
+            'Noe/Mission/Castro': 'Noe/Mission/Castro',
+            'Russian Hill/Nob Hill/North Beach': 'Russian Hill/Nob Hill/North Beach',
+            'Richmond/Sunset': 'Richmond/Sunset',
+            'Excelsior/Glen Park/Bernal': 'Excelsior/Glen Park/Bernal',
+            'Buena Vista Park / Ashbury Heights': 'Buena Vista Park/Ashbury Heights',
+            'Buena Vista Park/Ashbury Heights': 'Buena Vista Park/Ashbury Heights'
+        }
+    
+    return region_mapping, subregion_mapping
+
+# Load the mappings
+REGION_MAPPING, SUBREGION_MAPPING = load_normalization_tables()
+
+def normalize_regions(region):
+    """
+    Normalize a region name using the mapping table
+    
+    Args:
+        region: Region name to normalize
+        
+    Returns:
+        Normalized region name
+    """
+    if pd.isna(region) or not region:
+        return ''
+    
+    region = str(region).strip()
+    
+    # Direct mapping lookup
+    if region in REGION_MAPPING:
+        return REGION_MAPPING[region]
+    
+    # Try case-insensitive matching
+    for key, value in REGION_MAPPING.items():
+        if region.lower() == key.lower():
+            return value
+    
+    # If no match, apply basic normalization and return
+    normalized = region.strip()
+    normalized = re.sub(r'\s+', ' ', normalized)  # Replace multiple spaces with single space
+    
+    return normalized
+
+def normalize_subregions(subregion):
+    """
+    Normalize a subregion name using the mapping table
+    
+    Args:
+        subregion: Subregion name to normalize
+        
+    Returns:
+        Normalized subregion name
+    """
+    if pd.isna(subregion) or not subregion:
+        return ''
+        
+    subregion = str(subregion).strip()
+    
+    # Direct mapping lookup
+    if subregion in SUBREGION_MAPPING:
+        return SUBREGION_MAPPING[subregion]
+    
+    # Try case-insensitive matching
+    for key, value in SUBREGION_MAPPING.items():
+        if subregion.lower() == key.lower():
+            return value
+    
+    # If no match, apply basic normalization and return
+    normalized = subregion.strip()
+    normalized = re.sub(r'\s+', ' ', normalized)  # Replace multiple spaces with single space
+    normalized = re.sub(r'\s*\/\s*', '/', normalized)  # Standardize slash formatting
+    normalized = re.sub(r'\s*-\s*', '-', normalized)  # Standardize hyphen formatting
+    
+    return normalized
