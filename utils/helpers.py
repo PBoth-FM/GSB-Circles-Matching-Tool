@@ -182,39 +182,181 @@ def estimate_compatibility(participant, subregion, time_slot):
     
     return score
 
-def determine_unmatched_reason(participant):
+def determine_unmatched_reason(participant, context=None):
     """
-    Determine the reason a participant couldn't be matched
+    Determine the reason a participant couldn't be matched based on a hierarchical decision tree
     
     Args:
         participant: Participant data (dict or Series)
+        context: Additional context about the optimization state (optional)
+            - existing_circles: List of circles with their properties
+            - similar_participants: Dict mapping (location, time) to count of compatible participants
+            - full_circles: List of circles at maximum capacity (10 members)
+            - circles_needing_hosts: List of circles requiring additional hosts
         
     Returns:
-        Reason code string
+        Reason code string with the most specific explanation
     """
-    # Check for no preferences at all
+    # Initialize default context if none provided
+    if context is None:
+        context = {
+            'existing_circles': [],
+            'similar_participants': {},
+            'full_circles': [],
+            'circles_needing_hosts': []
+        }
+    
+    # 1. No Preferences Check - most fundamental issue
     if (not participant.get('first_choice_location') and 
         not participant.get('second_choice_location') and 
         not participant.get('third_choice_location') and
         not participant.get('first_choice_time') and 
         not participant.get('second_choice_time') and 
         not participant.get('third_choice_time')):
-        return "No preferences"
+        return "No location or time preferences"
     
-    # Check for no location preferences
+    # 2. Special Status Check
+    status = participant.get('Raw_Status', participant.get('Status', ''))
+    if isinstance(status, str) and 'WAITLIST' in status.upper() and 'LOW PRIORITY' in status.upper():
+        return "Waitlist - low priority"
+    
+    # 3. Partial Preference Checks
+    # No Location Preference
     if (not participant.get('first_choice_location') and 
         not participant.get('second_choice_location') and 
         not participant.get('third_choice_location')):
         return "No location preference"
     
-    # Check for no time preferences
+    # No Time Preference
     if (not participant.get('first_choice_time') and 
         not participant.get('second_choice_time') and 
         not participant.get('third_choice_time')):
         return "No time preference"
     
-    # Default to optimization trade-off
-    return "Optimization trade-off"
+    # 4. Location Match Check
+    location_matches = False
+    participant_locations = [
+        participant.get('first_choice_location', ''),
+        participant.get('second_choice_location', ''),
+        participant.get('third_choice_location', '')
+    ]
+    
+    # Remove empty values
+    participant_locations = [loc for loc in participant_locations if loc]
+    
+    # Check if any of participant's locations match existing circles or have enough similar participants
+    for location in participant_locations:
+        # Check existing circles
+        for circle in context.get('existing_circles', []):
+            if circle.get('subregion') == location:
+                location_matches = True
+                break
+                
+        # Check for similar participants at this location
+        for loc_time_key, count in context.get('similar_participants', {}).items():
+            loc, _ = loc_time_key  # Unpack the tuple
+            if loc == location and count >= 4:  # Need at least 4 others (5 total with this participant)
+                location_matches = True
+                break
+                
+        if location_matches:
+            break
+    
+    if not location_matches:
+        return "No location matches"
+    
+    # 5. Time Match at Location Check
+    time_match_at_location = False
+    participant_times = [
+        participant.get('first_choice_time', ''),
+        participant.get('second_choice_time', ''),
+        participant.get('third_choice_time', '')
+    ]
+    
+    # Remove empty values
+    participant_times = [time for time in participant_times if time]
+    
+    # Check for each location-time combination
+    for location in participant_locations:
+        for time in participant_times:
+            # Check existing circles
+            for circle in context.get('existing_circles', []):
+                if circle.get('subregion') == location and circle.get('meeting_time') == time:
+                    time_match_at_location = True
+                    break
+                    
+            # Check for similar participants at this location and time
+            loc_time_key = (location, time)
+            if context.get('similar_participants', {}).get(loc_time_key, 0) >= 4:
+                time_match_at_location = True
+                break
+                
+            if time_match_at_location:
+                break
+        
+        if time_match_at_location:
+            break
+    
+    if not time_match_at_location:
+        return "No time match at this location"
+    
+    # 6. Host Requirement Check
+    is_host = participant.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host']
+    needs_in_person = any(loc_time_key[0].startswith('IP-') for loc_time_key in context.get('similar_participants', {}))
+    
+    if needs_in_person and not is_host and context.get('circles_needing_hosts', []):
+        for circle in context.get('circles_needing_hosts', []):
+            if circle.get('subregion') in participant_locations:
+                return "Host requirement not met"
+    
+    # 7. Circle Capacity Check
+    all_circles_full = True
+    for circle in context.get('existing_circles', []):
+        if (circle.get('subregion') in participant_locations and 
+            circle.get('meeting_time') in participant_times and
+            circle.get('circle_id') not in context.get('full_circles', [])):
+            all_circles_full = False
+            break
+    
+    if all_circles_full and context.get('existing_circles', []):
+        return "Compatible circles are full"
+    
+    # 8. Similar Participants Check
+    has_enough_similar = False
+    for location in participant_locations:
+        for time in participant_times:
+            loc_time_key = (location, time)
+            if context.get('similar_participants', {}).get(loc_time_key, 0) >= 4:
+                has_enough_similar = True
+                break
+        if has_enough_similar:
+            break
+    
+    if not has_enough_similar:
+        return "Insufficient similar participants"
+    
+    # 9. Host Capacity for New Circles Check
+    if needs_in_person and not is_host:
+        # Check if there are enough hosts among similar participants
+        hosts_available = False
+        for location in participant_locations:
+            for time in participant_times:
+                loc_time_key = (location, time)
+                similar_count = context.get('similar_participants', {}).get(loc_time_key, 0)
+                host_count = context.get('host_counts', {}).get(loc_time_key, 0)
+                
+                if similar_count >= 4 and host_count > 0:
+                    hosts_available = True
+                    break
+            if hosts_available:
+                break
+        
+        if not hosts_available:
+            return "Insufficient hosts for new circle"
+    
+    # 10. Algorithm Optimization Check
+    # This is our default if all other checks pass but participant is still unmatched
+    return "Algorithm couldn't optimize placement"
 
 def normalize_string(s):
     """

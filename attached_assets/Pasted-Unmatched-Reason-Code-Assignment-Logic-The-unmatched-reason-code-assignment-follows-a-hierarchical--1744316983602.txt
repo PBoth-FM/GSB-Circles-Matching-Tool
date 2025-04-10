@@ -1,0 +1,57 @@
+Unmatched Reason Code Assignment Logic
+The unmatched reason code assignment follows a hierarchical decision tree that evaluates a participant's data to determine the most specific reason why they couldn't be matched to a circle. The process is implemented in the determine_unmatched_reason() method of the CircleMatcher class.
+Decision Hierarchy
+The logic processes the following checks in order of priority:
+1. No Preferences Check
+Condition: Participant has no location preferences AND no time preferences
+Reason Code: "No location or time preferences"
+Rationale: Most fundamental issue - cannot match someone who hasn't specified any preferences
+2. Special Status Check
+Condition: Participant status contains "WAITLIST" AND "LOW PRIORITY"
+Reason Code: "Waitlist - low priority"
+Rationale: Administrative decision to give these participants lower matching priority
+3. Partial Preference Checks
+No Location Preference:
+Condition: Has time preferences but no location preferences
+Reason Code: "No location preference"
+Rationale: Cannot place someone without knowing where they want to be
+No Time Preference:
+Condition: Has location preferences but no time preferences
+Reason Code: "No time preference"
+Rationale: Cannot schedule without time preferences
+4. Location Match Check
+Condition: None of the participant's location preferences match:
+Any existing circle's subregion, OR
+Have at least 4 other unmatched participants with compatible location preferences
+Reason Code: "No location matches"
+Rationale: Cannot place someone where no circles exist and insufficient interest to form a new circle
+5. Time Match at Location Check
+Condition: For each location where the participant could be placed, their time preferences don't match:
+Any existing circle's meeting time, OR
+Have at least 4 other unmatched participants with compatible time preferences
+Reason Code: "No time match at this location"
+Rationale: Participant's schedule doesn't align with any viable options at their preferred locations
+6. Host Requirement Check
+Condition: Participant needs in-person placement, doesn't have hosting ability, and there are compatible circles but they all require additional hosts
+Reason Code: "Host requirement not met"
+Rationale: In-person circles require host capacity, which this participant can't provide
+7. Circle Capacity Check
+Condition: Compatible circles exist but are already at maximum capacity (10 members)
+Reason Code: "Compatible circles are full"
+Rationale: Would be a good match but no space available
+8. Similar Participants Check
+Condition: Not enough other compatible participants to form a new viable circle (need at least 5 total, including this participant)
+Reason Code: "Insufficient similar participants"
+Rationale: Not enough people with similar preferences to form a new circle
+9. Host Capacity for New Circles Check
+Condition: Enough similar participants exist to form a new in-person circle, but insufficient hosts among them
+Reason Code: "Insufficient hosts for new circle"
+Rationale: Could form a circle but would lack required hosting capacity
+10. Algorithm Optimization Check
+Condition: All previous checks pass (should be able to place participant) but the optimization algorithm didn't select them in the final solution
+Reason Code: "Algorithm couldn't optimize placement"
+Rationale: Complex constraint satisfaction prevented inclusion in the optimal solution
+11. Default Case
+Condition: None of the above specific conditions apply
+Reason Code: "Other constraining factors"
+Rationale: Catch-all for unusual or multiple interacting constraints
