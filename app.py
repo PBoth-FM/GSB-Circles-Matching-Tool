@@ -99,8 +99,10 @@ def run_optimization():
             st.exception(e)
 
 def process_uploaded_file(uploaded_file):
-    """Process the uploaded CSV file"""
+    """Process the uploaded CSV file with participant data"""
     try:
+        # Force clear any cached values
+        st.cache_data.clear()
         with st.spinner("Processing data..."):
             # Load and validate data
             df, validation_errors, deduplication_messages = load_data(uploaded_file)
