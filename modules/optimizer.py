@@ -144,14 +144,27 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Step 1: Identify existing circles if we're preserving them
     if existing_circle_handling == 'preserve':
         # Check for circle ID column (case-insensitive to handle column mapping issues)
-        # In our column mapping, it's now 'Current_Circle_ID'
+        # In our column mapping, it's now 'Current_Circle_ID' 
         current_col = None
         potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
         
-        for col in region_df.columns:
-            if col in potential_columns or col.lower() in [c.lower() for c in potential_columns]:
+        # Print potential column names for debugging
+        if debug_mode:
+            print(f"Looking for circle ID column. Options: {potential_columns}")
+            print(f"Available columns: {region_df.columns.tolist()}")
+        
+        # First try direct matches
+        for col in potential_columns:
+            if col in region_df.columns:
                 current_col = col
                 break
+                
+        # If not found, try case-insensitive matching
+        if current_col is None:
+            for col in region_df.columns:
+                if col.lower() in [c.lower() for c in potential_columns]:
+                    current_col = col
+                    break
                 
         if current_col is None and debug_mode:
             print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
@@ -186,8 +199,18 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         if debug_mode:
                             print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
         
+        # Handle single-member circles separately
+        single_member_circles = {}
+        
         # Evaluate each existing circle
         for circle_id, members in current_circle_members.items():
+            # First identify single-member circles
+            if len(members) == 1:
+                if debug_mode:
+                    print(f"Found single-member circle {circle_id} with member {members[0]['Encoded ID']}")
+                single_member_circles[circle_id] = members[0]
+                continue
+                
             # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
             # and meets host requirements (for in-person circles)
             if len(members) >= 2:
@@ -395,6 +418,31 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Per PRD: Members of non-viable circles return to general pool with preferences from their circle
     non_viable_circle_members = {}  # Track members from non-viable circles by ID
     
+    # First process single-member circles
+    for circle_id, participant in single_member_circles.items():
+        if debug_mode:
+            print(f"Processing single-member circle {circle_id} with member {participant['Encoded ID']}")
+        
+        # Determine format from circle ID (IP- or V-)
+        is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
+        is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
+        format_prefix = 'IP-' if is_in_person else 'V-'
+        
+        # Get subregion and meeting time
+        subregion = participant.get('Current_Subregion', '')
+        meeting_time = participant.get('Current_Meeting_Time', '')
+        
+        if debug_mode:
+            print(f"Single-member circle info: format={format_prefix}, subregion={subregion}, time={meeting_time}")
+        
+        # Store the preferences for this participant
+        non_viable_circle_members[participant['Encoded ID']] = {
+            'format_prefix': format_prefix,
+            'subregion': subregion,
+            'meeting_time': meeting_time
+        }
+    
+    # Then process non-viable small circles (2-4 members that couldn't grow)
     for circle_id, circle_data in small_circles.items():
         if circle_id not in grown_small_circles:
             if debug_mode:
