@@ -3,6 +3,63 @@ import numpy as np
 import io
 from utils.validators import validate_required_columns, validate_data_types
 
+def deduplicate_encoded_ids(df):
+    """
+    Deduplicate Encoded IDs by adding alphabetical suffixes (A, B, C, etc.)
+    
+    Args:
+        df: DataFrame with potentially duplicate Encoded IDs
+        
+    Returns:
+        Tuple of (DataFrame with unique Encoded IDs, list of messages about changes)
+    """
+    if 'Encoded ID' not in df.columns:
+        return df, []
+    
+    # Create a copy to avoid modifying the original
+    result_df = df.copy()
+    deduplication_messages = []
+    
+    # Ensure Encoded ID is string type
+    result_df['Encoded ID'] = result_df['Encoded ID'].astype(str)
+    
+    # Find duplicate IDs
+    duplicate_ids = result_df[result_df.duplicated('Encoded ID', keep=False)]['Encoded ID'].unique()
+    
+    for duplicate_id in duplicate_ids:
+        # Get indexes of all rows with this duplicate ID
+        duplicate_indexes = result_df[result_df['Encoded ID'] == duplicate_id].index.tolist()
+        
+        # Keep the first occurrence as is, modify the rest
+        for idx, index in enumerate(duplicate_indexes[1:], 1):
+            # Start with 'A' and increment alphabetically
+            suffix = chr(64 + idx)  # 'A' for idx=1, 'B' for idx=2, etc.
+            
+            # Handle case where we might exceed 'Z'
+            if idx > 26:
+                # For simplicity, if we exceed 26 duplicates, use AA, AB, etc.
+                first_char = chr(64 + (idx // 26))
+                second_char = chr(64 + (idx % 26 or 26))  # Avoid '@' (ASCII 64)
+                suffix = first_char + second_char
+            
+            # Update the ID with suffix
+            new_id = f"{duplicate_id}{suffix}"
+            
+            # If the new ID already exists (unlikely but possible), increment until we find a unique one
+            suffix_idx = 0
+            while (result_df['Encoded ID'] == new_id).any():
+                suffix_idx += 1
+                new_suffix = chr(65 + suffix_idx)  # Start from 'B', 'C', etc.
+                new_id = f"{duplicate_id}{new_suffix}"
+            
+            # Update the ID in the DataFrame
+            result_df.at[index, 'Encoded ID'] = new_id
+            
+            # Create a message about this change
+            deduplication_messages.append(f"Encoded ID {duplicate_id} was not unique, split into {duplicate_id} and {new_id}")
+    
+    return result_df, deduplication_messages
+
 def load_data(uploaded_file):
     """
     Load data from uploaded file and perform initial validation
@@ -14,6 +71,7 @@ def load_data(uploaded_file):
         Tuple of (DataFrame, list of validation errors)
     """
     validation_errors = []
+    deduplication_messages = []
     
     try:
         # Check file type and read accordingly
@@ -25,18 +83,23 @@ def load_data(uploaded_file):
             df = pd.read_excel(uploaded_file)
         else:
             validation_errors.append(f"Unsupported file type: {file_extension}")
-            return None, validation_errors
+            return None, validation_errors, []
             
         # Check if the dataframe is empty
         if df.empty:
             validation_errors.append("The uploaded file is empty")
-            return df, validation_errors
+            return df, validation_errors, []
         
         # Map column names from the data file to the expected column names
         df = map_column_names(df)
         
         # Normalize status values
         df = normalize_status_values(df)
+        
+        # Deduplicate Encoded IDs (before other validations)
+        if 'Encoded ID' in df.columns:
+            df['Encoded ID'] = df['Encoded ID'].astype(str)
+            df, deduplication_messages = deduplicate_encoded_ids(df)
             
         # Validate required columns
         column_errors = validate_required_columns(df)
@@ -46,15 +109,11 @@ def load_data(uploaded_file):
         datatype_errors = validate_data_types(df)
         validation_errors.extend(datatype_errors)
         
-        # Handle Encoded ID as string
-        if 'Encoded ID' in df.columns:
-            df['Encoded ID'] = df['Encoded ID'].astype(str)
-        
-        return df, validation_errors
+        return df, validation_errors, deduplication_messages
         
     except Exception as e:
         validation_errors.append(f"Error loading file: {str(e)}")
-        return None, validation_errors
+        return None, validation_errors, []
 
 def map_column_names(df):
     """
