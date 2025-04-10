@@ -40,7 +40,7 @@ def generate_download_link(df):
     df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue()
 
-def generate_circle_id(region, subregion, index):
+def generate_circle_id(region, subregion, index, is_new=True):
     """
     Generate a circle ID following the naming convention
     
@@ -48,23 +48,26 @@ def generate_circle_id(region, subregion, index):
         region: Region name
         subregion: Subregion name
         index: Circle index
+        is_new: Whether this is a new circle (True) or existing circle (False)
         
     Returns:
         Circle ID string
     """
-    # Format: IP-NEW-{RegionCode}-{index}
-    # Example: IP-NEW-SFL-01
+    # Import here to avoid circular imports
+    from utils.normalization import get_region_code
     
-    # Normalize region and generate code
-    region_code = ''.join([word[0] for word in region.split() if word.lower() not in ['of', 'the', 'and']])
-    
-    # Make sure it's uppercase
-    region_code = region_code.upper()
+    # Get the standardized region code
+    region_code = get_region_code(region)
     
     # Format the index as 2-digit number
     index_str = str(index).zfill(2)
     
-    return f"IP-NEW-{region_code}-{index_str}"
+    # Format: IP-NEW-{RegionCode}-{index} for new circles
+    # For existing circles, the format is just IP-{RegionCode}-{index}
+    if is_new:
+        return f"IP-NEW-{region_code}-{index_str}"
+    else:
+        return f"IP-{region_code}-{index_str}"
 
 def estimate_compatibility(participant, subregion, time_slot):
     """

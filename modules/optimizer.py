@@ -91,9 +91,95 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     Returns:
         Tuple of (results list, circles list, unmatched list)
     """
-    # Determine all possible subregions and time slots in this region
-    subregions = get_unique_preferences(region_df, ['first_choice_location', 'second_choice_location', 'third_choice_location'])
-    time_slots = get_unique_preferences(region_df, ['first_choice_time', 'second_choice_time', 'third_choice_time'])
+    # Initialize containers for results
+    results = []
+    circles = []
+    unmatched = []
+    
+    # Check if we need to handle existing circles
+    existing_circles = {}
+    current_circle_members = {}
+    
+    # Step 1: Identify existing circles if we're preserving them
+    if existing_circle_handling == 'preserve' and 'current_circles_id' in region_df.columns:
+        # Group participants by their current circle
+        for _, row in region_df.iterrows():
+            if pd.notna(row.get('current_circles_id')) and row.get('Status') == 'CURRENT-CONTINUING':
+                circle_id = str(row['current_circles_id']).strip()
+                if circle_id:
+                    if circle_id not in current_circle_members:
+                        current_circle_members[circle_id] = []
+                    current_circle_members[circle_id].append(row)
+        
+        # Evaluate each existing circle
+        for circle_id, members in current_circle_members.items():
+            # Check if the circle has enough members to continue
+            if len(members) >= min_circle_size:
+                # Check if there's at least one host
+                has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
+                
+                if has_host or not enable_host_requirement:
+                    # This circle can continue - get subregion and time if available
+                    subregion = members[0].get('Current_Subregion', '')
+                    meeting_time = members[0].get('Current_Meeting_Time', '')
+                    
+                    # Add to existing circles dict with member list and metadata
+                    existing_circles[circle_id] = {
+                        'members': [m['Encoded ID'] for m in members],
+                        'subregion': subregion,
+                        'meeting_time': meeting_time,
+                        'always_hosts': sum(1 for m in members if m.get('host', '').lower() in ['always', 'always host']),
+                        'sometimes_hosts': sum(1 for m in members if m.get('host', '').lower() in ['sometimes', 'sometimes host'])
+                    }
+                    
+                    if debug_mode:
+                        print(f"Preserving existing circle {circle_id} with {len(members)} members")
+    
+    # Step 2: Process participants in existing circles
+    processed_ids = set()
+    for circle_id, circle_data in existing_circles.items():
+        # Process each member of this circle
+        for encoded_id in circle_data['members']:
+            # Find the participant in the region data
+            participant = region_df[region_df['Encoded ID'] == encoded_id].iloc[0].to_dict()
+            
+            # Add the participant to results list with their circle assignment
+            participant['proposed_NEW_circles_id'] = circle_id
+            participant['proposed_NEW_Subregion'] = circle_data['subregion']
+            participant['proposed_NEW_DayTime'] = circle_data['meeting_time']
+            
+            # Handle host status
+            if participant.get('host', '').lower() in ['always', 'always host']:
+                participant['proposed_NEW_host'] = "Yes"
+            elif participant.get('host', '').lower() in ['sometimes', 'sometimes host']:
+                participant['proposed_NEW_host'] = "Maybe"
+            else:
+                participant['proposed_NEW_host'] = "No"
+            
+            # Add to results and mark as processed
+            results.append(participant)
+            processed_ids.add(encoded_id)
+        
+        # Add the circle to circles list
+        circle_dict = {
+            'circle_id': circle_id,
+            'region': region,
+            'subregion': circle_data['subregion'],
+            'meeting_time': circle_data['meeting_time'],
+            'member_count': len(circle_data['members']),
+            'new_members': 0,  # No new members in continuing circles
+            'always_hosts': circle_data['always_hosts'],
+            'sometimes_hosts': circle_data['sometimes_hosts'],
+            'members': circle_data['members']
+        }
+        circles.append(circle_dict)
+    
+    # Step 3: Run optimization for remaining participants
+    remaining_df = region_df[~region_df['Encoded ID'].isin(processed_ids)]
+    
+    # Determine all possible subregions and time slots for the remaining participants
+    subregions = get_unique_preferences(remaining_df, ['first_choice_location', 'second_choice_location', 'third_choice_location'])
+    time_slots = get_unique_preferences(remaining_df, ['first_choice_time', 'second_choice_time', 'third_choice_time'])
     
     # Remove empty values
     subregions = [s for s in subregions if s]
@@ -197,8 +283,15 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     circle_assignments = {}
     for j in range(len(circle_options)):
         if y[j].value() and abs(y[j].value() - 1) < 1e-5:  # Check if circle is active
-            circle_id = f"IP-NEW-{region.replace(' ', '')}-{str(j+1).zfill(2)}"
+            # Get the subregion and time slot for this circle
             subregion, time_slot = circle_options[j]
+            
+            # Import here to avoid circular imports
+            from utils.normalization import get_region_code
+            from utils.helpers import generate_circle_id
+            
+            # Generate circle ID using region code
+            circle_id = generate_circle_id(region, subregion, j+1, is_new=True)
             
             circle = {
                 'circle_id': circle_id,
@@ -220,6 +313,9 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     }
             
             circle['member_count'] = len(circle['members'])
+            
+            # For new circles, all members are new
+            circle['new_members'] = len(circle['members'])
             
             # Count hosts
             circle['always_hosts'] = sum(1 for p in circle['members'] 

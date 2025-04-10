@@ -9,17 +9,20 @@ def load_normalization_tables():
     Load the region and subregion normalization tables
     
     Returns:
-        Tuple of (region_mapping, subregion_mapping)
+        Tuple of (region_mapping, subregion_mapping, region_code_mapping)
     """
     # First try to load from CSV files (for production)
     region_mapping = {}
     subregion_mapping = {}
+    region_code_mapping = {}
     
     try:
         # Try to load region normalization
         if os.path.exists('attached_assets/Appendix2-RegionNormalizationCodes.csv'):
             region_df = pd.read_csv('attached_assets/Appendix2-RegionNormalizationCodes.csv')
             region_mapping = dict(zip(region_df['All unique Region variations'], region_df['Normalized Region']))
+            # Also create a mapping from normalized region names to region codes
+            region_code_mapping = dict(zip(region_df['Normalized Region'], region_df['Region Code']))
     except Exception as e:
         print(f"Could not load region normalization table: {str(e)}")
         
@@ -94,10 +97,39 @@ def load_normalization_tables():
             'Buena Vista Park/Ashbury Heights': 'Buena Vista Park/Ashbury Heights'
         }
     
-    return region_mapping, subregion_mapping
+    # Create fallback region code mapping if not loaded from file
+    if not region_code_mapping:
+        region_code_mapping = {
+            'South Florida': 'SFL',
+            'Boston': 'BOS',
+            'New York': 'NYC',
+            'Washington DC': 'WDC',
+            'Atlanta': 'ATL',
+            'Chicago': 'CHI',
+            'Houston': 'HOU',
+            'Austin': 'AUS',
+            'San Francisco': 'SFO',
+            'East Bay': 'EBA',
+            'Peninsula': 'PSA',
+            'Marin County': 'MAR',
+            'Napa-Sonoma': 'NAP',
+            'Los Angeles': 'LAX',
+            'San Diego': 'SAN',
+            'Seattle': 'SEA',
+            'London': 'LON',
+            'Sao Paulo': 'SPO',
+            'Mexico City': 'MEX',
+            'Singapore': 'SIN',
+            'Shanghai': 'SHA',
+            'Nairobi': 'NBO',
+            'Virtual-Only Americas': 'AM',
+            'Virtual-Only APAC+EMEA': 'AE'
+        }
+    
+    return region_mapping, subregion_mapping, region_code_mapping
 
 # Load the mappings
-REGION_MAPPING, SUBREGION_MAPPING = load_normalization_tables()
+REGION_MAPPING, SUBREGION_MAPPING, REGION_CODE_MAPPING = load_normalization_tables()
 
 def normalize_regions(region):
     """
@@ -172,3 +204,31 @@ def normalize_subregions(subregion):
     normalized = re.sub(r'\s*-\s*', '-', normalized)  # Standardize hyphen formatting
     
     return normalized
+
+def get_region_code(region):
+    """
+    Get the region code for a given region name
+    
+    Args:
+        region: Region name (can be normalized or unnormalized)
+        
+    Returns:
+        Region code (e.g., 'LAX' for 'Los Angeles')
+    """
+    # First normalize the region name
+    normalized_region = normalize_regions(region)
+    
+    # Look up the code in the mapping
+    if normalized_region in REGION_CODE_MAPPING:
+        return REGION_CODE_MAPPING[normalized_region]
+    
+    # If not found, generate a fallback code (first 3 letters)
+    if normalized_region:
+        # Remove spaces and special characters
+        clean_region = re.sub(r'[^a-zA-Z0-9]', '', normalized_region)
+        # Take first 3 characters and uppercase
+        fallback_code = clean_region[:3].upper()
+        return fallback_code
+    
+    # Default fallback
+    return 'UNK'  # Unknown
