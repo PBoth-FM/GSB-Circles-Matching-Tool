@@ -62,18 +62,26 @@ def normalize_data(df):
     normalized_df = df.copy()
     
     # Normalize regions
-    for region_col in ['Requested_Region', 'Region']:
+    for region_col in ['Requested_Region', 'Current_Region', 'Region']:
         if region_col in normalized_df.columns:
             normalized_df[region_col] = normalized_df[region_col].apply(
                 lambda x: normalize_regions(x) if pd.notna(x) else x
             )
     
     # Normalize subregions
-    for location_col in ['first_choice_location', 'second_choice_location', 'third_choice_location']:
+    for location_col in ['first_choice_location', 'second_choice_location', 'third_choice_location', 'Current_Subregion']:
         if location_col in normalized_df.columns:
             normalized_df[location_col] = normalized_df[location_col].apply(
                 lambda x: normalize_subregions(x) if pd.notna(x) and x != '' else x
             )
+    
+    # Per PRD 4.3.2: For CURRENT-CONTINUING participants, use current_region; for all others, use requested_region_from_form
+    if 'Status' in normalized_df.columns and 'Current_Region' in normalized_df.columns and 'Requested_Region' in normalized_df.columns:
+        # Create a derived region column for grouping
+        normalized_df['Derived_Region'] = normalized_df.apply(
+            lambda row: row['Current_Region'] if row['Status'] == 'CURRENT-CONTINUING' else row['Requested_Region'], 
+            axis=1
+        )
     
     # Add score calculation fields
     normalized_df = calculate_preference_scores(normalized_df)

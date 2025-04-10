@@ -29,8 +29,14 @@ def run_matching_algorithm(data, config):
         status_counts = df['Status'].value_counts().to_dict()
         print(f"Input data status counts: {status_counts}")
     
-    # Group participants by region and determine subregions for each region
-    regions = df['Requested_Region'].unique()
+    # Group participants by derived region (Current_Region for CURRENT-CONTINUING, Requested_Region for others)
+    # If Derived_Region exists (added in data_processor.normalize_data), use it
+    region_column = 'Derived_Region' if 'Derived_Region' in df.columns else 'Requested_Region'
+    
+    if debug_mode:
+        print(f"Using {region_column} for region grouping according to PRD 4.3.2")
+    
+    regions = df[region_column].unique()
     
     # Initialize results containers
     all_results = []
@@ -42,7 +48,11 @@ def run_matching_algorithm(data, config):
         if debug_mode:
             print(f"Processing region: {region}")
         
-        region_df = df[df['Requested_Region'] == region]
+        region_df = df[df[region_column] == region]
+        
+        if debug_mode:
+            status_counts = region_df['Status'].value_counts().to_dict() if 'Status' in region_df.columns else {}
+            print(f"Region {region} has {len(region_df)} participants: {status_counts}")
         
         # Skip regions with too few participants
         if len(region_df) < min_circle_size:
@@ -341,13 +351,22 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # For small circles that couldn't grow, set preferences from circle data
     # Per PRD: Members of non-viable circles return to general pool with preferences from their circle
+    non_viable_circle_members = {}  # Track members from non-viable circles by ID
+    
     for circle_id, circle_data in small_circles.items():
         if circle_id not in grown_small_circles:
             if debug_mode:
                 print(f"Small circle {circle_id} could not grow, returning {len(circle_data['members'])} members to general pool")
             
-            # These members will be part of the remaining optimization, nothing to do here
-            # Their preferences will be set from their current circle data when processing results
+            # Store the circle data for these members so we can use it for preference setting
+            for member_id in circle_data['members']:
+                non_viable_circle_members[member_id] = {
+                    'format_prefix': 'IP-' if circle_data['is_in_person'] else 'V-',
+                    'subregion': circle_data['subregion'],
+                    'meeting_time': circle_data['meeting_time']
+                }
+                
+            # Note: These members will be processed in the remaining_df optimization
     
     # Step 3: Run optimization for remaining participants (both NEW and CURRENT-CONTINUING without a current circle)
     remaining_df = region_df[~region_df['Encoded ID'].isin(processed_ids)]
@@ -410,12 +429,46 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     y = pulp.LpVariable.dicts("circle", range(len(circle_options)), cat=pulp.LpBinary)
     
     # Objective function: maximize preference satisfaction
-    obj_expr = pulp.lpSum(calculate_preference_score(p_row, circle_options[j][0], circle_options[j][1]) * x[p, j]
-                         for idx, (_, p_row) in enumerate(remaining_df.iterrows())
-                         for j in range(len(circle_options))
-                         for p in [p_row['Encoded ID']])
+    # For members from non-viable circles, we need to prioritize their previous preferences
+    obj_expr = 0
     
-    prob += obj_expr, "Maximize preference satisfaction"
+    for idx, (_, p_row) in enumerate(remaining_df.iterrows()):
+        p_id = p_row['Encoded ID']
+        
+        # Check if this participant is from a non-viable circle
+        if p_id in non_viable_circle_members:
+            # Give preference to their previous subregion and time
+            previous_data = non_viable_circle_members[p_id]
+            
+            for j in range(len(circle_options)):
+                subregion, time_slot = circle_options[j]
+                
+                # Base score from regular preference calculation
+                base_score = calculate_preference_score(p_row, subregion, time_slot)
+                
+                # Bonus points if matching their previous circle's subregion/time
+                if subregion == previous_data['subregion']:
+                    base_score += 3  # Strong preference for previous subregion
+                
+                if time_slot == previous_data['meeting_time']:
+                    base_score += 3  # Strong preference for previous time slot
+                
+                obj_expr += base_score * x[p_id, j]
+        else:
+            # Regular preference calculation for other participants
+            for j in range(len(circle_options)):
+                subregion, time_slot = circle_options[j]
+                score = calculate_preference_score(p_row, subregion, time_slot)
+                obj_expr += score * x[p_id, j]
+    
+    # Primary objective: maximize number of matched participants (1000 points each)
+    # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
+    match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
+    
+    # Combined objective
+    full_obj_expr = match_obj + obj_expr
+    
+    prob += full_obj_expr, "Maximize matched participants and preference satisfaction"
     
     # Constraint: each participant is assigned to at most one circle
     for p in participants:
