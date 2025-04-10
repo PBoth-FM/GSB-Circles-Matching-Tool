@@ -127,6 +127,17 @@ def process_uploaded_file(uploaded_file):
             
             # Process and normalize data
             processed_data = process_data(df)
+            
+            # Check for "Moving out" status records that will be excluded
+            moving_out_count = 0
+            if 'Status' in df.columns:
+                for status in df['Status']:
+                    if isinstance(status, str) and "MOVING OUT" in status.upper():
+                        moving_out_count += 1
+                
+                if moving_out_count > 0:
+                    st.info(f"{moving_out_count} records with 'Moving Out' status will be excluded from matching")
+            
             normalized_data = normalize_data(processed_data)
             st.session_state.processed_data = normalized_data
             
