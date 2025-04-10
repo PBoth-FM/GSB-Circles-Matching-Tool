@@ -526,13 +526,29 @@ def render_results_overview():
 
     st.subheader("Results Overview")
 
-    # Display deduplication messages if any exist
+    # Display deduplication messages in a collapsed expander with full list
     if 'deduplication_messages' in st.session_state and st.session_state.deduplication_messages:
-        with st.expander(f"⚠️ {len(st.session_state.deduplication_messages)} Duplicate Encoded IDs were detected and fixed", expanded=True):
-            for message in st.session_state.deduplication_messages[:5]:  # Show first 5 messages
+        with st.expander(f"⚠️ {len(st.session_state.deduplication_messages)} Duplicate Encoded IDs were detected and fixed", expanded=False):
+            for message in st.session_state.deduplication_messages:
                 st.write(f"- {message}")
-            if len(st.session_state.deduplication_messages) > 5:
-                st.write(f"...and {len(st.session_state.deduplication_messages) - 5} more duplicates fixed.")
+    
+    # Display excluded "Moving out" records if any were filtered
+    excluded_count = 0
+    if 'status_counts' in st.session_state and 'df' in st.session_state and 'processed_data' in st.session_state:
+        # Try to calculate excluded "Moving out" records
+        try:
+            raw_status_counts = st.session_state.df['Status'].value_counts().to_dict() if 'Status' in st.session_state.df.columns else {}
+            moving_out_count = 0
+            for status, count in raw_status_counts.items():
+                if isinstance(status, str) and "MOVING OUT" in status.upper():
+                    moving_out_count += count
+            
+            if moving_out_count > 0:
+                with st.expander(f"ℹ️ {moving_out_count} records with 'Moving Out' status were excluded", expanded=False):
+                    st.write("Participants with 'Current-MOVING OUT of Region' status were excluded from matching as they are leaving their current region.")
+        except Exception as e:
+            if 'debug_mode' in st.session_state.config and st.session_state.config.get('debug_mode'):
+                st.warning(f"Error calculating excluded records: {str(e)}")
 
     col1, col2, col3, col4 = st.columns(4)
 

@@ -121,13 +121,9 @@ def process_uploaded_file(uploaded_file):
                 if len(validation_errors) > 5:
                     st.write(f"...and {len(validation_errors) - 5} more issues.")
             
-            # Display deduplication messages if any
+            # Display just the count of fixed duplicate Encoded IDs
             if len(deduplication_messages) > 0:
-                st.warning(f"Found and fixed {len(deduplication_messages)} duplicate Encoded IDs:")
-                for message in deduplication_messages[:5]:  # Show first 5 messages
-                    st.write(f"- {message}")
-                if len(deduplication_messages) > 5:
-                    st.write(f"...and {len(deduplication_messages) - 5} more duplicates fixed.")
+                st.warning(f"Found and fixed {len(deduplication_messages)} duplicate Encoded IDs")
             
             # Process and normalize data
             processed_data = process_data(df)
