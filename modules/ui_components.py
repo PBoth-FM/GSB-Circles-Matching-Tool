@@ -127,8 +127,6 @@ def render_vintage_diversity_histogram():
     Create a histogram showing the distribution of circles based on 
     the number of different class vintages they contain
     """
-    st.write("Starting vintage diversity histogram calculation...")
-    
     # First check if we have the necessary data
     if ('matched_circles' not in st.session_state or st.session_state.matched_circles.empty):
         st.warning("No matched circles data available to analyze vintage diversity.")
@@ -142,22 +140,16 @@ def render_vintage_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
-    st.write(f"Found {len(circles_df)} circles in session state")
-    
-    # Check that member_count column exists
+    # Filter out circles with no members
     if 'member_count' not in circles_df.columns:
         st.warning("Circles data does not have member_count column")
-        st.write("Available columns:", circles_df.columns.tolist())
         return
     
-    # Filter out circles with no members
     circles_df = circles_df[circles_df['member_count'] > 0]
     
     if len(circles_df) == 0:
         st.warning("No circles with members available for analysis.")
         return
-    
-    st.write(f"After filtering, found {len(circles_df)} circles with members")
     
     # Dictionary to track unique vintages per circle
     circle_vintage_counts = {}
@@ -169,36 +161,23 @@ def render_vintage_diversity_histogram():
         # Initialize empty set to track unique vintages
         unique_vintages = set()
         
-        # Debug: print the circle data
-        st.write(f"Circle {circle_id} data:")
-        if 'members' in circle_row:
-            st.write(f"- Members type: {type(circle_row['members'])}")
-            st.write(f"- Members value: {circle_row['members']}")
-        else:
-            st.write("- No 'members' column found")
-            st.write(f"- Available columns: {circle_row.index.tolist()}")
-        
         # Get the list of members for this circle
         if 'members' in circle_row and circle_row['members']:
             # For list representation
             if isinstance(circle_row['members'], list):
                 member_ids = circle_row['members']
-                st.write(f"- Using list directly: {member_ids}")
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
                         member_ids = eval(circle_row['members'])
-                        st.write(f"- Converted string to list using eval(): {member_ids}")
                     else:
                         member_ids = [circle_row['members']]
-                        st.write(f"- Using single string as member ID: {member_ids}")
                 except Exception as e:
-                    st.error(f"Error parsing members string: {str(e)}")
-                    member_ids = []
+                    # Skip if parsing fails
+                    continue
             else:
                 # Skip if members data is not in expected format
-                st.write(f"- Skipping unexpected members format: {type(circle_row['members'])}")
                 continue
                 
             # For each member, look up their vintage in results_df
@@ -413,97 +392,8 @@ def render_class_vintage_analysis(data):
         # Show the plot
         st.plotly_chart(fig, use_container_width=True)
     
-    # Create a breakdown by Match Status if available
-    if 'proposed_NEW_circles_id' in df.columns:
-        st.subheader("Class Vintage by Match Status")
-        
-        # Create a match status column
-        df['Match Status'] = df['proposed_NEW_circles_id'].apply(
-            lambda x: "Unmatched" if x == "UNMATCHED" else "Matched"
-        )
-        
-        # Create a crosstab of Class Vintage vs Match Status
-        match_vintage = pd.crosstab(
-            df['Class_Vintage'], 
-            df['Match Status'],
-            rownames=['Class Vintage'],
-            colnames=['Match Status']
-        ).reindex(vintage_order)
-        
-        # Add a Total column
-        match_vintage['Total'] = match_vintage.sum(axis=1)
-        
-        # Calculate match rate percentage
-        if 'Matched' in match_vintage.columns and 'Unmatched' in match_vintage.columns:
-            match_vintage['Match Rate %'] = (match_vintage['Matched'] / match_vintage['Total'] * 100).round(1)
-        
-        # Show the table
-        st.dataframe(match_vintage, use_container_width=True)
-        
-        # Create a stacked bar chart
-        fig = px.bar(
-            match_vintage.reset_index(),
-            x='Class Vintage',
-            y=['Matched', 'Unmatched'],
-            title='Class Vintage Distribution by Match Status',
-            barmode='stack',
-            color_discrete_sequence=['#008566', '#8C1515']  # Green for matched, red for unmatched
-        )
-        
-        # Customize layout
-        fig.update_layout(
-            xaxis={'categoryorder': 'array', 'categoryarray': vintage_order},
-            xaxis_title="Class Vintage (Years Since Graduation)",
-            yaxis_title="Count of Participants",
-            legend_title="Match Status"
-        )
-        
-        # Show the plot
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Create a line chart for match rate
-        if 'Match Rate %' in match_vintage.columns:
-            # Create a line chart for match rate
-            fig = px.line(
-                match_vintage.reset_index(),
-                x='Class Vintage',
-                y='Match Rate %',
-                title='Match Rate by Class Vintage',
-                markers=True,
-                color_discrete_sequence=['#00505C']  # Stanford blue
-            )
-            
-            # Customize layout
-            fig.update_layout(
-                xaxis={'categoryorder': 'array', 'categoryarray': vintage_order},
-                xaxis_title="Class Vintage (Years Since Graduation)",
-                yaxis_title="Match Rate (%)",
-                yaxis=dict(range=[0, 100])  # Set y-axis range from 0 to 100%
-            )
-            
-            # Add a horizontal reference line at 80% (target match rate)
-            fig.add_shape(
-                type="line",
-                x0=0,
-                x1=1,
-                xref="paper",
-                y0=80,
-                y1=80,
-                line=dict(color="#8C1515", width=2, dash="dash")
-            )
-            
-            # Add annotation for the target line
-            fig.add_annotation(
-                x=0.5,
-                y=82,
-                xref="paper",
-                text="Target Match Rate (80%)",
-                showarrow=False,
-                font=dict(color="#8C1515")
-            )
-            
-            # Show the plot
-            st.plotly_chart(fig, use_container_width=True)
+    # We have removed the "Class Vintage by Match Status", "Class Vintage Distribution by Match Status", 
+    # and "Match Rate by Class Vintage" sections per user request
     
     # Add the vintage diversity histogram after all the existing vintage analysis
     render_vintage_diversity_histogram()
