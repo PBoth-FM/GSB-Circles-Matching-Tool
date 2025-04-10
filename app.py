@@ -37,6 +37,8 @@ if 'unmatched_participants' not in st.session_state:
     st.session_state.unmatched_participants = None
 if 'validation_errors' not in st.session_state:
     st.session_state.validation_errors = None
+if 'deduplication_messages' not in st.session_state:
+    st.session_state.deduplication_messages = []
 if 'exec_time' not in st.session_state:
     st.session_state.exec_time = None
 if 'config' not in st.session_state:
@@ -97,16 +99,26 @@ def process_uploaded_file(uploaded_file):
     try:
         with st.spinner("Processing data..."):
             # Load and validate data
-            df, validation_errors = load_data(uploaded_file)
+            df, validation_errors, deduplication_messages = load_data(uploaded_file)
             st.session_state.df = df
             st.session_state.validation_errors = validation_errors
+            st.session_state.deduplication_messages = deduplication_messages
             
+            # Display validation errors if any
             if len(validation_errors) > 0:
                 st.warning(f"Found {len(validation_errors)} validation issues:")
                 for error in validation_errors[:5]:  # Show first 5 errors
                     st.write(f"- {error}")
                 if len(validation_errors) > 5:
                     st.write(f"...and {len(validation_errors) - 5} more issues.")
+            
+            # Display deduplication messages if any
+            if len(deduplication_messages) > 0:
+                st.warning(f"Found and fixed {len(deduplication_messages)} duplicate Encoded IDs:")
+                for message in deduplication_messages[:5]:  # Show first 5 messages
+                    st.write(f"- {message}")
+                if len(deduplication_messages) > 5:
+                    st.write(f"...and {len(deduplication_messages) - 5} more duplicates fixed.")
             
             # Process and normalize data
             processed_data = process_data(df)

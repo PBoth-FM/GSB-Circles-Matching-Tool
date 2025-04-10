@@ -113,6 +113,14 @@ def render_results_overview():
     
     st.subheader("Results Overview")
     
+    # Display deduplication messages if any exist
+    if 'deduplication_messages' in st.session_state and st.session_state.deduplication_messages:
+        with st.expander(f"⚠️ {len(st.session_state.deduplication_messages)} Duplicate Encoded IDs were detected and fixed", expanded=True):
+            for message in st.session_state.deduplication_messages[:5]:  # Show first 5 messages
+                st.write(f"- {message}")
+            if len(st.session_state.deduplication_messages) > 5:
+                st.write(f"...and {len(st.session_state.deduplication_messages) - 5} more duplicates fixed.")
+    
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
