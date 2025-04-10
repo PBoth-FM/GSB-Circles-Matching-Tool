@@ -25,7 +25,7 @@ def validate_required_columns(df):
         for col in missing_columns:
             errors.append(f"Required column '{col}' is missing")
     
-    # Define recommended columns
+    # Define recommended columns - these are now mapped from the original column names
     recommended_columns = [
         'Requested_Region',
         'first_choice_location',
@@ -37,11 +37,16 @@ def validate_required_columns(df):
         'host'
     ]
     
-    # Check for missing recommended columns
+    # Check for missing recommended columns - but be less strict now
+    # since we've already mapped the original columns
     missing_recommended = [col for col in recommended_columns if col not in df.columns]
     
-    if missing_recommended:
-        for col in missing_recommended:
+    # Only warn about key columns that are truly essential
+    essential_columns = ['Requested_Region', 'first_choice_location', 'first_choice_time']
+    missing_essential = [col for col in essential_columns if col in missing_recommended]
+    
+    if missing_essential:
+        for col in missing_essential:
             errors.append(f"Recommended column '{col}' is missing")
     
     return errors
@@ -70,13 +75,19 @@ def validate_data_types(df):
         if df['Status'].dtype != 'object':
             errors.append("Status column should contain text values")
         
-        # Check for valid Status values
+        # The Status values should already be normalized, but double-check
         valid_statuses = ['CURRENT-CONTINUING', 'NEW', 'MOVING OUT', 'WAITLIST']
-        invalid_statuses = df[~df['Status'].isin(valid_statuses)]['Status'].unique()
+        # Only check non-null values to avoid TypeErrors
+        non_null_status = df['Status'].dropna()
         
-        if len(invalid_statuses) > 0:
-            invalid_list = ', '.join([str(s) for s in invalid_statuses])
-            errors.append(f"Invalid Status values found: {invalid_list}")
+        if not non_null_status.empty:
+            # Filter out values that are not in the valid list
+            invalid_mask = ~non_null_status.isin(valid_statuses)
+            invalid_statuses = non_null_status[invalid_mask].unique() if any(invalid_mask) else []
+            
+            if len(invalid_statuses) > 0:
+                invalid_list = ', '.join([str(s) for s in invalid_statuses])
+                errors.append(f"Invalid Status values found: {invalid_list}")
     
     # Check host values if present
     if 'host' in df.columns:
