@@ -863,12 +863,58 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     if debug_mode:
         print(f"Creating optimization variables for {len(participants)} participants and {len(circle_options)} circle options")
     
+    # Create compatibility matrix to enforce matching only to preferred locations and times
+    compatibility = {}
+    for p in participants:
+        p_row = remaining_df[remaining_df['Encoded ID'] == p].iloc[0]
+        for j in range(len(circle_options)):
+            subregion, time_slot = circle_options[j]
+            
+            # Check location compatibility - participant must have this location in their preferences
+            loc_match = (
+                (p_row['first_choice_location'] == subregion) or 
+                (p_row['second_choice_location'] == subregion) or 
+                (p_row['third_choice_location'] == subregion)
+            )
+            
+            # Check time compatibility - participant must have this time in their preferences
+            time_match = (
+                (p_row['first_choice_time'] == time_slot) or 
+                (p_row['second_choice_time'] == time_slot) or 
+                (p_row['third_choice_time'] == time_slot)
+            )
+            
+            # Both location and time must match for compatibility
+            compatibility[(p, j)] = 1 if (loc_match and time_match) else 0
+    
+    # Create decision variables for all pairs
     x = pulp.LpVariable.dicts("assign", 
                              [(p, j) for p in participants for j in range(len(circle_options))],
                              cat=pulp.LpBinary)
     
     # Create circle activation variables: y[j] = 1 if circle j is formed
     y = pulp.LpVariable.dicts("circle", range(len(circle_options)), cat=pulp.LpBinary)
+    
+    # Add compatibility constraints - force x[p,j] = 0 for incompatible pairs
+    for p in participants:
+        for j in range(len(circle_options)):
+            if compatibility[(p, j)] == 0:
+                prob += x[p, j] == 0, f"Incompatible_match_{p}_{j}"
+                
+    if debug_mode:
+        # Count how many compatible options exist for each participant
+        compatible_options_count = {}
+        for p in participants:
+            compatible_options_count[p] = sum(1 for j in range(len(circle_options)) if compatibility[(p, j)] == 1)
+        
+        # Log number of compatible options
+        print(f"Created compatibility constraints: {sum(1 for v in compatibility.values() if v == 0)} incompatible pairs excluded")
+        print(f"Average compatible options per participant: {sum(compatible_options_count.values()) / len(participants):.2f}")
+        
+        # Identify participants with very few options
+        few_options = [p for p, count in compatible_options_count.items() if count < 3]
+        if few_options:
+            print(f"WARNING: {len(few_options)} participants have fewer than 3 compatible circle options")
     
     # Objective function: maximize preference satisfaction
     # For members from non-viable circles, we need to prioritize their previous preferences
@@ -1011,9 +1057,34 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         
         if p_id in circle_assignments:
             assignment = circle_assignments[p_id]
+            subregion = assignment['subregion']
+            time_slot = assignment['meeting_time']
+            
+            # Verify compatibility before finalizing assignment
+            loc_match = (
+                (participant['first_choice_location'] == subregion) or 
+                (participant['second_choice_location'] == subregion) or 
+                (participant['third_choice_location'] == subregion)
+            )
+            
+            time_match = (
+                (participant['first_choice_time'] == time_slot) or 
+                (participant['second_choice_time'] == time_slot) or 
+                (participant['third_choice_time'] == time_slot)
+            )
+            
+            if not (loc_match and time_match) and debug_mode:
+                print(f"WARNING: Participant {p_id} was assigned to incompatible circle!")
+                print(f"  Assigned: {subregion} at {time_slot}")
+                print(f"  Location Preferences: {participant['first_choice_location']}, " +
+                      f"{participant['second_choice_location']}, {participant['third_choice_location']}")
+                print(f"  Time Preferences: {participant['first_choice_time']}, " +
+                      f"{participant['second_choice_time']}, {participant['third_choice_time']}")
+            
+            # Proceed with assignment
             participant_dict['proposed_NEW_circles_id'] = assignment['circle_id']
-            participant_dict['proposed_NEW_Subregion'] = assignment['subregion']
-            participant_dict['proposed_NEW_DayTime'] = assignment['meeting_time']
+            participant_dict['proposed_NEW_Subregion'] = subregion
+            participant_dict['proposed_NEW_DayTime'] = time_slot
             participant_dict['unmatched_reason'] = ""
             
             # Determine if participant should be a host or co-leader
