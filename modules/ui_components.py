@@ -128,11 +128,16 @@ def render_vintage_diversity_histogram():
     the number of different class vintages they contain
     """
     # First check if we have the necessary data
-    if ('matched_circles' not in st.session_state or st.session_state.matched_circles.empty):
+    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
         st.warning("No matched circles data available to analyze vintage diversity.")
         return
         
-    if ('results' not in st.session_state or st.session_state.results is None):
+    # Check if the matched_circles dataframe is empty
+    if hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty:
+        st.warning("No matched circles data available (empty dataframe).")
+        return
+        
+    if 'results' not in st.session_state or st.session_state.results is None:
         st.warning("No results data available to analyze vintage diversity.")
         return
     
@@ -395,8 +400,14 @@ def render_class_vintage_analysis(data):
     # We have removed the "Class Vintage by Match Status", "Class Vintage Distribution by Match Status", 
     # and "Match Rate by Class Vintage" sections per user request
     
-    # Add the vintage diversity histogram after all the existing vintage analysis
-    render_vintage_diversity_histogram()
+    # Only add the vintage diversity histogram if matching has been run (circles exist)
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            render_vintage_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
 
 def render_debug_tab():
     """Render the debug tab content"""
