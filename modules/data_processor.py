@@ -75,6 +75,24 @@ def normalize_data(df):
                 lambda x: normalize_subregions(x) if pd.notna(x) and x != '' else x
             )
     
+    # Handle small regions with no subregions
+    # For NEW participants from small regions who didn't specify a first_choice_location,
+    # set their first_choice_location to their Requested_Region
+    small_regions = [
+        'San Diego', 'Marin County', 'Nairobi', 'Sao Paulo', 
+        'Mexico City', 'Singapore', 'Shanghai', 'Napa/Sonoma', 'Atlanta'
+    ]
+    
+    # Only apply this to non-CURRENT-CONTINUING participants 
+    mask = (
+        normalized_df['Requested_Region'].isin(small_regions) &
+        ((normalized_df['first_choice_location'].isna()) | (normalized_df['first_choice_location'] == '')) &
+        (normalized_df['Status'] != 'CURRENT-CONTINUING')
+    )
+    
+    # Set first_choice_location to match Requested_Region for these participants
+    normalized_df.loc[mask, 'first_choice_location'] = normalized_df.loc[mask, 'Requested_Region']
+    
     # Per PRD 4.3.2: For CURRENT-CONTINUING participants, use current_region; for all others, use requested_region_from_form
     if 'Status' in normalized_df.columns and 'Current_Region' in normalized_df.columns and 'Requested_Region' in normalized_df.columns:
         # Create a derived region column for grouping
