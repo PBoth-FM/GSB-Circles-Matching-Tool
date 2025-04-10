@@ -81,10 +81,26 @@ def generate_download_link(df):
     if 'Preferred Email' in output_df.columns:
         name_email_columns.append('Preferred Email')
     
-    # All other columns (except name/email columns that we'll place later)
+    # Find GSB Class and Class Vintage columns to place them together
+    gsb_class_column = None
+    gsb_vintage_column = None
+    
+    # Look for GSB Class column (case-insensitive)
+    for col in output_df.columns:
+        if 'gsb class' in col.lower():
+            gsb_class_column = col
+            break
+    
+    # Class Vintage column
+    if 'Class_Vintage' in output_df.columns:
+        gsb_vintage_column = 'Class_Vintage'
+    
+    # All other columns (except name/email columns and GSB class columns that we'll place later)
     remaining_columns = [col for col in output_df.columns 
                         if col not in ordered_columns 
-                        and col not in name_email_columns]
+                        and col not in name_email_columns
+                        and col != gsb_class_column
+                        and col != gsb_vintage_column]
     
     # Add remaining columns alphabetically for consistency
     ordered_columns.extend(sorted(remaining_columns))

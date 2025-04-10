@@ -32,6 +32,46 @@ def process_co_leader_max_new_members(value):
         # If not a valid number, return None
         return None
 
+def calculate_class_vintage(gsb_class):
+    """
+    Calculate the Class Vintage based on GSB Class year
+    
+    Args:
+        gsb_class: The GSB Class year
+        
+    Returns:
+        Class Vintage category (e.g. "01-10 yrs", "11-20 yrs", etc.)
+    """
+    # Current year for calculation (as specified)
+    current_year = 2025
+    
+    # Handle missing or invalid values
+    if pd.isna(gsb_class) or not str(gsb_class).strip() or not str(gsb_class).strip().isdigit():
+        return None
+    
+    # Calculate years since graduation
+    try:
+        class_year = int(gsb_class)
+        years_since = current_year - class_year
+        
+        # Determine decade range
+        if years_since <= 10:
+            return "01-10 yrs"
+        elif years_since <= 20:
+            return "11-20 yrs"
+        elif years_since <= 30:
+            return "21-30 yrs"
+        elif years_since <= 40:
+            return "31-40 yrs"
+        elif years_since <= 50:
+            return "41-50 yrs"
+        elif years_since <= 60:
+            return "51-60 yrs"
+        else:
+            return "61+ yrs"
+    except (ValueError, TypeError):
+        return None
+
 def process_data(df):
     """
     Process and clean the participant data
@@ -72,6 +112,15 @@ def process_data(df):
     else:
         # Add the column with default None values if it doesn't exist
         processed_df['co_leader_max_new_members'] = None
+    
+    # Calculate Class Vintage if GSB Class column exists
+    gsb_class_columns = [col for col in processed_df.columns if 'gsb class' in col.lower()]
+    if gsb_class_columns:
+        gsb_class_col = gsb_class_columns[0]
+        processed_df['Class_Vintage'] = processed_df[gsb_class_col].apply(calculate_class_vintage)
+    else:
+        # Add empty Class_Vintage column if GSB Class doesn't exist
+        processed_df['Class_Vintage'] = None
     
     # Filter out participants with "MOVING OUT" status
     processed_df = processed_df[processed_df.get('Status', '') != 'MOVING OUT']
