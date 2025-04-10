@@ -127,15 +127,28 @@ def render_vintage_diversity_histogram():
     Create a histogram showing the distribution of circles based on 
     the number of different class vintages they contain
     """
+    st.write("Starting vintage diversity histogram calculation...")
+    
     # First check if we have the necessary data
-    if ('matched_circles' not in st.session_state or st.session_state.matched_circles.empty or
-        'results' not in st.session_state or st.session_state.results is None):
-        st.warning("No circle data available to analyze vintage diversity.")
+    if ('matched_circles' not in st.session_state or st.session_state.matched_circles.empty):
+        st.warning("No matched circles data available to analyze vintage diversity.")
+        return
+        
+    if ('results' not in st.session_state or st.session_state.results is None):
+        st.warning("No results data available to analyze vintage diversity.")
         return
     
     # Get the circle data
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
+    
+    st.write(f"Found {len(circles_df)} circles in session state")
+    
+    # Check that member_count column exists
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        st.write("Available columns:", circles_df.columns.tolist())
+        return
     
     # Filter out circles with no members
     circles_df = circles_df[circles_df['member_count'] > 0]
@@ -143,6 +156,8 @@ def render_vintage_diversity_histogram():
     if len(circles_df) == 0:
         st.warning("No circles with members available for analysis.")
         return
+    
+    st.write(f"After filtering, found {len(circles_df)} circles with members")
     
     # Dictionary to track unique vintages per circle
     circle_vintage_counts = {}
@@ -154,16 +169,36 @@ def render_vintage_diversity_histogram():
         # Initialize empty set to track unique vintages
         unique_vintages = set()
         
+        # Debug: print the circle data
+        st.write(f"Circle {circle_id} data:")
+        if 'members' in circle_row:
+            st.write(f"- Members type: {type(circle_row['members'])}")
+            st.write(f"- Members value: {circle_row['members']}")
+        else:
+            st.write("- No 'members' column found")
+            st.write(f"- Available columns: {circle_row.index.tolist()}")
+        
         # Get the list of members for this circle
         if 'members' in circle_row and circle_row['members']:
             # For list representation
             if isinstance(circle_row['members'], list):
                 member_ids = circle_row['members']
+                st.write(f"- Using list directly: {member_ids}")
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
-                member_ids = eval(circle_row['members']) if circle_row['members'].startswith('[') else [circle_row['members']]
+                try:
+                    if circle_row['members'].startswith('['):
+                        member_ids = eval(circle_row['members'])
+                        st.write(f"- Converted string to list using eval(): {member_ids}")
+                    else:
+                        member_ids = [circle_row['members']]
+                        st.write(f"- Using single string as member ID: {member_ids}")
+                except Exception as e:
+                    st.error(f"Error parsing members string: {str(e)}")
+                    member_ids = []
             else:
                 # Skip if members data is not in expected format
+                st.write(f"- Skipping unexpected members format: {type(circle_row['members'])}")
                 continue
                 
             # For each member, look up their vintage in results_df
