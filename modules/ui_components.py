@@ -339,9 +339,14 @@ def render_circle_table():
                         # For string columns, ensure they're strings
                         display_df[display_col] = filtered_circles[orig_col].astype(str)
 
-            # Convert Max Additions to integer format
+            # Convert Max Additions to integer format, handling decimals
             if 'Max Additions' in display_df.columns:
-                display_df['Max Additions'] = display_df['Max Additions'].fillna(0).astype(int)
+                # First convert to float to handle any decimal values
+                display_df['Max Additions'] = pd.to_numeric(display_df['Max Additions'], errors='coerce')
+                # Floor decimal values and convert to int, keeping NaN values
+                display_df['Max Additions'] = display_df['Max Additions'].apply(
+                    lambda x: int(x) if pd.notnull(x) else x
+                )
 
             # Display the clean dataframe with row numbers
             st.dataframe(
