@@ -101,9 +101,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     circles = []
     unmatched = []
     
-    # Check if we need to handle existing circles
-    existing_circles = {}
-    current_circle_members = {}
+    # Track timing for performance analysis
+    import time
+    start_time = time.time()
+    
+    # Initialize containers for existing circle handling
+    existing_circles = {}  # Maps circle_id to circle data for viable circles (>= min_circle_size)
+    small_circles = {}     # Maps circle_id to circle data for small circles (2-4 members)
+    current_circle_members = {}  # Maps circle_id to list of members
     
     # Step 1: Identify existing circles if we're preserving them
     if existing_circle_handling == 'preserve' and 'current_circles_id' in region_df.columns:
@@ -131,29 +136,47 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         
         # Evaluate each existing circle
         for circle_id, members in current_circle_members.items():
-            # Check if the circle has enough members to continue
-            if len(members) >= min_circle_size:
-                # Check if there's at least one host
-                has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
+            # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
+            # and meets host requirements (for in-person circles)
+            if len(members) >= 2:
+                # Check if it's an in-person circle (IP prefix) or virtual circle (V prefix)
+                is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
+                is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
                 
-                if has_host or not enable_host_requirement:
-                    # This circle can continue - get subregion and time if available
+                # For in-person circles, check host requirements
+                host_requirement_met = True
+                if is_in_person and enable_host_requirement:
+                    has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
+                    host_requirement_met = has_host
+                
+                if host_requirement_met:
+                    # Get subregion and time if available
                     subregion = members[0].get('Current_Subregion', '')
                     meeting_time = members[0].get('Current_Meeting_Time', '')
                     
-                    # Add to existing circles dict with member list and metadata
-                    existing_circles[circle_id] = {
+                    # Create circle data with member list and metadata
+                    circle_data = {
                         'members': [m['Encoded ID'] for m in members],
                         'subregion': subregion,
                         'meeting_time': meeting_time,
                         'always_hosts': sum(1 for m in members if m.get('host', '').lower() in ['always', 'always host']),
-                        'sometimes_hosts': sum(1 for m in members if m.get('host', '').lower() in ['sometimes', 'sometimes host'])
+                        'sometimes_hosts': sum(1 for m in members if m.get('host', '').lower() in ['sometimes', 'sometimes host']),
+                        'is_in_person': is_in_person,
+                        'is_virtual': is_virtual
                     }
                     
-                    if debug_mode:
-                        print(f"Preserving existing circle {circle_id} with {len(members)} members")
+                    # Per PRD: Small circles (2-4 members) need to grow to be viable
+                    if len(members) < min_circle_size:
+                        small_circles[circle_id] = circle_data
+                        if debug_mode:
+                            print(f"Small existing circle {circle_id} has {len(members)} members, needs {min_circle_size - len(members)} more")
+                    else:
+                        # Viable circle (>= min_circle_size) - add to existing circles
+                        existing_circles[circle_id] = circle_data
+                        if debug_mode:
+                            print(f"Preserving viable existing circle {circle_id} with {len(members)} members")
     
-    # Step 2: Process participants in existing circles
+    # Step 2: Process participants in existing viable circles
     processed_ids = set()
     for circle_id, circle_data in existing_circles.items():
         # Process each member of this circle
@@ -191,6 +214,140 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             'members': circle_data['members']
         }
         circles.append(circle_dict)
+    
+    # Step 2.5: Handle small existing circles (2-4 members)
+    # Per PRD: Try to add participants to reach 5 members. If not possible, return to general pool.
+    if small_circles and debug_mode:
+        print(f"Found {len(small_circles)} small circles with 2-4 members that need to grow")
+        
+    # Get the pool of participants we can add to small circles (exclude already processed)
+    available_df = region_df[~region_df['Encoded ID'].isin(processed_ids)]
+    
+    # Try to grow each small circle to viable size
+    grown_small_circles = {}
+    small_circle_members_to_keep = set()
+    
+    for circle_id, circle_data in small_circles.items():
+        current_members = circle_data['members']
+        current_size = len(current_members)
+        needed_size = min_circle_size - current_size
+        
+        if debug_mode:
+            print(f"Small circle {circle_id} has {current_size} members, needs {needed_size} more")
+        
+        # Skip circles that are impossible to grow given available pool
+        if needed_size > len(available_df):
+            if debug_mode:
+                print(f"Circle {circle_id} needs {needed_size} members but only {len(available_df)} available - cannot grow")
+            continue
+        
+        # Find compatible participants for this circle
+        # Use the subregion and meeting time from the circle
+        subregion = circle_data['subregion']
+        meeting_time = circle_data['meeting_time']
+        
+        # Score each available participant based on compatibility
+        compatibility_scores = []
+        for _, row in available_df.iterrows():
+            participant_id = row['Encoded ID']
+            # Calculate preference score for this subregion and time slot
+            score = calculate_preference_score(row, subregion, meeting_time)
+            compatibility_scores.append((participant_id, score))
+        
+        # Sort by compatibility score (highest first)
+        compatibility_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # Take the top N needed participants
+        best_matches = compatibility_scores[:needed_size]
+        
+        # Check if we have enough good matches (score > 0)
+        good_matches = [p for p, score in best_matches if score > 0]
+        
+        if len(good_matches) >= needed_size:
+            # We have enough good matches to grow this circle
+            new_members = [p for p, _ in best_matches[:needed_size]]
+            
+            # Update the circle data
+            circle_data['members'].extend(new_members)
+            circle_data['member_count'] = len(circle_data['members'])
+            circle_data['new_members'] = needed_size
+            
+            # Count the hosts in the combined group
+            all_member_rows = []
+            for encoded_id in circle_data['members']:
+                member_rows = region_df[region_df['Encoded ID'] == encoded_id]
+                if not member_rows.empty:
+                    all_member_rows.append(member_rows.iloc[0])
+            
+            circle_data['always_hosts'] = sum(1 for m in all_member_rows if m.get('host', '').lower() in ['always', 'always host'])
+            circle_data['sometimes_hosts'] = sum(1 for m in all_member_rows if m.get('host', '').lower() in ['sometimes', 'sometimes host'])
+            
+            # Check host requirements
+            host_requirement_met = True
+            if circle_data['is_in_person'] and enable_host_requirement:
+                has_host = circle_data['always_hosts'] > 0 or circle_data['sometimes_hosts'] >= 2
+                host_requirement_met = has_host
+            
+            if host_requirement_met:
+                # This small circle has grown into a viable circle
+                grown_small_circles[circle_id] = circle_data
+                small_circle_members_to_keep.update(current_members)
+                small_circle_members_to_keep.update(new_members)
+                
+                if debug_mode:
+                    print(f"Successfully grew circle {circle_id} by adding {needed_size} members")
+            else:
+                if debug_mode:
+                    print(f"Circle {circle_id} would have enough members but fails host requirements")
+    
+    # Process the grown small circles
+    for circle_id, circle_data in grown_small_circles.items():
+        # Process each member of this circle
+        for encoded_id in circle_data['members']:
+            if encoded_id not in processed_ids:  # Only process members we haven't processed yet
+                # Find the participant in the region data
+                participant = region_df[region_df['Encoded ID'] == encoded_id].iloc[0].to_dict()
+                
+                # Add the participant to results list with their circle assignment
+                participant['proposed_NEW_circles_id'] = circle_id
+                participant['proposed_NEW_Subregion'] = circle_data['subregion']
+                participant['proposed_NEW_DayTime'] = circle_data['meeting_time']
+                
+                # Handle host status
+                if participant.get('host', '').lower() in ['always', 'always host']:
+                    participant['proposed_NEW_host'] = "Yes"
+                elif participant.get('host', '').lower() in ['sometimes', 'sometimes host']:
+                    participant['proposed_NEW_host'] = "Maybe"
+                else:
+                    participant['proposed_NEW_host'] = "No"
+                
+                # Add to results and mark as processed
+                results.append(participant)
+                processed_ids.add(encoded_id)
+        
+        # Add the circle to circles list
+        circle_dict = {
+            'circle_id': circle_id,
+            'region': region,
+            'subregion': circle_data['subregion'],
+            'meeting_time': circle_data['meeting_time'],
+            'member_count': len(circle_data['members']),
+            'new_members': circle_data['new_members'],  # Number of newly added members
+            'always_hosts': circle_data['always_hosts'],
+            'sometimes_hosts': circle_data['sometimes_hosts'],
+            'members': circle_data['members']
+        }
+        circles.append(circle_dict)
+    
+    # For small circles that couldn't grow, set preferences from circle data
+    # Per PRD: Members of non-viable circles return to general pool with preferences from their circle
+    for circle_id, circle_data in small_circles.items():
+        if circle_id not in grown_small_circles:
+            if debug_mode:
+                print(f"Small circle {circle_id} could not grow, returning {len(circle_data['members'])} members to general pool")
+            
+            # These members will be part of the remaining optimization, nothing to do here
+            # Their preferences will be set from their current circle data when processing results
     
     # Step 3: Run optimization for remaining participants (both NEW and CURRENT-CONTINUING without a current circle)
     remaining_df = region_df[~region_df['Encoded ID'].isin(processed_ids)]
