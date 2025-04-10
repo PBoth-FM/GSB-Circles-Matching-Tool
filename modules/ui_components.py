@@ -469,6 +469,9 @@ def render_class_vintage_analysis(data):
             
             # Show the plot
             st.plotly_chart(fig, use_container_width=True)
+    
+    # Add the vintage diversity histogram after all the existing vintage analysis
+    render_vintage_diversity_histogram()
 
 def render_debug_tab():
     """Render the debug tab content"""
