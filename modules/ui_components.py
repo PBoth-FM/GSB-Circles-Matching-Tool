@@ -126,13 +126,53 @@ def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
     st.subheader("Class Vintage Distribution")
     
+    # Create a copy to work with
+    df = data.copy()
+    
+    # Debug: show column names
+    st.caption("Debugging information:")
+    with st.expander("Show data columns and sample values"):
+        st.write("Available columns:")
+        for col in df.columns:
+            st.text(f"- {col}")
+        
+        # Try to find GSB Class column
+        gsb_class_col = None
+        for col in df.columns:
+            if any(term in col.lower().replace(" ", "") for term in ['gsbclass', 'gsb class']):
+                gsb_class_col = col
+                break
+        
+        if gsb_class_col:
+            st.write(f"Found GSB Class column: {gsb_class_col}")
+            # Show some sample values
+            sample_values = df[gsb_class_col].dropna().head(5).tolist()
+            st.write(f"Sample values: {sample_values}")
+        else:
+            st.write("No GSB Class column found in the data")
+    
     # Check if we have Class Vintage data
     if 'Class_Vintage' not in data.columns:
         st.warning("Class Vintage data is not available. Please ensure GSB Class data was included in the uploaded file.")
-        return
-    
-    # Create a copy to work with
-    df = data.copy()
+        
+        # Try to calculate Class Vintage on-the-fly if there's a GSB Class column
+        if gsb_class_col:
+            st.info(f"Attempting to calculate Class Vintage from {gsb_class_col}...")
+            try:
+                from modules.data_processor import calculate_class_vintage
+                
+                # Convert to numeric and calculate vintage
+                df['GSB_Class_Numeric'] = pd.to_numeric(df[gsb_class_col], errors='coerce')
+                df['Class_Vintage'] = df['GSB_Class_Numeric'].apply(calculate_class_vintage)
+                
+                vintage_counts = df['Class_Vintage'].value_counts()
+                st.success(f"Successfully calculated Class Vintage for {len(df[df['Class_Vintage'].notna()])} records")
+                st.write(f"Distribution: {vintage_counts}")
+            except Exception as e:
+                st.error(f"Error calculating Class Vintage: {str(e)}")
+                return
+        else:
+            return
     
     # Filter out rows with missing Class Vintage
     df = df[df['Class_Vintage'].notna()]
