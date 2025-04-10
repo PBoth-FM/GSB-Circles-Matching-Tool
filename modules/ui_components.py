@@ -122,6 +122,115 @@ def render_demographics_tab():
     with demo_tab2:
         st.info("Additional demographic analyses will be added in future updates.")
 
+def render_vintage_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different class vintages they contain
+    """
+    # First check if we have the necessary data
+    if ('matched_circles' not in st.session_state or st.session_state.matched_circles.empty or
+        'results' not in st.session_state or st.session_state.results is None):
+        st.warning("No circle data available to analyze vintage diversity.")
+        return
+    
+    # Get the circle data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy()
+    
+    # Filter out circles with no members
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique vintages per circle
+    circle_vintage_counts = {}
+    
+    # Get vintage data for each member of each circle
+    for _, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        
+        # Initialize empty set to track unique vintages
+        unique_vintages = set()
+        
+        # Get the list of members for this circle
+        if 'members' in circle_row and circle_row['members']:
+            # For list representation
+            if isinstance(circle_row['members'], list):
+                member_ids = circle_row['members']
+            # For string representation - convert to list
+            elif isinstance(circle_row['members'], str):
+                member_ids = eval(circle_row['members']) if circle_row['members'].startswith('[') else [circle_row['members']]
+            else:
+                # Skip if members data is not in expected format
+                continue
+                
+            # For each member, look up their vintage in results_df
+            for member_id in member_ids:
+                member_data = results_df[results_df['Encoded ID'] == member_id]
+                
+                if not member_data.empty and 'Class_Vintage' in member_data.columns:
+                    vintage = member_data['Class_Vintage'].iloc[0]
+                    if pd.notna(vintage):
+                        unique_vintages.add(vintage)
+        
+        # Store the count of unique vintages for this circle
+        if unique_vintages:  # Only include if there's at least one valid vintage
+            circle_vintage_counts[circle_id] = len(unique_vintages)
+    
+    # Create histogram data from the vintage counts
+    if not circle_vintage_counts:
+        st.warning("No vintage data available for circles.")
+        return
+        
+    # Count circles by number of unique vintages
+    diversity_counts = pd.Series(circle_vintage_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Vintages': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
+    st.subheader("Vintage Diversity Within Circles")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Vintages',
+        y='Number of Circles',
+        title='Distribution of Circles by Number of Class Vintages',
+        text='Number of Circles',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Class Vintages",
+            tickmode='linear',
+            dtick=1  # Force integer labels
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Show a table with the data
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
+    
+    # Add a brief explanation
+    total_circles = sum(diversity_counts.values)
+    diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
+    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple class vintages.")
+
+
 def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
     st.subheader("Class Vintage Distribution")
