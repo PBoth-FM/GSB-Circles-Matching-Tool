@@ -23,7 +23,11 @@ def process_co_leader_max_new_members(value):
     
     # Try to convert to integer
     try:
-        return int(value)
+        int_value = int(value)
+        # Handle 0 as equivalent to 'None' - no new members should be added
+        if int_value == 0:
+            return 'None'
+        return int_value
     except (ValueError, TypeError):
         # If not a valid number, return None
         return None

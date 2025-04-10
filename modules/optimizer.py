@@ -159,6 +159,16 @@ def run_matching_algorithm(data, config):
                             print(f"  Member {member['Encoded ID']} specified 'None' - no new members allowed")
                         break
                     
+                    # Check for 0 which should be treated like "None"
+                    elif pd.notna(max_value) and (
+                        (isinstance(max_value, (int, float)) and max_value == 0) or
+                        (isinstance(max_value, str) and max_value.strip() == "0")
+                    ):
+                        has_none_preference = True
+                        if debug_mode:
+                            print(f"  Member {member['Encoded ID']} specified '0' - no new members allowed")
+                        break
+                    
                     # Process numeric values
                     elif pd.notna(max_value):
                         try:
@@ -469,6 +479,16 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                             has_none_preference = True
                             if debug_mode:
                                 print(f"  Member {member['Encoded ID']} specified 'None' - no new members allowed")
+                            break
+                        
+                        # Check for 0 which should be treated like "None"
+                        elif pd.notna(max_value) and (
+                            (isinstance(max_value, (int, float)) and max_value == 0) or
+                            (isinstance(max_value, str) and max_value.strip() == "0")
+                        ):
+                            has_none_preference = True
+                            if debug_mode:
+                                print(f"  Member {member['Encoded ID']} specified '0' - no new members allowed")
                             break
                         
                         # Process numeric values

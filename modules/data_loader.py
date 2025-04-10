@@ -144,7 +144,8 @@ def map_column_names(df):
         'Co-Leader Max New Members': 'co_leader_max_new_members',
         'Co-Leader Maximum New Members': 'co_leader_max_new_members',
         'Maximum New Members Requested': 'co_leader_max_new_members',
-        'Max New Members': 'co_leader_max_new_members'
+        'Max New Members': 'co_leader_max_new_members',
+        'Co-Leader Response: Max New Member Requested': 'co_leader_max_new_members'
     }
     
     # Debug information about column mapping
