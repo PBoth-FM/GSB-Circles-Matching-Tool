@@ -139,24 +139,33 @@ def render_results_overview():
     if 'matched_circles' in st.session_state and not st.session_state.matched_circles.empty:
         circles = st.session_state.matched_circles
         
-        # Circle statistics
-        circle_count = len(circles)
-        avg_size = circles['member_count'].mean() if 'member_count' in circles.columns else 0
-        
-        st.subheader("Circle Statistics")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("Total Circles", circle_count)
-        
-        with col2:
-            st.metric("Average Size", f"{avg_size:.1f}")
-        
-        with col3:
-            if 'member_count' in circles.columns:
-                full_circles = len(circles[circles['member_count'] >= 8])
-                st.metric("Full Circles (8+ members)", full_circles)
+        # Create a histogram of circle sizes
+        if 'member_count' in circles.columns:
+            st.subheader("Circle Size Distribution")
+            
+            # Create a histogram using plotly
+            import plotly.express as px
+            
+            # Count circles by size
+            size_counts = circles['member_count'].value_counts().reset_index()
+            size_counts.columns = ['Circle Size', 'Count']
+            size_counts = size_counts.sort_values('Circle Size')
+            
+            # Create bar chart
+            fig = px.bar(
+                size_counts,
+                x='Circle Size',
+                y='Count',
+                title='Distribution of Circle Sizes',
+                labels={'Count': 'Number of Circles', 'Circle Size': 'Number of Members'},
+                text='Count'  # Show the count values on bars
+            )
+            
+            fig.update_traces(textposition='outside')
+            fig.update_layout(xaxis_title="Number of Members", yaxis_title="Number of Circles")
+            
+            # Display the chart
+            st.plotly_chart(fig, use_container_width=True)
 
 def render_circle_table():
     """Render the circle composition table"""
@@ -194,11 +203,18 @@ def render_circle_table():
     
     # Display the filtered circles
     if not filtered_circles.empty:
+        # Add new_members column (for new circles, this equals member_count)
+        filtered_circles['new_members'] = filtered_circles['member_count']
+        
+        # Display the count of filtered circles
+        st.write(f"Showing {len(filtered_circles)} circles")
+        
+        # Display the dataframe with the updated column order
         st.dataframe(
             filtered_circles,
             use_container_width=True,
             hide_index=True,
-            column_order=["circle_id", "region", "subregion", "meeting_time", "member_count", "always_hosts", "sometimes_hosts"]
+            column_order=["circle_id", "region", "subregion", "meeting_time", "member_count", "new_members", "always_hosts", "sometimes_hosts"]
         )
     else:
         st.info("No circles match the selected filters.")
@@ -247,6 +263,9 @@ def render_unmatched_table():
     
     # Display the filtered unmatched participants
     if not filtered_unmatched.empty:
+        # Display the count of unmatched participants
+        st.write(f"Showing {len(filtered_unmatched)} unmatched participants")
+        
         st.dataframe(
             filtered_unmatched[display_columns],
             use_container_width=True,

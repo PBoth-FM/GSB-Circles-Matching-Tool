@@ -143,32 +143,17 @@ def process_uploaded_file(uploaded_file):
                 st.metric("New Participants", new_participants)
             
             st.subheader("Configuration")
-            config_col1, config_col2 = st.columns(2)
+            # Keep only Debug Mode and set other options to fixed values
+            st.session_state.config['min_circle_size'] = 5  # Fixed value
+            st.session_state.config['existing_circle_handling'] = 'preserve'  # Fixed value
+            st.session_state.config['enable_host_requirement'] = True  # Fixed value
             
-            with config_col1:
-                st.session_state.config['min_circle_size'] = st.slider(
-                    "Minimum Circle Size", 
-                    min_value=3, 
-                    max_value=10, 
-                    value=5
-                )
-                
-                st.session_state.config['debug_mode'] = st.checkbox(
-                    "Debug Mode", 
-                    value=st.session_state.config['debug_mode']
-                )
-            
-            with config_col2:
-                st.session_state.config['existing_circle_handling'] = st.radio(
-                    "Existing Circle Handling",
-                    options=['preserve', 'dissolve', 'optimize'],
-                    index=0
-                )
-                
-                st.session_state.config['enable_host_requirement'] = st.checkbox(
-                    "Enforce Host Requirements", 
-                    value=True
-                )
+            # Only show Debug Mode as a configurable option
+            st.session_state.config['debug_mode'] = st.checkbox(
+                "Debug Mode", 
+                value=st.session_state.config['debug_mode'],
+                help="Enable to see detailed logs and diagnostic information"
+            )
             
             # Add run button once data is loaded
             if st.button("Run Matching Algorithm"):
