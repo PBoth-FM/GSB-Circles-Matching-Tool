@@ -93,7 +93,14 @@ def run_matching_algorithm(data, config):
                 first_member = group.iloc[0]
                 current_region = first_member.get('Current_Region', '')
                 current_subregion = first_member.get('Current_Subregion', '')
+                current_meeting_day = first_member.get('Current_Meeting_Day', '')
                 current_meeting_time = first_member.get('Current_Meeting_Time', '')
+                
+                # Format the day/time combination for proposed_NEW_DayTime
+                if current_meeting_day and current_meeting_time:
+                    formatted_day_time = f"{current_meeting_day} ({current_meeting_time})"
+                else:
+                    formatted_day_time = current_meeting_day or current_meeting_time
                 
                 # Check if it's an in-person or virtual circle
                 is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
@@ -134,7 +141,7 @@ def run_matching_algorithm(data, config):
                     # Direct assignment - skip optimization
                     member_dict['proposed_NEW_circles_id'] = circle_id
                     member_dict['proposed_NEW_Subregion'] = current_subregion
-                    member_dict['proposed_NEW_DayTime'] = current_meeting_time
+                    member_dict['proposed_NEW_DayTime'] = formatted_day_time
                     
                     # Handle host status
                     if str(member.get('host', '')).lower() in ['always', 'always host']:
@@ -185,7 +192,7 @@ def run_matching_algorithm(data, config):
         if debug_mode:
             print(f"Processing region: {region}")
         
-        region_df = df[df[region_column] == region]
+        region_df = remaining_df[remaining_df[region_column] == region]
         
         if debug_mode:
             status_counts = region_df['Status'].value_counts().to_dict() if 'Status' in region_df.columns else {}
