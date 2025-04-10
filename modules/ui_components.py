@@ -63,6 +63,35 @@ def render_debug_tab():
     st.subheader("Debug Information")
     
     if 'config' in st.session_state and st.session_state.config.get('debug_mode', False):
+        # Display status counts if available
+        if 'status_counts' in st.session_state:
+            st.write("### Participant Status Counts")
+            status_df = pd.DataFrame({
+                'Status': list(st.session_state.status_counts.keys()),
+                'Count': list(st.session_state.status_counts.values())
+            })
+            st.dataframe(status_df, use_container_width=True)
+            
+        # Display data samples if available
+        if 'df' in st.session_state:
+            st.write("### Raw Data Preview")
+            st.dataframe(st.session_state.df.head(), use_container_width=True)
+            
+            # Show column names for debugging
+            st.write("### Column Names")
+            st.write(list(st.session_state.df.columns))
+            
+        if 'processed_data' in st.session_state:
+            st.write("### Processed Data Preview")
+            st.dataframe(st.session_state.processed_data.head(), use_container_width=True)
+            
+            # Count participants by status in processed data
+            if 'Status' in st.session_state.processed_data.columns:
+                st.write("### Processed Data Status Counts")
+                processed_status_counts = st.session_state.processed_data['Status'].value_counts().reset_index()
+                processed_status_counts.columns = ['Status', 'Count']
+                st.dataframe(processed_status_counts, use_container_width=True)
+    
         # Time compatibility tester
         st.write("### Time Compatibility Tester")
         col1, col2 = st.columns(2)

@@ -104,6 +104,11 @@ def process_uploaded_file(uploaded_file):
             st.session_state.validation_errors = validation_errors
             st.session_state.deduplication_messages = deduplication_messages
             
+            # Count participants by status for debugging
+            if 'Status' in df.columns:
+                status_counts = df['Status'].value_counts().to_dict()
+                st.session_state.status_counts = status_counts
+            
             # Display validation errors if any
             if len(validation_errors) > 0:
                 st.warning(f"Found {len(validation_errors)} validation issues:")
