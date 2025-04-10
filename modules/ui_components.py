@@ -231,11 +231,35 @@ def render_circle_table():
     # Create a copy of the circles dataframe to avoid modifying the original
     circles = st.session_state.matched_circles.copy()
     
+    # Debug: Print dataframe info and column types to help diagnose type issues
+    st.write("Debugging Circle Table Data Types:")
+    debug_info = {col: str(circles[col].dtype) for col in circles.columns}
+    st.write(debug_info)
+    
+    # Special handling for the members column which could be causing the error
+    if 'members' in circles.columns:
+        st.write("Members column found - checking data types")
+        # Check the first few values to see what type they are
+        st.write("First few members values types:")
+        for i, val in enumerate(circles['members'].head(3)):
+            st.write(f"Row {i}: Type: {type(val)}, Value: {val}")
+        
+        # Convert members to string if it's a list or other object
+        try:
+            circles['members'] = circles['members'].apply(lambda x: str(x) if not isinstance(x, str) else x)
+            st.write("Members column converted to strings")
+        except Exception as e:
+            st.error(f"Error converting members column: {str(e)}")
+    
     # Preprocess all numeric columns to ensure they're numeric
     # This prevents the "not supported between instances of 'float' and 'str'" error
     for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
         if col in circles.columns:
-            circles[col] = pd.to_numeric(circles[col], errors='coerce').fillna(0).astype(int)
+            try:
+                circles[col] = pd.to_numeric(circles[col], errors='coerce').fillna(0).astype(int)
+                st.write(f"Column {col} converted to numeric")
+            except Exception as e:
+                st.error(f"Error converting {col} to numeric: {str(e)}")
     
     # Make sure new_members column exists (for new circles, this equals member_count)
     if 'new_members' not in circles.columns and 'member_count' in circles.columns:
@@ -258,14 +282,30 @@ def render_circle_table():
             subregions = ['All'] + sorted(circles['subregion'].unique().tolist())
             selected_subregion = st.selectbox("Filter by Subregion", subregions)
     
-    # Apply filters
-    filtered_circles = circles.copy()
+    # Apply filters - safely handling types
+    try:
+        filtered_circles = circles.copy()
+        
+        # Convert all region values to strings for safe comparison
+        if 'region' in circles.columns and selected_region != 'All':
+            # Convert to strings for safe comparison
+            filtered_circles['region_str'] = filtered_circles['region'].astype(str)
+            filtered_circles = filtered_circles[filtered_circles['region_str'] == str(selected_region)]
+            # Remove the temporary string column
+            filtered_circles = filtered_circles.drop(columns=['region_str'])
+        
+        if 'subregion' in circles.columns and selected_subregion != 'All':
+            # Convert to strings for safe comparison
+            filtered_circles['subregion_str'] = filtered_circles['subregion'].astype(str)
+            filtered_circles = filtered_circles[filtered_circles['subregion_str'] == str(selected_subregion)]
+            # Remove the temporary string column
+            filtered_circles = filtered_circles.drop(columns=['subregion_str'])
     
-    if 'region' in circles.columns and selected_region != 'All':
-        filtered_circles = filtered_circles[filtered_circles['region'] == selected_region]
-    
-    if 'subregion' in circles.columns and selected_subregion != 'All':
-        filtered_circles = filtered_circles[filtered_circles['subregion'] == selected_subregion]
+    except Exception as e:
+        st.error(f"Error filtering circles: {str(e)}")
+        # If filtering fails, fall back to the original dataset
+        filtered_circles = circles.copy()
+        st.warning("Filtering disabled due to error - showing all circles")
     
     # Display the filtered circles
     if not filtered_circles.empty:
@@ -387,8 +427,37 @@ def render_circle_details():
     
     # Get all members of this circle
     if 'members' in circle:
-        members = circle['members']
-        circle_members = results[results['Encoded ID'].isin(members)]
+        try:
+            members = circle['members']
+            
+            # Handle different types of members (it might be a string representation of a list)
+            if isinstance(members, str):
+                try:
+                    # Handle string representation of a list 
+                    if members.startswith('[') and members.endswith(']'):
+                        import ast
+                        members = ast.literal_eval(members)  # Convert string representation to actual list
+                    else:
+                        # Handle comma-separated list
+                        members = [m.strip() for m in members.split(',')]
+                except Exception as e:
+                    st.error(f"Error parsing members string: {str(e)}")
+                    members = []
+                    
+            # Make sure members is iterable
+            if not hasattr(members, '__iter__') or isinstance(members, str):
+                members = [members]  # Convert to a list if it's a scalar
+                
+            try:
+                # Find members in results
+                circle_members = results[results['Encoded ID'].isin(members)]
+                st.write(f"Found {len(circle_members)} of {len(members)} members in results")
+            except Exception as e:
+                st.error(f"Error filtering members: {str(e)}")
+                circle_members = pd.DataFrame()
+        except Exception as e:
+            st.error(f"Error processing circle members: {str(e)}")
+            circle_members = pd.DataFrame()
         
         st.write("### Circle Members")
         

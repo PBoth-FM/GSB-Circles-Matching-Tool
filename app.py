@@ -168,21 +168,20 @@ def process_uploaded_file(uploaded_file):
             if st.session_state.results is not None:
                 render_results_overview()
                 
+                # Download button for results - moved above Circle Composition to ensure it's always accessible
+                st.download_button(
+                    "Download Results CSV",
+                    generate_download_link(st.session_state.results),
+                    "circles_results.csv",
+                    "text/csv",
+                    key='download-csv'
+                )
+                
                 st.subheader("Circle Composition")
                 render_circle_table()
                 
                 st.subheader("Unmatched Participants")
                 render_unmatched_table()
-                
-                # Download button for results
-                if st.session_state.results is not None:
-                    st.download_button(
-                        "Download Results CSV",
-                        generate_download_link(st.session_state.results),
-                        "circles_results.csv",
-                        "text/csv",
-                        key='download-csv'
-                    )
             
     except Exception as e:
         st.error(f"Error processing file: {str(e)}")
