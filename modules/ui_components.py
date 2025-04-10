@@ -323,6 +323,7 @@ def render_circle_table():
                 "meeting_time": "Meeting Time",
                 "member_count": "Member Count",
                 "new_members": "New Members",
+                "max_additions": "Max Additions",
                 "always_hosts": "Always Hosts",
                 "sometimes_hosts": "Sometimes Hosts"
             }
@@ -496,7 +497,7 @@ def render_circle_details():
     # Display circle information
     st.subheader(f"Circle: {selected_circle}")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.write("**Region:**", circle['region'])
@@ -509,6 +510,24 @@ def render_circle_details():
     with col3:
         st.write("**Always Hosts:**", circle['always_hosts'])
         st.write("**Sometimes Hosts:**", circle['sometimes_hosts'])
+    
+    # Add information about max additions if available
+    with col4:
+        st.write("**New Members:**", circle.get('new_members', 0))
+        
+        # Display max_additions if present in the dataframe
+        if 'max_additions' in circle:
+            max_adds = circle['max_additions']
+            if max_adds == 0:
+                st.write("**Max Additions:** None")
+                st.write("*Co-leader preference: no new members allowed*")
+            else:
+                st.write(f"**Max Additions:** {max_adds}")
+                if circle.get('new_members', 0) > 0:
+                    remaining = max(0, max_adds - circle.get('new_members', 0))
+                    st.write(f"*Used {circle.get('new_members', 0)} of {max_adds}, {remaining} remaining*")
+        else:
+            st.write("**Max Additions:** No limit specified")
     
     # Get all members of this circle
     if 'members' in circle:
