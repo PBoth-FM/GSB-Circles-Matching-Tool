@@ -378,7 +378,36 @@ def render_unmatched_table():
         st.info("All participants have been matched.")
         return
     
-    unmatched = st.session_state.unmatched_participants
+    # Create a deep copy to avoid modifying the original
+    unmatched = st.session_state.unmatched_participants.copy()
+    
+    # Debug: Print dataframe info and column types to help diagnose type issues
+    st.write("Debugging Unmatched Table Data Types:")
+    debug_info = {col: str(unmatched[col].dtype) for col in unmatched.columns}
+    st.write(debug_info)
+    
+    # Special attention for columns used in filtering and comparison
+    if 'unmatched_reason' in unmatched.columns:
+        st.write("Unmatched reason column found - checking data types")
+        st.write("First few unmatched_reason values and types:")
+        for i, val in enumerate(unmatched['unmatched_reason'].head(3)):
+            st.write(f"Row {i}: Type: {type(val)}, Value: {val}")
+
+    if 'Requested_Region' in unmatched.columns:
+        st.write("Requested_Region column found - checking data types")
+        st.write("First few Requested_Region values and types:")
+        for i, val in enumerate(unmatched['Requested_Region'].head(3)):
+            st.write(f"Row {i}: Type: {type(val)}, Value: {val}")
+    
+    # Pre-process all columns to ensure consistent types
+    for col in unmatched.columns:
+        try:
+            # For every column, normalize to string if it's an object type (might contain mixed types)
+            if unmatched[col].dtype == 'object':
+                unmatched[col] = unmatched[col].fillna('').astype(str)
+                st.write(f"Converted {col} to string type")
+        except Exception as e:
+            st.error(f"Error pre-processing column {col}: {str(e)}")
     
     # Add filter options
     col1, col2 = st.columns(2)
@@ -387,76 +416,89 @@ def render_unmatched_table():
     selected_reason = 'All'
     selected_region = 'All'
     
-    with col1:
-        if 'unmatched_reason' in unmatched.columns:
-            reasons = ['All'] + sorted(unmatched['unmatched_reason'].unique().tolist())
-            selected_reason = st.selectbox("Filter by Reason", reasons)
-    
-    with col2:
-        if 'Requested_Region' in unmatched.columns:
-            regions = ['All'] + sorted(unmatched['Requested_Region'].unique().tolist())
-            selected_region = st.selectbox("Filter by Requested Region", regions, key="unmatched_region")
-    
-    # Apply filters - using the same safe filtering approach as for circles
+    # Create filters only after converting all columns to consistent types
     try:
-        # Create safe string versions for filtering
-        safe_unmatched = unmatched.copy()
+        with col1:
+            if 'unmatched_reason' in unmatched.columns:
+                # Use the string-converted column for consistent filters
+                reasons = ['All'] + sorted(unmatched['unmatched_reason'].unique().tolist())
+                selected_reason = st.selectbox("Filter by Reason", reasons)
         
-        # Convert object columns to strings for safer filtering
-        for col in ['unmatched_reason', 'Requested_Region']:
-            if col in safe_unmatched.columns:
-                # Fill NaN/None values and convert to string
-                safe_unmatched[col] = safe_unmatched[col].fillna('').astype(str)
+        with col2:
+            if 'Requested_Region' in unmatched.columns:
+                # Use the string-converted column for consistent filters
+                regions = ['All'] + sorted(unmatched['Requested_Region'].unique().tolist())
+                selected_region = st.selectbox("Filter by Requested Region", regions, key="unmatched_region")
         
-        # Safe filtering
-        filtered_unmatched = safe_unmatched.copy()
+        # Apply filters to the pre-processed dataframe
+        filtered_unmatched = unmatched.copy()
         
-        if 'unmatched_reason' in safe_unmatched.columns and selected_reason != 'All':
+        # Filter by reason if selected
+        if 'unmatched_reason' in unmatched.columns and selected_reason != 'All':
             filtered_unmatched = filtered_unmatched[filtered_unmatched['unmatched_reason'] == selected_reason]
         
-        if 'Requested_Region' in safe_unmatched.columns and selected_region != 'All':
+        # Filter by region if selected
+        if 'Requested_Region' in unmatched.columns and selected_region != 'All':
             filtered_unmatched = filtered_unmatched[filtered_unmatched['Requested_Region'] == selected_region]
     
     except Exception as e:
-        st.error(f"Error filtering unmatched data: {str(e)}")
-        # Fall back to the original dataset
+        st.error(f"Error setting up filters: {str(e)}")
+        # Fall back to showing all participants without filtering
         filtered_unmatched = unmatched.copy()
-        st.warning("Unmatched filtering disabled due to error - showing all unmatched participants")
-    
-    # Display columns of interest
-    display_columns = ["Encoded ID", "Requested_Region", "unmatched_reason", 
-                       "first_choice_location", "first_choice_time", 
-                       "second_choice_location", "second_choice_time",
-                       "host"]
-    
-    display_columns = [col for col in display_columns if col in filtered_unmatched.columns]
+        st.warning("Filtering disabled due to error - showing all unmatched participants")
     
     # Display the filtered unmatched participants
     if not filtered_unmatched.empty:
         # Display the count of unmatched participants
         st.write(f"Showing {len(filtered_unmatched)} unmatched participants")
         
+        # Prepare a safer version of the dataframe for display
         try:
-            # Convert all values to strings for safer display
+            # Create a completely new display dataframe with carefully controlled types
             display_df = pd.DataFrame()
-            for col in display_columns:
-                if col in filtered_unmatched.columns:
-                    # Fill NA values with empty string
-                    display_df[col] = filtered_unmatched[col].fillna('').astype(str)
             
-            # Display the safe dataframe
+            # Define display-ready columns with nice names
+            column_mapping = {
+                "Encoded ID": "Participant ID",
+                "Requested_Region": "Region",
+                "unmatched_reason": "Reason Unmatched",
+                "first_choice_location": "1st Choice Location",
+                "first_choice_time": "1st Choice Time",
+                "second_choice_location": "2nd Choice Location",
+                "second_choice_time": "2nd Choice Time",
+                "host": "Host Status"
+            }
+            
+            # Build display dataframe with only the columns we need
+            for orig_col, display_col in column_mapping.items():
+                if orig_col in filtered_unmatched.columns:
+                    # For all columns, ensure they're strings for consistent display
+                    display_df[display_col] = filtered_unmatched[orig_col].fillna('').astype(str)
+            
+            # Display the clean dataframe - no column_order parameter which might cause issues
             st.dataframe(
                 display_df,
                 use_container_width=True,
                 hide_index=True
             )
         except Exception as e:
-            st.error(f"Error preparing unmatched table: {str(e)}")
+            st.error(f"Error preparing display table: {str(e)}")
             
-            # Even more basic fallback
-            st.write("Using simplified display for unmatched participants:")
-            for i, row in filtered_unmatched.iterrows():
-                st.write(f"- ID: {row.get('Encoded ID', 'Unknown')}, Reason: {row.get('unmatched_reason', 'Unknown')}")
+            # Ultra-fallback - just list IDs and reasons in text format
+            st.write("Using emergency fallback display method:")
+            try:
+                # Display 1 participant per line with basic info
+                for i in range(min(100, len(filtered_unmatched))): # Limit to 100 to avoid cluttering
+                    row = filtered_unmatched.iloc[i]
+                    id_val = row.get('Encoded ID', 'Unknown ID')
+                    reason = row.get('unmatched_reason', 'Unknown reason')
+                    st.write(f"• Participant: {id_val} - Reason: {reason}")
+                
+                if len(filtered_unmatched) > 100:
+                    st.write(f"... and {len(filtered_unmatched) - 100} more participants")
+            except Exception as e2:
+                st.error(f"Even fallback display failed: {str(e2)}")
+                st.write("Data cannot be displayed. Please check the downloadable CSV for complete results.")
     else:
         st.info("No unmatched participants match the selected filters.")
 
