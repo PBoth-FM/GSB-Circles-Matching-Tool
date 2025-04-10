@@ -193,6 +193,10 @@ def determine_unmatched_reason(participant, context=None):
             - similar_participants: Dict mapping (location, time) to count of compatible participants
             - full_circles: List of circles at maximum capacity (10 members)
             - circles_needing_hosts: List of circles requiring additional hosts
+            - no_preferences: True if no preferences exist in the region
+            - no_location_preferences: True if no location preferences exist in the region
+            - no_time_preferences: True if no time preferences exist in the region
+            - insufficient_regional_participants: True if the region has too few participants
         
     Returns:
         Reason code string with the most specific explanation
@@ -206,6 +210,19 @@ def determine_unmatched_reason(participant, context=None):
             'circles_needing_hosts': []
         }
     
+    # Special context flags from optimizer
+    if context.get('no_preferences', False):
+        return "No location or time preferences"
+    
+    if context.get('no_location_preferences', False):
+        return "No location preference"
+    
+    if context.get('no_time_preferences', False):
+        return "No time preference"
+    
+    if context.get('insufficient_regional_participants', False):
+        return "Insufficient participants in region"
+    
     # 1. No Preferences Check - most fundamental issue
     if (not participant.get('first_choice_location') and 
         not participant.get('second_choice_location') and 
@@ -215,9 +232,12 @@ def determine_unmatched_reason(participant, context=None):
         not participant.get('third_choice_time')):
         return "No location or time preferences"
     
-    # 2. Special Status Check
-    status = participant.get('Raw_Status', participant.get('Status', ''))
-    if isinstance(status, str) and 'WAITLIST' in status.upper() and 'LOW PRIORITY' in status.upper():
+    # 2. Special Status Check - waitlist participants
+    raw_status = participant.get('Raw_Status', '')
+    status = participant.get('Status', '')
+    
+    if (isinstance(raw_status, str) and ('WAITLIST' in raw_status.upper() or 'WAIT LIST' in raw_status.upper())) or \
+       (isinstance(status, str) and ('WAITLIST' in status.upper() or 'WAIT LIST' in status.upper())):
         return "Waitlist - low priority"
     
     # 3. Partial Preference Checks
@@ -301,10 +321,15 @@ def determine_unmatched_reason(participant, context=None):
         return "No time match at this location"
     
     # 6. Host Requirement Check
-    is_host = participant.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host']
-    needs_in_person = any(loc_time_key[0].startswith('IP-') for loc_time_key in context.get('similar_participants', {}))
+    is_host = False
+    host_value = str(participant.get('host', '')).lower()
+    if host_value in ['always', 'always host', 'sometimes', 'sometimes host']:
+        is_host = True
     
-    if needs_in_person and not is_host and context.get('circles_needing_hosts', []):
+    # Check if we need in-person hosts
+    in_person_circles_exist = any(circle.get('circle_id', '').startswith('IP-') for circle in context.get('existing_circles', []))
+    
+    if in_person_circles_exist and not is_host and context.get('circles_needing_hosts', []):
         for circle in context.get('circles_needing_hosts', []):
             if circle.get('subregion') in participant_locations:
                 return "Host requirement not met"
@@ -336,7 +361,7 @@ def determine_unmatched_reason(participant, context=None):
         return "Insufficient similar participants"
     
     # 9. Host Capacity for New Circles Check
-    if needs_in_person and not is_host:
+    if in_person_circles_exist and not is_host:
         # Check if there are enough hosts among similar participants
         hosts_available = False
         for location in participant_locations:
