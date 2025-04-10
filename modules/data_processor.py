@@ -217,6 +217,8 @@ def calculate_preference_scores(df):
     result_df = df.copy()
     
     # Initialize score columns if they don't exist
+    # Note: These scores will be recalculated later in optimizer.py
+    # based on actual circle assignments
     if 'location_score' not in result_df.columns:
         result_df['location_score'] = 0
     
@@ -225,31 +227,9 @@ def calculate_preference_scores(df):
     
     if 'total_score' not in result_df.columns:
         result_df['total_score'] = 0
-    
-    # Define score weights
-    location_weights = {
-        'first_choice_location': 3,
-        'second_choice_location': 2, 
-        'third_choice_location': 1
-    }
-    
-    time_weights = {
-        'first_choice_time': 3,
-        'second_choice_time': 2,
-        'third_choice_time': 1
-    }
-    
-    # Calculate location score
-    for col, weight in location_weights.items():
-        if col in result_df.columns:
-            result_df.loc[result_df[col].notna() & (result_df[col] != ''), 'location_score'] += weight
-    
-    # Calculate time score
-    for col, weight in time_weights.items():
-        if col in result_df.columns:
-            result_df.loc[result_df[col].notna() & (result_df[col] != ''), 'time_score'] += weight
-    
-    # Calculate total score
-    result_df['total_score'] = result_df['location_score'] + result_df['time_score']
+        
+    # Note: We're only initializing the score columns here
+    # The actual scores will be calculated after circle assignments in optimizer.py
+    # This ensures the scores reflect how well the assigned circle matches preferences
     
     return result_df

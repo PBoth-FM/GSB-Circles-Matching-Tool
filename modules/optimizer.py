@@ -288,6 +288,11 @@ def run_matching_algorithm(data, config):
                 participant_dict = participant.to_dict()
                 participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
                 
+                # Set scores to 0 for unmatched participants
+                participant_dict['location_score'] = 0
+                participant_dict['time_score'] = 0
+                participant_dict['total_score'] = 0
+                
                 # Use our enhanced reason determination with appropriate context
                 reason_context = {"insufficient_regional_participants": True}
                 participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, reason_context)
@@ -573,6 +578,33 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             participant['proposed_NEW_Subregion'] = circle_data['subregion']
             participant['proposed_NEW_DayTime'] = circle_data['meeting_time']
             
+            # Calculate preference match scores for existing circle assignment
+            subregion = circle_data['subregion']
+            time_slot = circle_data['meeting_time']
+            
+            # Calculate location score
+            loc_score = 0
+            if participant.get('first_choice_location') == subregion:
+                loc_score = 3
+            elif participant.get('second_choice_location') == subregion:
+                loc_score = 2
+            elif participant.get('third_choice_location') == subregion:
+                loc_score = 1
+                
+            # Calculate time score
+            time_score = 0
+            if participant.get('first_choice_time') == time_slot:
+                time_score = 3
+            elif participant.get('second_choice_time') == time_slot:
+                time_score = 2
+            elif participant.get('third_choice_time') == time_slot:
+                time_score = 1
+                
+            # Update scores
+            participant['location_score'] = loc_score
+            participant['time_score'] = time_score
+            participant['total_score'] = loc_score + time_score
+            
             # Handle host status
             if participant.get('host', '').lower() in ['always', 'always host']:
                 participant['proposed_NEW_host'] = "Yes"
@@ -836,6 +868,11 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         for _, participant in region_df.iterrows():
             participant_dict = participant.to_dict()
             participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
+            
+            # Set scores to 0 for unmatched participants
+            participant_dict['location_score'] = 0
+            participant_dict['time_score'] = 0
+            participant_dict['total_score'] = 0
             
             # Use our enhanced determine_unmatched_reason function with appropriate reason
             if not subregions and not time_slots:
@@ -1111,6 +1148,31 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             participant_dict['proposed_NEW_DayTime'] = time_slot
             participant_dict['unmatched_reason'] = ""
             
+            # Calculate actual preference match scores for assigned location and time
+            loc_score = 0
+            time_score = 0
+            
+            # Location preference scoring
+            if participant.get('first_choice_location') == subregion:
+                loc_score = 3
+            elif participant.get('second_choice_location') == subregion:
+                loc_score = 2
+            elif participant.get('third_choice_location') == subregion:
+                loc_score = 1
+                
+            # Time preference scoring
+            if participant.get('first_choice_time') == time_slot:
+                time_score = 3
+            elif participant.get('second_choice_time') == time_slot:
+                time_score = 2
+            elif participant.get('third_choice_time') == time_slot:
+                time_score = 1
+                
+            # Update scores based on actual assignment
+            participant_dict['location_score'] = loc_score
+            participant_dict['time_score'] = time_score
+            participant_dict['total_score'] = loc_score + time_score
+            
             # Determine if participant should be a host or co-leader
             host_status = participant['host']
             if host_status == 'Always':
@@ -1132,6 +1194,11 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             participant_dict['proposed_NEW_DayTime'] = ""
             participant_dict['proposed_NEW_host'] = "No"
             participant_dict['proposed_NEW_co_leader'] = "No"
+            
+            # Set scores to 0 for unmatched participants
+            participant_dict['location_score'] = 0
+            participant_dict['time_score'] = 0
+            participant_dict['total_score'] = 0
             
             # Determine unmatched reason using the enhanced hierarchical logic
             participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, optimization_context)
