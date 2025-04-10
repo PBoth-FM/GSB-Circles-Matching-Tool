@@ -372,14 +372,37 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if host_requirement_met:
                     # Get subregion and time if available
                     subregion = members[0].get('Current_Subregion', '')
-                    meeting_day = members[0].get('Current_Meeting_Day', '')
-                    meeting_time = members[0].get('Current_Meeting_Time', '')
                     
-                    # Format the day/time combination for proposed_NEW_DayTime
-                    if meeting_day and meeting_time:
-                        formatted_meeting_time = f"{meeting_day} ({meeting_time})"
-                    else:
-                        formatted_meeting_time = meeting_day or meeting_time
+                    # Check for column names that might contain the meeting day/time information
+                    day_column = None
+                    time_column = None
+                    
+                    # Try different potential column names for meeting day
+                    for col_name in ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']:
+                        if col_name in members[0]:
+                            day_column = col_name
+                            break
+                    
+                    # Try different potential column names for meeting time
+                    for col_name in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
+                        if col_name in members[0]:
+                            time_column = col_name
+                            break
+                    
+                    # Get meeting day and time, defaulting to 'Varies' if not found
+                    meeting_day = members[0].get(day_column, 'Varies') if day_column else 'Varies'
+                    meeting_time = members[0].get(time_column, 'Varies') if time_column else 'Varies'
+                    
+                    # Ensure non-empty strings for day and time
+                    meeting_day = meeting_day if pd.notna(meeting_day) and meeting_day else 'Varies'
+                    meeting_time = meeting_time if pd.notna(meeting_time) and meeting_time else 'Varies'
+                    
+                    # Format the day/time combination for proposed_NEW_DayTime using the standard format
+                    formatted_meeting_time = f"{meeting_day} ({meeting_time})"
+                    
+                    if debug_mode:
+                        print(f"For existing circle_id {circle_id}, using day '{meeting_day}' and time '{meeting_time}'")
+                        print(f"Formatted meeting time: '{formatted_meeting_time}'")
                     
                     # Create circle data with member list and metadata
                     circle_data = {
