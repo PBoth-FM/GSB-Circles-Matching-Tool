@@ -272,68 +272,103 @@ def render_circle_table():
     selected_region = 'All'
     selected_subregion = 'All'
     
-    with col1:
-        if 'region' in circles.columns:
-            regions = ['All'] + sorted(circles['region'].unique().tolist())
-            selected_region = st.selectbox("Filter by Region", regions)
-    
-    with col2:
-        if 'subregion' in circles.columns:
-            subregions = ['All'] + sorted(circles['subregion'].unique().tolist())
-            selected_subregion = st.selectbox("Filter by Subregion", subregions)
-    
-    # Apply filters - safely handling types
+    # Create safe string versions of region and subregion for filters
+    # This prevents the '<' comparison error between float and string
     try:
-        filtered_circles = circles.copy()
+        # Convert all columns to string first for safer operations
+        safe_circles = circles.copy()
         
-        # Convert all region values to strings for safe comparison
-        if 'region' in circles.columns and selected_region != 'All':
-            # Convert to strings for safe comparison
-            filtered_circles['region_str'] = filtered_circles['region'].astype(str)
-            filtered_circles = filtered_circles[filtered_circles['region_str'] == str(selected_region)]
-            # Remove the temporary string column
-            filtered_circles = filtered_circles.drop(columns=['region_str'])
+        # Convert object columns to strings for filtering
+        for col in ['region', 'subregion']:
+            if col in safe_circles.columns:
+                # Replace any None/NaN values with empty string before conversion
+                safe_circles[col] = safe_circles[col].fillna('')
+                safe_circles[col] = safe_circles[col].astype(str)
         
-        if 'subregion' in circles.columns and selected_subregion != 'All':
-            # Convert to strings for safe comparison
-            filtered_circles['subregion_str'] = filtered_circles['subregion'].astype(str)
-            filtered_circles = filtered_circles[filtered_circles['subregion_str'] == str(selected_subregion)]
-            # Remove the temporary string column
-            filtered_circles = filtered_circles.drop(columns=['subregion_str'])
+        # Now create the filters using the safe string columns
+        with col1:
+            if 'region' in safe_circles.columns:
+                regions = ['All'] + sorted(safe_circles['region'].unique().tolist())
+                selected_region = st.selectbox("Filter by Region", regions)
+        
+        with col2:
+            if 'subregion' in safe_circles.columns:
+                subregions = ['All'] + sorted(safe_circles['subregion'].unique().tolist())
+                selected_subregion = st.selectbox("Filter by Subregion", subregions)
+        
+        # Apply filters using the safe string columns
+        filtered_circles = safe_circles.copy()
+        
+        if selected_region != 'All':
+            filtered_circles = filtered_circles[filtered_circles['region'] == selected_region]
+        
+        if selected_subregion != 'All':
+            filtered_circles = filtered_circles[filtered_circles['subregion'] == selected_subregion]
     
     except Exception as e:
-        st.error(f"Error filtering circles: {str(e)}")
-        # If filtering fails, fall back to the original dataset
+        st.error(f"Error during filtering setup: {str(e)}")
+        # Create a backup filtered dataset
         filtered_circles = circles.copy()
-        st.warning("Filtering disabled due to error - showing all circles")
+        st.warning("Advanced filtering disabled due to error - showing all circles")
     
     # Display the filtered circles
     if not filtered_circles.empty:
         # Display the count of filtered circles
         st.write(f"Showing {len(filtered_circles)} circles")
         
-        # Display the dataframe with the updated column order
-        # Only include columns that actually exist in the dataframe
-        available_columns = ["circle_id", "region", "subregion", "meeting_time", "member_count", "new_members", "always_hosts", "sometimes_hosts"]
-        column_order = [col for col in available_columns if col in filtered_circles.columns]
-        
+        # Prepare a safer version of the dataframe for display
         try:
-            st.dataframe(
-                filtered_circles,
-                use_container_width=True,
-                hide_index=True,
-                column_order=column_order
-            )
-        except Exception as e:
-            st.error(f"Error displaying circle table: {str(e)}")
+            # Create a display-only dataframe with simplified columns
+            display_df = pd.DataFrame()
             
-            # Fallback display approach if the column_order approach fails
-            st.write("Using fallback display method:")
+            # Define display-ready columns - explicitly select and convert them
+            column_mapping = {
+                "circle_id": "Circle ID",
+                "region": "Region",
+                "subregion": "Subregion",
+                "meeting_time": "Meeting Time",
+                "member_count": "Member Count",
+                "new_members": "New Members",
+                "always_hosts": "Always Hosts",
+                "sometimes_hosts": "Sometimes Hosts"
+            }
+            
+            # Build display dataframe with clean columns
+            for orig_col, display_col in column_mapping.items():
+                if orig_col in filtered_circles.columns:
+                    # For numeric columns, ensure they're properly converted
+                    if orig_col in ["member_count", "new_members", "always_hosts", "sometimes_hosts"]:
+                        display_df[display_col] = pd.to_numeric(filtered_circles[orig_col], 
+                                                               errors='coerce').fillna(0).astype(int)
+                    else:
+                        # For string columns, ensure they're strings
+                        display_df[display_col] = filtered_circles[orig_col].astype(str)
+            
+            # Display the clean dataframe
             st.dataframe(
-                filtered_circles,
+                display_df,
                 use_container_width=True,
                 hide_index=True
             )
+        except Exception as e:
+            st.error(f"Error preparing display table: {str(e)}")
+            
+            # Ultra-fallback - just show the raw data with no column reordering
+            st.write("Using emergency fallback display method:")
+            try:
+                # Just show the raw data as string representations
+                raw_display = pd.DataFrame()
+                for col in filtered_circles.columns:
+                    raw_display[col] = filtered_circles[col].astype(str)
+                
+                st.dataframe(
+                    raw_display,
+                    use_container_width=True,
+                    hide_index=True
+                )
+            except Exception as e2:
+                st.error(f"Even fallback display failed: {str(e2)}")
+                st.write("Data cannot be displayed in table format. Please check the downloadable CSV for complete results.")
     else:
         st.info("No circles match the selected filters.")
 
@@ -384,11 +419,27 @@ def render_unmatched_table():
         # Display the count of unmatched participants
         st.write(f"Showing {len(filtered_unmatched)} unmatched participants")
         
-        st.dataframe(
-            filtered_unmatched[display_columns],
-            use_container_width=True,
-            hide_index=True
-        )
+        try:
+            # Convert all values to strings for safer display
+            display_df = pd.DataFrame()
+            for col in display_columns:
+                if col in filtered_unmatched.columns:
+                    # Fill NA values with empty string
+                    display_df[col] = filtered_unmatched[col].fillna('').astype(str)
+            
+            # Display the safe dataframe
+            st.dataframe(
+                display_df,
+                use_container_width=True,
+                hide_index=True
+            )
+        except Exception as e:
+            st.error(f"Error preparing unmatched table: {str(e)}")
+            
+            # Even more basic fallback
+            st.write("Using simplified display for unmatched participants:")
+            for i, row in filtered_unmatched.iterrows():
+                st.write(f"- ID: {row.get('Encoded ID', 'Unknown')}, Reason: {row.get('unmatched_reason', 'Unknown')}")
     else:
         st.info("No unmatched participants match the selected filters.")
 
