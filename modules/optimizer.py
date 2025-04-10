@@ -93,14 +93,37 @@ def run_matching_algorithm(data, config):
                 first_member = group.iloc[0]
                 current_region = first_member.get('Current_Region', '')
                 current_subregion = first_member.get('Current_Subregion', '')
-                current_meeting_day = first_member.get('Current_Meeting_Day', '')
-                current_meeting_time = first_member.get('Current_Meeting_Time', '')
                 
-                # Format the day/time combination for proposed_NEW_DayTime
-                if current_meeting_day and current_meeting_time:
-                    formatted_day_time = f"{current_meeting_day} ({current_meeting_time})"
-                else:
-                    formatted_day_time = current_meeting_day or current_meeting_time
+                # Check for column names that might contain the meeting day/time information
+                day_column = None
+                time_column = None
+                
+                # Try different potential column names for meeting day
+                for col_name in ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']:
+                    if col_name in first_member:
+                        day_column = col_name
+                        break
+                
+                # Try different potential column names for meeting time
+                for col_name in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
+                    if col_name in first_member:
+                        time_column = col_name
+                        break
+                
+                # Get meeting day and time, defaulting to 'Varies' if not found
+                current_meeting_day = first_member.get(day_column, 'Varies') if day_column else 'Varies'
+                current_meeting_time = first_member.get(time_column, 'Varies') if time_column else 'Varies'
+                
+                # Ensure non-empty strings for day and time
+                current_meeting_day = current_meeting_day if pd.notna(current_meeting_day) and current_meeting_day else 'Varies'
+                current_meeting_time = current_meeting_time if pd.notna(current_meeting_time) and current_meeting_time else 'Varies'
+                
+                # Format the day/time combination for proposed_NEW_DayTime using the standard format
+                formatted_day_time = f"{current_meeting_day} ({current_meeting_time})"
+                
+                if debug_mode:
+                    print(f"For circle {circle_id}, using day '{current_meeting_day}' and time '{current_meeting_time}'")
+                    print(f"Formatted meeting time: '{formatted_day_time}'")
                 
                 # Check if it's an in-person or virtual circle
                 is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
