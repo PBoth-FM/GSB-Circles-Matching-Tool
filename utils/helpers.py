@@ -50,7 +50,11 @@ def generate_download_link(df):
     if 'Status' in output_df.columns:
         ordered_columns.append('Status')
     
-    # Second column should be Encoded ID
+    # Keep Raw_Status next to Status if available
+    if 'Raw_Status' in output_df.columns:
+        ordered_columns.append('Raw_Status')
+    
+    # Next column should be Encoded ID
     if 'Encoded ID' in output_df.columns:
         ordered_columns.append('Encoded ID')
     

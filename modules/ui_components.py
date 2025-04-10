@@ -113,10 +113,17 @@ def render_debug_tab():
             
             # Count participants by status in processed data
             if 'Status' in st.session_state.processed_data.columns:
-                st.write("### Processed Data Status Counts")
+                st.write("### Processed Data Status Counts (Binary)")
                 processed_status_counts = st.session_state.processed_data['Status'].value_counts().reset_index()
                 processed_status_counts.columns = ['Status', 'Count']
                 st.dataframe(processed_status_counts, use_container_width=True)
+            
+            # Display Raw_Status counts if available
+            if 'Raw_Status' in st.session_state.processed_data.columns:
+                st.write("### Processed Data Detailed Status Counts")
+                raw_status_counts = st.session_state.processed_data['Raw_Status'].value_counts().reset_index()
+                raw_status_counts.columns = ['Raw Status', 'Count']
+                st.dataframe(raw_status_counts, use_container_width=True)
     
         # Time compatibility tester
         st.write("### Time Compatibility Tester")
@@ -574,7 +581,10 @@ def render_participant_details():
             
             with col1:
                 st.write("**Encoded ID:**", participant['Encoded ID'])
+                # Display both binary status and detailed status if available
                 st.write("**Status:**", participant['Status'])
+                if 'Raw_Status' in participant:
+                    st.write("**Detailed Status:**", participant['Raw_Status'])
                 st.write("**Requested Region:**", participant.get('Requested_Region', 'N/A'))
             
             with col2:

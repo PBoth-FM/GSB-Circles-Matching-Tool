@@ -279,12 +279,14 @@ def validate_data(df):
             missing_count = df[field].isna().sum()
             errors.append(f"{missing_count} missing values in {field}")
             
-    # Validate Status values
+    # Validate Status values - adjusted to include both binary and detailed statuses
     if 'Status' in df.columns:
-        valid_statuses = ['CURRENT-CONTINUING', 'NEW', 'MOVING OUT', 'WAITLIST']
-        invalid_statuses = df[~df['Status'].isin(valid_statuses)]['Status'].unique()
+        valid_binary_statuses = ['CURRENT-CONTINUING', 'NEW', 'MOVING OUT', 'WAITLIST']
+        invalid_statuses = df[~df['Status'].isin(valid_binary_statuses)]['Status'].unique()
         if len(invalid_statuses) > 0:
-            errors.append(f"Invalid Status values: {', '.join(map(str, invalid_statuses))}")
+            errors.append(f"Invalid binary Status values: {', '.join(map(str, invalid_statuses))}")
+            
+    # No validation needed for Raw_Status since it contains the detailed values
     
     # Validate host volunteer information
     if 'host' in df.columns:
