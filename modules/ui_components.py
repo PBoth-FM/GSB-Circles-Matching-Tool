@@ -339,11 +339,15 @@ def render_circle_table():
                         # For string columns, ensure they're strings
                         display_df[display_col] = filtered_circles[orig_col].astype(str)
 
-            # Display the clean dataframe
+            # Convert Max Additions to integer format
+            if 'Max Additions' in display_df.columns:
+                display_df['Max Additions'] = display_df['Max Additions'].fillna(0).astype(int)
+
+            # Display the clean dataframe with row numbers
             st.dataframe(
                 display_df,
                 use_container_width=True,
-                hide_index=True
+                hide_index=False
             )
         except Exception as e:
             st.error(f"Error preparing display table: {str(e)}")
