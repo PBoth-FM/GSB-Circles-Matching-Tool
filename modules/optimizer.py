@@ -141,6 +141,54 @@ def run_matching_algorithm(data, config):
                 if debug_mode:
                     print(f"DIRECT CONTINUATION: Directly assigning {len(member_ids)} members to continuing circle {circle_id}")
                 
+                # Calculate max_additions for this circle based on co-leader preferences
+                max_additions = None  # Start with None to indicate no limit specified yet
+                has_none_preference = False
+                
+                for _, member in group.iterrows():
+                    # Get the max new members value if present
+                    max_value = member.get('co_leader_max_new_members', None)
+                    
+                    if debug_mode and pd.notna(max_value):
+                        print(f"  Member {member['Encoded ID']} specified max new members: {max_value}")
+                    
+                    # Check for "None" literal string preference
+                    if isinstance(max_value, str) and max_value.lower() == "none":
+                        has_none_preference = True
+                        if debug_mode:
+                            print(f"  Member {member['Encoded ID']} specified 'None' - no new members allowed")
+                        break
+                    
+                    # Process numeric values
+                    elif pd.notna(max_value):
+                        try:
+                            int_value = int(max_value)
+                            # If first valid value or smaller than previous minimum
+                            if max_additions is None or int_value < max_additions:
+                                max_additions = int_value
+                        except (ValueError, TypeError):
+                            # Not a valid number, ignore
+                            if debug_mode:
+                                print(f"  Invalid max new members value: {max_value}")
+                
+                # Set max_additions based on rules
+                if has_none_preference:
+                    # Any member saying "None" means no new members
+                    final_max_additions = 0
+                    if debug_mode:
+                        print(f"  Circle {circle_id} has 'None' preference - not accepting new members")
+                elif max_additions is not None:
+                    # Use the minimum valid value provided
+                    final_max_additions = max_additions
+                    if debug_mode:
+                        print(f"  Circle {circle_id} can accept up to {final_max_additions} new members")
+                else:
+                    # Default to 10 total if no one specified a value
+                    final_max_additions = max(0, 10 - len(member_ids))
+                    if debug_mode:
+                        print(f"  No max preference specified for circle {circle_id} - using default max total of 10")
+                        print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more")
+                
                 # Create circle metadata
                 circle_data = {
                     'circle_id': circle_id,
@@ -152,7 +200,8 @@ def run_matching_algorithm(data, config):
                     'always_hosts': always_hosts,
                     'sometimes_hosts': sometimes_hosts,
                     'members': member_ids,
-                    'is_direct_continuation': True
+                    'is_direct_continuation': True,
+                    'max_additions': final_max_additions
                 }
                 direct_circles_list.append(circle_data)
                 
@@ -404,6 +453,54 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         print(f"For existing circle_id {circle_id}, using day '{meeting_day}' and time '{meeting_time}'")
                         print(f"Formatted meeting time: '{formatted_meeting_time}'")
                     
+                    # Calculate max_additions for this circle based on co-leader preferences
+                    max_additions = None  # Start with None to indicate no limit specified yet
+                    has_none_preference = False
+                    
+                    for member in members:
+                        # Get the max new members value if present
+                        max_value = member.get('co_leader_max_new_members', None)
+                        
+                        if debug_mode and pd.notna(max_value):
+                            print(f"  Member {member['Encoded ID']} specified max new members: {max_value}")
+                        
+                        # Check for "None" literal string preference
+                        if isinstance(max_value, str) and max_value.lower() == "none":
+                            has_none_preference = True
+                            if debug_mode:
+                                print(f"  Member {member['Encoded ID']} specified 'None' - no new members allowed")
+                            break
+                        
+                        # Process numeric values
+                        elif pd.notna(max_value):
+                            try:
+                                int_value = int(max_value)
+                                # If first valid value or smaller than previous minimum
+                                if max_additions is None or int_value < max_additions:
+                                    max_additions = int_value
+                            except (ValueError, TypeError):
+                                # Not a valid number, ignore
+                                if debug_mode:
+                                    print(f"  Invalid max new members value: {max_value}")
+                    
+                    # Set max_additions based on rules
+                    if has_none_preference:
+                        # Any member saying "None" means no new members
+                        final_max_additions = 0
+                        if debug_mode:
+                            print(f"  Circle {circle_id} has 'None' preference - not accepting new members")
+                    elif max_additions is not None:
+                        # Use the minimum valid value provided
+                        final_max_additions = max_additions
+                        if debug_mode:
+                            print(f"  Circle {circle_id} can accept up to {final_max_additions} new members")
+                    else:
+                        # Default to 10 total if no one specified a value
+                        final_max_additions = max(0, 10 - len(members))
+                        if debug_mode:
+                            print(f"  No max preference specified for circle {circle_id} - using default max total of 10")
+                            print(f"  Currently has {len(members)} members, can accept {final_max_additions} more")
+                    
                     # Create circle data with member list and metadata
                     circle_data = {
                         'members': [m['Encoded ID'] for m in members],
@@ -412,7 +509,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         'always_hosts': sum(1 for m in members if m.get('host', '').lower() in ['always', 'always host']),
                         'sometimes_hosts': sum(1 for m in members if m.get('host', '').lower() in ['sometimes', 'sometimes host']),
                         'is_in_person': is_in_person,
-                        'is_virtual': is_virtual
+                        'is_virtual': is_virtual,
+                        'max_additions': final_max_additions
                     }
                     
                     # Per PRD: Small circles (2-4 members) need to grow to be viable
@@ -461,7 +559,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             'new_members': 0,  # No new members in continuing circles
             'always_hosts': circle_data['always_hosts'],
             'sometimes_hosts': circle_data['sometimes_hosts'],
-            'members': circle_data['members']
+            'members': circle_data['members'],
+            'max_additions': circle_data.get('max_additions', 0)  # Include max_additions from the circle_data
         }
         circles.append(circle_dict)
     
@@ -480,11 +579,26 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     for circle_id, circle_data in small_circles.items():
         current_members = circle_data['members']
         current_size = len(current_members)
-        needed_size = min_circle_size - current_size
+        
+        # Check if max_additions is 0 (meaning "None" preference)
+        if 'max_additions' in circle_data and circle_data['max_additions'] == 0:
+            if debug_mode:
+                print(f"Circle {circle_id} has max_additions=0, not growing (co-leader specified 'None')")
+            continue
+        
+        # Calculate actual growth limit based on max_additions
+        max_growth = circle_data.get('max_additions', min_circle_size - current_size)
+        needed_size = min(min_circle_size - current_size, max_growth)
         
         if debug_mode:
-            print(f"Small circle {circle_id} has {current_size} members, needs {needed_size} more")
+            print(f"Small circle {circle_id} has {current_size} members, needs {needed_size} more (max_additions={circle_data.get('max_additions', 'default')})")
         
+        # Skip if no growth is needed or allowed
+        if needed_size <= 0:
+            if debug_mode:
+                print(f"Circle {circle_id} already at or over capacity, not growing")
+            continue
+            
         # Skip circles that are impossible to grow given available pool
         if needed_size > len(available_df):
             if debug_mode:
@@ -585,7 +699,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             'new_members': circle_data['new_members'],  # Number of newly added members
             'always_hosts': circle_data['always_hosts'],
             'sometimes_hosts': circle_data['sometimes_hosts'],
-            'members': circle_data['members']
+            'members': circle_data['members'],
+            'max_additions': circle_data.get('max_additions', 0)  # Include max_additions from the circle_data
         }
         circles.append(circle_dict)
     
