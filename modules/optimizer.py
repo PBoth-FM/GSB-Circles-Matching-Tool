@@ -745,6 +745,33 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 participant['proposed_NEW_Subregion'] = circle_data['subregion']
                 participant['proposed_NEW_DayTime'] = circle_data['meeting_time']
                 
+                # Calculate preference match scores for assigned location and time
+                subregion = circle_data['subregion']
+                time_slot = circle_data['meeting_time']
+                
+                # Calculate location score
+                loc_score = 0
+                if participant.get('first_choice_location') == subregion:
+                    loc_score = 3
+                elif participant.get('second_choice_location') == subregion:
+                    loc_score = 2
+                elif participant.get('third_choice_location') == subregion:
+                    loc_score = 1
+                    
+                # Calculate time score
+                time_score = 0
+                if participant.get('first_choice_time') == time_slot:
+                    time_score = 3
+                elif participant.get('second_choice_time') == time_slot:
+                    time_score = 2
+                elif participant.get('third_choice_time') == time_slot:
+                    time_score = 1
+                    
+                # Update scores
+                participant['location_score'] = loc_score
+                participant['time_score'] = time_score
+                participant['total_score'] = loc_score + time_score
+                
                 # Handle host status
                 if participant.get('host', '').lower() in ['always', 'always host']:
                     participant['proposed_NEW_host'] = "Yes"
