@@ -136,7 +136,10 @@ def map_column_names(df):
         '3rd Choice Subregion/ Time Zone': 'third_choice_location',
         '3rd Choice Days and Times of Week': 'third_choice_time',
         'Volunteering to Host?': 'host',
-        'Current Region': 'Current_Region'
+        'Current Region': 'Current_Region',
+        'Current Circle ID': 'current_circles_id',
+        'Current Subregion': 'Current_Subregion',
+        'Current Meeting Time': 'Current_Meeting_Time'
     }
     
     # Create a copy of the DataFrame to avoid modifying the original
