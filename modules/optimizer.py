@@ -350,7 +350,10 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         'similar_participants': {},
         'full_circles': [],
         'circles_needing_hosts': [],
-        'host_counts': {}
+        'host_counts': {},
+        'compatibility_matrix': {},  # Track compatibility between participants and circle options
+        'participant_compatible_options': {},  # Count of compatible options per participant
+        'location_time_pairs': []  # All possible location-time combinations
     }
     # Initialize containers for results
     results = []
@@ -865,8 +868,15 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Create compatibility matrix to enforce matching only to preferred locations and times
     compatibility = {}
+    optimization_context['location_time_pairs'] = [(opt[0], opt[1]) for opt in circle_options]
+    
+    # Track compatible options for each participant
+    participant_compatible_options = {}
+    
     for p in participants:
         p_row = remaining_df[remaining_df['Encoded ID'] == p].iloc[0]
+        participant_compatible_options[p] = []
+        
         for j in range(len(circle_options)):
             subregion, time_slot = circle_options[j]
             
@@ -885,7 +895,12 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             )
             
             # Both location and time must match for compatibility
-            compatibility[(p, j)] = 1 if (loc_match and time_match) else 0
+            is_compatible = (loc_match and time_match)
+            compatibility[(p, j)] = 1 if is_compatible else 0
+            
+            # Save to context for unmatched reason determination
+            if is_compatible:
+                participant_compatible_options[p].append((subregion, time_slot))
     
     # Create decision variables for all pairs
     x = pulp.LpVariable.dicts("assign", 
@@ -901,11 +916,18 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             if compatibility[(p, j)] == 0:
                 prob += x[p, j] == 0, f"Incompatible_match_{p}_{j}"
                 
+    # Add compatibility information to optimization context for unmatched reason determination
+    optimization_context['compatibility_matrix'] = compatibility
+    optimization_context['participant_compatible_options'] = participant_compatible_options
+
     if debug_mode:
         # Count how many compatible options exist for each participant
         compatible_options_count = {}
         for p in participants:
             compatible_options_count[p] = sum(1 for j in range(len(circle_options)) if compatibility[(p, j)] == 1)
+            
+        # Store counts in optimization context for unmatched reason determination
+        optimization_context['participant_compatible_count'] = compatible_options_count
         
         # Log number of compatible options
         print(f"Created compatibility constraints: {sum(1 for v in compatibility.values() if v == 0)} incompatible pairs excluded")
@@ -913,6 +935,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         
         # Identify participants with very few options
         few_options = [p for p, count in compatible_options_count.items() if count < 3]
+        optimization_context['participants_with_few_options'] = few_options
+        
         if few_options:
             print(f"WARNING: {len(few_options)} participants have fewer than 3 compatible circle options")
     
