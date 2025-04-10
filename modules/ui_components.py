@@ -397,14 +397,31 @@ def render_unmatched_table():
             regions = ['All'] + sorted(unmatched['Requested_Region'].unique().tolist())
             selected_region = st.selectbox("Filter by Requested Region", regions, key="unmatched_region")
     
-    # Apply filters
-    filtered_unmatched = unmatched.copy()
+    # Apply filters - using the same safe filtering approach as for circles
+    try:
+        # Create safe string versions for filtering
+        safe_unmatched = unmatched.copy()
+        
+        # Convert object columns to strings for safer filtering
+        for col in ['unmatched_reason', 'Requested_Region']:
+            if col in safe_unmatched.columns:
+                # Fill NaN/None values and convert to string
+                safe_unmatched[col] = safe_unmatched[col].fillna('').astype(str)
+        
+        # Safe filtering
+        filtered_unmatched = safe_unmatched.copy()
+        
+        if 'unmatched_reason' in safe_unmatched.columns and selected_reason != 'All':
+            filtered_unmatched = filtered_unmatched[filtered_unmatched['unmatched_reason'] == selected_reason]
+        
+        if 'Requested_Region' in safe_unmatched.columns and selected_region != 'All':
+            filtered_unmatched = filtered_unmatched[filtered_unmatched['Requested_Region'] == selected_region]
     
-    if 'unmatched_reason' in unmatched.columns and selected_reason != 'All':
-        filtered_unmatched = filtered_unmatched[filtered_unmatched['unmatched_reason'] == selected_reason]
-    
-    if 'Requested_Region' in unmatched.columns and selected_region != 'All':
-        filtered_unmatched = filtered_unmatched[filtered_unmatched['Requested_Region'] == selected_region]
+    except Exception as e:
+        st.error(f"Error filtering unmatched data: {str(e)}")
+        # Fall back to the original dataset
+        filtered_unmatched = unmatched.copy()
+        st.warning("Unmatched filtering disabled due to error - showing all unmatched participants")
     
     # Display columns of interest
     display_columns = ["Encoded ID", "Requested_Region", "unmatched_reason", 
@@ -613,13 +630,27 @@ def render_visualizations():
     if 'Requested_Region' in results.columns:
         st.write("### Match Rate by Region")
         
-        region_stats = results.groupby('Requested_Region').apply(
-            lambda x: pd.Series({
-                'Total': len(x),
-                'Matched': sum(x['proposed_NEW_circles_id'] != "UNMATCHED"),
-                'Unmatched': sum(x['proposed_NEW_circles_id'] == "UNMATCHED"),
-            })
-        ).reset_index()
+        try:
+            # Create a safer version of the dataframe for visualization
+            viz_results = results.copy()
+            
+            # Make sure the proposed_NEW_circles_id column is string for safe comparison
+            if 'proposed_NEW_circles_id' in viz_results.columns:
+                viz_results['proposed_NEW_circles_id'] = viz_results['proposed_NEW_circles_id'].fillna("UNMATCHED").astype(str)
+            
+            # Create stats using the safe dataframe
+            region_stats = viz_results.groupby('Requested_Region').apply(
+                lambda x: pd.Series({
+                    'Total': len(x),
+                    'Matched': sum(x['proposed_NEW_circles_id'] != "UNMATCHED"),
+                    'Unmatched': sum(x['proposed_NEW_circles_id'] == "UNMATCHED"),
+                })
+            ).reset_index()
+        except Exception as e:
+            st.error(f"Error generating region statistics: {str(e)}")
+            # Create a minimal fallback
+            region_stats = pd.DataFrame(columns=['Requested_Region', 'Total', 'Matched', 'Unmatched'])
+            st.warning("Could not generate region statistics due to data type issues.")
         
         region_stats['Match_Rate'] = (region_stats['Matched'] / region_stats['Total'] * 100).round(1)
         
@@ -637,39 +668,62 @@ def render_visualizations():
     
     # Unmatched reasons
     if 'unmatched_reason' in results.columns:
-        unmatched = results[results['proposed_NEW_circles_id'] == "UNMATCHED"]
-        
-        if not unmatched.empty:
-            st.write("### Unmatched Reasons")
+        try:
+            # Create a safer version for visualization
+            viz_results = results.copy()
             
-            reason_counts = unmatched['unmatched_reason'].value_counts().reset_index()
-            reason_counts.columns = ['Reason', 'Count']
+            # Make sure proposed_NEW_circles_id is a string for safe comparison
+            if 'proposed_NEW_circles_id' in viz_results.columns:
+                viz_results['proposed_NEW_circles_id'] = viz_results['proposed_NEW_circles_id'].fillna("UNMATCHED").astype(str)
             
-            fig = px.pie(
-                reason_counts,
-                values='Count',
-                names='Reason',
-                title='Reasons for Unmatched Participants'
-            )
+            # Filter to only unmatched entries
+            unmatched = viz_results[viz_results['proposed_NEW_circles_id'] == "UNMATCHED"]
             
-            st.plotly_chart(fig, use_container_width=True)
+            if not unmatched.empty:
+                st.write("### Unmatched Reasons")
+                
+                # Make sure unmatched_reason is string for safe aggregation
+                unmatched['unmatched_reason'] = unmatched['unmatched_reason'].fillna("Unknown").astype(str)
+                
+                reason_counts = unmatched['unmatched_reason'].value_counts().reset_index()
+                reason_counts.columns = ['Reason', 'Count']
+                
+                fig = px.pie(
+                    reason_counts,
+                    values='Count',
+                    names='Reason',
+                    title='Reasons for Unmatched Participants'
+                )
+                
+                # Only show chart inside the try block if we successfully created it
+                st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error generating unmatched reason visualization: {str(e)}")
+            st.warning("Could not generate unmatched reasons visualization due to data type issues.")
     
     # Circle size distribution
     if 'matched_circles' in st.session_state and not st.session_state.matched_circles.empty:
-        circles = st.session_state.matched_circles
-        
-        if 'member_count' in circles.columns:
-            st.write("### Circle Size Distribution")
+        try:
+            circles = st.session_state.matched_circles.copy()
             
-            size_counts = circles['member_count'].value_counts().reset_index()
-            size_counts.columns = ['Circle Size', 'Count']
-            size_counts = size_counts.sort_values('Circle Size')
-            
-            fig = px.bar(
-                size_counts,
-                x='Circle Size',
-                y='Count',
-                title='Distribution of Circle Sizes'
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
+            if 'member_count' in circles.columns:
+                st.write("### Circle Size Distribution")
+                
+                # Ensure member_count is numeric
+                circles['member_count'] = pd.to_numeric(circles['member_count'], errors='coerce').fillna(0).astype(int)
+                
+                size_counts = circles['member_count'].value_counts().reset_index()
+                size_counts.columns = ['Circle Size', 'Count']
+                size_counts = size_counts.sort_values('Circle Size')
+                
+                fig = px.bar(
+                    size_counts,
+                    x='Circle Size',
+                    y='Count',
+                    title='Distribution of Circle Sizes'
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error generating circle size distribution: {str(e)}")
+            st.warning("Could not generate circle size distribution due to data type issues.")
