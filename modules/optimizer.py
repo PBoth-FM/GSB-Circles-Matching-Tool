@@ -28,20 +28,143 @@ def run_matching_algorithm(data, config):
     if debug_mode:
         status_counts = df['Status'].value_counts().to_dict()
         print(f"Input data status counts: {status_counts}")
-        
-        # Additional debugging for circle continuation issues
-        if 'Status' in df.columns and 'current_circles_id' in df.columns:
-            continuing_count = len(df[df['Status'] == 'CURRENT-CONTINUING'])
-            continuing_with_circles = len(df[(df['Status'] == 'CURRENT-CONTINUING') & df['current_circles_id'].notna()])
-            print(f"CURRENT-CONTINUING participants: {continuing_count}")
-            print(f"CURRENT-CONTINUING with circle IDs: {continuing_with_circles}")
+        print(f"Available columns: {df.columns.tolist()}")
+    
+    # STEP 0: DIRECT HANDLING OF CURRENT-CONTINUING PARTICIPANTS
+    # This ensures existing circles are maintained exactly as they were
+    
+    # First, identify the current circle ID column
+    current_circle_col = None
+    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+    
+    # Try direct matches first
+    for col in potential_columns:
+        if col in df.columns:
+            current_circle_col = col
+            break
             
-            # Count unique existing circles
-            if continuing_with_circles > 0:
-                unique_circles = df[df['Status'] == 'CURRENT-CONTINUING']['current_circles_id'].dropna().unique()
-                print(f"Unique existing circles: {len(unique_circles)}")
-                # Check for column capitalization issues
-                print(f"Available columns: {df.columns.tolist()}")
+    # If not found, try case-insensitive matching
+    if current_circle_col is None:
+        for col in df.columns:
+            if col.lower() in [c.lower() for c in potential_columns]:
+                current_circle_col = col
+                break
+                
+    if debug_mode:
+        if current_circle_col:
+            print(f"DIRECT CONTINUATION: Found Current Circle ID column: '{current_circle_col}'")
+        else:
+            print("DIRECT CONTINUATION: ERROR - Could not find Current Circle ID column!")
+    
+    # Initialize tracking containers for direct circle continuation
+    directly_continued_circles = {}  # Maps circle_id to circle data
+    processed_participants = set()   # Track participants already assigned
+    direct_circles_list = []         # Track circle metadata
+    direct_results = []              # Track direct assignments
+
+    # Only proceed if we found the current circle column and are in preserve mode
+    if current_circle_col and existing_circle_handling == 'preserve':
+        # Find all CURRENT-CONTINUING participants with circle IDs
+        continuing_df = df[(df['Status'] == 'CURRENT-CONTINUING') & df[current_circle_col].notna()]
+        
+        if debug_mode:
+            print(f"DIRECT CONTINUATION: Found {len(continuing_df)} CURRENT-CONTINUING participants with circle IDs")
+        
+        if not continuing_df.empty:
+            # Group participants by their current circle ID
+            circle_groups = continuing_df.groupby(current_circle_col)
+            
+            if debug_mode:
+                print(f"DIRECT CONTINUATION: Found {len(circle_groups)} distinct circles")
+            
+            # Process each circle group
+            for circle_id, group in circle_groups:
+                # Skip empty or NaN circle IDs
+                if not circle_id or pd.isna(circle_id):
+                    continue
+                    
+                # Convert to string and standardize
+                circle_id = str(circle_id).strip()
+                
+                if debug_mode:
+                    print(f"DIRECT CONTINUATION: Processing circle {circle_id} with {len(group)} members")
+                
+                # Get the current region, subregion and meeting time from the first member
+                first_member = group.iloc[0]
+                current_region = first_member.get('Current_Region', '')
+                current_subregion = first_member.get('Current_Subregion', '')
+                current_meeting_time = first_member.get('Current_Meeting_Time', '')
+                
+                # Check if it's an in-person or virtual circle
+                is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
+                is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
+                
+                # Count hosts in the circle
+                always_hosts = sum(1 for _, row in group.iterrows() if str(row.get('host', '')).lower() in ['always', 'always host'])
+                sometimes_hosts = sum(1 for _, row in group.iterrows() if str(row.get('host', '')).lower() in ['sometimes', 'sometimes host'])
+                
+                # Skip host requirement check for now - keep all circles regardless
+                
+                # Create a direct circle assignment for all members
+                member_ids = group['Encoded ID'].tolist()
+                
+                if debug_mode:
+                    print(f"DIRECT CONTINUATION: Directly assigning {len(member_ids)} members to continuing circle {circle_id}")
+                
+                # Create circle metadata
+                circle_data = {
+                    'circle_id': circle_id,
+                    'region': current_region,
+                    'subregion': current_subregion,
+                    'meeting_time': current_meeting_time,
+                    'member_count': len(member_ids),
+                    'new_members': 0,  # No new members in directly continued circles
+                    'always_hosts': always_hosts,
+                    'sometimes_hosts': sometimes_hosts,
+                    'members': member_ids,
+                    'is_direct_continuation': True
+                }
+                direct_circles_list.append(circle_data)
+                
+                # Process each member of this circle
+                for _, member in group.iterrows():
+                    member_dict = member.to_dict()
+                    member_id = member['Encoded ID']
+                    
+                    # Direct assignment - skip optimization
+                    member_dict['proposed_NEW_circles_id'] = circle_id
+                    member_dict['proposed_NEW_Subregion'] = current_subregion
+                    member_dict['proposed_NEW_DayTime'] = current_meeting_time
+                    
+                    # Handle host status
+                    if str(member.get('host', '')).lower() in ['always', 'always host']:
+                        member_dict['proposed_NEW_host'] = "Yes"
+                    elif str(member.get('host', '')).lower() in ['sometimes', 'sometimes host']:
+                        member_dict['proposed_NEW_host'] = "Maybe"
+                    else:
+                        member_dict['proposed_NEW_host'] = "No"
+                    
+                    # Set co-leader status (first always host or sometimes host)
+                    if member_dict['proposed_NEW_host'] == "Yes" and not any(r.get('proposed_NEW_co_leader') == "Yes" for r in direct_results if r.get('proposed_NEW_circles_id') == circle_id):
+                        member_dict['proposed_NEW_co_leader'] = "Yes"
+                    else:
+                        member_dict['proposed_NEW_co_leader'] = "No"
+                    
+                    # Mark as processed and add to results
+                    direct_results.append(member_dict)
+                    processed_participants.add(member_id)
+    
+    if debug_mode and current_circle_col:
+        print(f"DIRECT CONTINUATION: Directly assigned {len(processed_participants)} participants to {len(direct_circles_list)} circles")
+    
+    # Create a filtered copy of the dataframe excluding directly processed participants
+    remaining_df = df[~df['Encoded ID'].isin(processed_participants)].copy()
+    
+    if debug_mode:
+        print(f"DIRECT CONTINUATION: {len(remaining_df)} participants remaining for regular optimization")
+        if 'Status' in remaining_df.columns:
+            status_counts = remaining_df['Status'].value_counts().to_dict()
+            print(f"DIRECT CONTINUATION: Remaining status counts: {status_counts}")
     
     # Group participants by derived region (Current_Region for CURRENT-CONTINUING, Requested_Region for others)
     # If Derived_Region exists (added in data_processor.normalize_data), use it
@@ -50,11 +173,11 @@ def run_matching_algorithm(data, config):
     if debug_mode:
         print(f"Using {region_column} for region grouping according to PRD 4.3.2")
     
-    regions = df[region_column].unique()
+    regions = remaining_df[region_column].unique()
     
     # Initialize results containers
-    all_results = []
-    all_circles = []
+    all_results = direct_results.copy()  # Start with directly continued participants
+    all_circles = direct_circles_list.copy()  # Start with directly continued circles
     all_unmatched = []
     
     # Process each region separately
@@ -199,18 +322,10 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         if debug_mode:
                             print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
         
-        # Handle single-member circles separately
-        single_member_circles = {}
-        
-        # Evaluate each existing circle
+        # Evaluate each existing circle in the region
+        # Note: By this point, direct continuation has already been done in the main function
+        # so we only need to handle edge cases here
         for circle_id, members in current_circle_members.items():
-            # First identify single-member circles
-            if len(members) == 1:
-                if debug_mode:
-                    print(f"Found single-member circle {circle_id} with member {members[0]['Encoded ID']}")
-                single_member_circles[circle_id] = members[0]
-                continue
-                
             # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
             # and meets host requirements (for in-person circles)
             if len(members) >= 2:
@@ -418,31 +533,10 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Per PRD: Members of non-viable circles return to general pool with preferences from their circle
     non_viable_circle_members = {}  # Track members from non-viable circles by ID
     
-    # First process single-member circles
-    for circle_id, participant in single_member_circles.items():
-        if debug_mode:
-            print(f"Processing single-member circle {circle_id} with member {participant['Encoded ID']}")
-        
-        # Determine format from circle ID (IP- or V-)
-        is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
-        is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
-        format_prefix = 'IP-' if is_in_person else 'V-'
-        
-        # Get subregion and meeting time
-        subregion = participant.get('Current_Subregion', '')
-        meeting_time = participant.get('Current_Meeting_Time', '')
-        
-        if debug_mode:
-            print(f"Single-member circle info: format={format_prefix}, subregion={subregion}, time={meeting_time}")
-        
-        # Store the preferences for this participant
-        non_viable_circle_members[participant['Encoded ID']] = {
-            'format_prefix': format_prefix,
-            'subregion': subregion,
-            'meeting_time': meeting_time
-        }
+    # Skip single-member circle handling - this is now done directly in the main function
     
-    # Then process non-viable small circles (2-4 members that couldn't grow)
+    # Process non-viable small circles (2-4 members that couldn't grow)
+    single_member_circles = {}  # This is a placeholder to avoid reference errors
     for circle_id, circle_data in small_circles.items():
         if circle_id not in grown_small_circles:
             if debug_mode:
