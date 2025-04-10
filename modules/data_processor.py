@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 from utils.normalization import normalize_regions, normalize_subregions
 import re
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, 
+                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 def process_co_leader_max_new_members(value):
     """
@@ -47,7 +52,7 @@ def calculate_class_vintage(gsb_class):
     
     # Handle missing values
     if pd.isna(gsb_class):
-        print(f"Skipping class vintage calculation for NaN value")
+        logging.info(f"Skipping class vintage calculation for NaN value")
         return None
     
     # Convert to string and clean
@@ -55,44 +60,50 @@ def calculate_class_vintage(gsb_class):
     
     # Skip empty strings
     if not gsb_class_str:
-        print(f"Skipping class vintage calculation for empty value")
+        logging.info(f"Skipping class vintage calculation for empty value")
         return None
     
-    # Try to extract a 4-digit year from the string
+    # Log the input value for debugging
+    logging.info(f"Calculating Class Vintage for: '{gsb_class}' (type: {type(gsb_class).__name__})")
+    
+    # Try to extract a 4-digit year from the string using regex
     year_match = re.search(r'(19\d{2}|20\d{2})', gsb_class_str)
     if year_match:
         try:
             class_year = int(year_match.group(1))
-            print(f"Extracted year {class_year} from '{gsb_class_str}'")
+            logging.info(f"Extracted year {class_year} from '{gsb_class_str}'")
         except ValueError:
-            print(f"Could not convert extracted year '{year_match.group(1)}' to integer")
+            logging.error(f"Could not convert extracted year '{year_match.group(1)}' to integer")
             return None
     else:
         # If no 4-digit year pattern, try to convert the entire string
         try:
             # For numeric values like 2001.0, convert to integer
-            if isinstance(gsb_class, (int, float)) or gsb_class_str.replace('.', '', 1).isdigit():
+            if isinstance(gsb_class, (int, float)):
+                class_year = int(gsb_class)
+                logging.info(f"Direct conversion of numeric value {gsb_class} to year {class_year}")
+            elif gsb_class_str.replace('.', '', 1).isdigit():
                 class_year = int(float(gsb_class_str))
-                print(f"Converted numeric value {gsb_class_str} to year {class_year}")
+                logging.info(f"Converted numeric string {gsb_class_str} to year {class_year}")
             # For other strings that might be numeric
             elif gsb_class_str.isdigit():
                 class_year = int(gsb_class_str)
-                print(f"Converted string '{gsb_class_str}' to year {class_year}")
+                logging.info(f"Converted digit string '{gsb_class_str}' to year {class_year}")
             else:
-                print(f"Could not extract year from '{gsb_class_str}'")
+                logging.warning(f"Could not extract year from '{gsb_class_str}' - not a valid year format")
                 return None
         except (ValueError, TypeError) as e:
-            print(f"Error converting '{gsb_class_str}' to year: {str(e)}")
+            logging.error(f"Error converting '{gsb_class_str}' to year: {str(e)}")
             return None
     
     # Validate year is in reasonable range
     if class_year < 1900 or class_year > 2030:
-        print(f"Year {class_year} is outside reasonable range (1900-2030)")
+        logging.warning(f"Year {class_year} is outside reasonable range (1900-2030)")
         return None
     
     # Calculate years since graduation
     years_since = current_year - class_year
-    print(f"For class year {class_year}, calculated {years_since} years since graduation")
+    logging.info(f"For class year {class_year}, calculated {years_since} years since graduation")
     
     # Determine decade range
     if years_since <= 10:
@@ -154,16 +165,32 @@ def process_data(df):
     # Calculate Class Vintage if GSB Class column exists
     # Improved search for GSB Class column with better logging
     gsb_class_columns = []
+    
+    # Log all available columns for debugging
+    logging.info("Searching for GSB Class Year column among these columns:")
     for col in processed_df.columns:
-        # Look for 'gsb class' or 'gsbclass' in lowercase version of column name
-        if any(term in col.lower().replace(" ", "") for term in ['gsbclass', 'gsb class']):
-            gsb_class_columns.append(col)
-            print(f"Found GSB Class column: {col}")
+        logging.info(f"  - '{col}'")
+        
+    # First, try to find the exact column name "GSB Class Year"
+    if "GSB Class Year" in processed_df.columns:
+        gsb_class_columns.append("GSB Class Year")
+        logging.info("Found exact column match: 'GSB Class Year'")
+    else:
+        # Look for partial matches or variations
+        for col in processed_df.columns:
+            # Look for 'gsb class' or 'gsbclass' in lowercase version of column name
+            if any(term in col.lower().replace(" ", "") for term in ['gsbclass', 'gsb class']):
+                gsb_class_columns.append(col)
+                logging.info(f"Found GSB Class column via pattern match: '{col}'")
 
     if gsb_class_columns:
         gsb_class_col = gsb_class_columns[0]
         # Add direct debug output before calculation
-        print(f"Using '{gsb_class_col}' for Class Vintage calculation")
+        logging.info(f"Using '{gsb_class_col}' for Class Vintage calculation")
+        
+        # Show sample values from this column
+        sample_values = processed_df[gsb_class_col].dropna().head(10).tolist()
+        logging.info(f"Sample GSB Class values: {sample_values}")
         
         # Create a safer version of the calculation with more error handling
         try:
@@ -173,21 +200,26 @@ def process_data(df):
                 errors='coerce'  # Convert errors to NaN instead of raising an exception
             )
             
+            # Check if conversion was successful
+            valid_count = processed_df['GSB_Class_Numeric'].notna().sum()
+            total_count = len(processed_df)
+            logging.info(f"Successfully converted {valid_count} out of {total_count} GSB Class values to numeric")
+            
             # Apply class vintage calculation to the numeric column
             processed_df['Class_Vintage'] = processed_df['GSB_Class_Numeric'].apply(calculate_class_vintage)
             
             # Debug output
             vintage_counts = processed_df['Class_Vintage'].value_counts()
-            print(f"Class Vintage distribution: {vintage_counts}")
+            vintage_null_count = processed_df['Class_Vintage'].isna().sum()
+            logging.info(f"Class Vintage distribution: {vintage_counts}")
+            logging.info(f"Null Class Vintage values: {vintage_null_count}")
         except Exception as e:
-            print(f"Error calculating Class Vintage: {str(e)}")
+            logging.error(f"Error calculating Class Vintage: {str(e)}")
             # Add empty Class_Vintage column as fallback
             processed_df['Class_Vintage'] = None
     else:
         # Add empty Class_Vintage column if GSB Class doesn't exist
-        print("No GSB Class column found among columns:")
-        for col in processed_df.columns:
-            print(f"  - {col}")
+        logging.error("No GSB Class column found - cannot calculate Class Vintage")
         processed_df['Class_Vintage'] = None
     
     # Filter out participants with "MOVING OUT" status
