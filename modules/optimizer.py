@@ -111,7 +111,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         for _, row in region_df.iterrows():
             # First, check if it's a CURRENT-CONTINUING participant
             if row.get('Status') == 'CURRENT-CONTINUING':
-                # If they have a valid circle ID, add them to that circle
+                # They must have a current circle ID - this is required for CURRENT-CONTINUING
                 if pd.notna(row.get('current_circles_id')):
                     circle_id = str(row['current_circles_id']).strip()
                     if circle_id:
@@ -120,9 +120,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         current_circle_members[circle_id].append(row)
                     else:
                         # They're CURRENT-CONTINUING but have an empty circle ID
-                        # These need to be assigned to new circles
+                        # This shouldn't happen per the spec, but log for debugging
                         if debug_mode:
-                            print(f"CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
+                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
+                else:
+                    # They're CURRENT-CONTINUING but circle ID is null
+                    # This shouldn't happen per the spec, but log for debugging
+                    if debug_mode:
+                        print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
         
         # Evaluate each existing circle
         for circle_id, members in current_circle_members.items():
