@@ -28,16 +28,93 @@ def format_time_elapsed(seconds):
 
 def generate_download_link(df):
     """
-    Generate a downloadable link for a DataFrame
+    Generate a downloadable link for a DataFrame with properly ordered columns
     
     Args:
         df: Pandas DataFrame to convert
         
     Returns:
-        CSV data as string
+        CSV data as string with reordered columns
     """
+    # Create a copy to avoid modifying the original DataFrame
+    output_df = df.copy()
+    
+    # Only keep columns that don't start with "Unnamed:"
+    filtered_columns = [col for col in output_df.columns if not col.startswith('Unnamed:')]
+    output_df = output_df[filtered_columns]
+    
+    # Define the column order according to specifications
+    ordered_columns = []
+    
+    # First column should be Status
+    if 'Status' in output_df.columns:
+        ordered_columns.append('Status')
+    
+    # Second column should be Encoded ID
+    if 'Encoded ID' in output_df.columns:
+        ordered_columns.append('Encoded ID')
+    
+    # Next come the specified columns in order
+    priority_columns = [
+        'proposed_NEW_circles_id',
+        'unmatched_reason',
+        'proposed_NEW_Subregion',
+        'proposed_NEW_DayTime',
+        'proposed_NEW_host',
+        'proposed_NEW_co_leader'
+    ]
+    
+    for col in priority_columns:
+        if col in output_df.columns:
+            ordered_columns.append(col)
+    
+    # Identify name and email columns to place them in the right spot
+    name_email_columns = []
+    if 'Last (Family) Name' in output_df.columns:
+        name_email_columns.append('Last (Family) Name')
+    if 'First (Given) Name' in output_df.columns:
+        name_email_columns.append('First (Given) Name')
+    if 'Preferred Email' in output_df.columns:
+        name_email_columns.append('Preferred Email')
+    
+    # All other columns (except name/email columns that we'll place later)
+    remaining_columns = [col for col in output_df.columns 
+                        if col not in ordered_columns 
+                        and col not in name_email_columns]
+    
+    # Add remaining columns alphabetically for consistency
+    ordered_columns.extend(sorted(remaining_columns))
+    
+    # Now insert the name/email columns just before the Preferred Email
+    if 'Preferred Email' in output_df.columns:
+        email_index = ordered_columns.index('Preferred Email') if 'Preferred Email' in ordered_columns else len(ordered_columns)
+        
+        # If Found, remove Preferred Email from ordered_columns first
+        if 'Preferred Email' in ordered_columns:
+            ordered_columns.remove('Preferred Email')
+        
+        # Insert name columns followed by Preferred Email at the right position
+        for col in name_email_columns:
+            if col != 'Preferred Email' and col in output_df.columns:
+                ordered_columns.insert(email_index, col)
+                email_index += 1
+                
+        # Add Preferred Email back at the right position
+        if 'Preferred Email' in output_df.columns:
+            ordered_columns.insert(email_index, 'Preferred Email')
+    
+    # Make sure we haven't lost any columns
+    for col in output_df.columns:
+        if col not in ordered_columns and not col.startswith('Unnamed:'):
+            ordered_columns.append(col)
+    
+    # Create a new DataFrame with only the columns that exist
+    final_columns = [col for col in ordered_columns if col in output_df.columns]
+    final_df = output_df[final_columns]
+    
+    # Convert to CSV and return
     csv_buffer = io.StringIO()
-    df.to_csv(csv_buffer, index=False)
+    final_df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue()
 
 def generate_circle_id(region, subregion, index, is_new=True):

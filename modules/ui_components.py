@@ -231,23 +231,11 @@ def render_circle_table():
     # Create a copy of the circles dataframe to avoid modifying the original
     circles = st.session_state.matched_circles.copy()
     
-    # Debug: Print dataframe info and column types to help diagnose type issues
-    st.write("Debugging Circle Table Data Types:")
-    debug_info = {col: str(circles[col].dtype) for col in circles.columns}
-    st.write(debug_info)
-    
-    # Special handling for the members column which could be causing the error
+    # Special handling for the members column which could be causing display issues
     if 'members' in circles.columns:
-        st.write("Members column found - checking data types")
-        # Check the first few values to see what type they are
-        st.write("First few members values types:")
-        for i, val in enumerate(circles['members'].head(3)):
-            st.write(f"Row {i}: Type: {type(val)}, Value: {val}")
-        
         # Convert members to string if it's a list or other object
         try:
             circles['members'] = circles['members'].apply(lambda x: str(x) if not isinstance(x, str) else x)
-            st.write("Members column converted to strings")
         except Exception as e:
             st.error(f"Error converting members column: {str(e)}")
     
@@ -257,7 +245,6 @@ def render_circle_table():
         if col in circles.columns:
             try:
                 circles[col] = pd.to_numeric(circles[col], errors='coerce').fillna(0).astype(int)
-                st.write(f"Column {col} converted to numeric")
             except Exception as e:
                 st.error(f"Error converting {col} to numeric: {str(e)}")
     
@@ -381,31 +368,12 @@ def render_unmatched_table():
     # Create a deep copy to avoid modifying the original
     unmatched = st.session_state.unmatched_participants.copy()
     
-    # Debug: Print dataframe info and column types to help diagnose type issues
-    st.write("Debugging Unmatched Table Data Types:")
-    debug_info = {col: str(unmatched[col].dtype) for col in unmatched.columns}
-    st.write(debug_info)
-    
-    # Special attention for columns used in filtering and comparison
-    if 'unmatched_reason' in unmatched.columns:
-        st.write("Unmatched reason column found - checking data types")
-        st.write("First few unmatched_reason values and types:")
-        for i, val in enumerate(unmatched['unmatched_reason'].head(3)):
-            st.write(f"Row {i}: Type: {type(val)}, Value: {val}")
-
-    if 'Requested_Region' in unmatched.columns:
-        st.write("Requested_Region column found - checking data types")
-        st.write("First few Requested_Region values and types:")
-        for i, val in enumerate(unmatched['Requested_Region'].head(3)):
-            st.write(f"Row {i}: Type: {type(val)}, Value: {val}")
-    
     # Pre-process all columns to ensure consistent types
     for col in unmatched.columns:
         try:
             # For every column, normalize to string if it's an object type (might contain mixed types)
             if unmatched[col].dtype == 'object':
                 unmatched[col] = unmatched[col].fillna('').astype(str)
-                st.write(f"Converted {col} to string type")
         except Exception as e:
             st.error(f"Error pre-processing column {col}: {str(e)}")
     
