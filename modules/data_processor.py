@@ -3,6 +3,31 @@ import numpy as np
 from utils.normalization import normalize_regions, normalize_subregions
 import re
 
+def process_co_leader_max_new_members(value):
+    """
+    Process co-leader max new members value
+    
+    Args:
+        value: The co-leader max new members value to process
+        
+    Returns:
+        Processed value (None, string 'None', or integer)
+    """
+    # Handle None/NaN values
+    if pd.isna(value) or value is None or value == '':
+        return None
+    
+    # Handle 'None' literal string
+    if isinstance(value, str) and value.strip().lower() == 'none':
+        return 'None'
+    
+    # Try to convert to integer
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        # If not a valid number, return None
+        return None
+
 def process_data(df):
     """
     Process and clean the participant data
@@ -34,6 +59,15 @@ def process_data(df):
     # Convert Encoded ID to string if it exists
     if 'Encoded ID' in processed_df.columns:
         processed_df['Encoded ID'] = processed_df['Encoded ID'].astype(str)
+    
+    # Process co-leader max new members if the column exists
+    if 'co_leader_max_new_members' in processed_df.columns:
+        processed_df['co_leader_max_new_members'] = processed_df['co_leader_max_new_members'].apply(
+            process_co_leader_max_new_members
+        )
+    else:
+        # Add the column with default None values if it doesn't exist
+        processed_df['co_leader_max_new_members'] = None
     
     # Filter out participants with "MOVING OUT" status
     processed_df = processed_df[processed_df.get('Status', '') != 'MOVING OUT']
