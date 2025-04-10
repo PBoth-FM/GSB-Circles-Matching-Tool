@@ -24,6 +24,11 @@ def run_matching_algorithm(data, config):
     # Copy data to avoid modifying original
     df = data.copy()
     
+    # Print the status counts for debugging
+    if debug_mode:
+        status_counts = df['Status'].value_counts().to_dict()
+        print(f"Input data status counts: {status_counts}")
+    
     # Group participants by region and determine subregions for each region
     regions = df['Requested_Region'].unique()
     
@@ -174,8 +179,13 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         }
         circles.append(circle_dict)
     
-    # Step 3: Run optimization for remaining participants
+    # Step 3: Run optimization for remaining participants (both NEW and CURRENT-CONTINUING without a current circle)
     remaining_df = region_df[~region_df['Encoded ID'].isin(processed_ids)]
+    
+    if debug_mode:
+        remaining_status_counts = remaining_df['Status'].value_counts().to_dict() if 'Status' in remaining_df.columns else {}
+        print(f"Remaining participants status counts: {remaining_status_counts}")
+        print(f"Total remaining participants: {len(remaining_df)}")
     
     # Determine all possible subregions and time slots for the remaining participants
     subregions = get_unique_preferences(remaining_df, ['first_choice_location', 'second_choice_location', 'third_choice_location'])
@@ -216,7 +226,12 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     prob = pulp.LpProblem(f"CircleMatching_{region}", pulp.LpMaximize)
     
     # Create decision variables: x[i, j] = 1 if participant i is assigned to circle j
-    participants = region_df['Encoded ID'].tolist()
+    # Must use remaining_df here, not region_df to avoid including already processed participants
+    participants = remaining_df['Encoded ID'].tolist()
+    
+    if debug_mode:
+        print(f"Creating optimization variables for {len(participants)} participants and {len(circle_options)} circle options")
+    
     x = pulp.LpVariable.dicts("assign", 
                              [(p, j) for p in participants for j in range(len(circle_options))],
                              cat=pulp.LpBinary)
@@ -226,7 +241,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Objective function: maximize preference satisfaction
     obj_expr = pulp.lpSum(calculate_preference_score(p_row, circle_options[j][0], circle_options[j][1]) * x[p, j]
-                         for idx, (_, p_row) in enumerate(region_df.iterrows())
+                         for idx, (_, p_row) in enumerate(remaining_df.iterrows())
                          for j in range(len(circle_options))
                          for p in [p_row['Encoded ID']])
     
@@ -250,9 +265,9 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         for j in range(len(circle_options)):
             # At least one "Always" host or two "Sometimes" hosts
             always_hosts = pulp.lpSum(x[p, j] for p in participants 
-                                    if region_df.loc[region_df['Encoded ID'] == p, 'host'].values[0] == 'Always')
+                                    if remaining_df.loc[remaining_df['Encoded ID'] == p, 'host'].values[0] == 'Always')
             sometimes_hosts = pulp.lpSum(x[p, j] for p in participants 
-                                        if region_df.loc[region_df['Encoded ID'] == p, 'host'].values[0] == 'Sometimes')
+                                        if remaining_df.loc[remaining_df['Encoded ID'] == p, 'host'].values[0] == 'Sometimes')
             
             # Binary variable to indicate if "two sometimes" condition is satisfied
             two_sometimes = pulp.LpVariable(f"two_sometimes_{j}", cat=pulp.LpBinary)
@@ -274,9 +289,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         print(f"Optimization status: {pulp.LpStatus[prob.status]}")
         print(f"Optimization time: {solve_time:.2f} seconds")
     
-    # Process results
-    results = []
-    circles = []
+    # Process results - start with the results from previously processed participants (existing circles)
     unmatched = []
     
     # Create circle assignments
