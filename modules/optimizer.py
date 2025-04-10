@@ -3,6 +3,7 @@ import numpy as np
 import pulp
 import time
 from itertools import combinations
+from utils.helpers import determine_unmatched_reason
 
 def run_matching_algorithm(data, config):
     """
@@ -286,7 +287,11 @@ def run_matching_algorithm(data, config):
             for _, participant in region_df.iterrows():
                 participant_dict = participant.to_dict()
                 participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
-                participant_dict['unmatched_reason'] = "Insufficient participants in region"
+                
+                # Use our enhanced reason determination with appropriate context
+                reason_context = {"insufficient_regional_participants": True}
+                participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, reason_context)
+                
                 all_unmatched.append(participant_dict)
                 all_results.append(participant_dict)
             continue
@@ -339,6 +344,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     Returns:
         Tuple of (results list, circles list, unmatched list)
     """
+    # Context information for enhanced unmatched reason determination
+    optimization_context = {
+        'existing_circles': [],
+        'similar_participants': {},
+        'full_circles': [],
+        'circles_needing_hosts': [],
+        'host_counts': {}
+    }
     # Initialize containers for results
     results = []
     circles = []
@@ -763,6 +776,52 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     subregions = [s for s in subregions if s]
     time_slots = [t for t in time_slots if t]
     
+    # Collect information about similar participants at each location-time
+    for subregion in subregions:
+        for time_slot in time_slots:
+            # Count participants who prefer this location and time
+            compatible_count = 0
+            host_count = 0
+            
+            for _, participant in remaining_df.iterrows():
+                participant_locations = [
+                    participant.get('first_choice_location', ''),
+                    participant.get('second_choice_location', ''),
+                    participant.get('third_choice_location', '')
+                ]
+                participant_times = [
+                    participant.get('first_choice_time', ''),
+                    participant.get('second_choice_time', ''),
+                    participant.get('third_choice_time', '')
+                ]
+                
+                # Check if this location and time match the participant's preferences
+                if (subregion in participant_locations and time_slot in participant_times):
+                    compatible_count += 1
+                    
+                    # Track host availability
+                    host_value = str(participant.get('host', '')).lower()
+                    if host_value in ['always', 'always host', 'sometimes', 'sometimes host']:
+                        host_count += 1
+            
+            # Add to context
+            loc_time_key = (subregion, time_slot)
+            optimization_context['similar_participants'][loc_time_key] = compatible_count
+            optimization_context['host_counts'][loc_time_key] = host_count
+    
+    # Add existing circles to context
+    optimization_context['existing_circles'] = circles
+    
+    # Track circles at capacity (10 members) or needing hosts
+    for circle in circles:
+        if circle.get('member_count', 0) >= 10:
+            optimization_context['full_circles'].append(circle.get('circle_id'))
+        
+        if (circle.get('always_hosts', 0) == 0 and 
+            circle.get('sometimes_hosts', 0) < 2 and
+            circle.get('circle_id', '').startswith('IP-')):
+            optimization_context['circles_needing_hosts'].append(circle)
+    
     if debug_mode:
         print(f"Region: {region}, Subregions: {subregions}, Time slots: {time_slots}")
     
@@ -775,12 +834,16 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             participant_dict = participant.to_dict()
             participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
             
-            if not subregions:
-                participant_dict['unmatched_reason'] = "No location preferences"
+            # Use our enhanced determine_unmatched_reason function with appropriate reason
+            if not subregions and not time_slots:
+                reason_context = {"no_preferences": True}
+                participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, reason_context)
+            elif not subregions:
+                reason_context = {"no_location_preferences": True} 
+                participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, reason_context)
             elif not time_slots:
-                participant_dict['unmatched_reason'] = "No time preferences"
-            else:
-                participant_dict['unmatched_reason'] = "No preferences"
+                reason_context = {"no_time_preferences": True}
+                participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, reason_context)
                 
             results.append(participant_dict)
             unmatched.append(participant_dict)
@@ -975,32 +1038,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             participant_dict['proposed_NEW_host'] = "No"
             participant_dict['proposed_NEW_co_leader'] = "No"
             
-            # Determine unmatched reason
-            if not participant['first_choice_location'] and not participant['second_choice_location'] and not participant['third_choice_location']:
-                participant_dict['unmatched_reason'] = "No location preference"
-            elif not participant['first_choice_time'] and not participant['second_choice_time'] and not participant['third_choice_time']:
-                participant_dict['unmatched_reason'] = "No time preference"
-            else:
-                # Check location compatibility
-                loc_compatible = False
-                for loc in [participant['first_choice_location'], participant['second_choice_location'], participant['third_choice_location']]:
-                    if loc in subregions:
-                        loc_compatible = True
-                        break
-                
-                # Check time compatibility
-                time_compatible = False
-                for time_pref in [participant['first_choice_time'], participant['second_choice_time'], participant['third_choice_time']]:
-                    if time_pref in time_slots:
-                        time_compatible = True
-                        break
-                
-                if not loc_compatible:
-                    participant_dict['unmatched_reason'] = "Location issues"
-                elif not time_compatible:
-                    participant_dict['unmatched_reason'] = "Time compatibility"
-                else:
-                    participant_dict['unmatched_reason'] = "Optimization trade-off"
+            # Determine unmatched reason using the enhanced hierarchical logic
+            participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, optimization_context)
             
             unmatched.append(participant_dict)
         
