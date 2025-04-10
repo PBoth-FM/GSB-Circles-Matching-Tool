@@ -316,6 +316,15 @@ def run_matching_algorithm(data, config):
     circles_df = pd.DataFrame(all_circles) if all_circles else pd.DataFrame()
     unmatched_df = pd.DataFrame(all_unmatched) if all_unmatched else pd.DataFrame()
     
+    # Ensure Class_Vintage is properly preserved in results
+    if not results_df.empty and 'Class_Vintage' not in results_df.columns and 'Class_Vintage' in data.columns:
+        print(f"Adding Class_Vintage from original data to results")
+        # Create a mapping from Encoded ID to Class_Vintage
+        id_to_vintage = data[['Encoded ID', 'Class_Vintage']].set_index('Encoded ID').to_dict()['Class_Vintage']
+        # Add Class_Vintage to results using the mapping
+        results_df['Class_Vintage'] = results_df['Encoded ID'].map(id_to_vintage)
+        print(f"Added Class_Vintage to {results_df['Class_Vintage'].notna().sum()} rows")
+    
     # Ensure numeric columns are properly typed to avoid comparison issues
     if not circles_df.empty:
         # Convert numeric columns to int to avoid string/float comparison issues

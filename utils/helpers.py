@@ -85,15 +85,36 @@ def generate_download_link(df):
     gsb_class_column = None
     gsb_vintage_column = None
     
-    # Look for GSB Class column (case-insensitive)
-    for col in output_df.columns:
-        if 'gsb class' in col.lower():
-            gsb_class_column = col
-            break
+    # Look for GSB Class column with improved detection logic
+    # First try for the exact column name that we know is used in the input data
+    if 'GSB Class Year' in output_df.columns:
+        gsb_class_column = 'GSB Class Year'
+        print(f"Found exact GSB Class Year column")
+    else:
+        # Fallback to case-insensitive search with better pattern matching
+        for col in output_df.columns:
+            if any(term in col.lower().replace(" ", "") for term in ['gsbclass', 'gsb class']):
+                gsb_class_column = col
+                print(f"Found GSB Class column via pattern match: '{col}'")
+                break
     
-    # Class Vintage column
+    # Class Vintage column - ensure it's included
     if 'Class_Vintage' in output_df.columns:
         gsb_vintage_column = 'Class_Vintage'
+        print(f"Found Class_Vintage column")
+    
+    # Debug to verify column inclusion
+    if gsb_class_column:
+        print(f"Will include GSB Class column: '{gsb_class_column}'")
+        # Check if it has data
+        non_null_values = output_df[gsb_class_column].notna().sum()
+        print(f"- GSB Class column has {non_null_values} non-null values out of {len(output_df)}")
+    
+    if gsb_vintage_column:
+        print(f"Will include Class Vintage column: '{gsb_vintage_column}'")
+        # Check if it has data
+        non_null_values = output_df[gsb_vintage_column].notna().sum()
+        print(f"- Class Vintage column has {non_null_values} non-null values out of {len(output_df)}")
     
     # All other columns (except name/email columns and GSB class columns that we'll place later)
     remaining_columns = [col for col in output_df.columns 
