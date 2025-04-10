@@ -7,21 +7,13 @@ def render_match_tab():
     """Render the main matching tab content"""
     st.subheader("Upload Participant Data")
     
-    uploaded_file = st.file_uploader(
-        "Upload CSV with participant data", 
-        type=["csv", "xlsx"],
-        help="Upload a CSV file with participant data following the required format"
-    )
+    # File uploader functionality is now handled directly in app.py through match_tab_callback
+    # This function remains as a placeholder for imported reference
+    st.info("Please upload a CSV file with participant data to begin.")
     
-    if uploaded_file is not None:
-        # Data upload and processing is handled in app.py
-        pass
-    else:
-        st.info("Please upload a CSV file with participant data to begin.")
-        
-        # Show file format instructions
-        with st.expander("CSV File Format Requirements"):
-            st.markdown("""
+    # Show file format instructions
+    with st.expander("CSV File Format Requirements"):
+        st.markdown("""
             ### Required Columns
             - **Encoded ID**: Unique identifier for each participant
             - **Status**: Current status (e.g., 'CURRENT-CONTINUING', 'NEW', 'MOVING OUT')
@@ -169,6 +161,10 @@ def render_circle_table():
     # Add filter options
     col1, col2 = st.columns(2)
     
+    # Initialize default values
+    selected_region = 'All'
+    selected_subregion = 'All'
+    
     with col1:
         if 'region' in circles.columns:
             regions = ['All'] + sorted(circles['region'].unique().tolist())
@@ -209,6 +205,10 @@ def render_unmatched_table():
     
     # Add filter options
     col1, col2 = st.columns(2)
+    
+    # Initialize default values
+    selected_reason = 'All'
+    selected_region = 'All'
     
     with col1:
         if 'unmatched_reason' in unmatched.columns:

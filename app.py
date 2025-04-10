@@ -57,7 +57,8 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Match", "Details", "Debug"])
     
     with tab1:
-        render_match_tab()
+        # Use our custom match tab function instead of the imported one
+        match_tab_callback()
         
     with tab2:
         render_details_tab()
