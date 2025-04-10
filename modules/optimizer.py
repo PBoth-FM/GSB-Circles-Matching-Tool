@@ -109,12 +109,20 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     if existing_circle_handling == 'preserve' and 'current_circles_id' in region_df.columns:
         # Group participants by their current circle
         for _, row in region_df.iterrows():
-            if pd.notna(row.get('current_circles_id')) and row.get('Status') == 'CURRENT-CONTINUING':
-                circle_id = str(row['current_circles_id']).strip()
-                if circle_id:
-                    if circle_id not in current_circle_members:
-                        current_circle_members[circle_id] = []
-                    current_circle_members[circle_id].append(row)
+            # First, check if it's a CURRENT-CONTINUING participant
+            if row.get('Status') == 'CURRENT-CONTINUING':
+                # If they have a valid circle ID, add them to that circle
+                if pd.notna(row.get('current_circles_id')):
+                    circle_id = str(row['current_circles_id']).strip()
+                    if circle_id:
+                        if circle_id not in current_circle_members:
+                            current_circle_members[circle_id] = []
+                        current_circle_members[circle_id].append(row)
+                    else:
+                        # They're CURRENT-CONTINUING but have an empty circle ID
+                        # These need to be assigned to new circles
+                        if debug_mode:
+                            print(f"CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
         
         # Evaluate each existing circle
         for circle_id, members in current_circle_members.items():
@@ -290,6 +298,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         print(f"Optimization time: {solve_time:.2f} seconds")
     
     # Process results - start with the results from previously processed participants (existing circles)
+    results = []  # Initialize empty results list - we'll add entries for both existing circles and new circles
     unmatched = []
     
     # Create circle assignments

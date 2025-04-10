@@ -72,6 +72,32 @@ def render_debug_tab():
             })
             st.dataframe(status_df, use_container_width=True)
             
+        # Display result counts by status if available
+        if 'results' in st.session_state and 'Status' in st.session_state.results.columns:
+            st.write("### Results Status Counts")
+            results_status_counts = st.session_state.results['Status'].value_counts().reset_index()
+            results_status_counts.columns = ['Status', 'Count']
+            st.dataframe(results_status_counts, use_container_width=True)
+            
+            # Count matched versus unmatched for each status
+            st.write("### Status Match Rates")
+            match_by_status = pd.crosstab(
+                st.session_state.results['Status'], 
+                st.session_state.results['proposed_NEW_circles_id'] != 'UNMATCHED',
+                rownames=['Status'], 
+                colnames=['Matched']
+            ).reset_index()
+            
+            # Add percentage columns
+            total_by_status = match_by_status.sum(axis=1).values
+            match_by_status['Total'] = total_by_status
+            match_by_status['Match %'] = (match_by_status[True] / match_by_status['Total'] * 100).round(1)
+            
+            # Rename columns for clarity
+            match_by_status.columns = ['Status', 'Unmatched', 'Matched', 'Total', 'Match %']
+            
+            st.dataframe(match_by_status, use_container_width=True)
+            
         # Display data samples if available
         if 'df' in st.session_state:
             st.write("### Raw Data Preview")
