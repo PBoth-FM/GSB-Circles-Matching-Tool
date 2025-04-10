@@ -183,9 +183,36 @@ def normalize_status_values(df):
     # Create a copy of the DataFrame
     normalized_df = df.copy()
     
-    # Normalize common variations in Status values
-    status_mapping = {
+    # Define detailed status mapping for Raw_Status column
+    detailed_status_mapping = {
+        # Current variations
+        'CURRENT-CONTINUING': 'Current-CONTINUING',
+        'Current-CONTINUING': 'Current-CONTINUING',
+        'Current-CONTINUING ': 'Current-CONTINUING',
+        
+        # Moving within region
+        'Current-MOVING within Region': 'Current-MOVING within Region',
+        
+        # Moving out variations
+        'Current-MOVING OUT of Region': 'Current-MOVING OUT of Region',
+        'Current - MOVING OUT OF region': 'Current-MOVING OUT of Region',
+        
+        # Moving into variations
+        'Current-MOVING INTO Region': 'Current-MOVING INTO Region',
+        'Current - MOVING INTO region': 'Current-MOVING INTO Region',
+        'Current-MOVING INTO Region ': 'Current-MOVING INTO Region',
+        
+        # New participants variations
+        'NEW to Circles': 'NEW to Circles',
+        'Requesting 2nd Circle': 'Requesting 2nd Circle',
+        'xNEW to Circles (Waitlist)': 'NEW to Circles (Waitlist)',
+        'NEW to Circles (Waitlist) Requesting 2nd Circle': 'NEW to Circles (Waitlist) Requesting 2nd Circle'
+    }
+    
+    # Binary status mapping for algorithm compatibility
+    binary_status_mapping = {
         # Continuing in their circle
+        'CURRENT-CONTINUING': 'CURRENT-CONTINUING',
         'Current-CONTINUING': 'CURRENT-CONTINUING',
         'Current-CONTINUING ': 'CURRENT-CONTINUING',
         
@@ -201,9 +228,14 @@ def normalize_status_values(df):
         'NEW to Circles (Waitlist) Requesting 2nd Circle': 'NEW',
     }
     
-    # Apply the mapping
+    # Create Raw_Status column with detailed status mapping
+    normalized_df['Raw_Status'] = normalized_df['Status'].apply(
+        lambda x: detailed_status_mapping.get(x.strip() if isinstance(x, str) else x, x)
+    )
+    
+    # Apply binary mapping to maintain compatibility with existing code
     normalized_df['Status'] = normalized_df['Status'].apply(
-        lambda x: status_mapping.get(x.strip() if isinstance(x, str) else x, x)
+        lambda x: binary_status_mapping.get(x.strip() if isinstance(x, str) else x, x)
     )
     
     # Special handling for "Current-MOVING OUT of Region" - filter these out
