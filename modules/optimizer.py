@@ -278,8 +278,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 
                 # Check time compatibility
                 time_compatible = False
-                for time in [participant['first_choice_time'], participant['second_choice_time'], participant['third_choice_time']]:
-                    if time in time_slots:
+                for time_pref in [participant['first_choice_time'], participant['second_choice_time'], participant['third_choice_time']]:
+                    if time_pref in time_slots:
                         time_compatible = True
                         break
                 
