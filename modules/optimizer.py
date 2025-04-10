@@ -143,19 +143,26 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Step 1: Identify existing circles if we're preserving them
     if existing_circle_handling == 'preserve':
-        # Check for current_circles_id column (case-insensitive to handle column mapping issues)
+        # Check for circle ID column (case-insensitive to handle column mapping issues)
+        # In our column mapping, it's now 'Current_Circle_ID'
         current_col = None
+        potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+        
         for col in region_df.columns:
-            if col.lower() == 'current_circles_id' or col == 'Current Circle ID':
+            if col in potential_columns or col.lower() in [c.lower() for c in potential_columns]:
                 current_col = col
                 break
                 
         if current_col is None and debug_mode:
-            print(f"WARNING: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
+            print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
+            return [], [], []  # Return empty results if we can't find the critical column
             
         if current_col is not None:
             if debug_mode:
                 print(f"Using column '{current_col}' for current circle IDs")
+                continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
+                circles_count = region_df[region_df['Status'] == 'CURRENT-CONTINUING'][current_col].notna().sum()
+                print(f"Found {continuing_count} CURRENT-CONTINUING participants, {circles_count} with circle IDs")
                 
             # Group participants by their current circle
             for _, row in region_df.iterrows():

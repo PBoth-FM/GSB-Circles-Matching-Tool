@@ -137,10 +137,25 @@ def map_column_names(df):
         '3rd Choice Days and Times of Week': 'third_choice_time',
         'Volunteering to Host?': 'host',
         'Current Region': 'Current_Region',
-        'Current Circle ID': 'current_circles_id',
+        'Current Circle ID': 'Current_Circle_ID',  # Changed to preserve capitalization pattern
         'Current Subregion': 'Current_Subregion',
         'Current Meeting Time': 'Current_Meeting_Time'
     }
+    
+    # Debug information about column mapping
+    print(f"Input column names: {df.columns.tolist()}")
+    print(f"Column mapping: {column_mapping}")
+    
+    # Check for any columns in the source data that might match our expected "Current Circle ID"
+    for col in df.columns:
+        if "circle" in col.lower() and "id" in col.lower():
+            print(f"Found potential circle ID column: '{col}'")
+            # Count non-null values in this column
+            non_null_count = df[col].notna().sum()
+            print(f"  Number of non-null values: {non_null_count}")
+            if 'Status' in df.columns:
+                continuing_count = df[df['Status'] == 'CURRENT-CONTINUING'][col].notna().sum()
+                print(f"  Number of CURRENT-CONTINUING with non-null value: {continuing_count}")
     
     # Create a copy of the DataFrame to avoid modifying the original
     mapped_df = df.copy()

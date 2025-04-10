@@ -228,7 +228,18 @@ def render_circle_table():
         st.info("No circles have been formed yet.")
         return
     
-    circles = st.session_state.matched_circles
+    # Create a copy of the circles dataframe to avoid modifying the original
+    circles = st.session_state.matched_circles.copy()
+    
+    # Preprocess all numeric columns to ensure they're numeric
+    # This prevents the "not supported between instances of 'float' and 'str'" error
+    for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
+        if col in circles.columns:
+            circles[col] = pd.to_numeric(circles[col], errors='coerce').fillna(0).astype(int)
+    
+    # Make sure new_members column exists (for new circles, this equals member_count)
+    if 'new_members' not in circles.columns and 'member_count' in circles.columns:
+        circles['new_members'] = circles['member_count']
     
     # Add filter options
     col1, col2 = st.columns(2)
@@ -258,16 +269,6 @@ def render_circle_table():
     
     # Display the filtered circles
     if not filtered_circles.empty:
-        # Ensure all columns are properly typed to prevent comparison issues
-        # Convert numeric columns to int
-        for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
-            if col in filtered_circles.columns:
-                filtered_circles[col] = pd.to_numeric(filtered_circles[col], errors='coerce').fillna(0).astype(int)
-        
-        # Make sure new_members column exists (for new circles, this equals member_count)
-        if 'new_members' not in filtered_circles.columns and 'member_count' in filtered_circles.columns:
-            filtered_circles['new_members'] = filtered_circles['member_count']
-        
         # Display the count of filtered circles
         st.write(f"Showing {len(filtered_circles)} circles")
         
@@ -276,12 +277,23 @@ def render_circle_table():
         available_columns = ["circle_id", "region", "subregion", "meeting_time", "member_count", "new_members", "always_hosts", "sometimes_hosts"]
         column_order = [col for col in available_columns if col in filtered_circles.columns]
         
-        st.dataframe(
-            filtered_circles,
-            use_container_width=True,
-            hide_index=True,
-            column_order=column_order
-        )
+        try:
+            st.dataframe(
+                filtered_circles,
+                use_container_width=True,
+                hide_index=True,
+                column_order=column_order
+            )
+        except Exception as e:
+            st.error(f"Error displaying circle table: {str(e)}")
+            
+            # Fallback display approach if the column_order approach fails
+            st.write("Using fallback display method:")
+            st.dataframe(
+                filtered_circles,
+                use_container_width=True,
+                hide_index=True
+            )
     else:
         st.info("No circles match the selected filters.")
 
