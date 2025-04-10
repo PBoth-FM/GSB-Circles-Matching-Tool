@@ -258,18 +258,29 @@ def render_circle_table():
     
     # Display the filtered circles
     if not filtered_circles.empty:
-        # Add new_members column (for new circles, this equals member_count)
-        filtered_circles['new_members'] = filtered_circles['member_count']
+        # Ensure all columns are properly typed to prevent comparison issues
+        # Convert numeric columns to int
+        for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
+            if col in filtered_circles.columns:
+                filtered_circles[col] = pd.to_numeric(filtered_circles[col], errors='coerce').fillna(0).astype(int)
+        
+        # Make sure new_members column exists (for new circles, this equals member_count)
+        if 'new_members' not in filtered_circles.columns and 'member_count' in filtered_circles.columns:
+            filtered_circles['new_members'] = filtered_circles['member_count']
         
         # Display the count of filtered circles
         st.write(f"Showing {len(filtered_circles)} circles")
         
         # Display the dataframe with the updated column order
+        # Only include columns that actually exist in the dataframe
+        available_columns = ["circle_id", "region", "subregion", "meeting_time", "member_count", "new_members", "always_hosts", "sometimes_hosts"]
+        column_order = [col for col in available_columns if col in filtered_circles.columns]
+        
         st.dataframe(
             filtered_circles,
             use_container_width=True,
             hide_index=True,
-            column_order=["circle_id", "region", "subregion", "meeting_time", "member_count", "new_members", "always_hosts", "sometimes_hosts"]
+            column_order=column_order
         )
     else:
         st.info("No circles match the selected filters.")

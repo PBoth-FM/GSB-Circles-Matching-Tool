@@ -80,6 +80,13 @@ def run_matching_algorithm(data, config):
     circles_df = pd.DataFrame(all_circles) if all_circles else pd.DataFrame()
     unmatched_df = pd.DataFrame(all_unmatched) if all_unmatched else pd.DataFrame()
     
+    # Ensure numeric columns are properly typed to avoid comparison issues
+    if not circles_df.empty:
+        # Convert numeric columns to int to avoid string/float comparison issues
+        for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
+            if col in circles_df.columns:
+                circles_df[col] = pd.to_numeric(circles_df[col], errors='coerce').fillna(0).astype(int)
+    
     # Calculate final metrics
     if not results_df.empty:
         matched_count = len(results_df[results_df['proposed_NEW_circles_id'] != "UNMATCHED"])
