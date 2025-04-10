@@ -123,6 +123,19 @@ def generate_download_link(df):
         if 'Preferred Email' in output_df.columns:
             ordered_columns.insert(email_index, 'Preferred Email')
     
+    # Add GSB Class and Class Vintage columns in the right order if they exist
+    if gsb_class_column and gsb_class_column not in ordered_columns:
+        # Add GSB Class column first
+        ordered_columns.append(gsb_class_column)
+        
+        # Add Class Vintage right after GSB Class column if it exists
+        if gsb_vintage_column and gsb_vintage_column not in ordered_columns:
+            gsb_class_index = ordered_columns.index(gsb_class_column)
+            ordered_columns.insert(gsb_class_index + 1, gsb_vintage_column)
+    elif gsb_vintage_column and gsb_vintage_column not in ordered_columns:
+        # If we only have Class Vintage but no GSB Class, just add it
+        ordered_columns.append(gsb_vintage_column)
+    
     # Make sure we haven't lost any columns
     for col in output_df.columns:
         if col not in ordered_columns and not col.startswith('Unnamed:'):

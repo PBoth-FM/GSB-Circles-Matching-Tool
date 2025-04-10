@@ -10,6 +10,7 @@ from modules.ui_components import (
     render_match_tab, 
     render_details_tab, 
     render_debug_tab,
+    render_demographics_tab,
     render_results_overview,
     render_circle_table,
     render_unmatched_table
@@ -55,8 +56,8 @@ def main():
     st.title("CirclesTool2")
     st.write("GSB Alumni Circle Matching Tool")
     
-    # Create tabs for navigation
-    tab1, tab2, tab3 = st.tabs(["Match", "Details", "Debug"])
+    # Create tabs for navigation, adding the Demographics tab
+    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Details", "Demographics", "Debug"])
     
     with tab1:
         # Use our custom match tab function instead of the imported one
@@ -64,8 +65,11 @@ def main():
         
     with tab2:
         render_details_tab()
-            
+    
     with tab3:
+        render_demographics_tab()
+            
+    with tab4:
         render_debug_tab()
 
 def run_optimization():

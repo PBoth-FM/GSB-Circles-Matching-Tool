@@ -1,7 +1,10 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import re
 
 def render_match_tab():
     """Render the main matching tab content"""
@@ -57,6 +60,266 @@ def render_details_tab():
 
     with detail_tab3:
         render_visualizations()
+
+def render_demographics_tab():
+    """Render the demographics analysis tab content"""
+    st.subheader("Demographics Analysis")
+    
+    # Check if we have results or processed data to work with
+    if ('results' not in st.session_state or st.session_state.results is None) and \
+       ('processed_data' not in st.session_state or st.session_state.processed_data is None):
+        st.info("Run the matching algorithm first to see demographic analysis.")
+        return
+    
+    # Get the data to work with - prefer results data if available, otherwise use processed data
+    if 'results' in st.session_state and st.session_state.results is not None:
+        data = st.session_state.results.copy()
+    else:
+        data = st.session_state.processed_data.copy()
+    
+    # Add region and match status filters
+    col1, col2 = st.columns(2)
+    
+    # Filter by region
+    regions = ["All"]
+    # Add region options if available 
+    if 'Derived_Region' in data.columns:
+        regions.extend(sorted(data['Derived_Region'].dropna().unique().tolist()))
+    elif 'Requested_Region' in data.columns:
+        regions.extend(sorted(data['Requested_Region'].dropna().unique().tolist()))
+    
+    with col1:
+        selected_region = st.selectbox("Filter by Region", regions)
+    
+    # Filter by match status if results are available
+    with col2:
+        match_options = ["All", "Matched", "Unmatched"]
+        selected_match = st.selectbox("Filter by Match Status", match_options)
+    
+    # Apply filters
+    filtered_data = data.copy()
+    
+    # Apply region filter
+    if selected_region != "All":
+        if 'Derived_Region' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['Derived_Region'] == selected_region]
+        elif 'Requested_Region' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['Requested_Region'] == selected_region]
+    
+    # Apply match status filter if results are available
+    if 'results' in st.session_state and selected_match != "All":
+        if selected_match == "Matched" and 'proposed_NEW_circles_id' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] != "UNMATCHED"]
+        elif selected_match == "Unmatched" and 'proposed_NEW_circles_id' in filtered_data.columns:
+            filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] == "UNMATCHED"]
+    
+    # Create tabs for different demographic views
+    demo_tab1, demo_tab2 = st.tabs(["Class Vintage", "Other Demographics"])
+    
+    with demo_tab1:
+        render_class_vintage_analysis(filtered_data)
+    
+    with demo_tab2:
+        st.info("Additional demographic analyses will be added in future updates.")
+
+def render_class_vintage_analysis(data):
+    """Render the Class Vintage analysis visualizations"""
+    st.subheader("Class Vintage Distribution")
+    
+    # Check if we have Class Vintage data
+    if 'Class_Vintage' not in data.columns:
+        st.warning("Class Vintage data is not available. Please ensure GSB Class data was included in the uploaded file.")
+        return
+    
+    # Create a copy to work with
+    df = data.copy()
+    
+    # Filter out rows with missing Class Vintage
+    df = df[df['Class_Vintage'].notna()]
+    
+    if len(df) == 0:
+        st.warning("No Class Vintage data is available after filtering.")
+        return
+    
+    # Define the proper order for Class Vintage categories
+    vintage_order = [
+        "01-10 yrs", "11-20 yrs", "21-30 yrs", 
+        "31-40 yrs", "41-50 yrs", "51-60 yrs", "61+ yrs"
+    ]
+    
+    # Count by Class Vintage
+    vintage_counts = df['Class_Vintage'].value_counts().reindex(vintage_order).fillna(0).astype(int)
+    
+    # Create a DataFrame for plotting
+    vintage_df = pd.DataFrame({
+        'Class Vintage': vintage_counts.index,
+        'Count': vintage_counts.values
+    })
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        vintage_df,
+        x='Class Vintage',
+        y='Count',
+        title='Distribution of Class Vintage',
+        text='Count',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis={'categoryorder': 'array', 'categoryarray': vintage_order},
+        xaxis_title="Class Vintage (Years Since Graduation)",
+        yaxis_title="Count of Participants"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Create a breakdown by Status
+    if 'Status' in df.columns:
+        st.subheader("Class Vintage by Status")
+        
+        # Create a crosstab of Class Vintage vs Status
+        status_vintage = pd.crosstab(
+            df['Class_Vintage'], 
+            df['Status'],
+            rownames=['Class Vintage'],
+            colnames=['Status']
+        ).reindex(vintage_order)
+        
+        # Add a Total column
+        status_vintage['Total'] = status_vintage.sum(axis=1)
+        
+        # Calculate percentages
+        for col in status_vintage.columns:
+            if col != 'Total':
+                status_vintage[f'{col} %'] = (status_vintage[col] / status_vintage['Total'] * 100).round(1)
+        
+        # Reorder columns to group counts with percentages
+        cols = []
+        for status in status_vintage.columns:
+            if status != 'Total' and not status.endswith(' %'):
+                cols.append(status)
+                cols.append(f'{status} %')
+        cols.append('Total')
+        
+        # Show the table
+        st.dataframe(status_vintage[cols], use_container_width=True)
+        
+        # Create a stacked bar chart
+        fig = px.bar(
+            status_vintage.reset_index(),
+            x='Class Vintage',
+            y=[col for col in status_vintage.columns if col != 'Total' and not col.endswith(' %')],
+            title='Class Vintage Distribution by Status',
+            barmode='stack',
+            color_discrete_sequence=['#8C1515', '#2E2D29']  # Stanford colors
+        )
+        
+        # Customize layout
+        fig.update_layout(
+            xaxis={'categoryorder': 'array', 'categoryarray': vintage_order},
+            xaxis_title="Class Vintage (Years Since Graduation)",
+            yaxis_title="Count of Participants",
+            legend_title="Status"
+        )
+        
+        # Show the plot
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Create a breakdown by Match Status if available
+    if 'proposed_NEW_circles_id' in df.columns:
+        st.subheader("Class Vintage by Match Status")
+        
+        # Create a match status column
+        df['Match Status'] = df['proposed_NEW_circles_id'].apply(
+            lambda x: "Unmatched" if x == "UNMATCHED" else "Matched"
+        )
+        
+        # Create a crosstab of Class Vintage vs Match Status
+        match_vintage = pd.crosstab(
+            df['Class_Vintage'], 
+            df['Match Status'],
+            rownames=['Class Vintage'],
+            colnames=['Match Status']
+        ).reindex(vintage_order)
+        
+        # Add a Total column
+        match_vintage['Total'] = match_vintage.sum(axis=1)
+        
+        # Calculate match rate percentage
+        if 'Matched' in match_vintage.columns and 'Unmatched' in match_vintage.columns:
+            match_vintage['Match Rate %'] = (match_vintage['Matched'] / match_vintage['Total'] * 100).round(1)
+        
+        # Show the table
+        st.dataframe(match_vintage, use_container_width=True)
+        
+        # Create a stacked bar chart
+        fig = px.bar(
+            match_vintage.reset_index(),
+            x='Class Vintage',
+            y=['Matched', 'Unmatched'],
+            title='Class Vintage Distribution by Match Status',
+            barmode='stack',
+            color_discrete_sequence=['#008566', '#8C1515']  # Green for matched, red for unmatched
+        )
+        
+        # Customize layout
+        fig.update_layout(
+            xaxis={'categoryorder': 'array', 'categoryarray': vintage_order},
+            xaxis_title="Class Vintage (Years Since Graduation)",
+            yaxis_title="Count of Participants",
+            legend_title="Match Status"
+        )
+        
+        # Show the plot
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Create a line chart for match rate
+        if 'Match Rate %' in match_vintage.columns:
+            # Create a line chart for match rate
+            fig = px.line(
+                match_vintage.reset_index(),
+                x='Class Vintage',
+                y='Match Rate %',
+                title='Match Rate by Class Vintage',
+                markers=True,
+                color_discrete_sequence=['#00505C']  # Stanford blue
+            )
+            
+            # Customize layout
+            fig.update_layout(
+                xaxis={'categoryorder': 'array', 'categoryarray': vintage_order},
+                xaxis_title="Class Vintage (Years Since Graduation)",
+                yaxis_title="Match Rate (%)",
+                yaxis=dict(range=[0, 100])  # Set y-axis range from 0 to 100%
+            )
+            
+            # Add a horizontal reference line at 80% (target match rate)
+            fig.add_shape(
+                type="line",
+                x0=0,
+                x1=1,
+                xref="paper",
+                y0=80,
+                y1=80,
+                line=dict(color="#8C1515", width=2, dash="dash")
+            )
+            
+            # Add annotation for the target line
+            fig.add_annotation(
+                x=0.5,
+                y=82,
+                xref="paper",
+                text="Target Match Rate (80%)",
+                showarrow=False,
+                font=dict(color="#8C1515")
+            )
+            
+            # Show the plot
+            st.plotly_chart(fig, use_container_width=True)
 
 def render_debug_tab():
     """Render the debug tab content"""
