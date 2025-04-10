@@ -28,6 +28,20 @@ def run_matching_algorithm(data, config):
     if debug_mode:
         status_counts = df['Status'].value_counts().to_dict()
         print(f"Input data status counts: {status_counts}")
+        
+        # Additional debugging for circle continuation issues
+        if 'Status' in df.columns and 'current_circles_id' in df.columns:
+            continuing_count = len(df[df['Status'] == 'CURRENT-CONTINUING'])
+            continuing_with_circles = len(df[(df['Status'] == 'CURRENT-CONTINUING') & df['current_circles_id'].notna()])
+            print(f"CURRENT-CONTINUING participants: {continuing_count}")
+            print(f"CURRENT-CONTINUING with circle IDs: {continuing_with_circles}")
+            
+            # Count unique existing circles
+            if continuing_with_circles > 0:
+                unique_circles = df[df['Status'] == 'CURRENT-CONTINUING']['current_circles_id'].dropna().unique()
+                print(f"Unique existing circles: {len(unique_circles)}")
+                # Check for column capitalization issues
+                print(f"Available columns: {df.columns.tolist()}")
     
     # Group participants by derived region (Current_Region for CURRENT-CONTINUING, Requested_Region for others)
     # If Derived_Region exists (added in data_processor.normalize_data), use it
@@ -128,28 +142,42 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     current_circle_members = {}  # Maps circle_id to list of members
     
     # Step 1: Identify existing circles if we're preserving them
-    if existing_circle_handling == 'preserve' and 'current_circles_id' in region_df.columns:
-        # Group participants by their current circle
-        for _, row in region_df.iterrows():
-            # First, check if it's a CURRENT-CONTINUING participant
-            if row.get('Status') == 'CURRENT-CONTINUING':
-                # They must have a current circle ID - this is required for CURRENT-CONTINUING
-                if pd.notna(row.get('current_circles_id')):
-                    circle_id = str(row['current_circles_id']).strip()
-                    if circle_id:
-                        if circle_id not in current_circle_members:
-                            current_circle_members[circle_id] = []
-                        current_circle_members[circle_id].append(row)
+    if existing_circle_handling == 'preserve':
+        # Check for current_circles_id column (case-insensitive to handle column mapping issues)
+        current_col = None
+        for col in region_df.columns:
+            if col.lower() == 'current_circles_id' or col == 'Current Circle ID':
+                current_col = col
+                break
+                
+        if current_col is None and debug_mode:
+            print(f"WARNING: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
+            
+        if current_col is not None:
+            if debug_mode:
+                print(f"Using column '{current_col}' for current circle IDs")
+                
+            # Group participants by their current circle
+            for _, row in region_df.iterrows():
+                # First, check if it's a CURRENT-CONTINUING participant
+                if row.get('Status') == 'CURRENT-CONTINUING':
+                    # They must have a current circle ID - this is required for CURRENT-CONTINUING
+                    if pd.notna(row.get(current_col)):
+                        circle_id = str(row[current_col]).strip()
+                        if circle_id:
+                            if circle_id not in current_circle_members:
+                                current_circle_members[circle_id] = []
+                            current_circle_members[circle_id].append(row)
+                        else:
+                            # They're CURRENT-CONTINUING but have an empty circle ID
+                            # This shouldn't happen per the spec, but log for debugging
+                            if debug_mode:
+                                print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
                     else:
-                        # They're CURRENT-CONTINUING but have an empty circle ID
+                        # They're CURRENT-CONTINUING but circle ID is null
                         # This shouldn't happen per the spec, but log for debugging
                         if debug_mode:
-                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
-                else:
-                    # They're CURRENT-CONTINUING but circle ID is null
-                    # This shouldn't happen per the spec, but log for debugging
-                    if debug_mode:
-                        print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
+                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
         
         # Evaluate each existing circle
         for circle_id, members in current_circle_members.items():
