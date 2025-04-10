@@ -19,14 +19,17 @@ def process_data(df):
     # Convert column names to standardized format
     processed_df.columns = [col.strip() for col in processed_df.columns]
     
-    # Fill NaN values appropriately
-    processed_df['first_choice_location'] = processed_df.get('first_choice_location', '').fillna('')
-    processed_df['first_choice_time'] = processed_df.get('first_choice_time', '').fillna('')
-    processed_df['second_choice_location'] = processed_df.get('second_choice_location', '').fillna('')
-    processed_df['second_choice_time'] = processed_df.get('second_choice_time', '').fillna('')
-    processed_df['third_choice_location'] = processed_df.get('third_choice_location', '').fillna('')
-    processed_df['third_choice_time'] = processed_df.get('third_choice_time', '').fillna('')
-    processed_df['host'] = processed_df.get('host', '').fillna('')
+    # Fill NaN values appropriately - using a safer approach to handle missing columns
+    for column in ['first_choice_location', 'first_choice_time', 
+                   'second_choice_location', 'second_choice_time',
+                   'third_choice_location', 'third_choice_time', 'host']:
+        # Check if the column exists in the DataFrame
+        if column in processed_df.columns:
+            # Fill NaN values with empty string
+            processed_df[column] = processed_df[column].fillna('')
+        else:
+            # Add the column with default empty strings if it doesn't exist
+            processed_df[column] = ''
     
     # Convert Encoded ID to string if it exists
     if 'Encoded ID' in processed_df.columns:
@@ -52,6 +55,10 @@ def normalize_data(df):
     Returns:
         DataFrame with normalized region and subregion data
     """
+    if df is None or not isinstance(df, pd.DataFrame):
+        # Handle the case where df might be a string or None
+        return df
+        
     normalized_df = df.copy()
     
     # Normalize regions
