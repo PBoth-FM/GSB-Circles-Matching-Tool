@@ -1,0 +1,1043 @@
+Input data status counts: {'CURRENT-CONTINUING': 860, 'NEW': 324}
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+DIRECT CONTINUATION: Found Current Circle ID column: 'Current_Circle_ID'
+DIRECT CONTINUATION: Found 859 CURRENT-CONTINUING participants with circle IDs
+DIRECT CONTINUATION: Found 129 distinct circles
+DIRECT CONTINUATION: Processing circle IP-ATL-1 with 11 members
+For circle IP-ATL-1, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 11 members to continuing circle IP-ATL-1
+  No co-leaders found for circle IP-ATL-1 - using default max total of 8
+  Currently has 11 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-AUS-01 with 9 members
+For circle IP-AUS-01, using day 'Saturday' and time 'Days'
+Formatted meeting time: 'Saturday (Days)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-AUS-01
+  No co-leaders found for circle IP-AUS-01 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-AUS-02 with 9 members
+For circle IP-AUS-02, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-AUS-02
+  No co-leaders found for circle IP-AUS-02 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-BOS-01 with 6 members
+For circle IP-BOS-01, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-BOS-01
+  No co-leaders found for circle IP-BOS-01 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-BOS-02 with 8 members
+For circle IP-BOS-02, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-BOS-02
+  No co-leaders found for circle IP-BOS-02 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-BOS-03 with 8 members
+For circle IP-BOS-03, using day 'Sunday' and time 'Evenings'
+Formatted meeting time: 'Sunday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-BOS-03
+  No co-leaders found for circle IP-BOS-03 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-BOS-04 with 8 members
+For circle IP-BOS-04, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-BOS-04
+  No co-leaders found for circle IP-BOS-04 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-BOS-05 with 7 members
+For circle IP-BOS-05, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-BOS-05
+  No co-leaders found for circle IP-BOS-05 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-BOS-06 with 6 members
+For circle IP-BOS-06, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-BOS-06
+  No co-leaders found for circle IP-BOS-06 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-BOS-07 with 7 members
+For circle IP-BOS-07, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-BOS-07
+  No co-leaders found for circle IP-BOS-07 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-CHI-01 with 8 members
+For circle IP-CHI-01, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-CHI-01
+  No co-leaders found for circle IP-CHI-01 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-CHI-02 with 5 members
+For circle IP-CHI-02, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-CHI-02
+  No co-leaders found for circle IP-CHI-02 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-CHI-03 with 8 members
+For circle IP-CHI-03, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-CHI-03
+  No co-leaders found for circle IP-CHI-03 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-CHI-04 with 7 members
+For circle IP-CHI-04, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-CHI-04
+  No co-leaders found for circle IP-CHI-04 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-CHI-05 with 5 members
+For circle IP-CHI-05, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-CHI-05
+  No co-leaders found for circle IP-CHI-05 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-EAB-01 with 8 members
+For circle IP-EAB-01, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-EAB-01
+  No co-leaders found for circle IP-EAB-01 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-EAB-02 with 1 members
+For circle IP-EAB-02, using day 'Sunday' and time 'Evenings'
+Formatted meeting time: 'Sunday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 1 members to continuing circle IP-EAB-02
+  No co-leaders found for circle IP-EAB-02 - using default max total of 8
+  Currently has 1 members, can accept 7 more
+DIRECT CONTINUATION: Processing circle IP-EAB-03 with 7 members
+For circle IP-EAB-03, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-EAB-03
+  No co-leaders found for circle IP-EAB-03 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-EAB-04 with 6 members
+For circle IP-EAB-04, using day 'Sunday' and time 'Days'
+Formatted meeting time: 'Sunday (Days)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-EAB-04
+  No co-leaders found for circle IP-EAB-04 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-EAB-05 with 10 members
+For circle IP-EAB-05, using day 'Wednesday' and time 'Days'
+Formatted meeting time: 'Wednesday (Days)'
+DIRECT CONTINUATION: Directly assigning 10 members to continuing circle IP-EAB-05
+  No co-leaders found for circle IP-EAB-05 - using default max total of 8
+  Currently has 10 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-EAB-06 with 6 members
+For circle IP-EAB-06, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-EAB-06
+  No co-leaders found for circle IP-EAB-06 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-EAB-07 with 5 members
+For circle IP-EAB-07, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-EAB-07
+  No co-leaders found for circle IP-EAB-07 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-HOU-01 with 7 members
+For circle IP-HOU-01, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-HOU-01
+  No co-leaders found for circle IP-HOU-01 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-HOU-02 with 3 members
+For circle IP-HOU-02, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 3 members to continuing circle IP-HOU-02
+  No co-leaders found for circle IP-HOU-02 - using default max total of 8
+  Currently has 3 members, can accept 5 more
+DIRECT CONTINUATION: Processing circle IP-LAX-01 with 7 members
+For circle IP-LAX-01, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-LAX-01
+  No co-leaders found for circle IP-LAX-01 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-LAX-02 with 6 members
+For circle IP-LAX-02, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-LAX-02
+  No co-leaders found for circle IP-LAX-02 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-LAX-03 with 9 members
+For circle IP-LAX-03, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-LAX-03
+  No co-leaders found for circle IP-LAX-03 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-LAX-04 with 5 members
+For circle IP-LAX-04, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-LAX-04
+  No co-leaders found for circle IP-LAX-04 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-LAX-05 with 5 members
+For circle IP-LAX-05, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-LAX-05
+  No co-leaders found for circle IP-LAX-05 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-LAX-06 with 8 members
+For circle IP-LAX-06, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-LAX-06
+  No co-leaders found for circle IP-LAX-06 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-LAX-07 with 9 members
+For circle IP-LAX-07, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-LAX-07
+  No co-leaders found for circle IP-LAX-07 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-LAX-08 with 6 members
+For circle IP-LAX-08, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-LAX-08
+  No co-leaders found for circle IP-LAX-08 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-LAX-09 with 8 members
+For circle IP-LAX-09, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-LAX-09
+  No co-leaders found for circle IP-LAX-09 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-LAX-10 with 7 members
+For circle IP-LAX-10, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-LAX-10
+  No co-leaders found for circle IP-LAX-10 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-LON-01 with 7 members
+For circle IP-LON-01, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-LON-01
+  No co-leaders found for circle IP-LON-01 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-LON-02 with 7 members
+For circle IP-LON-02, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-LON-02
+  No co-leaders found for circle IP-LON-02 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-LON-03 with 5 members
+For circle IP-LON-03, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-LON-03
+  No co-leaders found for circle IP-LON-03 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-LON-04 with 7 members
+For circle IP-LON-04, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-LON-04
+  No co-leaders found for circle IP-LON-04 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-LON-05 with 9 members
+For circle IP-LON-05, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-LON-05
+  No co-leaders found for circle IP-LON-05 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-MAR-01 with 5 members
+For circle IP-MAR-01, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-MAR-01
+  No co-leaders found for circle IP-MAR-01 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-MAR-02 with 5 members
+For circle IP-MAR-02, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-MAR-02
+  No co-leaders found for circle IP-MAR-02 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-MAR-03 with 7 members
+For circle IP-MAR-03, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-MAR-03
+  No co-leaders found for circle IP-MAR-03 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-MAR-04 with 6 members
+For circle IP-MAR-04, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-MAR-04
+  No co-leaders found for circle IP-MAR-04 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-MXC-01 with 8 members
+For circle IP-MXC-01, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-MXC-01
+  No co-leaders found for circle IP-MXC-01 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-NAP-01 with 10 members
+For circle IP-NAP-01, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 10 members to continuing circle IP-NAP-01
+  No co-leaders found for circle IP-NAP-01 - using default max total of 8
+  Currently has 10 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-NBO-01 with 9 members
+For circle IP-NBO-01, using day 'Varies' and time 'Days'
+Formatted meeting time: 'Varies (Days)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-NBO-01
+  No co-leaders found for circle IP-NBO-01 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-NYC-01 with 7 members
+For circle IP-NYC-01, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-NYC-01
+  No co-leaders found for circle IP-NYC-01 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-NYC-02 with 6 members
+For circle IP-NYC-02, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-02
+  No co-leaders found for circle IP-NYC-02 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-03 with 7 members
+For circle IP-NYC-03, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-NYC-03
+  No co-leaders found for circle IP-NYC-03 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-NYC-04 with 6 members
+For circle IP-NYC-04, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-04
+  No co-leaders found for circle IP-NYC-04 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-05 with 6 members
+For circle IP-NYC-05, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-05
+  No co-leaders found for circle IP-NYC-05 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-07 with 5 members
+For circle IP-NYC-07, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-NYC-07
+  No co-leaders found for circle IP-NYC-07 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-NYC-08 with 7 members
+For circle IP-NYC-08, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-NYC-08
+  No co-leaders found for circle IP-NYC-08 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-NYC-09 with 5 members
+For circle IP-NYC-09, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-NYC-09
+  No co-leaders found for circle IP-NYC-09 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-NYC-10 with 8 members
+For circle IP-NYC-10, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-NYC-10
+  No co-leaders found for circle IP-NYC-10 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-NYC-11 with 5 members
+For circle IP-NYC-11, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-NYC-11
+  No co-leaders found for circle IP-NYC-11 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-NYC-12 with 6 members
+For circle IP-NYC-12, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-12
+  No co-leaders found for circle IP-NYC-12 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-13 with 5 members
+For circle IP-NYC-13, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-NYC-13
+  No co-leaders found for circle IP-NYC-13 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-NYC-14 with 4 members
+For circle IP-NYC-14, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 4 members to continuing circle IP-NYC-14
+  No co-leaders found for circle IP-NYC-14 - using default max total of 8
+  Currently has 4 members, can accept 4 more
+DIRECT CONTINUATION: Processing circle IP-NYC-15 with 7 members
+For circle IP-NYC-15, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-NYC-15
+  No co-leaders found for circle IP-NYC-15 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-NYC-16 with 5 members
+For circle IP-NYC-16, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-NYC-16
+  No co-leaders found for circle IP-NYC-16 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-NYC-17 with 6 members
+For circle IP-NYC-17, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-17
+  No co-leaders found for circle IP-NYC-17 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-18 with 6 members
+For circle IP-NYC-18, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-18
+  No co-leaders found for circle IP-NYC-18 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-19 with 5 members
+For circle IP-NYC-19, using day 'Varies' and time 'Days'
+Formatted meeting time: 'Varies (Days)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-NYC-19
+  No co-leaders found for circle IP-NYC-19 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-NYC-20 with 6 members
+For circle IP-NYC-20, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-20
+  No co-leaders found for circle IP-NYC-20 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-21 with 6 members
+For circle IP-NYC-21, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-21
+  No co-leaders found for circle IP-NYC-21 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-22 with 6 members
+For circle IP-NYC-22, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-22
+  No co-leaders found for circle IP-NYC-22 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-NYC-24 with 6 members
+For circle IP-NYC-24, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-NYC-24
+  No co-leaders found for circle IP-NYC-24 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-PSA-01 with 8 members
+For circle IP-PSA-01, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-01
+  No co-leaders found for circle IP-PSA-01 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-02 with 6 members
+For circle IP-PSA-02, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-PSA-02
+  No co-leaders found for circle IP-PSA-02 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-PSA-03 with 9 members
+For circle IP-PSA-03, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-PSA-03
+  No co-leaders found for circle IP-PSA-03 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-04 with 8 members
+For circle IP-PSA-04, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-04
+  No co-leaders found for circle IP-PSA-04 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-05 with 7 members
+For circle IP-PSA-05, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-PSA-05
+  No co-leaders found for circle IP-PSA-05 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-PSA-06 with 7 members
+For circle IP-PSA-06, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-PSA-06
+  No co-leaders found for circle IP-PSA-06 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-PSA-07 with 5 members
+For circle IP-PSA-07, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-PSA-07
+  No co-leaders found for circle IP-PSA-07 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-PSA-08 with 5 members
+For circle IP-PSA-08, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-PSA-08
+  No co-leaders found for circle IP-PSA-08 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-PSA-09 with 5 members
+For circle IP-PSA-09, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-PSA-09
+  No co-leaders found for circle IP-PSA-09 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-PSA-10 with 8 members
+For circle IP-PSA-10, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-10
+  No co-leaders found for circle IP-PSA-10 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-11 with 8 members
+For circle IP-PSA-11, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-11
+  No co-leaders found for circle IP-PSA-11 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-12 with 6 members
+For circle IP-PSA-12, using day 'Wednesday' and time 'Days'
+Formatted meeting time: 'Wednesday (Days)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-PSA-12
+  No co-leaders found for circle IP-PSA-12 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-PSA-13 with 8 members
+For circle IP-PSA-13, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-13
+  No co-leaders found for circle IP-PSA-13 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-14 with 3 members
+For circle IP-PSA-14, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 3 members to continuing circle IP-PSA-14
+  No co-leaders found for circle IP-PSA-14 - using default max total of 8
+  Currently has 3 members, can accept 5 more
+DIRECT CONTINUATION: Processing circle IP-PSA-15 with 8 members
+For circle IP-PSA-15, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-15
+  No co-leaders found for circle IP-PSA-15 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-16 with 5 members
+For circle IP-PSA-16, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-PSA-16
+  No co-leaders found for circle IP-PSA-16 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-PSA-18 with 7 members
+For circle IP-PSA-18, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-PSA-18
+  No co-leaders found for circle IP-PSA-18 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-PSA-19 with 7 members
+For circle IP-PSA-19, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-PSA-19
+  No co-leaders found for circle IP-PSA-19 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-PSA-20 with 6 members
+For circle IP-PSA-20, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-PSA-20
+  No co-leaders found for circle IP-PSA-20 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-PSA-21 with 4 members
+For circle IP-PSA-21, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 4 members to continuing circle IP-PSA-21
+  No co-leaders found for circle IP-PSA-21 - using default max total of 8
+  Currently has 4 members, can accept 4 more
+DIRECT CONTINUATION: Processing circle IP-PSA-22 with 8 members
+For circle IP-PSA-22, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-PSA-22
+  No co-leaders found for circle IP-PSA-22 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-23 with 6 members
+For circle IP-PSA-23, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-PSA-23
+  No co-leaders found for circle IP-PSA-23 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-PSA-24 with 9 members
+For circle IP-PSA-24, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-PSA-24
+  No co-leaders found for circle IP-PSA-24 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-PSA-26 with 6 members
+For circle IP-PSA-26, using day 'M-F' and time 'Days'
+Formatted meeting time: 'M-F (Days)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-PSA-26
+  No co-leaders found for circle IP-PSA-26 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-SAN-01 with 8 members
+For circle IP-SAN-01, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SAN-01
+  No co-leaders found for circle IP-SAN-01 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SAN-02 with 8 members
+For circle IP-SAN-02, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SAN-02
+  No co-leaders found for circle IP-SAN-02 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SEA-01 with 9 members
+For circle IP-SEA-01, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-SEA-01
+  No co-leaders found for circle IP-SEA-01 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SEA-03 with 9 members
+For circle IP-SEA-03, using day 'Sunday' and time 'Days'
+Formatted meeting time: 'Sunday (Days)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-SEA-03
+  No co-leaders found for circle IP-SEA-03 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SFL-01 with 1 members
+For circle IP-SFL-01, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 1 members to continuing circle IP-SFL-01
+  No co-leaders found for circle IP-SFL-01 - using default max total of 8
+  Currently has 1 members, can accept 7 more
+DIRECT CONTINUATION: Processing circle IP-SFO-01 with 7 members
+For circle IP-SFO-01, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-SFO-01
+  No co-leaders found for circle IP-SFO-01 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-SFO-02 with 8 members
+For circle IP-SFO-02, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SFO-02
+  No co-leaders found for circle IP-SFO-02 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SFO-03 with 6 members
+For circle IP-SFO-03, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-SFO-03
+  No co-leaders found for circle IP-SFO-03 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-SFO-04 with 7 members
+For circle IP-SFO-04, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-SFO-04
+  No co-leaders found for circle IP-SFO-04 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-SFO-05 with 5 members
+For circle IP-SFO-05, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-SFO-05
+  No co-leaders found for circle IP-SFO-05 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-SFO-06 with 6 members
+For circle IP-SFO-06, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-SFO-06
+  No co-leaders found for circle IP-SFO-06 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-SFO-08 with 9 members
+For circle IP-SFO-08, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 9 members to continuing circle IP-SFO-08
+  No co-leaders found for circle IP-SFO-08 - using default max total of 8
+  Currently has 9 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SFO-10 with 7 members
+For circle IP-SFO-10, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-SFO-10
+  No co-leaders found for circle IP-SFO-10 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-SFO-12 with 8 members
+For circle IP-SFO-12, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SFO-12
+  No co-leaders found for circle IP-SFO-12 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SFO-13 with 3 members
+For circle IP-SFO-13, using day 'Monday' and time 'Evenings'
+Formatted meeting time: 'Monday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 3 members to continuing circle IP-SFO-13
+  No co-leaders found for circle IP-SFO-13 - using default max total of 8
+  Currently has 3 members, can accept 5 more
+DIRECT CONTINUATION: Processing circle IP-SFO-14 with 4 members
+For circle IP-SFO-14, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 4 members to continuing circle IP-SFO-14
+  No co-leaders found for circle IP-SFO-14 - using default max total of 8
+  Currently has 4 members, can accept 4 more
+DIRECT CONTINUATION: Processing circle IP-SFO-15 with 5 members
+For circle IP-SFO-15, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-SFO-15
+  No co-leaders found for circle IP-SFO-15 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-SFO-16 with 6 members
+For circle IP-SFO-16, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-SFO-16
+  No co-leaders found for circle IP-SFO-16 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-SFO-17 with 7 members
+For circle IP-SFO-17, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-SFO-17
+  No co-leaders found for circle IP-SFO-17 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-SFO-18 with 5 members
+For circle IP-SFO-18, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-SFO-18
+  No co-leaders found for circle IP-SFO-18 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-SFO-19 with 5 members
+For circle IP-SFO-19, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-SFO-19
+  No co-leaders found for circle IP-SFO-19 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-SFO-22 with 5 members
+For circle IP-SFO-22, using day 'Monday' and time 'Varies'
+Formatted meeting time: 'Monday (Varies)'
+DIRECT CONTINUATION: Directly assigning 5 members to continuing circle IP-SFO-22
+  No co-leaders found for circle IP-SFO-22 - using default max total of 8
+  Currently has 5 members, can accept 3 more
+DIRECT CONTINUATION: Processing circle IP-SFO-24 with 3 members
+For circle IP-SFO-24, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 3 members to continuing circle IP-SFO-24
+  No co-leaders found for circle IP-SFO-24 - using default max total of 8
+  Currently has 3 members, can accept 5 more
+DIRECT CONTINUATION: Processing circle IP-SFO-25 with 10 members
+For circle IP-SFO-25, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 10 members to continuing circle IP-SFO-25
+  No co-leaders found for circle IP-SFO-25 - using default max total of 8
+  Currently has 10 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SFO-26 with 8 members
+For circle IP-SFO-26, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SFO-26
+  No co-leaders found for circle IP-SFO-26 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SFO-27 with 7 members
+For circle IP-SFO-27, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-SFO-27
+  No co-leaders found for circle IP-SFO-27 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-SFO-28 with 7 members
+For circle IP-SFO-28, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-SFO-28
+  No co-leaders found for circle IP-SFO-28 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-SHA-01 with 14 members
+For circle IP-SHA-01, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 14 members to continuing circle IP-SHA-01
+  No co-leaders found for circle IP-SHA-01 - using default max total of 8
+  Currently has 14 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SIN-01 with 4 members
+For circle IP-SIN-01, using day 'Varies' and time 'Evenings'
+Formatted meeting time: 'Varies (Evenings)'
+DIRECT CONTINUATION: Directly assigning 4 members to continuing circle IP-SIN-01
+  No co-leaders found for circle IP-SIN-01 - using default max total of 8
+  Currently has 4 members, can accept 4 more
+DIRECT CONTINUATION: Processing circle IP-SPO-01 with 8 members
+For circle IP-SPO-01, using day 'Tuesday' and time 'Evenings'
+Formatted meeting time: 'Tuesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SPO-01
+  No co-leaders found for circle IP-SPO-01 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-SPO-02 with 8 members
+For circle IP-SPO-02, using day 'Varies' and time 'Varies'
+Formatted meeting time: 'Varies (Varies)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-SPO-02
+  No co-leaders found for circle IP-SPO-02 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-WDC-01 with 7 members
+For circle IP-WDC-01, using day 'Saturday' and time 'Days'
+Formatted meeting time: 'Saturday (Days)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-WDC-01
+  No co-leaders found for circle IP-WDC-01 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-WDC-02 with 6 members
+For circle IP-WDC-02, using day 'Wednesday' and time 'Evenings'
+Formatted meeting time: 'Wednesday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 6 members to continuing circle IP-WDC-02
+  No co-leaders found for circle IP-WDC-02 - using default max total of 8
+  Currently has 6 members, can accept 2 more
+DIRECT CONTINUATION: Processing circle IP-WDC-03 with 7 members
+For circle IP-WDC-03, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-WDC-03
+  No co-leaders found for circle IP-WDC-03 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-WDC-04 with 7 members
+For circle IP-WDC-04, using day 'Sunday' and time 'Days'
+Formatted meeting time: 'Sunday (Days)'
+DIRECT CONTINUATION: Directly assigning 7 members to continuing circle IP-WDC-04
+  No co-leaders found for circle IP-WDC-04 - using default max total of 8
+  Currently has 7 members, can accept 1 more
+DIRECT CONTINUATION: Processing circle IP-WDC-05 with 8 members
+For circle IP-WDC-05, using day 'Thursday' and time 'Evenings'
+Formatted meeting time: 'Thursday (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-WDC-05
+  No co-leaders found for circle IP-WDC-05 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Processing circle IP-WDC-06 with 8 members
+For circle IP-WDC-06, using day 'M-Th' and time 'Evenings'
+Formatted meeting time: 'M-Th (Evenings)'
+DIRECT CONTINUATION: Directly assigning 8 members to continuing circle IP-WDC-06
+  No co-leaders found for circle IP-WDC-06 - using default max total of 8
+  Currently has 8 members, can accept 0 more
+DIRECT CONTINUATION: Directly assigned 859 participants to 129 circles
+DIRECT CONTINUATION: 325 participants remaining for regular optimization
+DIRECT CONTINUATION: Remaining status counts: {'NEW': 324, 'CURRENT-CONTINUING': 1}
+Using Derived_Region for region grouping according to PRD 4.3.2
+Processing region: San Francisco
+Region San Francisco has 65 participants: {'NEW': 65}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 65}
+Total remaining participants: 65
+Region: San Francisco, Subregions: ['Russian Hill/Nob Hill/North Beach', 'Richmond/Sunset', 'Noe/Mission/Castro', 'Hayes/Nopa/Haight', 'Excelsior/Glen Park/Bernal', 'Presidio/Marina/Pacific Heights', 'Mid Market/SoMa', 'Mission Bay/Potrero'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 65 participants and 40 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 2201 incompatible pairs excluded
+Average compatible options per participant: 6.14
+WARNING: 9 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.87 seconds
+Processing region: nan
+Region nan has 0 participants: {}
+Processing region: New York
+Region New York has 54 participants: {'NEW': 54}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 54}
+Total remaining participants: 54
+Region: New York, Subregions: ['Williamsburg', 'Gramercy', 'CT', 'Upper East Side', 'Midtown West', 'Flatiron', 'Cobble Hill/Boerum Hill', 'Queens', 'Park Slope/Prospect Heights', 'Tribeca', 'Chelsea', 'Midtown East', 'Southern Manhattan', 'Kips Bay/Murray Hill', 'Brooklyn Heights/Downtown Brooklyn', 'Fort Greene', 'West Village', 'Westchester', 'Upper West Side'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 54 participants and 95 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 4810 incompatible pairs excluded
+Average compatible options per participant: 5.93
+WARNING: 6 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 2.11 seconds
+Processing region: Seattle
+Region Seattle has 9 participants: {'NEW': 8, 'CURRENT-CONTINUING': 1}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 1 CURRENT-CONTINUING participants, 0 with circle IDs
+WARNING: CURRENT-CONTINUING participant 54775253428 has null circle ID
+Remaining participants status counts: {'NEW': 8, 'CURRENT-CONTINUING': 1}
+Total remaining participants: 9
+Region: Seattle, Subregions: ['East Side (Bellevue/Issaquah/Redmond/etc.)', 'North of Downtown Seattle (University District/Green Lake/Ballard/etc.)', 'Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)', 'South of Downtown Seattle (Mt Baker/ West Seattle/ Columbia City/ etc.)'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 9 participants and 20 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 140 incompatible pairs excluded
+Average compatible options per participant: 4.44
+WARNING: 3 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.04 seconds
+Processing region: Peninsula
+Region Peninsula has 72 participants: {'NEW': 72}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 72}
+Total remaining participants: 72
+Region: Peninsula, Subregions: ['Los Altos Hills', 'Palo Alto', 'Sunnyvale', 'Mid-Peninsula', 'Mountain View/Los Altos', 'Menlo Park', 'Redwood Shores', 'Redwood City/San Carlos', 'San Mateo'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 72 participants and 45 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 2830 incompatible pairs excluded
+Average compatible options per participant: 5.69
+WARNING: 15 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.47 seconds
+Processing region: South Florida
+Region South Florida has 14 participants: {'NEW': 14}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 14}
+Total remaining participants: 14
+Region: South Florida, Subregions: ['West Palm Beach', 'Miami', 'Fort Lauderdale', 'Palm Beach'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 14 participants and 20 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 207 incompatible pairs excluded
+Average compatible options per participant: 5.21
+WARNING: 2 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.09 seconds
+Processing region: San Diego
+Region San Diego has 2 participants: {'NEW': 2}
+Processing region: Houston
+Region Houston has 3 participants: {'NEW': 3}
+Processing region: Boston
+Region Boston has 14 participants: {'NEW': 14}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 14}
+Total remaining participants: 14
+Region: Boston, Subregions: ['Boston', 'North of Boston', 'Northwest of Boston (e.g. Belmont/Lexington/Concord)', 'Brookline/Newton', 'West of Boston (e.g. Needham/Wellesley/Natick)', 'South of Boston', 'Cambridge/Somerville'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 14 participants and 35 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 407 incompatible pairs excluded
+Average compatible options per participant: 5.93
+WARNING: 2 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.10 seconds
+Processing region: Marin County
+Region Marin County has 11 participants: {'NEW': 11}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 11}
+Total remaining participants: 11
+Region: Marin County, Subregions: ['Marin County'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 11 participants and 5 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 34 incompatible pairs excluded
+Average compatible options per participant: 1.91
+WARNING: 6 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.04 seconds
+Processing region: Chicago
+Region Chicago has 11 participants: {'NEW': 11}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 11}
+Total remaining participants: 11
+Region: Chicago, Subregions: ['City - Northside (Lincoln Park/Lakeview)', 'City - Loop', 'North Shore Suburbs', 'City - Northwest/Central'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 11 participants and 20 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 150 incompatible pairs excluded
+Average compatible options per participant: 6.36
+WARNING: 2 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.07 seconds
+Processing region: None of these.
+Region None of these. has 1 participants: {'NEW': 1}
+Processing region: Virtual-Only Americas
+Region Virtual-Only Americas has 1 participants: {'NEW': 1}
+Processing region: Virtual-Only APAC+EMEA
+Region Virtual-Only APAC+EMEA has 1 participants: {'NEW': 1}
+Processing region: Nairobi
+Region Nairobi has 1 participants: {'NEW': 1}
+Processing region: Los Angeles
+Region Los Angeles has 11 participants: {'NEW': 11}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 11}
+Total remaining participants: 11
+Region: Los Angeles, Subregions: ['Brentwood/Santa Monica/Palisades/Malibu', 'Beverly Hills/Westwood', 'West Valley (W of 405)', 'South Bay', 'Playa Vista/Marina Del Rey/Culver City', 'The Valley (E of 405)', 'Mid City/Mid Wilshire'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 11 participants and 35 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 310 incompatible pairs excluded
+Average compatible options per participant: 6.82
+WARNING: 2 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.12 seconds
+Processing region: Austin
+Region Austin has 3 participants: {'NEW': 3}
+Processing region: Washington DC
+Region Washington DC has 14 participants: {'NEW': 14}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 14}
+Total remaining participants: 14
+Region: Washington DC, Subregions: ['Montgomery County MD', 'Northwest DC', 'Northern VA'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 14 participants and 15 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 145 incompatible pairs excluded
+Average compatible options per participant: 4.64
+WARNING: 5 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.07 seconds
+Processing region: East Bay
+Region East Bay has 3 participants: {'NEW': 3}
+Processing region: Sao Paulo
+Region Sao Paulo has 6 participants: {'NEW': 6}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 6}
+Total remaining participants: 6
+Region: Sao Paulo, Subregions: ['Sao Paulo'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+Creating optimization variables for 6 participants and 5 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 13 incompatible pairs excluded
+Average compatible options per participant: 2.83
+WARNING: 1 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.02 seconds
+Processing region: London
+Region London has 6 participants: {'NEW': 6}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 6}
+Total remaining participants: 6
+Region: London, Subregions: ['North', 'Southeast', 'West', 'Southwest', 'Central', 'East'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+
+==================== DEBUG EXAMPLE ====================
+Found example participant 50625303450 in region London
+  Status: NEW
+  Circle status: Unknown
+  Location preferences: 1=West, 2=, 3=
+  Time preferences: 1=Monday-friday (Days), 2=Monday-thursday (Evenings), 3=
+  Host preference: Sometimes
+=======================================================
+
+THIS IS THE REGION WHERE OUR TEST EXAMPLES ARE LOCATED!
+Creating optimization variables for 6 participants and 30 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 147 incompatible pairs excluded
+Average compatible options per participant: 5.50
+WARNING: 1 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.03 seconds
+Processing region: Mexico City
+Region Mexico City has 3 participants: {'NEW': 3}
+Processing region: Singapore
+Region Singapore has 12 participants: {'NEW': 12}
+Looking for circle ID column. Options: ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+Available columns: ['Status', 'Last (Family) Name', 'First (Given) Name', 'Encoded ID', 'Current_Region', 'Current_Subregion', 'Current_Circle_ID', 'Current Co-Leader?', 'Current/ Continuing Meeting Day', 'Current/ Continuing Meeting Time', 'GSB Degree', 'GSB Class Year', 'Requested_Region', 'first_choice_location', 'second_choice_location', 'third_choice_location', "If Can't Place In-Person, Open to Virtual-Only?", 'first_choice_time', 'second_choice_time', 'third_choice_time', 'Days & Times Additional Info', 'Employment Status', 'Industry Sector', 'Racial Identity', 'Gender Identity', 'Sexual Orientation', 'Relationship Status', 'Children', 'Special Needs?', 'host', '(Non CLs) Volunteering to Co-Lead?', 'Co-Leader Response: Meeting Format', 'Co-Leader Response: Hosts', 'co_leader_max_new_members', 'Co-Leader Response: Anything You are Looking for in New Members', 'Co-Leader Response: Day(s)', 'Co-Leader Response: Times', 'Co-Leader Response:  CL in 2025?', 'Completed Form? Y/P', 'Preferred Email', 'Home City', 'Home State', 'Home Country', 'Home Phone', 'Business City', 'Business State', 'Business Country', 'Business Phone', 'Mobile Phone', 'If already in 2 Circles, list both regions', 'If asking to join 2nd Circle, what is the 2nd region?', 'Additional Comments From Form', 'Region Edit Made by tar', 'Unnamed: 53', 'Unnamed: 54', 'Unnamed: 55', 'Unnamed: 56', 'Unnamed: 57', 'Unnamed: 58', 'Unnamed: 59', 'Unnamed: 60', 'Unnamed: 61', 'Unnamed: 62', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65', 'Unnamed: 66', 'Unnamed: 67', 'Unnamed: 68', 'Unnamed: 69', 'Unnamed: 70', 'Unnamed: 71', 'Unnamed: 72', 'Unnamed: 73', 'Unnamed: 74', 'Unnamed: 75', 'Unnamed: 76', 'Unnamed: 77', 'Unnamed: 78', 'Unnamed: 79', 'Unnamed: 80', 'Unnamed: 81', 'Unnamed: 82', 'Unnamed: 83', 'Unnamed: 84', 'Unnamed: 85', 'Unnamed: 86', 'Unnamed: 87', 'Unnamed: 88', 'Unnamed: 89', 'Unnamed: 90', 'Unnamed: 91', 'Unnamed: 92', 'Unnamed: 93', 'Unnamed: 94', 'Unnamed: 95', 'Unnamed: 96', 'Unnamed: 97', 'Unnamed: 98', 'Unnamed: 99', 'Unnamed: 100', 'Unnamed: 101', 'Unnamed: 102', 'Unnamed: 103', 'Unnamed: 104', 'Unnamed: 105', 'Unnamed: 106', 'Unnamed: 107', 'Unnamed: 108', 'Unnamed: 109', 'Unnamed: 110', 'Unnamed: 111', 'Unnamed: 112', 'Unnamed: 113', 'Unnamed: 114', 'Unnamed: 115', 'Unnamed: 116', 'Unnamed: 117', 'Unnamed: 118', 'Unnamed: 119', 'Unnamed: 120', 'Unnamed: 121', 'Unnamed: 122', 'Unnamed: 123', 'Unnamed: 124', 'Unnamed: 125', 'Unnamed: 126', 'Unnamed: 127', 'Unnamed: 128', 'Unnamed: 129', 'Unnamed: 130', 'Unnamed: 131', 'Unnamed: 132', 'Unnamed: 133', 'Unnamed: 134', 'Unnamed: 135', 'Unnamed: 136', 'Unnamed: 137', 'Unnamed: 138', 'Unnamed: 139', 'Unnamed: 140', 'Unnamed: 141', 'Unnamed: 142', 'Unnamed: 143', 'Unnamed: 144', 'Unnamed: 145', 'Unnamed: 146', 'Unnamed: 147', 'Unnamed: 148', 'Unnamed: 149', 'Unnamed: 150', 'Unnamed: 151', 'Unnamed: 152', 'Unnamed: 153', 'Unnamed: 154', 'Unnamed: 155', 'Unnamed: 156', 'Unnamed: 157', 'Unnamed: 158', 'Unnamed: 159', 'Unnamed: 160', 'Unnamed: 161', 'Unnamed: 162', 'Unnamed: 163', 'Unnamed: 164', 'Unnamed: 165', 'Unnamed: 166', 'Unnamed: 167', 'Unnamed: 168', 'Unnamed: 169', 'Unnamed: 170', 'Unnamed: 171', 'Unnamed: 172', 'Unnamed: 173', 'Unnamed: 174', 'Unnamed: 175', 'Unnamed: 176', 'Unnamed: 177', 'Unnamed: 178', 'Unnamed: 179', 'Unnamed: 180', 'Unnamed: 181', 'Unnamed: 182', 'Unnamed: 183', 'Unnamed: 184', 'Unnamed: 185', 'Unnamed: 186', 'Unnamed: 187', 'Unnamed: 188', 'Unnamed: 189', 'Unnamed: 190', 'Unnamed: 191', 'Unnamed: 192', 'Unnamed: 193', 'Unnamed: 194', 'Unnamed: 195', 'Unnamed: 196', 'Unnamed: 197', 'Unnamed: 198', 'Unnamed: 199', 'Unnamed: 200', 'Unnamed: 201', 'Unnamed: 202', 'Unnamed: 203', 'Unnamed: 204', 'Unnamed: 205', 'Unnamed: 206', 'Unnamed: 207', 'Unnamed: 208', 'Unnamed: 209', 'Unnamed: 210', 'Unnamed: 211', 'Unnamed: 212', 'Unnamed: 213', 'Raw_Status', 'GSB_Class_Numeric', 'Class_Vintage', 'Derived_Region', 'location_score', 'time_score', 'total_score']
+Using column 'Current_Circle_ID' for current circle IDs
+Found 0 CURRENT-CONTINUING participants, 0 with circle IDs
+Remaining participants status counts: {'NEW': 12}
+Total remaining participants: 12
+Region: Singapore, Subregions: ['Singapore'], Time slots: ['Monday-thursday (Evenings)', 'Saturday (Days)', 'Monday-friday (Days)', 'Sunday (Evenings)', 'Sunday (Days)']
+
+==================== DEBUG EXAMPLE ====================
+Found example participant 73177784103 in region Singapore
+  Status: NEW
+  Circle status: Unknown
+  Location preferences: 1=Singapore, 2=, 3=
+  Time preferences: 1=Monday-thursday (Evenings), 2=, 3=
+  Host preference: Sometimes
+=======================================================
+
+THIS IS THE REGION WHERE OUR TEST EXAMPLES ARE LOCATED!
+Creating optimization variables for 12 participants and 5 circle options
+Found 0 existing circles with available capacity
+Created compatibility constraints: 35 incompatible pairs excluded
+Average compatible options per participant: 2.08
+WARNING: 4 participants have fewer than 3 compatible circle options
+Optimization status: Optimal
+Optimization time: 0.05 seconds
+Processing region: Shanghai
+Region Shanghai has 2 participants: {'NEW': 2}
+Processing region: Napa-Sonoma
+Region Napa-Sonoma has 2 participants: {'NEW': 2}
+Processing region: Atlanta
+Region Atlanta has 2 participants: {'NEW': 2}
+Processing region: Peninsula or E. Bay
+Region Peninsula or E. Bay has 1 participants: {'NEW': 1}
+Matched 1111 out of 1183 participants (93.91%)

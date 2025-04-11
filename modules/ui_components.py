@@ -648,8 +648,11 @@ def render_debug_tab():
                 time_period_match = details1['time_period'] == details2['time_period']
                 time_period_message = "Time periods match" if time_period_match else "Time periods don't match"
             
-            # Calculate final compatibility
+            # Calculate final compatibility - The key issue is here
             day_match = len(common_days) > 0
+            # Print detailed debug to check day matching
+            print(f"Day match check: {details1['days']} vs {details2['days']} = {common_days}")
+            print(f"Day match result = {day_match}")
             final_match = day_match and time_period_match
             
             # Check compatibility using different methods
@@ -692,10 +695,49 @@ def render_debug_tab():
                     return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], time_part
                 
                 days = []
+                
+                # Special handling for "M-Th" format
+                if days_part == "M-Th":
+                    print(f"Found special format M-Th, expanding to full day names")
+                    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday'], time_part
+                
                 if '-' in days_part:
                     day_range = days_part.split('-')
                     start_day = day_range[0].strip()
                     end_day = day_range[1].strip()
+                    
+                    # Special abbreviation mappings
+                    day_abbreviations = {
+                        "m": "monday",
+                        "mon": "monday",
+                        "t": "tuesday",
+                        "tue": "tuesday",
+                        "tues": "tuesday",
+                        "w": "wednesday",
+                        "wed": "wednesday",
+                        "th": "thursday",
+                        "thur": "thursday",
+                        "thurs": "thursday",
+                        "f": "friday",
+                        "fri": "friday",
+                        "s": "saturday",
+                        "sa": "saturday",
+                        "sat": "saturday", 
+                        "su": "sunday",
+                        "sun": "sunday"
+                    }
+                    
+                    # Try to match abbreviations
+                    start_day_lower = start_day.lower()
+                    end_day_lower = end_day.lower()
+                    
+                    if start_day_lower in day_abbreviations:
+                        start_day_lower = day_abbreviations[start_day_lower]
+                        print(f"Mapped abbreviated start day {start_day} to {start_day_lower}")
+                        
+                    if end_day_lower in day_abbreviations:
+                        end_day_lower = day_abbreviations[end_day_lower]
+                        print(f"Mapped abbreviated end day {end_day} to {end_day_lower}")
                     
                     # Make sure start and end days are properly capitalized
                     all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -703,8 +745,8 @@ def render_debug_tab():
                     
                     try:
                         # Case-insensitive lookup
-                        start_idx = all_days_lower.index(start_day.lower())
-                        end_idx = all_days_lower.index(end_day.lower())
+                        start_idx = all_days_lower.index(start_day_lower)
+                        end_idx = all_days_lower.index(end_day_lower)
                         
                         # Use properly capitalized days
                         start_day = all_days[start_idx]

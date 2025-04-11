@@ -413,6 +413,12 @@ def is_time_compatible(time1, time2):
         
         days = []
         
+        # Special handling for "M-Th" format
+        if days_part == "M-Th":
+            print(f"Found special format M-Th, expanding to full day names")
+            days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
+            return days, time_period
+        
         # Handle day ranges with dashes (e.g., Monday-Thursday)
         if '-' in days_part:
             day_range = days_part.split('-')
@@ -423,15 +429,50 @@ def is_time_compatible(time1, time2):
             all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
             all_days_lower = [day.lower() for day in all_days]
             
+            # Special mappings for abbreviated formats
+            day_abbreviations = {
+                "m": "monday",
+                "mon": "monday",
+                "t": "tuesday",
+                "tue": "tuesday",
+                "tues": "tuesday",
+                "w": "wednesday",
+                "wed": "wednesday",
+                "th": "thursday",
+                "thur": "thursday",
+                "thurs": "thursday",
+                "f": "friday",
+                "fri": "friday",
+                "s": "saturday",
+                "sa": "saturday",
+                "sat": "saturday", 
+                "su": "sunday",
+                "sun": "sunday"
+            }
+            
+            # Try to match abbreviations
+            start_day_lower = start_day.lower()
+            end_day_lower = end_day.lower()
+            
+            if start_day_lower in day_abbreviations:
+                start_day_lower = day_abbreviations[start_day_lower]
+                print(f"Mapped abbreviated start day {start_day} to {start_day_lower}")
+                
+            if end_day_lower in day_abbreviations:
+                end_day_lower = day_abbreviations[end_day_lower]
+                print(f"Mapped abbreviated end day {end_day} to {end_day_lower}")
+            
             # Find indices for the range using case-insensitive comparison
             try:
-                start_idx = all_days_lower.index(start_day.lower())
-                end_idx = all_days_lower.index(end_day.lower())
+                start_idx = all_days_lower.index(start_day_lower)
+                end_idx = all_days_lower.index(end_day_lower)
                 
                 # Get all days in the range (inclusive) with proper capitalization
                 days = all_days[start_idx:end_idx+1]
+                print(f"Successfully expanded day range {start_day}-{end_day} to {days}")
             except ValueError:
                 # Fallback if day not recognized
+                print(f"Could not parse day range: {start_day}-{end_day}, using as-is")
                 days = [days_part]
         else:
             # Single day case - check capitalization
@@ -465,7 +506,43 @@ def is_time_compatible(time1, time2):
         return False
     
     # Check for day overlap - if any day from one preference is in the other
-    day_match = any(day in days2 for day in days1) or any(day in days1 for day in days2)
+    day_match = False
+    
+    # First check if any day from days1 is in days2
+    match1 = any(day in days2 for day in days1)
+    
+    # Then check if any day from days2 is in days1
+    match2 = any(day in days1 for day in days2)
+    
+    # Combine results
+    day_match = match1 or match2
+    
+    # Debug output to understand day matching
+    print(f"Day matching check between {days1} and {days2}: match1={match1}, match2={match2}, final={day_match}")
+    
+    # Special handling for weird day formats like "M-Th"
+    if not day_match:
+        # Handle legacy formats like "M-Th" 
+        if any(day_str == "M-Th" for day_str in [days1[0], days2[0]]):
+            print(f"Special case: M-Th found, treating as Monday-Thursday")
+            weekday_map = {
+                "M": "Monday",
+                "T": "Tuesday", 
+                "W": "Wednesday",
+                "Th": "Thursday",
+                "F": "Friday",
+                "Sa": "Saturday", 
+                "Su": "Sunday"
+            }
+            
+            if days1[0] == "M-Th":
+                expanded_days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
+                day_match = any(day in expanded_days for day in days2)
+            elif days2[0] == "M-Th":
+                expanded_days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
+                day_match = any(day in expanded_days for day in days1)
+                
+            print(f"After special M-Th handling: day_match = {day_match}")
     
     return day_match
 
