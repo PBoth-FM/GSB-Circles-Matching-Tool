@@ -382,28 +382,44 @@ def is_time_compatible(time1, time2):
     Returns:
         Boolean indicating if the time preferences are compatible
     """
-    # Debug output to track all steps
-    print(f"\n⏩ COMPATIBILITY CHECK between '{time1}' and '{time2}'")
+    # Only debug specific cases
+    important_pairs = [
+        # Circle IP-SIN-01 with time "Varies (Evenings)" and participant 73177784103
+        ("Varies (Evenings)", "Monday-Thursday (Evenings)"),
+        ("Monday-Thursday (Evenings)", "Varies (Evenings)"),
+        # Circle IP-LON-04 with time "Tuesday (Evenings)" and participant 50625303450
+        ("Tuesday (Evenings)", "Monday-Thursday (Evenings)"),
+        ("Monday-Thursday (Evenings)", "Tuesday (Evenings)")
+    ]
+    
+    is_important = (time1, time2) in important_pairs
+    
+    if is_important:
+        print(f"\n🔍 IMPORTANT COMPATIBILITY CHECK between '{time1}' and '{time2}'")
     
     # Handle None, NaN or empty strings
     if pd.isna(time1) or pd.isna(time2) or time1 == '' or time2 == '':
-        print(f"  ❌ INCOMPATIBLE - One or both inputs is empty or invalid")
+        if is_important:
+            print(f"  ❌ INCOMPATIBLE - One or both inputs is empty or invalid")
         return False
     
     # Standardize both time preferences
     std_time1 = standardize_time_preference(time1)
     std_time2 = standardize_time_preference(time2)
     
-    print(f"  Standardized to: '{std_time1}' and '{std_time2}'")
+    if is_important:
+        print(f"  Standardized to: '{std_time1}' and '{std_time2}'")
     
     # Direct string match after standardization?
     if std_time1 == std_time2:
-        print(f"  ✅ COMPATIBLE - Direct string match after standardization")
+        if is_important:
+            print(f"  ✅ COMPATIBLE - Direct string match after standardization")
         return True
     
     # Special handling for "Varies (Varies)" which is compatible with anything
     if "Varies (Varies)" in [std_time1, std_time2]:
-        print(f"  ✅ COMPATIBLE - One preference is 'Varies (Varies)' which matches anything")
+        if is_important:
+            print(f"  ✅ COMPATIBLE - One preference is 'Varies (Varies)' which matches anything")
         return True
     
     # Define helper functions for extracting time components
@@ -420,20 +436,24 @@ def is_time_compatible(time1, time2):
     day_part1, time_period1 = extract_time_components(std_time1)
     day_part2, time_period2 = extract_time_components(std_time2)
     
-    print(f"  Time periods: '{time_period1}' vs '{time_period2}'")
-    print(f"  Day parts: '{day_part1}' vs '{day_part2}'")
+    if is_important:
+        print(f"  Time periods: '{time_period1}' vs '{time_period2}'")
+        print(f"  Day parts: '{day_part1}' vs '{day_part2}'")
     
     # Check time period compatibility
     time_period_match = False
     if time_period1.lower() == 'varies' or time_period2.lower() == 'varies':
         time_period_match = True
-        print(f"  ✓ Time periods match: One is 'Varies' which matches any time period")
+        if is_important:
+            print(f"  ✓ Time periods match: One is 'Varies' which matches any time period")
     else:
         time_period_match = time_period1.lower() == time_period2.lower()
-        print(f"  {'✓' if time_period_match else '✗'} Time periods {'' if time_period_match else 'do not '}match")
+        if is_important:
+            print(f"  {'✓' if time_period_match else '✗'} Time periods {'' if time_period_match else 'do not '}match")
     
     if not time_period_match:
-        print(f"  ❌ INCOMPATIBLE - Time periods don't match")
+        if is_important:
+            print(f"  ❌ INCOMPATIBLE - Time periods don't match")
         return False
     
     # Extract days function with enhanced handling for all formats

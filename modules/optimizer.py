@@ -1173,13 +1173,22 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
                     from modules.data_processor import standardize_time_preference
                     std_time_slot = standardize_time_preference(time_slot)
-                    print(f"\nDEBUG - Checking compatibility for: Participant {p} with Circle {circle_id}")
+                    print(f"\n⚠️ DETAILED DEBUG - Checking compatibility for: Participant {p} with Circle {circle_id}")
                     print(f"  Circle details: Subregion={subregion}, Time={time_slot}, Standardized Time={std_time_slot}")
                     print(f"  Participant prefs: Locations={p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
                     print(f"  Participant original time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
-                    print(f"  Using is_time_compatible() function for time matching now")
-                    print(f"  Location match: {loc_match}, Time match: {time_match}")
-                    print(f"  Overall compatibility: {loc_match and time_match}")
+                    print(f"  Participant standardized time prefs: {p_time_prefs[0]}, {p_time_prefs[1]}, {p_time_prefs[2]}")
+                    
+                    # Check each individual time preference compatibilities in detail
+                    print(f"  Time compatibility check details:")
+                    print(f"    Pref 1: {p_row['first_choice_time']} compatible with {time_slot}? {is_time_compatible(p_row['first_choice_time'], time_slot)}")
+                    print(f"    Pref 2: {p_row['second_choice_time']} compatible with {time_slot}? {is_time_compatible(p_row['second_choice_time'], time_slot)}")
+                    print(f"    Pref 3: {p_row['third_choice_time']} compatible with {time_slot}? {is_time_compatible(p_row['third_choice_time'], time_slot)}")
+                    
+                    print(f"  Final results:")
+                    print(f"    Location match: {loc_match}")
+                    print(f"    Time match: {time_match}")
+                    print(f"    Overall compatibility: {loc_match and time_match}")
                 
                 # Log all compatibility checks when in debug mode
                 if debug_mode and (loc_match or time_match):
