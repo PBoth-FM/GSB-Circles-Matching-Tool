@@ -971,10 +971,20 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     if debug_mode:
         print(f"Creating optimization variables for {len(participants)} participants and {len(circle_options)} circle options")
+        print(f"Found {len(existing_circles)} existing circles with available capacity")
     
     # Create compatibility matrix to enforce matching only to preferred locations and times
     compatibility = {}
     optimization_context['location_time_pairs'] = [(opt[0], opt[1]) for opt in circle_options]
+    
+    # Map existing circles to their index in a list for variable creation
+    existing_circle_list = list(existing_circles.items())
+    existing_circle_ids = [circle_id for circle_id, _ in existing_circle_list]
+    
+    if debug_mode and existing_circle_list:
+        print(f"Existing circles available for optimization: {existing_circle_ids}")
+        for circle_id, circle_data in existing_circle_list:
+            print(f"  Circle {circle_id}: {circle_data.get('member_count', 0)} members, max_additions={circle_data.get('max_additions', 0)}")
     
     # Track compatible options for each participant
     participant_compatible_options = {}
@@ -1008,7 +1018,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             if is_compatible:
                 participant_compatible_options[p].append((subregion, time_slot))
     
-    # Create decision variables for all pairs
+    # Create decision variables for new circles
     x = pulp.LpVariable.dicts("assign", 
                              [(p, j) for p in participants for j in range(len(circle_options))],
                              cat=pulp.LpBinary)
@@ -1016,11 +1026,69 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Create circle activation variables: y[j] = 1 if circle j is formed
     y = pulp.LpVariable.dicts("circle", range(len(circle_options)), cat=pulp.LpBinary)
     
+    # Create decision variables for assigning participants to existing circles
+    z = {}
+    if existing_circle_list:
+        z = pulp.LpVariable.dicts("assign_existing", 
+                                [(p, e) for p in participants for e in range(len(existing_circle_list))],
+                                cat=pulp.LpBinary)
+        
+        if debug_mode:
+            print(f"Created {len(participants) * len(existing_circle_list)} variables for assigning participants to existing circles")
+    
     # Add compatibility constraints - force x[p,j] = 0 for incompatible pairs
     for p in participants:
         for j in range(len(circle_options)):
             if compatibility[(p, j)] == 0:
                 prob += x[p, j] == 0, f"Incompatible_match_{p}_{j}"
+                
+    # Create compatibility matrix for existing circles
+    existing_circle_compatibility = {}
+    if existing_circle_list:
+        for p in participants:
+            p_row = remaining_df[remaining_df['Encoded ID'] == p].iloc[0]
+            
+            for e in range(len(existing_circle_list)):
+                circle_id, circle_data = existing_circle_list[e]
+                subregion = circle_data['subregion']
+                time_slot = circle_data['meeting_time']
+                
+                # Check location compatibility
+                loc_match = (
+                    (p_row['first_choice_location'] == subregion) or 
+                    (p_row['second_choice_location'] == subregion) or 
+                    (p_row['third_choice_location'] == subregion)
+                )
+                
+                # Check time compatibility
+                time_match = (
+                    (p_row['first_choice_time'] == time_slot) or 
+                    (p_row['second_choice_time'] == time_slot) or 
+                    (p_row['third_choice_time'] == time_slot)
+                )
+                
+                # Both location and time must match for compatibility
+                is_compatible = (loc_match and time_match)
+                existing_circle_compatibility[(p, e)] = 1 if is_compatible else 0
+                
+                # Add compatibility constraint
+                if not is_compatible:
+                    prob += z[p, e] == 0, f"Incompatible_existing_match_{p}_{e}"
+                    
+        if debug_mode:
+            # Count compatible existing circle options per participant
+            compatible_existing_count = {}
+            for p in participants:
+                compatible_existing_count[p] = sum(1 for e in range(len(existing_circle_list)) 
+                                               if existing_circle_compatibility[(p, e)] == 1)
+            
+            total_compatible = sum(1 for v in existing_circle_compatibility.values() if v == 1)
+            print(f"Created existing circle compatibility constraints: {len(existing_circle_compatibility) - total_compatible} incompatible pairs excluded")
+            print(f"Average compatible existing circles per participant: {total_compatible / len(participants):.2f}")
+            
+            # Log participants with compatible existing circles
+            participants_with_existing_options = [p for p in participants if compatible_existing_count[p] > 0]
+            print(f"{len(participants_with_existing_options)} participants have at least one compatible existing circle")
                 
     # Add compatibility information to optimization context for unmatched reason determination
     optimization_context['compatibility_matrix'] = compatibility
