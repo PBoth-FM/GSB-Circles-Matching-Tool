@@ -1044,32 +1044,37 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 (p_row['third_choice_location'] == subregion)
             )
             
-            # Check time compatibility using standardized time formats
-            from modules.data_processor import standardize_time_preference
-            std_time_slot = standardize_time_preference(time_slot)
-            std_first = standardize_time_preference(p_row['first_choice_time'])
-            std_second = standardize_time_preference(p_row['second_choice_time'])
-            std_third = standardize_time_preference(p_row['third_choice_time'])
+            # Check time compatibility using our improved compatibility function
+            from modules.data_processor import is_time_compatible
             
             time_match = (
-                (std_first == std_time_slot) or 
-                (std_second == std_time_slot) or 
-                (std_third == std_time_slot)
+                is_time_compatible(p_row['first_choice_time'], time_slot) or 
+                is_time_compatible(p_row['second_choice_time'], time_slot) or 
+                is_time_compatible(p_row['third_choice_time'], time_slot)
             )
             
-            # Debug raw vs. standardized matching
-            if debug_mode and (
+            # Debug raw vs. is_time_compatible matching
+            direct_match = (
                 (p_row['first_choice_time'] == time_slot) or 
                 (p_row['second_choice_time'] == time_slot) or 
-                (p_row['third_choice_time'] == time_slot)) != time_match:
+                (p_row['third_choice_time'] == time_slot)
+            )
+            
+            if debug_mode and direct_match != time_match:
+                from modules.data_processor import standardize_time_preference
+                std_time_slot = standardize_time_preference(time_slot)
+                std_first = standardize_time_preference(p_row['first_choice_time'])
+                std_second = standardize_time_preference(p_row['second_choice_time'])
+                std_third = standardize_time_preference(p_row['third_choice_time'])
+                
                 print(f"\nNEW CIRCLE COMPATIBILITY DIFFERENCE detected:")
                 print(f"  Participant: {p}")
                 print(f"  Time slot: '{time_slot}' (std: '{std_time_slot}')")  
                 print(f"  Prefs: '{p_row['first_choice_time']}' (std: '{std_first}')")
                 print(f"         '{p_row['second_choice_time']}' (std: '{std_second}')")
                 print(f"         '{p_row['third_choice_time']}' (std: '{std_third}')")
-                print(f"  Raw match: {(p_row['first_choice_time'] == time_slot) or (p_row['second_choice_time'] == time_slot) or (p_row['third_choice_time'] == time_slot)}")
-                print(f"  Std match: {time_match}")
+                print(f"  Direct match: {direct_match}")
+                print(f"  is_time_compatible match: {time_match}")
             
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
@@ -1132,37 +1137,34 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     (p_row['third_choice_location'] == subregion)
                 )
                 
-                # Check time compatibility with standardized time formats - direct equality check
-                # This is more precise than the "in" check which can cause issues with substrings
-                time_match = (
-                    (standardized_time_slot == p_time_prefs[0]) or
-                    (standardized_time_slot == p_time_prefs[1]) or
-                    (standardized_time_slot == p_time_prefs[2])
-                )
+                # Check time compatibility using our improved compatibility function
+                from modules.data_processor import is_time_compatible
                 
-                # Extra debug check for differences between methods
-                if debug_mode and ((standardized_time_slot in p_time_prefs) != time_match):
-                    print(f"\nCRITICAL COMPATIBILITY DIFFERENCE for {p} and {circle_id}:")
-                    print(f"  Using 'in' operator: {standardized_time_slot in p_time_prefs}")
-                    print(f"  Using direct equality: {time_match}")
-                    print(f"  Circle time: '{standardized_time_slot}'")
-                    print(f"  Time prefs: {p_time_prefs}")
+                time_match = (
+                    is_time_compatible(p_row['first_choice_time'], time_slot) or 
+                    is_time_compatible(p_row['second_choice_time'], time_slot) or 
+                    is_time_compatible(p_row['third_choice_time'], time_slot)
+                )
                 
                 # For more specific debugging of our examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                    from modules.data_processor import standardize_time_preference
+                    std_time_slot = standardize_time_preference(time_slot)
                     print(f"\nDEBUG - Checking compatibility for: Participant {p} with Circle {circle_id}")
-                    print(f"  Circle details: Subregion={subregion}, Time={time_slot}, Standardized Time={standardized_time_slot}")
+                    print(f"  Circle details: Subregion={subregion}, Time={time_slot}, Standardized Time={std_time_slot}")
                     print(f"  Participant prefs: Locations={p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
                     print(f"  Participant original time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
-                    print(f"  Participant standardized time prefs: {p_time_prefs}")
+                    print(f"  Using is_time_compatible() function for time matching now")
                     print(f"  Location match: {loc_match}, Time match: {time_match}")
                     print(f"  Overall compatibility: {loc_match and time_match}")
                 
                 # Log all compatibility checks when in debug mode
                 if debug_mode and (loc_match or time_match):
+                    from modules.data_processor import standardize_time_preference
+                    std_time_slot = standardize_time_preference(time_slot)
                     print(f"Participant {p} and Circle {circle_id} compatibility check:")
                     print(f"  Location match: {loc_match} (circle: {subregion} vs. participant prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']})")
-                    print(f"  Time match: {time_match} (circle: {standardized_time_slot} vs. participant prefs: {p_time_prefs})")
+                    print(f"  Time match: {time_match} (circle: {time_slot})")
                     print(f"  Overall: {loc_match and time_match}")
                 
                 # Both location and time must match for compatibility
@@ -1675,18 +1677,14 @@ def calculate_preference_score(participant, subregion, time_slot):
     elif participant['third_choice_location'] == subregion:
         loc_score = 1
     
-    # Time preference scoring - standardize time formats first
-    from modules.data_processor import standardize_time_preference
-    std_time_slot = standardize_time_preference(time_slot)
-    std_first = standardize_time_preference(participant['first_choice_time'])
-    std_second = standardize_time_preference(participant['second_choice_time'])
-    std_third = standardize_time_preference(participant['third_choice_time'])
+    # Time preference scoring - use our is_time_compatible function
+    from modules.data_processor import is_time_compatible
     
-    if std_first == std_time_slot:
+    if is_time_compatible(participant['first_choice_time'], time_slot):
         time_score = 3
-    elif std_second == std_time_slot:
+    elif is_time_compatible(participant['second_choice_time'], time_slot):
         time_score = 2
-    elif std_third == std_time_slot:
+    elif is_time_compatible(participant['third_choice_time'], time_slot):
         time_score = 1
     
     # Total score
