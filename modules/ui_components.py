@@ -568,50 +568,116 @@ def render_debug_tab():
                         'days_part': days_part, 
                         'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
                         'time_period': time_period,
-                        'is_varies': True
+                        'is_varies': True,
+                        'is_range': False,
+                        'start_day': None,
+                        'end_day': None
                     }
+                
+                # Special handling for "M-Th" format
+                if days_part == "M-Th":
+                    return {
+                        'days_part': days_part,
+                        'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+                        'time_period': time_period,
+                        'is_range': True,
+                        'start_day': 'Monday',
+                        'end_day': 'Thursday',
+                        'is_varies': False
+                    }
+                
+                # Day abbreviation mappings
+                day_abbreviations = {
+                    "m": "monday",
+                    "mon": "monday",
+                    "t": "tuesday", 
+                    "tue": "tuesday",
+                    "tues": "tuesday",
+                    "w": "wednesday",
+                    "wed": "wednesday",
+                    "th": "thursday",
+                    "thur": "thursday",
+                    "thurs": "thursday",
+                    "f": "friday",
+                    "fri": "friday",
+                    "s": "saturday",
+                    "sa": "saturday",
+                    "sat": "saturday",
+                    "su": "sunday",
+                    "sun": "sunday"
+                }
                 
                 days = []
                 is_range = False
+                start_day = None
+                end_day = None
                 
                 # Handle day ranges with dashes (e.g., Monday-Thursday)
                 if '-' in days_part:
                     is_range = True
                     day_range = days_part.split('-')
-                    start_day = day_range[0].strip()
-                    end_day = day_range[1].strip() if len(day_range) > 1 else start_day
+                    start_day_raw = day_range[0].strip()
+                    end_day_raw = day_range[1].strip() if len(day_range) > 1 else start_day_raw
+                    
+                    # Convert to lowercase for matching
+                    start_day_lower = start_day_raw.lower()
+                    end_day_lower = end_day_raw.lower()
+                    
+                    # Try to map abbreviations
+                    if start_day_lower in day_abbreviations:
+                        start_day_lower = day_abbreviations[start_day_lower]
+                        
+                    if end_day_lower in day_abbreviations:
+                        end_day_lower = day_abbreviations[end_day_lower]
                     
                     # Define the ordering of days for range inclusion
                     all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    all_days_lower = [d.lower() for d in all_days]
                     
-                    # Find indices for the range
+                    # Find indices for the range using case-insensitive comparison
                     try:
-                        start_idx = all_days.index(start_day)
-                        end_idx = all_days.index(end_day)
+                        start_idx = all_days_lower.index(start_day_lower)
+                        end_idx = all_days_lower.index(end_day_lower)
+                        
+                        # Store properly capitalized days
+                        start_day = all_days[start_idx]
+                        end_day = all_days[end_idx]
                         
                         # Get all days in the range (inclusive)
                         days = all_days[start_idx:end_idx+1]
                     except ValueError:
                         # Fallback if day not recognized
                         days = [days_part]
-                        
-                    return {
-                        'days_part': days_part,
-                        'days': days,
-                        'time_period': time_period,
-                        'is_range': is_range,
-                        'start_day': start_day,
-                        'end_day': end_day
-                    }
+                        start_day = start_day_raw
+                        end_day = end_day_raw
                 else:
-                    # Single day case
-                    days = [days_part]
+                    # Single day case - handle abbreviations and case sensitivity
+                    day_lower = days_part.lower()
                     
+                    # Check for abbreviation
+                    if day_lower in day_abbreviations:
+                        day_lower = day_abbreviations[day_lower]
+                    
+                    # Look up proper capitalization
+                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    all_days_lower = [d.lower() for d in all_days]
+                    
+                    try:
+                        idx = all_days_lower.index(day_lower)
+                        days = [all_days[idx]]
+                        start_day = all_days[idx]
+                    except ValueError:
+                        days = [days_part]
+                        start_day = days_part
+                
                 return {
                     'days_part': days_part,
                     'days': days,
                     'time_period': time_period,
-                    'is_range': is_range
+                    'is_range': is_range,
+                    'start_day': start_day,
+                    'end_day': end_day,
+                    'is_varies': False
                 }
             
             # Get detailed components
@@ -699,6 +765,8 @@ def render_debug_tab():
             st.write("#### Day Extraction Demo:")
             
             def extract_days_demo(time_str):
+                """Simplified version of extract_days_and_period_demo specifically for UI display"""
+                # Standardize time preference
                 std_time = standardize_time_preference(time_str)
                 days_part = std_time.split('(')[0].strip()
                 time_part = std_time[std_time.find('(')+1:std_time.find(')')] if '(' in std_time else "Unknown"
@@ -707,43 +775,44 @@ def render_debug_tab():
                 if days_part.lower() == 'varies':
                     return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], time_part
                 
-                days = []
-                
                 # Special handling for "M-Th" format
                 if days_part == "M-Th":
                     print(f"Found special format M-Th, expanding to full day names")
                     return ['Monday', 'Tuesday', 'Wednesday', 'Thursday'], time_part
                 
+                # Day abbreviation mappings - must match the one in is_time_compatible
+                day_abbreviations = {
+                    "m": "monday",
+                    "mon": "monday",
+                    "t": "tuesday",
+                    "tue": "tuesday",
+                    "tues": "tuesday",
+                    "w": "wednesday",
+                    "wed": "wednesday",
+                    "th": "thursday",
+                    "thur": "thursday",
+                    "thurs": "thursday",
+                    "f": "friday",
+                    "fri": "friday",
+                    "s": "saturday",
+                    "sa": "saturday",
+                    "sat": "saturday", 
+                    "su": "sunday",
+                    "sun": "sunday"
+                }
+                
+                # Handle day ranges
+                days = []
                 if '-' in days_part:
                     day_range = days_part.split('-')
                     start_day = day_range[0].strip()
                     end_day = day_range[1].strip()
                     
-                    # Special abbreviation mappings
-                    day_abbreviations = {
-                        "m": "monday",
-                        "mon": "monday",
-                        "t": "tuesday",
-                        "tue": "tuesday",
-                        "tues": "tuesday",
-                        "w": "wednesday",
-                        "wed": "wednesday",
-                        "th": "thursday",
-                        "thur": "thursday",
-                        "thurs": "thursday",
-                        "f": "friday",
-                        "fri": "friday",
-                        "s": "saturday",
-                        "sa": "saturday",
-                        "sat": "saturday", 
-                        "su": "sunday",
-                        "sun": "sunday"
-                    }
-                    
-                    # Try to match abbreviations
+                    # Convert to lowercase for case-insensitive matching
                     start_day_lower = start_day.lower()
                     end_day_lower = end_day.lower()
                     
+                    # Map abbreviations if needed
                     if start_day_lower in day_abbreviations:
                         start_day_lower = day_abbreviations[start_day_lower]
                         print(f"Mapped abbreviated start day {start_day} to {start_day_lower}")
@@ -752,37 +821,41 @@ def render_debug_tab():
                         end_day_lower = day_abbreviations[end_day_lower]
                         print(f"Mapped abbreviated end day {end_day} to {end_day_lower}")
                     
-                    # Make sure start and end days are properly capitalized
+                    # Define day ordering for range extraction
                     all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                     all_days_lower = [day.lower() for day in all_days]
                     
                     try:
-                        # Case-insensitive lookup
+                        # Find indices using lowercase comparison
                         start_idx = all_days_lower.index(start_day_lower)
                         end_idx = all_days_lower.index(end_day_lower)
                         
-                        # Use properly capitalized days
-                        start_day = all_days[start_idx]
-                        end_day = all_days[end_idx]
-                        
+                        # Extract all days in the range
                         days = all_days[start_idx:end_idx+1]
-                        
-                        # Debug output to check day range extraction
                         print(f"Extracting day range: {start_day}-{end_day} -> {days}")
                     except ValueError:
+                        # Fallback if day names not recognized
                         days = [days_part]
-                        print(f"Error parsing days: {days_part} - could not find day in list")
+                        print(f"Error parsing day range: {days_part}")
                 else:
-                    # Single day - check capitalization
+                    # Single day case
+                    day_lower = days_part.lower()
+                    
+                    # Check for abbreviation
+                    if day_lower in day_abbreviations:
+                        day_lower = day_abbreviations[day_lower]
+                        print(f"Mapped abbreviated day {days_part} to {day_lower}")
+                    
+                    # Properly capitalize the day name
                     all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
                     all_days_lower = [day.lower() for day in all_days]
                     
                     try:
-                        # Case-insensitive lookup for single day
-                        day_idx = all_days_lower.index(days_part.lower())
-                        days = [all_days[day_idx]]  # Use properly capitalized version
+                        idx = all_days_lower.index(day_lower)
+                        days = [all_days[idx]]
                     except ValueError:
-                        days = [days_part]  # Keep as is if not a recognized day
+                        days = [days_part]
+                        print(f"Could not normalize day: {days_part}")
                 
                 return days, time_part
             
