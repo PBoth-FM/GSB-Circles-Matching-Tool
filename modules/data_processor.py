@@ -301,7 +301,7 @@ def standardize_time_preference(time_pref):
         time_pref: Time preference string
         
     Returns:
-        Standardized time preference string
+        Standardized time preference string with PLURAL time formats (Evenings, Days)
     """
     if pd.isna(time_pref) or time_pref == '':
         return ''
@@ -328,13 +328,17 @@ def standardize_time_preference(time_pref):
         'sun': 'Sunday'
     }
     
+    # Updated time mapping to use PLURAL forms (Evenings, Days) for consistency
     time_mapping = {
-        'morning': 'Morning',
-        'afternoon': 'Afternoon',
-        'evening': 'Evening',
-        'evenings': 'Evening',
-        'day': 'Day',
-        'days': 'Day'
+        'morning': 'Days',
+        'afternoon': 'Days',
+        'evening': 'Evenings',  # Singular to plural
+        'evenings': 'Evenings',
+        'day': 'Days',  # Singular to plural
+        'days': 'Days',
+        'daytime': 'Days',
+        'night': 'Evenings',
+        'daylight': 'Days'
     }
     
     # Check if the pattern is "Day (Time)"
@@ -348,9 +352,23 @@ def standardize_time_preference(time_pref):
         standardized_day = day_mapping.get(day_part, day_part.capitalize())
         standardized_time = time_mapping.get(time_part, time_part.capitalize())
         
+        # If time part wasn't found in mapping, check if it's a singular that needs pluralizing
+        if standardized_time == time_part.capitalize():
+            if standardized_time == 'Evening':
+                standardized_time = 'Evenings'
+            elif standardized_time == 'Day':
+                standardized_time = 'Days'
+        
         return f"{standardized_day} ({standardized_time})"
     
-    # If no pattern, just return as is with first letter capitalized
+    # For patterns without parentheses, try to identify and standardize time references
+    lower_pref = time_pref.lower()
+    if 'evening' in lower_pref:
+        return time_pref.replace('evening', 'Evenings').replace('Evening', 'Evenings')
+    elif 'day' in lower_pref and 'day' != lower_pref:
+        return time_pref.replace('day', 'Days').replace('Day', 'Days')
+        
+    # If no specific pattern is found, just capitalize and return
     return time_pref.capitalize()
 
 def calculate_preference_scores(df):

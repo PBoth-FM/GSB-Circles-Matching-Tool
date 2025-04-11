@@ -1204,25 +1204,23 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 # Calculate preference score for this assignment
                 score = calculate_preference_score(p_row, subregion, time_slot)
                 
-                # More substantial bonus (1.5) for assigning to existing circles to actively prioritize filling existing circles
-                # This helps ensure existing circles get filled before new ones are created
-                existing_circle_obj += (score + 1.5) * z[p, e]
+                # Small bonus (0.1) for assigning to existing circles to slightly prefer using existing circles
+                # This is a minimal bonus to break ties, not to override regular preference matching
+                existing_circle_obj += (score + 0.1) * z[p, e]
                 
                 # Debug our specific examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
                     print(f"\nDEBUG - Setting objective for: Participant {p} with Circle {circle_id}")
-                    print(f"  Base score: {score}, Total score with bonus: {score + 1.5}")
+                    print(f"  Base score: {score}, Total score with bonus: {score + 0.1}")
     
     # Primary objective: maximize number of matched participants (1000 points each)
     # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
-    # Give a big bonus (3.0) to assigning participants to existing circles to strongly prioritize filling them first
-    existing_circle_bonus = 3.0
+    # All participants count the same whether assigned to new or existing circles (no bonus)
     
-    # For existing circles, we give a combined bonus of points per participant PLUS the existing circle bonus
     if existing_circle_list:
         match_obj = 1000 * (
             pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options))) + 
-            pulp.lpSum((1 + existing_circle_bonus) * z[p, e] for p in participants for e in range(len(existing_circle_list)))
+            pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list)))
         )
     else:
         match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
