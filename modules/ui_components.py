@@ -985,7 +985,16 @@ def render_participant_details():
             with col2:
                 st.write("**Host Status:**", participant.get('host', 'N/A'))
                 st.write("**Circle Assignment:**", participant.get('proposed_NEW_circles_id', 'N/A'))
-
+                
+                # Show co-leader preferences if the participant is a co-leader
+                if participant.get('Current_Co_Leader', '').lower() == 'yes':
+                    co_leader_max = participant.get('co_leader_max_new_members', 'Not specified')
+                    st.write("**Co-Leader Max New Members:**", co_leader_max)
+                
+                # Show max_additions value if assigned to a circle
+                if participant.get('proposed_NEW_circles_id', 'UNMATCHED') != 'UNMATCHED' and 'max_additions' in participant:
+                    st.write("**Circle Max Additions:**", participant.get('max_additions', 'Not specified'))
+                
                 if participant.get('proposed_NEW_circles_id', 'UNMATCHED') == 'UNMATCHED':
                     st.write("**Unmatched Reason:**", participant.get('unmatched_reason', 'N/A'))
 
