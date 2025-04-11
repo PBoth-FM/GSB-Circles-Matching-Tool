@@ -430,6 +430,12 @@ def is_time_compatible(time1, time2):
         day_part = parts[0].strip()
         time_period = parts[1].replace(')', '').strip() if len(parts) > 1 else ''
         
+        # Special debug for specific time preferences we're having issues with
+        if (day_part == 'Varies' and time_period == 'Evenings') or \
+           (day_part == 'Monday-Thursday' and time_period == 'Evenings') or \
+           (day_part == 'Tuesday' and time_period == 'Evenings'):
+            print(f"DEBUG: Extracted '{day_part}' and '{time_period}' from '{time_str}'")
+        
         return day_part, time_period
     
     # Extract day parts and time periods
@@ -486,12 +492,14 @@ def is_time_compatible(time1, time2):
         
         # Special case: Varies matches all days
         if day_part.lower() == 'varies':
-            print(f"    Day part 'Varies' expands to all days of the week")
+            if is_important:
+                print(f"    Day part 'Varies' expands to all days of the week")
             return all_days
             
         # Special case: M-Th format 
         if day_part == 'M-Th':
-            print(f"    Day part 'M-Th' expands to Monday through Thursday")
+            if is_important:
+                print(f"    Day part 'M-Th' expands to Monday through Thursday")
             return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
             
         # Handle day ranges with dash notation
@@ -505,11 +513,13 @@ def is_time_compatible(time1, time2):
             # Try to map abbreviations to full day names
             if start_day in abbr_map:
                 start_day = abbr_map[start_day]
-                print(f"    Mapped abbreviation {day_range[0].strip()} to {start_day}")
+                if is_important:
+                    print(f"    Mapped abbreviation {day_range[0].strip()} to {start_day}")
                 
             if end_day in abbr_map:
                 end_day = abbr_map[end_day]
-                print(f"    Mapped abbreviation {day_range[1].strip()} to {end_day}")
+                if is_important:
+                    print(f"    Mapped abbreviation {day_range[1].strip()} to {end_day}")
             
             # Get indices for range lookup
             try:
@@ -518,9 +528,11 @@ def is_time_compatible(time1, time2):
                 
                 # Extract the range with proper capitalization
                 days = all_days[start_idx:end_idx+1]
-                print(f"    Day range {day_range[0].strip()}-{day_range[1].strip()} expands to {days}")
+                if is_important:
+                    print(f"    Day range {day_range[0].strip()}-{day_range[1].strip()} expands to {days}")
             except ValueError:
-                print(f"    Could not parse day range {day_part}, using as-is")
+                if is_important:
+                    print(f"    Could not parse day range {day_part}, using as-is")
                 days = [day_part]
         else:
             # Single day - handle abbreviations and capitalization
@@ -529,16 +541,19 @@ def is_time_compatible(time1, time2):
             # Check for abbreviation
             if day_lower in abbr_map:
                 day_lower = abbr_map[day_lower]
-                print(f"    Mapped abbreviation {day_part} to {day_lower}")
+                if is_important:
+                    print(f"    Mapped abbreviation {day_part} to {day_lower}")
             
             # Look up proper capitalization
             try:
                 idx = all_days_lower.index(day_lower)
                 days = [all_days[idx]]
-                print(f"    Normalized day {day_part} to {days[0]}")
+                if is_important:
+                    print(f"    Normalized day {day_part} to {days[0]}")
             except ValueError:
                 days = [day_part]
-                print(f"    Could not normalize day {day_part}, using as-is")
+                if is_important:
+                    print(f"    Could not normalize day {day_part}, using as-is")
                 
         return days
     
@@ -546,19 +561,23 @@ def is_time_compatible(time1, time2):
     days1 = extract_days(day_part1)
     days2 = extract_days(day_part2)
     
-    print(f"  Expanded days: {days1} vs {days2}")
+    if is_important:
+        print(f"  Expanded days: {days1} vs {days2}")
     
     # Check for day overlap
     overlap = False
     common_days = set(days1).intersection(set(days2))
     if common_days:
         overlap = True
-        print(f"  ✓ Days overlap: Common days are {sorted(common_days)}")
+        if is_important:
+            print(f"  ✓ Days overlap: Common days are {sorted(common_days)}")
     else:
-        print(f"  ✗ No overlapping days found")
+        if is_important:
+            print(f"  ✗ No overlapping days found")
         
     result = time_period_match and overlap
-    print(f"  {'✅' if result else '❌'} FINAL RESULT: {'' if result else 'IN'}COMPATIBLE - Time periods {'do not ' if not time_period_match else ''}match and days {'do not ' if not overlap else ''}overlap")
+    if is_important:
+        print(f"  {'✅' if result else '❌'} FINAL RESULT: {'' if result else 'IN'}COMPATIBLE - Time periods {'do not ' if not time_period_match else ''}match and days {'do not ' if not overlap else ''}overlap")
     
     return result
 

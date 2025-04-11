@@ -201,6 +201,8 @@ def run_matching_algorithm(data, config):
                             # If first valid value or smaller than previous minimum
                             if max_additions is None or int_value < max_additions:
                                 max_additions = int_value
+                                if debug_mode and circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                                    print(f"  Set max_additions to {int_value} based on co-leader preference for circle {circle_id}")
                         except (ValueError, TypeError):
                             # Not a valid number, ignore
                             if debug_mode:
