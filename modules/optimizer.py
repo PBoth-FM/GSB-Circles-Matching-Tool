@@ -642,6 +642,17 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         'max_additions': final_max_additions
                     }
                     
+                    # Special extensive debug for our example circles
+                    if circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                        print(f"\n🔍 CRITICAL DEBUG FOR CIRCLE {circle_id}:")
+                        print(f"  Current members: {len(members)}")
+                        print(f"  Max additions set to: {final_max_additions}")
+                        print(f"  Meeting time: {formatted_meeting_time}")
+                        print(f"  Is determining max_additions - has co-leader: {has_co_leader}")
+                        print(f"  Is determining max_additions - has 'None' preference: {has_none_preference}")
+                        print(f"  Is determining max_additions - explicit max_additions value: {max_additions}")
+                        print(f"  Rules applied: {'Co-leader None preference' if has_none_preference else 'Co-leader explicit value' if max_additions is not None else 'Default max total of 8'}")
+                    
                     # Per PRD: Small circles (2-4 members) need to grow to be viable
                     if len(members) < min_circle_size:
                         small_circles[circle_id] = circle_data
