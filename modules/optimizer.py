@@ -974,22 +974,30 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         if p_id in remaining_df['Encoded ID'].values:
             has_examples = True
             p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
-            print(f"\nDEBUG - Found example participant {p_id} in region {region}")
+            print(f"\n==================== DEBUG EXAMPLE ====================")
+            print(f"Found example participant {p_id} in region {region}")
+            print(f"  Status: {p_row.get('Status', 'Unknown')}")
+            print(f"  Circle status: {p_row.get('Circle Status', 'Unknown')}")
             print(f"  Location preferences: 1={p_row['first_choice_location']}, 2={p_row['second_choice_location']}, 3={p_row['third_choice_location']}")
             print(f"  Time preferences: 1={p_row['first_choice_time']}, 2={p_row['second_choice_time']}, 3={p_row['third_choice_time']}")
+            print(f"  Host preference: {p_row.get('host', 'Unknown')}")
+            print(f"=======================================================")
     
     for c_id in example_circles:
         if c_id in existing_circles:
             has_examples = True
             circle_data = existing_circles[c_id]
-            print(f"\nDEBUG - Found example circle {c_id} in region {region}")
+            print(f"\n==================== DEBUG EXAMPLE ====================")
+            print(f"Found example circle {c_id} in region {region}")
             print(f"  Subregion: {circle_data['subregion']}")
             print(f"  Meeting time: {circle_data['meeting_time']}")
             print(f"  Member count: {circle_data['member_count']}")
             print(f"  Max additions: {circle_data.get('max_additions', 0)}")
+            print(f"  Circle members: {circle_data.get('members', [])}")
+            print(f"=======================================================")
     
     if has_examples:
-        print("\nThis is the region where our test examples are located!")
+        print("\nTHIS IS THE REGION WHERE OUR TEST EXAMPLES ARE LOCATED!")
     
     # Create decision variables: x[i, j] = 1 if participant i is assigned to circle j
     # Must use remaining_df here, not region_df to avoid including already processed participants
@@ -1207,9 +1215,17 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Primary objective: maximize number of matched participants (1000 points each)
     # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
-    match_obj = 1000 * (pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options))) + 
-                        (pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list))) 
-                         if existing_circle_list else 0))
+    # Give a big bonus (3.0) to assigning participants to existing circles to strongly prioritize filling them first
+    existing_circle_bonus = 3.0
+    
+    # For existing circles, we give a combined bonus of points per participant PLUS the existing circle bonus
+    if existing_circle_list:
+        match_obj = 1000 * (
+            pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options))) + 
+            pulp.lpSum((1 + existing_circle_bonus) * z[p, e] for p in participants for e in range(len(existing_circle_list)))
+        )
+    else:
+        match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
     
     # Combined objective
     full_obj_expr = match_obj + obj_expr + existing_circle_obj
@@ -1295,6 +1311,25 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 # Debug: count compatible participants for this circle
                 compatible_count = sum(1 for p in participants if existing_circle_compatibility.get((p, e), 0) == 1)
                 print(f"    {compatible_count} compatible participants available for this circle")
+                
+                # Print example participants if they're compatible with this circle
+                for p_id in ['73177784103', '50625303450']:
+                    if p_id in participants and existing_circle_compatibility.get((p_id, e), 0) == 1:
+                        print(f"    EXAMPLE: Participant {p_id} is compatible with {circle_id}")
+                        
+                # Debug: print solution variable values after the model is solved
+                if prob.status == pulp.LpStatusOptimal:
+                    example_assignments = []
+                    for p_id in ['73177784103', '50625303450']:
+                        if p_id in participants and (p_id, e) in z:
+                            val = z[p_id, e].value()
+                            is_assigned = abs(val - 1) < 1e-5 if val is not None else False
+                            example_assignments.append((p_id, is_assigned, val))
+                    
+                    if example_assignments:
+                        print(f"    SOLUTION STATUS for {circle_id}:")
+                        for p_id, is_assigned, val in example_assignments:
+                            print(f"      Participant {p_id}: assigned={is_assigned}, value={val}")
             
         for e in range(len(existing_circle_list)):
             circle_id, circle_data = existing_circle_list[e]
@@ -1319,6 +1354,15 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if new_members:
                     print(f"    New member IDs: {new_members}")
                 else:
+                    # Check if our examples should have been assigned to this circle
+                    for p_id in ['73177784103', '50625303450']:
+                        if p_id in participants and existing_circle_compatibility.get((p_id, e), 0) == 1:
+                            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                            print(f"    ISSUE: Participant {p_id} is compatible with {circle_id} but wasn't assigned")
+                            print(f"      Location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
+                            print(f"      Time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
+                            print(f"      Circle subregion: {circle_data['subregion']}, time: {circle_data['meeting_time']}")
+                    
                     # Check the actual variable values
                     if z:
                         for p in participants:
@@ -1332,6 +1376,19 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             
             # Add this circle to the circles list (it's already in existing_circles)
             circles.append(circle_data)
+            
+        # DEBUG: Check if our example participants were assigned anywhere
+        for p_id in ['73177784103', '50625303450']:
+            if p_id in participants:
+                if p_id in circle_assignments:
+                    assignment = circle_assignments[p_id]
+                    print(f"\nEXAMPLE PARTICIPANT {p_id} was successfully assigned:")
+                    print(f"  Circle: {assignment['circle_id']}")
+                    print(f"  Subregion: {assignment['subregion']}")
+                    print(f"  Meeting time: {assignment['meeting_time']}")
+                    print(f"  Is existing circle: {assignment.get('is_existing_circle', False)}")
+                else:
+                    print(f"\nEXAMPLE PARTICIPANT {p_id} was NOT assigned to any circle")
     for j in range(len(circle_options)):
         if y[j].value() and abs(y[j].value() - 1) < 1e-5:  # Check if circle is active
             # Get the subregion and time slot for this circle
