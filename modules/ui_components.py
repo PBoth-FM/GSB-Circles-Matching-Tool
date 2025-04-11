@@ -424,21 +424,43 @@ def render_debug_tab():
             st.dataframe(status_df, use_container_width=True)
 
         # Display result counts by status if available
-        if 'results' in st.session_state and 'Status' in st.session_state.results.columns:
+        # Make sure results exists and is not None before checking columns
+        if ('results' in st.session_state and 
+            st.session_state.results is not None and 
+            isinstance(st.session_state.results, pd.DataFrame) and
+            'Status' in st.session_state.results.columns):
+            
             st.write("### Results Status Counts")
             results_status_counts = st.session_state.results['Status'].value_counts().reset_index()
             results_status_counts.columns = ['Status', 'Count']
             st.dataframe(results_status_counts, use_container_width=True)
 
-            # Count matched versus unmatched for each status
-            st.write("### Status Match Rates")
-            match_by_status = pd.crosstab(
-                st.session_state.results['Status'], 
-                st.session_state.results['proposed_NEW_circles_id'] != 'UNMATCHED',
-                rownames=['Status'], 
-                colnames=['Matched']
-            ).reset_index()
-
+            # Count matched versus unmatched for each status - check that required column exists
+            if 'proposed_NEW_circles_id' in st.session_state.results.columns:
+                st.write("### Status Match Rates")
+                match_by_status = pd.crosstab(
+                    st.session_state.results['Status'], 
+                    st.session_state.results['proposed_NEW_circles_id'] != 'UNMATCHED',
+                    rownames=['Status'], 
+                    colnames=['Matched']
+                ).reset_index()
+            else:
+                # Create a simple dataframe if required columns aren't available
+                st.warning("Match rates unavailable - missing required column 'proposed_NEW_circles_id'")
+                # Create placeholder dataframe for further processing
+                match_by_status = pd.DataFrame({
+                    'Status': st.session_state.results['Status'].unique(),
+                    'Unmatched': 0,
+                    'Matched': 0
+                })
+        else:
+            # Skip this section if results dataframe doesn't exist or lacks required columns
+            if 'results' in st.session_state:
+                st.warning("Cannot display result statistics - results data may be corrupted")
+            return
+            
+        # Only if we have match_by_status dataframe
+        if 'match_by_status' in locals():
             # Handle potential errors in the debug tab by using a more robust approach
             try:
                 # Start with a more direct approach - get basic info columns
@@ -460,8 +482,12 @@ def render_debug_tab():
                 # If any error occurs, use a simpler approach
                 st.error(f"Error in status calculations: {str(e)}")
                 # Set safe defaults
-                match_by_status['Total'] = match_by_status.iloc[:, 1:].sum(axis=1)
-                match_by_status['Match %'] = 0
+                try:
+                    match_by_status['Total'] = match_by_status.iloc[:, 1:].sum(axis=1)
+                    match_by_status['Match %'] = 0
+                except Exception:
+                    st.error("Could not calculate match statistics")
+                    return
 
             # Rename columns for clarity
             match_by_status.columns = ['Status', 'Unmatched', 'Matched', 'Total', 'Match %']
