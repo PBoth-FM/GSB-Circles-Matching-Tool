@@ -1147,18 +1147,44 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 score = calculate_preference_score(p_row, subregion, time_slot)
                 obj_expr += score * x[p_id, j]
     
+    # Add preference scores for assignments to existing circles
+    existing_circle_obj = 0
+    if existing_circle_list:
+        for p in participants:
+            p_row = remaining_df[remaining_df['Encoded ID'] == p].iloc[0]
+            
+            for e in range(len(existing_circle_list)):
+                circle_id, circle_data = existing_circle_list[e]
+                subregion = circle_data['subregion']
+                time_slot = circle_data['meeting_time']
+                
+                # Calculate preference score for this assignment
+                score = calculate_preference_score(p_row, subregion, time_slot)
+                
+                # Small bonus (0.5) for assigning to existing circles to slightly prefer filling existing circles
+                # over creating new ones, but not enough to override preference matches
+                existing_circle_obj += (score + 0.5) * z[p, e]
+    
     # Primary objective: maximize number of matched participants (1000 points each)
     # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
-    match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
+    match_obj = 1000 * (pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options))) + 
+                        (pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list))) 
+                         if existing_circle_list else 0))
     
     # Combined objective
-    full_obj_expr = match_obj + obj_expr
+    full_obj_expr = match_obj + obj_expr + existing_circle_obj
     
     prob += full_obj_expr, "Maximize matched participants and preference satisfaction"
     
-    # Constraint: each participant is assigned to at most one circle
+    # Constraint: each participant is assigned to at most one circle (either new or existing)
     for p in participants:
-        prob += pulp.lpSum(x[p, j] for j in range(len(circle_options))) <= 1, f"One_circle_per_participant_{p}"
+        if existing_circle_list:
+            # Sum assignments to both new circles and existing circles
+            prob += pulp.lpSum(x[p, j] for j in range(len(circle_options))) + \
+                    pulp.lpSum(z[p, e] for e in range(len(existing_circle_list))) <= 1, f"One_circle_per_participant_{p}"
+        else:
+            # Just new circles if no existing circles
+            prob += pulp.lpSum(x[p, j] for j in range(len(circle_options))) <= 1, f"One_circle_per_participant_{p}"
     
     # Constraint: circle size limits
     for j in range(len(circle_options)):
@@ -1168,6 +1194,18 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         # Maximum size constraint - 10 participants
         max_size = 10
         prob += pulp.lpSum(x[p, j] for p in participants) <= max_size * y[j], f"Max_circle_size_{j}"
+    
+    # Constraint: existing circle max additions
+    if existing_circle_list:
+        for e in range(len(existing_circle_list)):
+            circle_id, circle_data = existing_circle_list[e]
+            max_additions = circle_data.get('max_additions', 0)
+            
+            # Constrain the sum of new members to be <= max_additions
+            prob += pulp.lpSum(z[p, e] for p in participants) <= max_additions, f"Max_additions_{circle_id}"
+            
+            if debug_mode:
+                print(f"  Applied max_additions constraint for circle {circle_id}: max {max_additions} new members")
     
     # Host constraint if enabled
     if enable_host_requirement:
@@ -1204,6 +1242,36 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Create circle assignments
     circle_assignments = {}
+    
+    # Process assignments to existing circles first
+    if existing_circle_list:
+        for e in range(len(existing_circle_list)):
+            circle_id, circle_data = existing_circle_list[e]
+            
+            # Find participants assigned to this existing circle
+            new_members = []
+            for p in participants:
+                if z[p, e].value() and abs(z[p, e].value() - 1) < 1e-5:  # Participant is assigned to this existing circle
+                    new_members.append(p)
+                    
+                    # Store assignment for later
+                    circle_assignments[p] = {
+                        'circle_id': circle_id,
+                        'subregion': circle_data['subregion'],
+                        'meeting_time': circle_data['meeting_time'],
+                        'is_existing_circle': True
+                    }
+            
+            if new_members and debug_mode:
+                print(f"Added {len(new_members)} new members to existing circle {circle_id}")
+                
+            # Update the circle data with new members
+            circle_data['new_members'] = len(new_members)
+            circle_data['members'].extend(new_members)
+            circle_data['member_count'] = len(circle_data['members'])
+            
+            # Add this circle to the circles list (it's already in existing_circles)
+            circles.append(circle_data)
     for j in range(len(circle_options)):
         if y[j].value() and abs(y[j].value() - 1) < 1e-5:  # Check if circle is active
             # Get the subregion and time slot for this circle
