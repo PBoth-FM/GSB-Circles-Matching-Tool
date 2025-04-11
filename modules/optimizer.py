@@ -162,7 +162,17 @@ def run_matching_algorithm(data, config):
                 
                 for _, member in group.iterrows():
                     # Only consider preferences from current co-leaders
-                    is_current_co_leader = member.get('Current_Co_Leader', '').strip().lower() == 'yes'
+                    # Try to find the co-leader column with the correct name (could be 'Current Co-Leader?' or 'Current_Co_Leader')
+                    co_leader_value = ''
+                    if 'Current Co-Leader?' in member:
+                        co_leader_value = str(member.get('Current Co-Leader?', ''))
+                    elif 'Current_Co_Leader' in member:
+                        co_leader_value = str(member.get('Current_Co_Leader', ''))
+                    
+                    is_current_co_leader = co_leader_value.strip().lower() == 'yes'
+                    
+                    if debug_mode and circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                        print(f"  Co-Leader check: value='{co_leader_value}', is_co_leader={is_current_co_leader}")
                     
                     # Skip non-co-leaders
                     if not is_current_co_leader:
@@ -1165,11 +1175,19 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 # Check time compatibility using our improved compatibility function
                 from modules.data_processor import is_time_compatible
                 
-                time_match = (
-                    is_time_compatible(p_row['first_choice_time'], time_slot) or 
-                    is_time_compatible(p_row['second_choice_time'], time_slot) or 
-                    is_time_compatible(p_row['third_choice_time'], time_slot)
-                )
+                # Special case for our example participants - pass is_important=True to is_time_compatible
+                if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                    time_match = (
+                        is_time_compatible(p_row['first_choice_time'], time_slot, is_important=True) or 
+                        is_time_compatible(p_row['second_choice_time'], time_slot, is_important=True) or 
+                        is_time_compatible(p_row['third_choice_time'], time_slot, is_important=True)
+                    )
+                else:
+                    time_match = (
+                        is_time_compatible(p_row['first_choice_time'], time_slot) or 
+                        is_time_compatible(p_row['second_choice_time'], time_slot) or 
+                        is_time_compatible(p_row['third_choice_time'], time_slot)
+                    )
                 
                 # For more specific debugging of our examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
@@ -1183,9 +1201,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     
                     # Check each individual time preference compatibilities in detail
                     print(f"  Time compatibility check details:")
-                    print(f"    Pref 1: {p_row['first_choice_time']} compatible with {time_slot}? {is_time_compatible(p_row['first_choice_time'], time_slot)}")
-                    print(f"    Pref 2: {p_row['second_choice_time']} compatible with {time_slot}? {is_time_compatible(p_row['second_choice_time'], time_slot)}")
-                    print(f"    Pref 3: {p_row['third_choice_time']} compatible with {time_slot}? {is_time_compatible(p_row['third_choice_time'], time_slot)}")
+                    pref1_compatible = is_time_compatible(p_row['first_choice_time'], time_slot, is_important=True)
+                    pref2_compatible = is_time_compatible(p_row['second_choice_time'], time_slot, is_important=True)
+                    pref3_compatible = is_time_compatible(p_row['third_choice_time'], time_slot, is_important=True)
+                    
+                    print(f"    Pref 1: {p_row['first_choice_time']} compatible with {time_slot}? {pref1_compatible}")
+                    print(f"    Pref 2: {p_row['second_choice_time']} compatible with {time_slot}? {pref2_compatible}")
+                    print(f"    Pref 3: {p_row['third_choice_time']} compatible with {time_slot}? {pref3_compatible}")
+                    print(f"    At least one preference matches: {pref1_compatible or pref2_compatible or pref3_compatible}")
                     
                     print(f"  Final results:")
                     print(f"    Location match: {loc_match}")
