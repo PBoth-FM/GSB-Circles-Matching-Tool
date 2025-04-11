@@ -405,13 +405,19 @@ def is_time_compatible(time1, time2):
         
         # Extract days part (before parentheses)
         days_part = time_str.split('(')[0].strip()
+        
+        # Special handling for "Varies"
+        if days_part.lower() == 'varies':
+            # "Varies" matches with any day
+            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], time_period
+        
         days = []
         
         # Handle day ranges with dashes (e.g., Monday-Thursday)
         if '-' in days_part:
             day_range = days_part.split('-')
             start_day = day_range[0].strip()
-            end_day = day_range[1].strip()
+            end_day = day_range[1].strip() if len(day_range) > 1 else start_day
             
             # Define the ordering of days for range inclusion
             all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -436,13 +442,23 @@ def is_time_compatible(time1, time2):
     days1, period1 = extract_days_and_period(std_time1)
     days2, period2 = extract_days_and_period(std_time2)
     
-    # Check time period compatibility
-    if period1 != period2:
+    # Special handling for "Varies" as time period
+    period_match = False
+    if period1.lower() == 'varies' or period2.lower() == 'varies':
+        # "Varies" time period matches with either Days or Evenings
+        period_match = True
+    else:
+        # Regular match check
+        period_match = period1 == period2
+    
+    # If time periods don't match, they're incompatible
+    if not period_match:
         return False
     
-    # Check for day overlap
-    # If any day in the first preference is in the second preference or vice versa
-    return any(day in days2 for day in days1) or any(day in days1 for day in days2)
+    # Check for day overlap - if any day from one preference is in the other
+    day_match = any(day in days2 for day in days1) or any(day in days1 for day in days2)
+    
+    return day_match
 
 def calculate_preference_scores(df):
     """

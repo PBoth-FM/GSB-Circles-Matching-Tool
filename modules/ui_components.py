@@ -548,30 +548,136 @@ def render_debug_tab():
             st.write(f"Time 1: '{std_time1}'")
             st.write(f"Time 2: '{std_time2}'")
             
+            # Extract detailed components for explanation
+            def extract_days_and_period_demo(time_str):
+                """Demonstration version that returns detailed info for display"""
+                # Default time period if not specified
+                time_period = "Days"
+                
+                # Extract time period from parentheses if present
+                if '(' in time_str and ')' in time_str:
+                    time_period = time_str[time_str.find('(')+1:time_str.find(')')]
+                
+                # Extract days part (before parentheses)
+                days_part = time_str.split('(')[0].strip()
+                
+                # Special handling for "Varies"
+                if days_part.lower() == 'varies':
+                    # "Varies" matches with any day
+                    return {
+                        'days_part': days_part, 
+                        'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                        'time_period': time_period,
+                        'is_varies': True
+                    }
+                
+                days = []
+                is_range = False
+                
+                # Handle day ranges with dashes (e.g., Monday-Thursday)
+                if '-' in days_part:
+                    is_range = True
+                    day_range = days_part.split('-')
+                    start_day = day_range[0].strip()
+                    end_day = day_range[1].strip() if len(day_range) > 1 else start_day
+                    
+                    # Define the ordering of days for range inclusion
+                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    
+                    # Find indices for the range
+                    try:
+                        start_idx = all_days.index(start_day)
+                        end_idx = all_days.index(end_day)
+                        
+                        # Get all days in the range (inclusive)
+                        days = all_days[start_idx:end_idx+1]
+                    except ValueError:
+                        # Fallback if day not recognized
+                        days = [days_part]
+                        
+                    return {
+                        'days_part': days_part,
+                        'days': days,
+                        'time_period': time_period,
+                        'is_range': is_range,
+                        'start_day': start_day,
+                        'end_day': end_day
+                    }
+                else:
+                    # Single day case
+                    days = [days_part]
+                    
+                return {
+                    'days_part': days_part,
+                    'days': days,
+                    'time_period': time_period,
+                    'is_range': is_range
+                }
+            
+            # Get detailed components
+            details1 = extract_days_and_period_demo(std_time1)
+            details2 = extract_days_and_period_demo(std_time2)
+            
+            # Show detailed breakdown
+            st.write("#### Time 1 Components:")
+            st.write(f"Day part: {details1['days_part']}")
+            st.write(f"Time period: {details1['time_period']}")
+            if details1.get('is_varies', False):
+                st.write("Special case: 'Varies' matches with any day")
+            elif details1.get('is_range', False):
+                st.write(f"Day range: From {details1['start_day']} to {details1['end_day']}")
+            st.write(f"Expanded days: {', '.join(details1['days'])}")
+            
+            st.write("#### Time 2 Components:")
+            st.write(f"Day part: {details2['days_part']}")
+            st.write(f"Time period: {details2['time_period']}")
+            if details2.get('is_varies', False):
+                st.write("Special case: 'Varies' matches with any day")
+            elif details2.get('is_range', False):
+                st.write(f"Day range: From {details2['start_day']} to {details2['end_day']}")
+            st.write(f"Expanded days: {', '.join(details2['days'])}")
+            
+            # Find common days
+            common_days = set(details1['days']).intersection(set(details2['days']))
+            
+            # Special handling for time period compatibility
+            if details1['time_period'].lower() == 'varies' or details2['time_period'].lower() == 'varies':
+                time_period_match = True
+                time_period_message = "Time periods match (special case: 'Varies' matches with any time period)"
+            else:
+                time_period_match = details1['time_period'] == details2['time_period']
+                time_period_message = "Time periods match" if time_period_match else "Time periods don't match"
+            
+            # Calculate final compatibility
+            day_match = len(common_days) > 0
+            final_match = day_match and time_period_match
+            
             # Check compatibility using different methods
             direct_match = (time1 == time2)
             std_match = (std_time1 == std_time2)
             range_match = is_time_compatible(time1, time2)
             
-            # Determine compatibility based on the different methods
+            # Show compatibility details
+            st.write("#### Compatibility Analysis:")
+            st.write(f"Time period compatibility: {'✅' if time_period_match else '❌'} {time_period_message}")
+            st.write(f"Day compatibility: {'✅' if day_match else '❌'} {'Days overlap' if day_match else 'No overlapping days'}")
+            if day_match:
+                st.write(f"Common days: {', '.join(sorted(common_days))}")
+            
+            # Show results
             st.write("#### Compatibility Results:")
             st.write(f"Direct string match: {'✅ Compatible' if direct_match else '❌ Not compatible'}")
             st.write(f"After standardization: {'✅ Compatible' if std_match else '❌ Not compatible'}")
             st.write(f"With day range handling: {'✅ Compatible' if range_match else '❌ Not compatible'}")
             
-            # Provide explanation
+            # Check if our manual calculation matches the function
+            if final_match != range_match:
+                st.error(f"WARNING: Manual calculation ({final_match}) doesn't match is_time_compatible() result ({range_match}). This indicates a bug in the code.")
+            
             if range_match:
-                if not direct_match and not std_match:
-                    st.success("The inputs are compatible because of day range overlap! This shows why we need special handling for day ranges.")
-                elif not direct_match and std_match:
-                    st.success("The inputs are compatible after standardization - this explains why some time slots might appear incompatible at first but should actually match!")
-                else:
-                    st.success("All compatibility checks agree these times are compatible.")
+                st.success(f"The time preferences are compatible! Days overlap and time periods match.")
             else:
-                if direct_match and not std_match:
-                    st.error("This is an unusual case - please report this to the developers.")
-                else:
-                    st.info("The time preferences truly don't match, even with day range handling.")
+                st.warning("The time preferences are not compatible. Either the days don't overlap or the time periods don't match.")
                 
             # Show day extraction
             st.write("#### Day Extraction Demo:")

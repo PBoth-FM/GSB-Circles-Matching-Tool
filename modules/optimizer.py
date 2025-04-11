@@ -16,6 +16,19 @@ def run_matching_algorithm(data, config):
     Returns:
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
     """
+    # Initialize optimization logs
+    import streamlit as st
+    if 'optimization_logs' not in st.session_state:
+        st.session_state.optimization_logs = ""
+    
+    # Capture existing stdout to enable logging
+    import sys
+    from io import StringIO
+    
+    # Create a string buffer to capture print statements
+    log_capture = StringIO()
+    original_stdout = sys.stdout
+    sys.stdout = log_capture
     # Extract configuration parameters
     min_circle_size = config.get('min_circle_size', 5)
     existing_circle_handling = config.get('existing_circle_handling', 'preserve')
