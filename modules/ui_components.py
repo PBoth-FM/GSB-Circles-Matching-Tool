@@ -712,7 +712,7 @@ def render_circle_table():
                 display_df['Max Additions'] = pd.to_numeric(display_df['Max Additions'], errors='coerce')
                 # Floor decimal values and convert to int, keeping NaN values
                 display_df['Max Additions'] = display_df['Max Additions'].apply(
-                    lambda x: int(x) if pd.notnull(x) else x
+                    lambda x: "None" if pd.notnull(x) and x == 0 else int(x) if pd.notnull(x) else x
                 )
 
             # Display the clean dataframe with row numbers
@@ -943,7 +943,7 @@ def render_circle_details():
 
         # Display member information
         if not circle_members.empty:
-            display_columns = ["Encoded ID", "Status", "host", "proposed_NEW_host", "proposed_NEW_co_leader"]
+            display_columns = ["Encoded ID", "Status", "host", "Current_Co_Leader", "co_leader_max_new_members", "proposed_NEW_host", "proposed_NEW_co_leader"]
             display_columns = [col for col in display_columns if col in circle_members.columns]
 
             st.dataframe(
