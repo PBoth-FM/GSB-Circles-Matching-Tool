@@ -501,6 +501,13 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     meeting_day = meeting_day if pd.notna(meeting_day) and meeting_day else 'Varies'
                     meeting_time = meeting_time if pd.notna(meeting_time) and meeting_time else 'Varies'
                     
+                    # Standardize time format to plural form (e.g., "Evening" -> "Evenings", "Day" -> "Days")
+                    # This ensures consistency between existing circles and new participant preferences
+                    if meeting_time.lower() == 'evening':
+                        meeting_time = 'Evenings'
+                    elif meeting_time.lower() == 'day':
+                        meeting_time = 'Days'
+                    
                     # Format the day/time combination for proposed_NEW_DayTime using the standard format
                     formatted_meeting_time = f"{meeting_day} ({meeting_time})"
                     
