@@ -1373,7 +1373,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         # Minimum size constraint - only if the circle is active (y[j] = 1)
         prob += pulp.lpSum(x[p, j] for p in participants) >= min_circle_size * y[j], f"Min_circle_size_{j}"
         
-        # Maximum size constraint - 10 participants
+        # Maximum size constraint - 10 participants for new circles
         max_size = 10
         prob += pulp.lpSum(x[p, j] for p in participants) <= max_size * y[j], f"Max_circle_size_{j}"
     
@@ -1388,6 +1388,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             
             if debug_mode:
                 print(f"  Applied max_additions constraint for circle {circle_id}: max {max_additions} new members")
+                
+                # Additional debugging for our specific example circles
+                if circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                    print(f"  EXAMPLE CIRCLE: {circle_id}")
+                    print(f"  - Current member count: {len(circle_data.get('members', []))}")
+                    print(f"  - Max additions allowed: {max_additions}")
+                    print(f"  - Meeting time: {circle_data.get('meeting_time', 'Unknown')}")
+                    print(f"  - Subregion: {circle_data.get('subregion', 'Unknown')}")
     
     # Host constraint if enabled
     if enable_host_requirement:
