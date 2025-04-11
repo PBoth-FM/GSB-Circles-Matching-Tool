@@ -382,169 +382,165 @@ def is_time_compatible(time1, time2):
     Returns:
         Boolean indicating if the time preferences are compatible
     """
+    # Debug output to track all steps
+    print(f"\n⏩ COMPATIBILITY CHECK between '{time1}' and '{time2}'")
+    
     # Handle None, NaN or empty strings
     if pd.isna(time1) or pd.isna(time2) or time1 == '' or time2 == '':
+        print(f"  ❌ INCOMPATIBLE - One or both inputs is empty or invalid")
         return False
     
     # Standardize both time preferences
     std_time1 = standardize_time_preference(time1)
     std_time2 = standardize_time_preference(time2)
     
-    # Direct match case - easiest check
+    print(f"  Standardized to: '{std_time1}' and '{std_time2}'")
+    
+    # Direct string match after standardization?
     if std_time1 == std_time2:
+        print(f"  ✅ COMPATIBLE - Direct string match after standardization")
         return True
     
-    # Extract days and time periods
-    def extract_days_and_period(time_str):
-        # Default time period if not specified
-        time_period = "Days"
-        
-        # Extract time period from parentheses if present
-        if '(' in time_str and ')' in time_str:
-            time_period = time_str[time_str.find('(')+1:time_str.find(')')]
-        
-        # Extract days part (before parentheses)
-        days_part = time_str.split('(')[0].strip()
-        
-        # Special handling for "Varies"
-        if days_part.lower() == 'varies':
-            # "Varies" matches with any day
-            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], time_period
-        
-        days = []
-        
-        # Special handling for "M-Th" format
-        if days_part == "M-Th":
-            print(f"Found special format M-Th, expanding to full day names")
-            days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
-            return days, time_period
-        
-        # Handle day ranges with dashes (e.g., Monday-Thursday)
-        if '-' in days_part:
-            day_range = days_part.split('-')
-            start_day = day_range[0].strip()
-            end_day = day_range[1].strip() if len(day_range) > 1 else start_day
-            
-            # Define the ordering of days for range inclusion
-            all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            all_days_lower = [day.lower() for day in all_days]
-            
-            # Special mappings for abbreviated formats
-            day_abbreviations = {
-                "m": "monday",
-                "mon": "monday",
-                "t": "tuesday",
-                "tue": "tuesday",
-                "tues": "tuesday",
-                "w": "wednesday",
-                "wed": "wednesday",
-                "th": "thursday",
-                "thur": "thursday",
-                "thurs": "thursday",
-                "f": "friday",
-                "fri": "friday",
-                "s": "saturday",
-                "sa": "saturday",
-                "sat": "saturday", 
-                "su": "sunday",
-                "sun": "sunday"
-            }
-            
-            # Try to match abbreviations
-            start_day_lower = start_day.lower()
-            end_day_lower = end_day.lower()
-            
-            if start_day_lower in day_abbreviations:
-                start_day_lower = day_abbreviations[start_day_lower]
-                print(f"Mapped abbreviated start day {start_day} to {start_day_lower}")
-                
-            if end_day_lower in day_abbreviations:
-                end_day_lower = day_abbreviations[end_day_lower]
-                print(f"Mapped abbreviated end day {end_day} to {end_day_lower}")
-            
-            # Find indices for the range using case-insensitive comparison
-            try:
-                start_idx = all_days_lower.index(start_day_lower)
-                end_idx = all_days_lower.index(end_day_lower)
-                
-                # Get all days in the range (inclusive) with proper capitalization
-                days = all_days[start_idx:end_idx+1]
-                print(f"Successfully expanded day range {start_day}-{end_day} to {days}")
-            except ValueError:
-                # Fallback if day not recognized
-                print(f"Could not parse day range: {start_day}-{end_day}, using as-is")
-                days = [days_part]
-        else:
-            # Single day case - check capitalization
-            all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-            all_days_lower = [day.lower() for day in all_days]
-            
-            try:
-                # Case-insensitive lookup for single day
-                day_idx = all_days_lower.index(days_part.lower())
-                days = [all_days[day_idx]]  # Use properly capitalized version
-            except ValueError:
-                days = [days_part]  # Keep as is if not a recognized day
-            
-        return days, time_period
+    # Special handling for "Varies (Varies)" which is compatible with anything
+    if "Varies (Varies)" in [std_time1, std_time2]:
+        print(f"  ✅ COMPATIBLE - One preference is 'Varies (Varies)' which matches anything")
+        return True
     
-    # Extract components
-    days1, period1 = extract_days_and_period(std_time1)
-    days2, period2 = extract_days_and_period(std_time2)
+    # Define helper functions for extracting time components
+    def extract_time_components(time_str):
+        """Extract day part and time period from a time preference string"""
+        # Split into day part and time period
+        parts = time_str.split('(')
+        day_part = parts[0].strip()
+        time_period = parts[1].replace(')', '').strip() if len(parts) > 1 else ''
+        
+        return day_part, time_period
     
-    # Special handling for "Varies" as time period
-    period_match = False
-    if period1.lower() == 'varies' or period2.lower() == 'varies':
-        # "Varies" time period matches with either Days or Evenings
-        period_match = True
+    # Extract day parts and time periods
+    day_part1, time_period1 = extract_time_components(std_time1)
+    day_part2, time_period2 = extract_time_components(std_time2)
+    
+    print(f"  Time periods: '{time_period1}' vs '{time_period2}'")
+    print(f"  Day parts: '{day_part1}' vs '{day_part2}'")
+    
+    # Check time period compatibility
+    time_period_match = False
+    if time_period1.lower() == 'varies' or time_period2.lower() == 'varies':
+        time_period_match = True
+        print(f"  ✓ Time periods match: One is 'Varies' which matches any time period")
     else:
-        # Regular match check
-        period_match = period1 == period2
+        time_period_match = time_period1.lower() == time_period2.lower()
+        print(f"  {'✓' if time_period_match else '✗'} Time periods {'' if time_period_match else 'do not '}match")
     
-    # If time periods don't match, they're incompatible
-    if not period_match:
+    if not time_period_match:
+        print(f"  ❌ INCOMPATIBLE - Time periods don't match")
         return False
     
-    # Check for day overlap - if any day from one preference is in the other
-    day_match = False
-    
-    # First check if any day from days1 is in days2
-    match1 = any(day in days2 for day in days1)
-    
-    # Then check if any day from days2 is in days1
-    match2 = any(day in days1 for day in days2)
-    
-    # Combine results
-    day_match = match1 or match2
-    
-    # Debug output to understand day matching
-    print(f"Day matching check between {days1} and {days2}: match1={match1}, match2={match2}, final={day_match}")
-    
-    # Special handling for weird day formats like "M-Th"
-    if not day_match:
-        # Handle legacy formats like "M-Th" 
-        if any(day_str == "M-Th" for day_str in [days1[0], days2[0]]):
-            print(f"Special case: M-Th found, treating as Monday-Thursday")
-            weekday_map = {
-                "M": "Monday",
-                "T": "Tuesday", 
-                "W": "Wednesday",
-                "Th": "Thursday",
-                "F": "Friday",
-                "Sa": "Saturday", 
-                "Su": "Sunday"
-            }
+    # Extract days function with enhanced handling for all formats
+    def extract_days(day_part):
+        """Extract individual days from day part with support for ranges and abbreviations"""
+        # Standard day name mapping
+        all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        all_days_lower = [d.lower() for d in all_days]
+        
+        # Special abbreviation mapping
+        abbr_map = {
+            'm': 'monday',
+            'mon': 'monday',
+            't': 'tuesday',
+            'tue': 'tuesday',
+            'tues': 'tuesday',
+            'w': 'wednesday',
+            'wed': 'wednesday',
+            'th': 'thursday',
+            'thur': 'thursday',
+            'thurs': 'thursday',
+            'f': 'friday',
+            'fri': 'friday',
+            's': 'saturday',
+            'sa': 'saturday',
+            'sat': 'saturday',
+            'su': 'sunday',
+            'sun': 'sunday'
+        }
+        
+        # Special case: Varies matches all days
+        if day_part.lower() == 'varies':
+            print(f"    Day part 'Varies' expands to all days of the week")
+            return all_days
             
-            if days1[0] == "M-Th":
-                expanded_days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
-                day_match = any(day in expanded_days for day in days2)
-            elif days2[0] == "M-Th":
-                expanded_days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
-                day_match = any(day in expanded_days for day in days1)
+        # Special case: M-Th format 
+        if day_part == 'M-Th':
+            print(f"    Day part 'M-Th' expands to Monday through Thursday")
+            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
+            
+        # Handle day ranges with dash notation
+        days = []
+        if '-' in day_part:
+            # Extract start and end days
+            day_range = day_part.split('-')
+            start_day = day_range[0].strip().lower()
+            end_day = day_range[1].strip().lower()
+            
+            # Try to map abbreviations to full day names
+            if start_day in abbr_map:
+                start_day = abbr_map[start_day]
+                print(f"    Mapped abbreviation {day_range[0].strip()} to {start_day}")
                 
-            print(f"After special M-Th handling: day_match = {day_match}")
+            if end_day in abbr_map:
+                end_day = abbr_map[end_day]
+                print(f"    Mapped abbreviation {day_range[1].strip()} to {end_day}")
+            
+            # Get indices for range lookup
+            try:
+                start_idx = all_days_lower.index(start_day)
+                end_idx = all_days_lower.index(end_day)
+                
+                # Extract the range with proper capitalization
+                days = all_days[start_idx:end_idx+1]
+                print(f"    Day range {day_range[0].strip()}-{day_range[1].strip()} expands to {days}")
+            except ValueError:
+                print(f"    Could not parse day range {day_part}, using as-is")
+                days = [day_part]
+        else:
+            # Single day - handle abbreviations and capitalization
+            day_lower = day_part.lower()
+            
+            # Check for abbreviation
+            if day_lower in abbr_map:
+                day_lower = abbr_map[day_lower]
+                print(f"    Mapped abbreviation {day_part} to {day_lower}")
+            
+            # Look up proper capitalization
+            try:
+                idx = all_days_lower.index(day_lower)
+                days = [all_days[idx]]
+                print(f"    Normalized day {day_part} to {days[0]}")
+            except ValueError:
+                days = [day_part]
+                print(f"    Could not normalize day {day_part}, using as-is")
+                
+        return days
     
-    return day_match
+    # Extract individual days for both preferences
+    days1 = extract_days(day_part1)
+    days2 = extract_days(day_part2)
+    
+    print(f"  Expanded days: {days1} vs {days2}")
+    
+    # Check for day overlap
+    overlap = False
+    common_days = set(days1).intersection(set(days2))
+    if common_days:
+        overlap = True
+        print(f"  ✓ Days overlap: Common days are {sorted(common_days)}")
+    else:
+        print(f"  ✗ No overlapping days found")
+        
+    result = time_period_match and overlap
+    print(f"  {'✅' if result else '❌'} FINAL RESULT: {'' if result else 'IN'}COMPATIBLE - Time periods {'do not ' if not time_period_match else ''}match and days {'do not ' if not overlap else ''}overlap")
+    
+    return result
 
 def calculate_preference_scores(df):
     """

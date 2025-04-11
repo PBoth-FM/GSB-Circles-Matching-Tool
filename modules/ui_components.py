@@ -640,19 +640,32 @@ def render_debug_tab():
             # Find common days
             common_days = set(details1['days']).intersection(set(details2['days']))
             
-            # Special handling for time period compatibility
+            # Special handling for time period compatibility - Case insensitive comparison
             if details1['time_period'].lower() == 'varies' or details2['time_period'].lower() == 'varies':
                 time_period_match = True
                 time_period_message = "Time periods match (special case: 'Varies' matches with any time period)"
             else:
-                time_period_match = details1['time_period'] == details2['time_period']
+                # Use case-insensitive comparison for time periods
+                time_period_match = details1['time_period'].lower() == details2['time_period'].lower()
                 time_period_message = "Time periods match" if time_period_match else "Time periods don't match"
             
-            # Calculate final compatibility - The key issue is here
+            # Calculate final compatibility
             day_match = len(common_days) > 0
+            
             # Print detailed debug to check day matching
             print(f"Day match check: {details1['days']} vs {details2['days']} = {common_days}")
             print(f"Day match result = {day_match}")
+            
+            # Add more debug info for diagnosis
+            if not day_match:
+                print(f"No day overlap between {details1['days']} and {details2['days']}")
+                # Check case sensitivity
+                lower_days1 = [d.lower() for d in details1['days']]
+                lower_days2 = [d.lower() for d in details2['days']]
+                case_insensitive_common = set(lower_days1).intersection(set(lower_days2))
+                if case_insensitive_common:
+                    print(f"Case-insensitive match would have found: {case_insensitive_common}")
+            
             final_match = day_match and time_period_match
             
             # Check compatibility using different methods
