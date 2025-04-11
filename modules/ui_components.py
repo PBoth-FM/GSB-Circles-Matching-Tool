@@ -687,21 +687,47 @@ def render_debug_tab():
                 days_part = std_time.split('(')[0].strip()
                 time_part = std_time[std_time.find('(')+1:std_time.find(')')] if '(' in std_time else "Unknown"
                 
+                # Special handling for "Varies"
+                if days_part.lower() == 'varies':
+                    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], time_part
+                
                 days = []
                 if '-' in days_part:
                     day_range = days_part.split('-')
                     start_day = day_range[0].strip()
                     end_day = day_range[1].strip()
                     
+                    # Make sure start and end days are properly capitalized
                     all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    all_days_lower = [day.lower() for day in all_days]
+                    
                     try:
-                        start_idx = all_days.index(start_day)
-                        end_idx = all_days.index(end_day)
+                        # Case-insensitive lookup
+                        start_idx = all_days_lower.index(start_day.lower())
+                        end_idx = all_days_lower.index(end_day.lower())
+                        
+                        # Use properly capitalized days
+                        start_day = all_days[start_idx]
+                        end_day = all_days[end_idx]
+                        
                         days = all_days[start_idx:end_idx+1]
+                        
+                        # Debug output to check day range extraction
+                        print(f"Extracting day range: {start_day}-{end_day} -> {days}")
                     except ValueError:
                         days = [days_part]
+                        print(f"Error parsing days: {days_part} - could not find day in list")
                 else:
-                    days = [days_part]
+                    # Single day - check capitalization
+                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    all_days_lower = [day.lower() for day in all_days]
+                    
+                    try:
+                        # Case-insensitive lookup for single day
+                        day_idx = all_days_lower.index(days_part.lower())
+                        days = [all_days[day_idx]]  # Use properly capitalized version
+                    except ValueError:
+                        days = [days_part]  # Keep as is if not a recognized day
                 
                 return days, time_part
             

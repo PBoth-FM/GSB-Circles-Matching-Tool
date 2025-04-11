@@ -369,6 +369,16 @@ def run_matching_algorithm(data, config):
         if debug_mode:
             print(f"Matched {matched_count} out of {total_count} participants ({matched_percentage:.2f}%)")
     
+    # Restore original stdout
+    sys.stdout = original_stdout
+    
+    # Capture logs
+    logs = log_capture.getvalue()
+    
+    # Add logs to session state for display in the Debug tab
+    if 'optimization_logs' in st.session_state:
+        st.session_state.optimization_logs = logs
+    
     return results_df, circles_df, unmatched_df
 
 def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):

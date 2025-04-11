@@ -421,20 +421,29 @@ def is_time_compatible(time1, time2):
             
             # Define the ordering of days for range inclusion
             all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            all_days_lower = [day.lower() for day in all_days]
             
-            # Find indices for the range
+            # Find indices for the range using case-insensitive comparison
             try:
-                start_idx = all_days.index(start_day)
-                end_idx = all_days.index(end_day)
+                start_idx = all_days_lower.index(start_day.lower())
+                end_idx = all_days_lower.index(end_day.lower())
                 
-                # Get all days in the range (inclusive)
+                # Get all days in the range (inclusive) with proper capitalization
                 days = all_days[start_idx:end_idx+1]
             except ValueError:
                 # Fallback if day not recognized
                 days = [days_part]
         else:
-            # Single day case
-            days = [days_part]
+            # Single day case - check capitalization
+            all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            all_days_lower = [day.lower() for day in all_days]
+            
+            try:
+                # Case-insensitive lookup for single day
+                day_idx = all_days_lower.index(days_part.lower())
+                days = [all_days[day_idx]]  # Use properly capitalized version
+            except ValueError:
+                days = [days_part]  # Keep as is if not a recognized day
             
         return days, time_period
     
