@@ -439,10 +439,31 @@ def render_debug_tab():
                 colnames=['Matched']
             ).reset_index()
 
-            # Add percentage columns
-            total_by_status = match_by_status.sum(axis=1).values
-            match_by_status['Total'] = total_by_status
-            match_by_status['Match %'] = (match_by_status[True] / match_by_status['Total'] * 100).round(1)
+            # Handle potential errors in the debug tab by skipping complex calculations
+            try:
+                # Add percentage columns - ensure numeric types before summing
+                # Convert boolean columns to int to avoid type issues
+                match_by_status_numeric = match_by_status.copy()
+                
+                # Convert all columns except Status to numeric
+                for col in match_by_status.columns:
+                    if col != 'Status':  # Skip the Status column
+                        # Convert column to string first to avoid type mixing errors
+                        match_by_status_numeric[col] = match_by_status_numeric[col].astype(str)
+                        # Then convert to numeric, replacing any errors with 0
+                        match_by_status_numeric[col] = pd.to_numeric(match_by_status_numeric[col], errors='coerce').fillna(0).astype(int)
+                
+                # Sum the rows to get totals
+                total_by_status = match_by_status_numeric.sum(axis=1).values
+                match_by_status['Total'] = total_by_status
+                
+                # Calculate match percentage
+                match_by_status['Match %'] = (match_by_status_numeric[True] / match_by_status_numeric['Total'] * 100).round(1)
+            except Exception as e:
+                # If any error occurs, use a simpler approach
+                st.error(f"Error in status calculations: {str(e)}")
+                match_by_status['Total'] = 0  # Placeholder
+                match_by_status['Match %'] = 0  # Placeholder
 
             # Rename columns for clarity
             match_by_status.columns = ['Status', 'Unmatched', 'Matched', 'Total', 'Match %']

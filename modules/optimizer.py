@@ -1094,6 +1094,17 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 subregion = circle_data['subregion']
                 time_slot = circle_data['meeting_time']
                 
+                # Standardize time slot to ensure consistent format (plural form)
+                from modules.data_processor import standardize_time_preference
+                standardized_time_slot = standardize_time_preference(time_slot)
+                
+                # Get participant time preferences and standardize them
+                p_time_prefs = [
+                    standardize_time_preference(p_row['first_choice_time']), 
+                    standardize_time_preference(p_row['second_choice_time']),
+                    standardize_time_preference(p_row['third_choice_time'])
+                ]
+                
                 # Check location compatibility
                 loc_match = (
                     (p_row['first_choice_location'] == subregion) or 
@@ -1101,21 +1112,27 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     (p_row['third_choice_location'] == subregion)
                 )
                 
-                # Check time compatibility
+                # Check time compatibility with standardized time formats
                 time_match = (
-                    (p_row['first_choice_time'] == time_slot) or 
-                    (p_row['second_choice_time'] == time_slot) or 
-                    (p_row['third_choice_time'] == time_slot)
+                    (standardized_time_slot in p_time_prefs)
                 )
                 
                 # For more specific debugging of our examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
                     print(f"\nDEBUG - Checking compatibility for: Participant {p} with Circle {circle_id}")
-                    print(f"  Circle details: Subregion={subregion}, Time={time_slot}")
+                    print(f"  Circle details: Subregion={subregion}, Time={time_slot}, Standardized Time={standardized_time_slot}")
                     print(f"  Participant prefs: Locations={p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
-                    print(f"  Participant prefs: Times={p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
+                    print(f"  Participant original time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
+                    print(f"  Participant standardized time prefs: {p_time_prefs}")
                     print(f"  Location match: {loc_match}, Time match: {time_match}")
                     print(f"  Overall compatibility: {loc_match and time_match}")
+                
+                # Log all compatibility checks when in debug mode
+                if debug_mode and (loc_match or time_match):
+                    print(f"Participant {p} and Circle {circle_id} compatibility check:")
+                    print(f"  Location match: {loc_match} (circle: {subregion} vs. participant prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']})")
+                    print(f"  Time match: {time_match} (circle: {standardized_time_slot} vs. participant prefs: {p_time_prefs})")
+                    print(f"  Overall: {loc_match and time_match}")
                 
                 # Both location and time must match for compatibility
                 is_compatible = (loc_match and time_match)
@@ -1211,14 +1228,13 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 # Calculate preference score for this assignment
                 score = calculate_preference_score(p_row, subregion, time_slot)
                 
-                # Small bonus (0.1) for assigning to existing circles to slightly prefer using existing circles
-                # This is a minimal bonus to break ties, not to override regular preference matching
-                existing_circle_obj += (score + 0.1) * z[p, e]
+                # No bonus for existing circles as requested
+                existing_circle_obj += score * z[p, e]
                 
                 # Debug our specific examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
                     print(f"\nDEBUG - Setting objective for: Participant {p} with Circle {circle_id}")
-                    print(f"  Base score: {score}, Total score with bonus: {score + 0.1}")
+                    print(f"  Score (no bonus): {score}")
     
     # Primary objective: maximize number of matched participants (1000 points each)
     # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
