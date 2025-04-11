@@ -145,19 +145,30 @@ def run_matching_algorithm(data, config):
                 # Calculate max_additions for this circle based on co-leader preferences
                 max_additions = None  # Start with None to indicate no limit specified yet
                 has_none_preference = False
+                has_co_leader = False
                 
                 for _, member in group.iterrows():
+                    # Only consider preferences from current co-leaders
+                    is_current_co_leader = member.get('Current_Co_Leader', '').strip().lower() == 'yes'
+                    
+                    # Skip non-co-leaders
+                    if not is_current_co_leader:
+                        continue
+                    
+                    # Mark that at least one co-leader was found
+                    has_co_leader = True
+                    
                     # Get the max new members value if present
                     max_value = member.get('co_leader_max_new_members', None)
                     
                     if debug_mode and pd.notna(max_value):
-                        print(f"  Member {member['Encoded ID']} specified max new members: {max_value}")
+                        print(f"  Co-Leader {member['Encoded ID']} specified max new members: {max_value}")
                     
                     # Check for "None" literal string preference
                     if isinstance(max_value, str) and max_value.lower() == "none":
                         has_none_preference = True
                         if debug_mode:
-                            print(f"  Member {member['Encoded ID']} specified 'None' - no new members allowed")
+                            print(f"  Co-Leader {member['Encoded ID']} specified 'None' - no new members allowed")
                         break
                     
                     # Check for 0 which should be treated like "None"
@@ -167,7 +178,7 @@ def run_matching_algorithm(data, config):
                     ):
                         has_none_preference = True
                         if debug_mode:
-                            print(f"  Member {member['Encoded ID']} specified '0' - no new members allowed")
+                            print(f"  Co-Leader {member['Encoded ID']} specified '0' - no new members allowed")
                         break
                     
                     # Process numeric values
@@ -184,20 +195,21 @@ def run_matching_algorithm(data, config):
                 
                 # Set max_additions based on rules
                 if has_none_preference:
-                    # Any member saying "None" means no new members
+                    # Any co-leader saying "None" means no new members
                     final_max_additions = 0
                     if debug_mode:
-                        print(f"  Circle {circle_id} has 'None' preference - not accepting new members")
+                        print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
                 elif max_additions is not None:
-                    # Use the minimum valid value provided
+                    # Use the minimum valid value provided by a co-leader
                     final_max_additions = max_additions
                     if debug_mode:
-                        print(f"  Circle {circle_id} can accept up to {final_max_additions} new members")
+                        print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                 else:
-                    # Default to 10 total if no one specified a value
-                    final_max_additions = max(0, 10 - len(member_ids))
+                    # Default to 8 total if no co-leader specified a value or no co-leaders exist
+                    final_max_additions = max(0, 8 - len(member_ids))
                     if debug_mode:
-                        print(f"  No max preference specified for circle {circle_id} - using default max total of 10")
+                        message = "No co-leader preference specified" if has_co_leader else "No co-leaders found"
+                        print(f"  {message} for circle {circle_id} - using default max total of 8")
                         print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more")
                 
                 # Create circle metadata
@@ -239,6 +251,9 @@ def run_matching_algorithm(data, config):
                         member_dict['proposed_NEW_co_leader'] = "Yes"
                     else:
                         member_dict['proposed_NEW_co_leader'] = "No"
+                    
+                    # Add max_additions value to individual participants
+                    member_dict['max_additions'] = final_max_additions
                     
                     # Mark as processed and add to results
                     direct_results.append(member_dict)

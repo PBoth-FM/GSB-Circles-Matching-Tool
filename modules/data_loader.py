@@ -140,6 +140,10 @@ def map_column_names(df):
         'Current Circle ID': 'Current_Circle_ID',  # Changed to preserve capitalization pattern
         'Current Subregion': 'Current_Subregion',
         'Current Meeting Time': 'Current_Meeting_Time',
+        # Current Co-Leader status
+        'Current Co-Leader': 'Current_Co_Leader',
+        'Co-Leader Status': 'Current_Co_Leader',
+        'Current Circle Co-Leader': 'Current_Co_Leader',
         # New column for max new members
         'Co-Leader Max New Members': 'co_leader_max_new_members',
         'Co-Leader Maximum New Members': 'co_leader_max_new_members',

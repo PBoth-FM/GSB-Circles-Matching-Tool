@@ -65,7 +65,8 @@ def generate_download_link(df):
         'proposed_NEW_Subregion',
         'proposed_NEW_DayTime',
         'proposed_NEW_host',
-        'proposed_NEW_co_leader'
+        'proposed_NEW_co_leader',
+        'max_additions'  # Added to include the max_additions data
     ]
     
     for col in priority_columns:
