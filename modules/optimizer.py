@@ -1044,12 +1044,32 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 (p_row['third_choice_location'] == subregion)
             )
             
-            # Check time compatibility - participant must have this time in their preferences
+            # Check time compatibility using standardized time formats
+            from modules.data_processor import standardize_time_preference
+            std_time_slot = standardize_time_preference(time_slot)
+            std_first = standardize_time_preference(p_row['first_choice_time'])
+            std_second = standardize_time_preference(p_row['second_choice_time'])
+            std_third = standardize_time_preference(p_row['third_choice_time'])
+            
             time_match = (
+                (std_first == std_time_slot) or 
+                (std_second == std_time_slot) or 
+                (std_third == std_time_slot)
+            )
+            
+            # Debug raw vs. standardized matching
+            if debug_mode and (
                 (p_row['first_choice_time'] == time_slot) or 
                 (p_row['second_choice_time'] == time_slot) or 
-                (p_row['third_choice_time'] == time_slot)
-            )
+                (p_row['third_choice_time'] == time_slot)) != time_match:
+                print(f"\nNEW CIRCLE COMPATIBILITY DIFFERENCE detected:")
+                print(f"  Participant: {p}")
+                print(f"  Time slot: '{time_slot}' (std: '{std_time_slot}')")  
+                print(f"  Prefs: '{p_row['first_choice_time']}' (std: '{std_first}')")
+                print(f"         '{p_row['second_choice_time']}' (std: '{std_second}')")
+                print(f"         '{p_row['third_choice_time']}' (std: '{std_third}')")
+                print(f"  Raw match: {(p_row['first_choice_time'] == time_slot) or (p_row['second_choice_time'] == time_slot) or (p_row['third_choice_time'] == time_slot)}")
+                print(f"  Std match: {time_match}")
             
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
@@ -1112,10 +1132,21 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     (p_row['third_choice_location'] == subregion)
                 )
                 
-                # Check time compatibility with standardized time formats
+                # Check time compatibility with standardized time formats - direct equality check
+                # This is more precise than the "in" check which can cause issues with substrings
                 time_match = (
-                    (standardized_time_slot in p_time_prefs)
+                    (standardized_time_slot == p_time_prefs[0]) or
+                    (standardized_time_slot == p_time_prefs[1]) or
+                    (standardized_time_slot == p_time_prefs[2])
                 )
+                
+                # Extra debug check for differences between methods
+                if debug_mode and ((standardized_time_slot in p_time_prefs) != time_match):
+                    print(f"\nCRITICAL COMPATIBILITY DIFFERENCE for {p} and {circle_id}:")
+                    print(f"  Using 'in' operator: {standardized_time_slot in p_time_prefs}")
+                    print(f"  Using direct equality: {time_match}")
+                    print(f"  Circle time: '{standardized_time_slot}'")
+                    print(f"  Time prefs: {p_time_prefs}")
                 
                 # For more specific debugging of our examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:

@@ -439,31 +439,29 @@ def render_debug_tab():
                 colnames=['Matched']
             ).reset_index()
 
-            # Handle potential errors in the debug tab by skipping complex calculations
+            # Handle potential errors in the debug tab by using a more robust approach
             try:
-                # Add percentage columns - ensure numeric types before summing
-                # Convert boolean columns to int to avoid type issues
-                match_by_status_numeric = match_by_status.copy()
+                # Start with a more direct approach - get basic info columns
+                match_by_status['Total'] = match_by_status.sum(axis=1, numeric_only=True)
                 
-                # Convert all columns except Status to numeric
-                for col in match_by_status.columns:
-                    if col != 'Status':  # Skip the Status column
-                        # Convert column to string first to avoid type mixing errors
-                        match_by_status_numeric[col] = match_by_status_numeric[col].astype(str)
-                        # Then convert to numeric, replacing any errors with 0
-                        match_by_status_numeric[col] = pd.to_numeric(match_by_status_numeric[col], errors='coerce').fillna(0).astype(int)
-                
-                # Sum the rows to get totals
-                total_by_status = match_by_status_numeric.sum(axis=1).values
-                match_by_status['Total'] = total_by_status
-                
-                # Calculate match percentage
-                match_by_status['Match %'] = (match_by_status_numeric[True] / match_by_status_numeric['Total'] * 100).round(1)
+                # Handle the case where the boolean column might not be properly converted
+                if True in match_by_status.columns:
+                    match_by_status_safe = match_by_status.copy()
+                    
+                    # Convert the Matched column to numeric safely
+                    matched_values = match_by_status_safe[True].apply(lambda x: 1 if x == True else 0 if x == False else 0)
+                    
+                    # Calculate match percentage
+                    match_by_status['Match %'] = (matched_values / match_by_status['Total'] * 100).round(1).fillna(0)
+                else:
+                    # If True column doesn't exist, set defaults
+                    match_by_status['Match %'] = 0
             except Exception as e:
                 # If any error occurs, use a simpler approach
                 st.error(f"Error in status calculations: {str(e)}")
-                match_by_status['Total'] = 0  # Placeholder
-                match_by_status['Match %'] = 0  # Placeholder
+                # Set safe defaults
+                match_by_status['Total'] = match_by_status.iloc[:, 1:].sum(axis=1)
+                match_by_status['Match %'] = 0
 
             # Rename columns for clarity
             match_by_status.columns = ['Status', 'Unmatched', 'Matched', 'Total', 'Match %']
@@ -508,8 +506,38 @@ def render_debug_tab():
             time2 = st.text_input("Time Preference 2", "Monday-Thursday (Evening)")
 
         if st.button("Test Compatibility"):
-            # This would call a function to test time compatibility
-            st.write("Compatibility result would be shown here")
+            # Import the standardization function
+            from modules.data_processor import standardize_time_preference
+            
+            # Standardize both inputs
+            std_time1 = standardize_time_preference(time1)
+            std_time2 = standardize_time_preference(time2)
+            
+            # Show original and standardized formats
+            st.write("#### Original Values:")
+            st.write(f"Time 1: '{time1}'")
+            st.write(f"Time 2: '{time2}'")
+            
+            st.write("#### Standardized Values:")
+            st.write(f"Time 1: '{std_time1}'")
+            st.write(f"Time 2: '{std_time2}'")
+            
+            # Check direct string equality
+            direct_match = (time1 == time2)
+            std_match = (std_time1 == std_time2)
+            
+            # Determine compatibility based on standardized formats
+            st.write("#### Compatibility Results:")
+            st.write(f"Direct string match: {'✅ Compatible' if direct_match else '❌ Not compatible'}")
+            st.write(f"After standardization: {'✅ Compatible' if std_match else '❌ Not compatible'}")
+            
+            # Provide explanation
+            if not direct_match and std_match:
+                st.success("The inputs are compatible after standardization - this explains why some time slots might appear incompatible at first but should actually match!")
+            elif direct_match and not std_match:
+                st.error("This is an unusual case - please report this to the developers.")
+            elif not direct_match and not std_match:
+                st.info("The time preferences truly don't match, even after standardization.")
 
         # Region code mapping tester
         st.write("### Region Code Mapping Tester")
