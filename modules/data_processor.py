@@ -371,13 +371,14 @@ def standardize_time_preference(time_pref):
     # If no specific pattern is found, just capitalize and return
     return time_pref.capitalize()
 
-def is_time_compatible(time1, time2):
+def is_time_compatible(time1, time2, is_important=False):
     """
     Check if two time preferences are compatible, including day ranges
     
     Args:
         time1: First time preference string
         time2: Second time preference string
+        is_important: Boolean indicating whether to print detailed debug logs
         
     Returns:
         Boolean indicating if the time preferences are compatible
@@ -392,7 +393,9 @@ def is_time_compatible(time1, time2):
         ("Monday-Thursday (Evenings)", "Tuesday (Evenings)")
     ]
     
-    is_important = (time1, time2) in important_pairs
+    # If not explicitly set to True, check if this is an important pair we want to debug
+    if not is_important:
+        is_important = (time1, time2) in important_pairs
     
     if is_important:
         print(f"\n🔍 IMPORTANT COMPATIBILITY CHECK between '{time1}' and '{time2}'")

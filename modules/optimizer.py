@@ -557,7 +557,17 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     
                     for member in members:
                         # Only consider preferences from current co-leaders
-                        is_current_co_leader = member.get('Current_Co_Leader', '').strip().lower() == 'yes'
+                        # Try to find the co-leader column with the correct name
+                        co_leader_value = ''
+                        if 'Current Co-Leader?' in member:
+                            co_leader_value = str(member.get('Current Co-Leader?', ''))
+                        elif 'Current_Co_Leader' in member:
+                            co_leader_value = str(member.get('Current_Co_Leader', ''))
+                        
+                        is_current_co_leader = co_leader_value.strip().lower() == 'yes'
+                        
+                        if debug_mode and circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                            print(f"  Co-Leader check in existing circle preservation: value='{co_leader_value}', is_co_leader={is_current_co_leader}")
                         
                         # Skip non-co-leaders
                         if not is_current_co_leader:
