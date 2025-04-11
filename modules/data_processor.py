@@ -371,6 +371,79 @@ def standardize_time_preference(time_pref):
     # If no specific pattern is found, just capitalize and return
     return time_pref.capitalize()
 
+def is_time_compatible(time1, time2):
+    """
+    Check if two time preferences are compatible, including day ranges
+    
+    Args:
+        time1: First time preference string
+        time2: Second time preference string
+        
+    Returns:
+        Boolean indicating if the time preferences are compatible
+    """
+    # Handle None, NaN or empty strings
+    if pd.isna(time1) or pd.isna(time2) or time1 == '' or time2 == '':
+        return False
+    
+    # Standardize both time preferences
+    std_time1 = standardize_time_preference(time1)
+    std_time2 = standardize_time_preference(time2)
+    
+    # Direct match case - easiest check
+    if std_time1 == std_time2:
+        return True
+    
+    # Extract days and time periods
+    def extract_days_and_period(time_str):
+        # Default time period if not specified
+        time_period = "Days"
+        
+        # Extract time period from parentheses if present
+        if '(' in time_str and ')' in time_str:
+            time_period = time_str[time_str.find('(')+1:time_str.find(')')]
+        
+        # Extract days part (before parentheses)
+        days_part = time_str.split('(')[0].strip()
+        days = []
+        
+        # Handle day ranges with dashes (e.g., Monday-Thursday)
+        if '-' in days_part:
+            day_range = days_part.split('-')
+            start_day = day_range[0].strip()
+            end_day = day_range[1].strip()
+            
+            # Define the ordering of days for range inclusion
+            all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            
+            # Find indices for the range
+            try:
+                start_idx = all_days.index(start_day)
+                end_idx = all_days.index(end_day)
+                
+                # Get all days in the range (inclusive)
+                days = all_days[start_idx:end_idx+1]
+            except ValueError:
+                # Fallback if day not recognized
+                days = [days_part]
+        else:
+            # Single day case
+            days = [days_part]
+            
+        return days, time_period
+    
+    # Extract components
+    days1, period1 = extract_days_and_period(std_time1)
+    days2, period2 = extract_days_and_period(std_time2)
+    
+    # Check time period compatibility
+    if period1 != period2:
+        return False
+    
+    # Check for day overlap
+    # If any day in the first preference is in the second preference or vice versa
+    return any(day in days2 for day in days1) or any(day in days1 for day in days2)
+
 def calculate_preference_scores(df):
     """
     Calculate preference scores for location and time matches

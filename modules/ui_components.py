@@ -532,8 +532,8 @@ def render_debug_tab():
             time2 = st.text_input("Time Preference 2", "Monday-Thursday (Evening)")
 
         if st.button("Test Compatibility"):
-            # Import the standardization function
-            from modules.data_processor import standardize_time_preference
+            # Import the standardization and compatibility functions
+            from modules.data_processor import standardize_time_preference, is_time_compatible
             
             # Standardize both inputs
             std_time1 = standardize_time_preference(time1)
@@ -548,22 +548,68 @@ def render_debug_tab():
             st.write(f"Time 1: '{std_time1}'")
             st.write(f"Time 2: '{std_time2}'")
             
-            # Check direct string equality
+            # Check compatibility using different methods
             direct_match = (time1 == time2)
             std_match = (std_time1 == std_time2)
+            range_match = is_time_compatible(time1, time2)
             
-            # Determine compatibility based on standardized formats
+            # Determine compatibility based on the different methods
             st.write("#### Compatibility Results:")
             st.write(f"Direct string match: {'✅ Compatible' if direct_match else '❌ Not compatible'}")
             st.write(f"After standardization: {'✅ Compatible' if std_match else '❌ Not compatible'}")
+            st.write(f"With day range handling: {'✅ Compatible' if range_match else '❌ Not compatible'}")
             
             # Provide explanation
-            if not direct_match and std_match:
-                st.success("The inputs are compatible after standardization - this explains why some time slots might appear incompatible at first but should actually match!")
-            elif direct_match and not std_match:
-                st.error("This is an unusual case - please report this to the developers.")
-            elif not direct_match and not std_match:
-                st.info("The time preferences truly don't match, even after standardization.")
+            if range_match:
+                if not direct_match and not std_match:
+                    st.success("The inputs are compatible because of day range overlap! This shows why we need special handling for day ranges.")
+                elif not direct_match and std_match:
+                    st.success("The inputs are compatible after standardization - this explains why some time slots might appear incompatible at first but should actually match!")
+                else:
+                    st.success("All compatibility checks agree these times are compatible.")
+            else:
+                if direct_match and not std_match:
+                    st.error("This is an unusual case - please report this to the developers.")
+                else:
+                    st.info("The time preferences truly don't match, even with day range handling.")
+                
+            # Show day extraction
+            st.write("#### Day Extraction Demo:")
+            
+            def extract_days_demo(time_str):
+                std_time = standardize_time_preference(time_str)
+                days_part = std_time.split('(')[0].strip()
+                time_part = std_time[std_time.find('(')+1:std_time.find(')')] if '(' in std_time else "Unknown"
+                
+                days = []
+                if '-' in days_part:
+                    day_range = days_part.split('-')
+                    start_day = day_range[0].strip()
+                    end_day = day_range[1].strip()
+                    
+                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                    try:
+                        start_idx = all_days.index(start_day)
+                        end_idx = all_days.index(end_day)
+                        days = all_days[start_idx:end_idx+1]
+                    except ValueError:
+                        days = [days_part]
+                else:
+                    days = [days_part]
+                
+                return days, time_part
+            
+            days1, time1_part = extract_days_demo(time1)
+            days2, time2_part = extract_days_demo(time2)
+            
+            st.write(f"Time 1 days: {days1}")
+            st.write(f"Time 1 period: {time1_part}")
+            st.write(f"Time 2 days: {days2}")
+            st.write(f"Time 2 period: {time2_part}")
+            
+            # Check for day overlap
+            overlap = any(day in days2 for day in days1)
+            st.write(f"Day overlap found: {'Yes' if overlap else 'No'}")
 
         # Region code mapping tester
         st.write("### Region Code Mapping Tester")
