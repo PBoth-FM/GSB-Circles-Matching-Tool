@@ -1217,8 +1217,41 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Add preference scores for assignments to existing circles
     existing_circle_obj = 0
     if existing_circle_list:
+        # EXTENSIVE DEBUG: Print details about existing circles before assignment
+        if debug_mode:
+            print("\nDEBUG - Existing Circle Details:")
+            for e, (circle_id, circle_data) in enumerate(existing_circle_list):
+                print(f"  Circle {circle_id}:")
+                print(f"    Subregion: {circle_data['subregion']}")
+                print(f"    Meeting Time: {circle_data['meeting_time']}")
+                print(f"    Current Members: {len(circle_data['members'])}")
+                print(f"    Max Additions: {circle_data.get('max_additions', 'Not set')}")
+            
+            # Check specifically for our example circles
+            for circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                for e, (c_id, circle_data) in enumerate(existing_circle_list):
+                    if c_id == circle_id:
+                        print(f"\nDETAILED DEBUG FOR EXAMPLE: {circle_id}")
+                        print(f"  Current Members: {len(circle_data['members'])}")
+                        print(f"  Max Additions: {circle_data.get('max_additions', 'Not set')}")
+                        print(f"  Meeting Time: {circle_data['meeting_time']}")
+                        print(f"  Subregion: {circle_data['subregion']}")
+        
         for p in participants:
             p_row = remaining_df[remaining_df['Encoded ID'] == p].iloc[0]
+            
+            # DEEP DEBUG: Check time preferences for specific participants
+            if p in ['73177784103', '50625303450'] and debug_mode:
+                print(f"\nDEEP DEBUG - Participant {p} Time Preferences:")
+                from modules.data_processor import standardize_time_preference
+                print(f"  Original preferences:")
+                print(f"    First: '{p_row['first_choice_time']}'")
+                print(f"    Second: '{p_row['second_choice_time']}'")
+                print(f"    Third: '{p_row['third_choice_time']}'")
+                print(f"  Standardized preferences:")
+                print(f"    First: '{standardize_time_preference(p_row['first_choice_time'])}'")
+                print(f"    Second: '{standardize_time_preference(p_row['second_choice_time'])}'")
+                print(f"    Third: '{standardize_time_preference(p_row['third_choice_time'])}'")
             
             for e in range(len(existing_circle_list)):
                 circle_id, circle_data = existing_circle_list[e]
@@ -1235,6 +1268,22 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
                     print(f"\nDEBUG - Setting objective for: Participant {p} with Circle {circle_id}")
                     print(f"  Score (no bonus): {score}")
+                    print(f"  Circle max_additions: {circle_data.get('max_additions', 'Not set')}")
+                    print(f"  Circle current members: {len(circle_data['members'])}")
+                    print(f"  Compatibility check: {existing_circle_compatibility.get((p, e), 'Not found')}")
+                    print(f"  Time slots - Circle: '{time_slot}', Participant prefs: '{p_row['first_choice_time']}', '{p_row['second_choice_time']}', '{p_row['third_choice_time']}'")
+                    
+                    # Standardize and check again
+                    from modules.data_processor import standardize_time_preference
+                    std_time_slot = standardize_time_preference(time_slot)
+                    std_prefs = [
+                        standardize_time_preference(p_row['first_choice_time']),
+                        standardize_time_preference(p_row['second_choice_time']),
+                        standardize_time_preference(p_row['third_choice_time'])
+                    ]
+                    print(f"  Standardized - Circle: '{std_time_slot}', Participant prefs: {std_prefs}")
+                    print(f"  Time match: {std_time_slot in std_prefs}")
+                    print(f"  Location match: {subregion in [p_row['first_choice_location'], p_row['second_choice_location'], p_row['third_choice_location']]}")
     
     # Primary objective: maximize number of matched participants (1000 points each)
     # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
@@ -1595,12 +1644,18 @@ def calculate_preference_score(participant, subregion, time_slot):
     elif participant['third_choice_location'] == subregion:
         loc_score = 1
     
-    # Time preference scoring
-    if participant['first_choice_time'] == time_slot:
+    # Time preference scoring - standardize time formats first
+    from modules.data_processor import standardize_time_preference
+    std_time_slot = standardize_time_preference(time_slot)
+    std_first = standardize_time_preference(participant['first_choice_time'])
+    std_second = standardize_time_preference(participant['second_choice_time'])
+    std_third = standardize_time_preference(participant['third_choice_time'])
+    
+    if std_first == std_time_slot:
         time_score = 3
-    elif participant['second_choice_time'] == time_slot:
+    elif std_second == std_time_slot:
         time_score = 2
-    elif participant['third_choice_time'] == time_slot:
+    elif std_third == std_time_slot:
         time_score = 1
     
     # Total score
