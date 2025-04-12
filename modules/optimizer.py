@@ -981,18 +981,20 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # This ensures all viable circles with max_additions > 0 are included
     optimization_context['existing_circles'] = list(existing_circles.values())
     
-    # Track circles at capacity (10 members) or needing hosts
+    # Track circles at capacity (10 members)
     for circle in circles:
         if circle.get('member_count', 0) >= 10:
             optimization_context['full_circles'].append(circle.get('circle_id'))
-            
-    if debug_mode:
-        print(f"Added {len(existing_circles)} existing circles to optimization context")
-        
+    
+    # Track circles needing hosts (in a separate loop to avoid LSP confusion)
+    for circle in circles:
         if (circle.get('always_hosts', 0) == 0 and 
             circle.get('sometimes_hosts', 0) < 2 and
             circle.get('circle_id', '').startswith('IP-')):
             optimization_context['circles_needing_hosts'].append(circle)
+            
+    if debug_mode:
+        print(f"Added {len(existing_circles)} existing circles to optimization context")
     
     if debug_mode:
         print(f"Region: {region}, Subregions: {subregions}, Time slots: {time_slots}")
