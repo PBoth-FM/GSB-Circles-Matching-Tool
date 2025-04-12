@@ -1089,7 +1089,10 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     optimization_context['location_time_pairs'] = [(opt[0], opt[1]) for opt in circle_options]
     
     # Map existing circles to their index in a list for variable creation
-    existing_circle_list = list(existing_circles.items())
+    # Only use circles that can accept new members (max_additions > 0)
+    viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
+                     if circle_data.get('max_additions', 0) > 0}
+    existing_circle_list = list(viable_circles.items())
     existing_circle_ids = [circle_id for circle_id, _ in existing_circle_list]
     
     if debug_mode and existing_circle_list:
