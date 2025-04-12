@@ -633,6 +633,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     # Create circle data with member list and metadata
                     circle_data = {
                         'members': [m['Encoded ID'] for m in members],
+                        'region': region,  # Add region to ensure we can filter properly by region
                         'subregion': subregion,
                         'meeting_time': formatted_meeting_time,
                         'always_hosts': sum(1 for m in members if m.get('host', '').lower() in ['always', 'always host']),
@@ -978,11 +979,30 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Add existing circles to context
     # Use the existing_circles dictionary rather than the circles list
-    # Filter to only include circles that can accept new members (max_additions > 0)
+    # Filter to only include circles that:
+    # 1. Can accept new members (max_additions > 0)
+    # 2. Belong to the current region
     viable_circles = [circle for circle_id, circle in existing_circles.items() 
-                     if circle.get('max_additions', 0) > 0]
+                     if circle.get('max_additions', 0) > 0 and
+                        circle.get('region', '') == region]
     
     optimization_context['existing_circles'] = viable_circles
+    
+    # More detailed debug output to help diagnose issues
+    if debug_mode:
+        all_regions = set(circle.get('region', '') for circle in existing_circles.values())
+        circles_in_region = [circle_id for circle_id, circle in existing_circles.items() 
+                           if circle.get('region', '') == region]
+        viable_circle_count = len(viable_circles)
+        
+        print(f"All circles span {len(all_regions)} regions: {all_regions}")
+        print(f"Found {len(circles_in_region)} total circles in region {region}")
+        print(f"Of those, {viable_circle_count} have capacity (max_additions > 0)")
+        
+        if viable_circle_count > 0:
+            print(f"Viable circles in region {region}:")
+            for circle in viable_circles:
+                print(f"  {circle.get('circle_id')}: {circle.get('member_count')} members, can add {circle.get('max_additions')} more")
     
     if debug_mode:
         print(f"Found {len(existing_circles)} total existing circles")
@@ -1081,19 +1101,27 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     if debug_mode:
         print(f"Creating optimization variables for {len(participants)} participants and {len(circle_options)} circle options")
-        viable_circle_count = sum(1 for c in existing_circles.values() if c.get('max_additions', 0) > 0)
-        print(f"Found {viable_circle_count} existing circles with available capacity")
+        viable_circle_count = sum(1 for c in existing_circles.values() 
+                                if c.get('max_additions', 0) > 0 and 
+                                c.get('region', '') == region)
+        print(f"Found {viable_circle_count} existing circles with available capacity for region {region}")
     
     # Create compatibility matrix to enforce matching only to preferred locations and times
     compatibility = {}
     optimization_context['location_time_pairs'] = [(opt[0], opt[1]) for opt in circle_options]
     
     # Map existing circles to their index in a list for variable creation
-    # Only use circles that can accept new members (max_additions > 0)
+    # Only use circles that:
+    # 1. Can accept new members (max_additions > 0)
+    # 2. Belong to the current region
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
-                     if circle_data.get('max_additions', 0) > 0}
+                     if circle_data.get('max_additions', 0) > 0 and
+                        circle_data.get('region', '') == region}
     existing_circle_list = list(viable_circles.items())
     existing_circle_ids = [circle_id for circle_id, _ in existing_circle_list]
+    
+    if debug_mode:
+        print(f"FILTERING: Region-specific viable circles for {region}: {existing_circle_ids}")
     
     if debug_mode and existing_circle_list:
         print(f"Existing circles available for optimization: {existing_circle_ids}")
