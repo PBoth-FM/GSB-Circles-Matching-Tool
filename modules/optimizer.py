@@ -978,8 +978,15 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Add existing circles to context
     # Use the existing_circles dictionary rather than the circles list
-    # This ensures all viable circles with max_additions > 0 are included
-    optimization_context['existing_circles'] = list(existing_circles.values())
+    # Filter to only include circles that can accept new members (max_additions > 0)
+    viable_circles = [circle for circle_id, circle in existing_circles.items() 
+                     if circle.get('max_additions', 0) > 0]
+    
+    optimization_context['existing_circles'] = viable_circles
+    
+    if debug_mode:
+        print(f"Found {len(existing_circles)} total existing circles")
+        print(f"Adding {len(viable_circles)} circles with capacity (max_additions > 0) to optimization context")
     
     # Track circles at capacity (10 members)
     for circle in circles:
@@ -993,8 +1000,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             circle.get('circle_id', '').startswith('IP-')):
             optimization_context['circles_needing_hosts'].append(circle)
             
-    if debug_mode:
-        print(f"Added {len(existing_circles)} existing circles to optimization context")
+    # Removed redundant debug log since we now provide more detailed information above
     
     if debug_mode:
         print(f"Region: {region}, Subregions: {subregions}, Time slots: {time_slots}")
@@ -1075,7 +1081,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     if debug_mode:
         print(f"Creating optimization variables for {len(participants)} participants and {len(circle_options)} circle options")
-        print(f"Found {len(existing_circles)} existing circles with available capacity")
+        viable_circle_count = sum(1 for c in existing_circles.values() if c.get('max_additions', 0) > 0)
+        print(f"Found {viable_circle_count} existing circles with available capacity")
     
     # Create compatibility matrix to enforce matching only to preferred locations and times
     compatibility = {}
