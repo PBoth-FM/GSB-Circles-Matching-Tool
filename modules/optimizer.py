@@ -394,6 +394,10 @@ def run_matching_algorithm(data, config):
     return results_df, circles_df, unmatched_df
 
 def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
+    # Force debug mode to True for our critical test cases
+    if region in ["London", "Singapore", "New York"]:
+        debug_mode = True
+        print(f"\n🔍🔍🔍 ENTERING CRITICAL REGION: {region} 🔍🔍🔍")
     """
     Optimize matching within a single region
     
@@ -1152,7 +1156,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         viable_circle_count = sum(1 for c in existing_circles.values() 
                                 if c.get('max_additions', 0) > 0)
         
-        print(f"Found {len(existing_circle_list)} existing circles with available capacity for region {region}")
+        # This is a completely separate definition of viable_circles
+        viable_circles_debug = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
+                      if circle_data.get('max_additions', 0) > 0}
+        
+        # Create a list of viable circles for debugging
+        viable_list = list(viable_circles_debug.items())
+        
+        print(f"Found {len(viable_list)} existing circles with available capacity for region {region}")
     
     # Create compatibility matrix to enforce matching only to preferred locations and times
     compatibility = {}
@@ -1166,8 +1177,18 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     #   b) Have region information extracted from circle_id (more accurate, we filter later)
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
                      if circle_data.get('max_additions', 0) > 0}
+    
+    # Create a list of viable circles for the optimizer to work with
     existing_circle_list = list(viable_circles.items())
     existing_circle_ids = [circle_id for circle_id, _ in existing_circle_list]
+    
+    # CRITICAL LOGGING for Singapore and London
+    if region in ["London", "Singapore"] and debug_mode:
+        print(f"\n🔍🔍🔍 VIABLE CIRCLES IN {region} 🔍🔍🔍")
+        for circle_id, circle_data in existing_circles.items():
+            extracted_region = circle_data.get('region', "No region")
+            max_add = circle_data.get('max_additions', 0)
+            print(f"Circle: {circle_id}, Region: {extracted_region}, Max Additions: {max_add}")
     
     if debug_mode:
         print(f"FILTERING: Region-specific viable circles for {region}: {existing_circle_ids}")
