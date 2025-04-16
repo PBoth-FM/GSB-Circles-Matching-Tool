@@ -455,6 +455,23 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     if region in ["London", "Singapore", "New York"]:
         debug_mode = True
         print(f"\n🔍🔍🔍 ENTERING CRITICAL REGION: {region} 🔍🔍🔍")
+        
+    # Special debug to check for our test participants
+    test_participants = ['73177784103', '50625303450']
+    test_circles = ['IP-SIN-01', 'IP-LON-04']
+    
+    # Check if our test participants are in this region
+    for p_id in test_participants:
+        if p_id in region_df['Encoded ID'].values:
+            print(f"🔎 Test participant {p_id} found in region {region}")
+            
+    # Check if our test circles are being processed for this region
+    for current_col in ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']:
+        if current_col in region_df.columns:
+            for c_id in test_circles:
+                circle_members = region_df[region_df[current_col] == c_id]
+                if not circle_members.empty:
+                    print(f"🔎 Test circle {c_id} has {len(circle_members)} members in region {region}")
     """
     Optimize matching within a single region
     
@@ -709,10 +726,18 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                                 "BOS": "Boston",
                                 "LAX": "Los Angeles",
                                 "SEA": "Seattle",
+                            
+                            }
+                            
+                            # Special debug for our test cases
+                            if circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                                print(f"🧪 REGION EXTRACTION: Circle ID {circle_id}, extracted code {region_code}")
+                                
+                            region_map.update({
                                 "ATL": "Atlanta",
                                 "AUS": "Austin",
                                 # Add more mappings as needed
-                            }
+                            })
                             circle_region = region_map.get(region_code, region)
                             
                             if debug_mode and circle_id in ['IP-SIN-01', 'IP-LON-04']:
