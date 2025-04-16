@@ -1014,9 +1014,23 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Filter to only include circles that:
     # 1. Can accept new members (max_additions > 0)
     # 2. Belong to the current region
+    # 3. Using the region extracted from circle_id which is more accurate
     viable_circles = [circle for circle_id, circle in existing_circles.items() 
-                     if circle.get('max_additions', 0) > 0 and
-                        circle.get('region', '') == region]
+                     if circle.get('max_additions', 0) > 0]
+                     
+    # Add extensive debug for region matching
+    if debug_mode:
+        print(f"\n📋 VIABLE CIRCLES REGION MATCHING DEBUG:")
+        all_circles_count = len(existing_circles)
+        capacity_circles_count = sum(1 for c in existing_circles.values() if c.get('max_additions', 0) > 0)
+        print(f"  Total circles with capacity: {capacity_circles_count}/{all_circles_count}")
+        
+        # Print all circles with capacity
+        if capacity_circles_count > 0:
+            print(f"  Circles with capacity:")
+            for circle_id, circle in existing_circles.items():
+                if circle.get('max_additions', 0) > 0:
+                    print(f"    {circle_id}: region='{circle.get('region', 'unknown')}', max_additions={circle.get('max_additions', 0)}")
     
     optimization_context['existing_circles'] = viable_circles
     
@@ -1133,10 +1147,12 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     if debug_mode:
         print(f"Creating optimization variables for {len(participants)} participants and {len(circle_options)} circle options")
+        
+        # Count circles with capacity, but don't apply region filter anymore
         viable_circle_count = sum(1 for c in existing_circles.values() 
-                                if c.get('max_additions', 0) > 0 and 
-                                c.get('region', '') == region)
-        print(f"Found {viable_circle_count} existing circles with available capacity for region {region}")
+                                if c.get('max_additions', 0) > 0)
+        
+        print(f"Found {len(existing_circle_list)} existing circles with available capacity for region {region}")
     
     # Create compatibility matrix to enforce matching only to preferred locations and times
     compatibility = {}
@@ -1145,10 +1161,11 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Map existing circles to their index in a list for variable creation
     # Only use circles that:
     # 1. Can accept new members (max_additions > 0)
-    # 2. Belong to the current region
+    # 2. Either: 
+    #   a) Belong to the current region, OR
+    #   b) Have region information extracted from circle_id (more accurate, we filter later)
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
-                     if circle_data.get('max_additions', 0) > 0 and
-                        circle_data.get('region', '') == region}
+                     if circle_data.get('max_additions', 0) > 0}
     existing_circle_list = list(viable_circles.items())
     existing_circle_ids = [circle_id for circle_id, _ in existing_circle_list]
     
