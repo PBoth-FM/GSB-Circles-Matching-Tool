@@ -1267,6 +1267,26 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # CRITICAL LOGGING for Singapore and London
     if region in ["London", "Singapore"] and debug_mode:
         print(f"\n🔍🔍🔍 VIABLE CIRCLES IN {region} 🔍🔍🔍")
+        
+        # First, check if our test circles are in the existing_circles
+        test_circles = ['IP-SIN-01', 'IP-LON-04'] 
+        for test_id in test_circles:
+            if test_id in existing_circles:
+                c_data = existing_circles[test_id]
+                print(f"🧪 Test circle {test_id} found in existing_circles:")
+                print(f"    Circle region: {c_data.get('region', 'Unknown')}")
+                print(f"    Circle original region: {c_data.get('original_region', 'Unknown')}")
+                print(f"    Max additions: {c_data.get('max_additions', 0)}")
+                print(f"    In viable circles: {test_id in viable_circles}")
+                
+                # If not in viable circles, explain why
+                if test_id not in viable_circles:
+                    if c_data.get('max_additions', 0) <= 0:
+                        print(f"    Not viable because max_additions is {c_data.get('max_additions', 0)}")
+            else:
+                print(f"🧪 Test circle {test_id} NOT found in existing_circles!")
+        
+        # List all circles
         for circle_id, circle_data in existing_circles.items():
             extracted_region = circle_data.get('region', "No region")
             max_add = circle_data.get('max_additions', 0)
