@@ -16,6 +16,31 @@ def run_matching_algorithm(data, config):
     Returns:
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
     """
+    # Critical debugging - look for our test participants and circles
+    print("\n🔍🔍🔍 MATCHING ALGORITHM START - CHECKING FOR TEST CASES 🔍🔍🔍")
+    
+    # Check for our example participants
+    example_participants = ['73177784103', '50625303450']
+    for p_id in example_participants:
+        if p_id in data['Encoded ID'].values:
+            p_row = data[data['Encoded ID'] == p_id].iloc[0]
+            print(f"  Found example participant {p_id}:")
+            print(f"    Status: {p_row.get('Status', 'Unknown')}")
+            print(f"    Region: {p_row.get('Current_Region', 'Unknown')}")
+            print(f"    Current Circle ID: {p_row.get('Current_Circle_ID', 'Unknown')}")
+            
+    # Check for current circles that should be matching
+    example_circles = ['IP-SIN-01', 'IP-LON-04']
+    circle_ids = data['Current_Circle_ID'].unique()
+    for c_id in example_circles:
+        if c_id in circle_ids:
+            members = data[data['Current_Circle_ID'] == c_id]
+            print(f"  Found example circle {c_id} with {len(members)} members")
+            print(f"    Region from first member: {members.iloc[0].get('Current_Region', 'Unknown')}")
+            print(f"    Members: {members['Encoded ID'].tolist()}")
+            
+    # Debug is already embedded in the workflow
+    debug_mode = config.get('debug_mode', False)
     # Initialize optimization logs
     import streamlit as st
     if 'optimization_logs' not in st.session_state:
@@ -309,6 +334,38 @@ def run_matching_algorithm(data, config):
     all_results = direct_results.copy()  # Start with directly continued participants
     all_circles = direct_circles_list.copy()  # Start with directly continued circles
     all_unmatched = []
+    
+    # Special debug for test cases
+    print("\n🧪 TEST CASE TRACKING BEFORE REGIONAL OPTIMIZATION 🧪")
+    test_participants = ['73177784103', '50625303450']
+    test_circles = ['IP-SIN-01', 'IP-LON-04']
+    
+    # Check which regions our test participants are in
+    for p_id in test_participants:
+        p_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        if not p_rows.empty:
+            p_row = p_rows.iloc[0]
+            p_region = p_row.get(region_column, 'Unknown')
+            print(f"  Test participant {p_id} found in region {p_region}")
+            print(f"    Status: {p_row.get('Status', 'Unknown')}")
+            print(f"    Location Preferences: {p_row.get('first_choice_location', 'Unknown')}, {p_row.get('second_choice_location', 'Unknown')}, {p_row.get('third_choice_location', 'Unknown')}")
+            print(f"    Time Preferences: {p_row.get('first_choice_time', 'Unknown')}, {p_row.get('second_choice_time', 'Unknown')}, {p_row.get('third_choice_time', 'Unknown')}")
+    
+    # Check which regions our test circles are in
+    for circle_id in test_circles:
+        circle_found = False
+        for c_data in all_circles:
+            if c_data['circle_id'] == circle_id:
+                circle_found = True
+                c_region = c_data.get('region', 'Unknown')
+                print(f"  Test circle {circle_id} found with region {c_region}")
+                print(f"    Subregion: {c_data.get('subregion', 'Unknown')}")
+                print(f"    Meeting Time: {c_data.get('meeting_time', 'Unknown')}")
+                print(f"    Max Additions: {c_data.get('max_additions', 0)}")
+                print(f"    Members: {len(c_data.get('members', []))}")
+                break
+        if not circle_found:
+            print(f"  Test circle {circle_id} NOT FOUND in circles list")
     
     # Process each region separately
     for region in regions:
