@@ -630,10 +630,42 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                             print(f"  {message} for circle {circle_id} - using default max total of 8")
                             print(f"  Currently has {len(members)} members, can accept {final_max_additions} more")
                     
+                    # Extract region from circle ID 
+                    circle_region = None
+                    # Look for standard format IP-XXX-YY, where XXX is the region code
+                    if "-" in circle_id:
+                        parts = circle_id.split("-")
+                        if len(parts) >= 2:
+                            # Extract the region code (the middle part for 3-part IDs, or the last part for 2-part IDs)
+                            region_code = parts[1] if len(parts) >= 3 else parts[-1]
+                            # Map common region codes to region names
+                            region_map = {
+                                "LON": "London",
+                                "SIN": "Singapore",
+                                "SFO": "San Francisco",
+                                "NYC": "New York",
+                                "CHI": "Chicago",
+                                "BOS": "Boston",
+                                "LAX": "Los Angeles",
+                                "SEA": "Seattle",
+                                "ATL": "Atlanta",
+                                "AUS": "Austin",
+                                # Add more mappings as needed
+                            }
+                            circle_region = region_map.get(region_code, region)
+                            
+                            if debug_mode and circle_id in ['IP-SIN-01', 'IP-LON-04']:
+                                print(f"\n🔑 REGION EXTRACTION for circle {circle_id}:")
+                                print(f"  Extracted region code: {region_code}")
+                                print(f"  Mapped to region: {circle_region}")
+                                print(f"  Current function region: {region}")
+
                     # Create circle data with member list and metadata
                     circle_data = {
                         'members': [m['Encoded ID'] for m in members],
-                        'region': region,  # Add region to ensure we can filter properly by region
+                        'region': circle_region if circle_region else region,  # Use extracted region if available
+                        'original_region': region,  # Keep track of the original region for debugging
+                        'circle_id': circle_id,  # Store the circle ID directly
                         'subregion': subregion,
                         'meeting_time': formatted_meeting_time,
                         'always_hosts': sum(1 for m in members if m.get('host', '').lower() in ['always', 'always host']),
