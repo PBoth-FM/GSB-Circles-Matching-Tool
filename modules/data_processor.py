@@ -390,12 +390,29 @@ def is_time_compatible(time1, time2, is_important=False):
         ("Monday-Thursday (Evenings)", "Varies (Evenings)"),
         # Circle IP-LON-04 with time "Tuesday (Evenings)" and participant 50625303450
         ("Tuesday (Evenings)", "Monday-Thursday (Evenings)"),
-        ("Monday-Thursday (Evenings)", "Tuesday (Evenings)")
+        ("Monday-Thursday (Evenings)", "Tuesday (Evenings)"),
+        # Also check Monday-thursday variants (lowercase t)
+        ("Varies (Evenings)", "Monday-thursday (Evenings)"),
+        ("Monday-thursday (Evenings)", "Varies (Evenings)"),
+        ("Tuesday (Evenings)", "Monday-thursday (Evenings)"),
+        ("Monday-thursday (Evenings)", "Tuesday (Evenings)")
     ]
     
-    # If not explicitly set to True, check if this is an important pair we want to debug
+    # Check if this is a known problematic case to force debug
     if not is_important:
-        is_important = (time1, time2) in important_pairs
+        # Check more flexibly to catch casing variations
+        time1_lower = str(time1).lower() if not pd.isna(time1) else ""
+        time2_lower = str(time2).lower() if not pd.isna(time2) else ""
+        
+        # Check for specific patterns we care about
+        if ("varies" in time1_lower and "evening" in time1_lower and "monday" in time2_lower and "thursday" in time2_lower) or \
+           ("varies" in time2_lower and "evening" in time2_lower and "monday" in time1_lower and "thursday" in time1_lower) or \
+           ("tuesday" in time1_lower and "evening" in time1_lower and "monday" in time2_lower and "thursday" in time2_lower) or \
+           ("tuesday" in time2_lower and "evening" in time2_lower and "monday" in time1_lower and "thursday" in time1_lower):
+            is_important = True
+        else:
+            # Check exact matches from the list
+            is_important = (time1, time2) in important_pairs
     
     if is_important:
         print(f"\n🔍 IMPORTANT COMPATIBILITY CHECK between '{time1}' and '{time2}'")
@@ -434,9 +451,10 @@ def is_time_compatible(time1, time2, is_important=False):
         time_period = parts[1].replace(')', '').strip() if len(parts) > 1 else ''
         
         # Special debug for specific time preferences we're having issues with
-        if (day_part == 'Varies' and time_period == 'Evenings') or \
-           (day_part == 'Monday-Thursday' and time_period == 'Evenings') or \
-           (day_part == 'Tuesday' and time_period == 'Evenings'):
+        if is_important or (
+           (day_part == 'Varies' and time_period == 'Evenings') or 
+           ('Monday' in day_part and 'Thursday' in day_part and time_period == 'Evenings') or
+           (day_part == 'Tuesday' and time_period == 'Evenings')):
             print(f"DEBUG: Extracted '{day_part}' and '{time_period}' from '{time_str}'")
         
         return day_part, time_period
@@ -448,6 +466,16 @@ def is_time_compatible(time1, time2, is_important=False):
     if is_important:
         print(f"  Time periods: '{time_period1}' vs '{time_period2}'")
         print(f"  Day parts: '{day_part1}' vs '{day_part2}'")
+    
+    # Special case handling for "Varies" in day part
+    if day_part1.lower() == 'varies' or day_part2.lower() == 'varies':
+        # Varies matches any day part
+        day_match = True
+        if is_important:
+            print(f"  ✓ Day parts match: One is 'Varies' which matches any day")
+    else:
+        # Normal day matching will be done below
+        day_match = None
     
     # Check time period compatibility
     time_period_match = False
@@ -464,6 +492,12 @@ def is_time_compatible(time1, time2, is_important=False):
         if is_important:
             print(f"  ❌ INCOMPATIBLE - Time periods don't match")
         return False
+    
+    # Skip day extraction if we already know days match
+    if day_match is True:
+        if is_important:
+            print(f"  ✅ FINAL RESULT: COMPATIBLE - Time periods match and day part contains 'Varies'")
+        return True
     
     # Extract days function with enhanced handling for all formats
     def extract_days(day_part):
@@ -504,6 +538,12 @@ def is_time_compatible(time1, time2, is_important=False):
             if is_important:
                 print(f"    Day part 'M-Th' expands to Monday through Thursday")
             return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
+        
+        # Special case: handle "monday-thursday" explicitly (lowercase t issue)
+        if day_part.lower() in ['monday-thursday', 'monday-thurs']:
+            if is_important:
+                print(f"    Day part '{day_part}' expands to Monday through Thursday")
+            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
             
         # Handle day ranges with dash notation
         days = []
@@ -536,7 +576,19 @@ def is_time_compatible(time1, time2, is_important=False):
             except ValueError:
                 if is_important:
                     print(f"    Could not parse day range {day_part}, using as-is")
-                days = [day_part]
+                # Special case for 'thursday' if ValueError was raised trying to find it
+                if 'thursday' in end_day:
+                    end_day = 'thursday'  # Make sure it's lowercase for matching
+                    try:
+                        start_idx = all_days_lower.index(start_day)
+                        end_idx = all_days_lower.index(end_day)
+                        days = all_days[start_idx:end_idx+1]
+                        if is_important:
+                            print(f"    Second attempt: Day range {day_range[0].strip()}-{day_range[1].strip()} expands to {days}")
+                    except ValueError:
+                        days = [day_part]
+                else:
+                    days = [day_part]
         else:
             # Single day - handle abbreviations and capitalization
             day_lower = day_part.lower()

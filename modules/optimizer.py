@@ -1422,14 +1422,34 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 
                 # Debug our specific examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
-                    print(f"\nDEBUG - Setting objective for: Participant {p} with Circle {circle_id}")
+                    print(f"\n🔍 DETAILED DEBUG - Setting objective for: Participant {p} with Circle {circle_id}")
                     print(f"  Score (no bonus): {score}")
                     print(f"  Circle max_additions: {circle_data.get('max_additions', 'Not set')}")
                     print(f"  Circle current members: {len(circle_data['members'])}")
-                    print(f"  Compatibility check: {existing_circle_compatibility.get((p, e), 'Not found')}")
-                    print(f"  Time slots - Circle: '{time_slot}', Participant prefs: '{p_row['first_choice_time']}', '{p_row['second_choice_time']}', '{p_row['third_choice_time']}'")
                     
-                    # Standardize and check again
+                    # Does the compatibility matrix show this as compatible?
+                    is_compatible = existing_circle_compatibility.get((p, e), 0) == 1
+                    print(f"  ⚠️ Compatibility check: {is_compatible} (value={existing_circle_compatibility.get((p, e), 'Not found')})")
+                    
+                    # Verify location match
+                    location_preferences = [p_row['first_choice_location'], p_row['second_choice_location'], p_row['third_choice_location']]
+                    location_match = subregion in location_preferences
+                    print(f"  Location match: {location_match} (Circle: {subregion}, Preferences: {location_preferences})")
+                    
+                    # Verify time match using our function
+                    from modules.data_processor import is_time_compatible
+                    time_preferences = [p_row['first_choice_time'], p_row['second_choice_time'], p_row['third_choice_time']]
+                    direct_time_matches = [
+                        is_time_compatible(time_slot, time_preferences[0], is_important=True),
+                        is_time_compatible(time_slot, time_preferences[1], is_important=True),
+                        is_time_compatible(time_slot, time_preferences[2], is_important=True)
+                    ]
+                    time_match = any(direct_time_matches)
+                    print(f"  Time match results: {direct_time_matches}")
+                    print(f"  Time match overall: {time_match}")
+                    print(f"  Time slots - Circle: '{time_slot}', Participant prefs: {time_preferences}")
+                    
+                    # Check standardized versions for debugging
                     from modules.data_processor import standardize_time_preference
                     std_time_slot = standardize_time_preference(time_slot)
                     std_prefs = [
@@ -1438,8 +1458,17 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         standardize_time_preference(p_row['third_choice_time'])
                     ]
                     print(f"  Standardized - Circle: '{std_time_slot}', Participant prefs: {std_prefs}")
-                    print(f"  Time match: {std_time_slot in std_prefs}")
-                    print(f"  Location match: {subregion in [p_row['first_choice_location'], p_row['second_choice_location'], p_row['third_choice_location']]}")
+                    print(f"  Standardized time match: {std_time_slot in std_prefs}")
+                    
+                    # Verify the variable is in the model
+                    print(f"  Variable z[{p}, {e}] exists: {(p, e) in z}")
+                    print(f"  Is there a compatibility constraint restricting this match: {not is_compatible}")
+                    
+                    # Compatibility should be determined by location AND time matches
+                    print(f"  Final compatibility (location AND time): {location_match and time_match} (should match {is_compatible})")
+                    
+                    # Is this in the correct region?
+                    print(f"  Same region: {p_row.get('Derived_Region', p_row.get('Requested_Region', 'Unknown')) == circle_data.get('region', 'Unknown')}")
     
     # Primary objective: maximize number of matched participants (1000 points each)
     # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
