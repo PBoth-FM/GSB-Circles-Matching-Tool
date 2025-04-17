@@ -484,8 +484,8 @@ def run_matching_algorithm(data, config):
     
     # Special debug for test cases
     print("\n🧪 TEST CASE TRACKING BEFORE REGIONAL OPTIMIZATION 🧪")
-    test_participants = ['73177784103', '50625303450']
-    test_circles = ['IP-SIN-01', 'IP-LON-04']
+    test_participants = ['73177784103', '50625303450', '72549701782']
+    test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
     
     # Check which regions our test participants are in
     for p_id in test_participants:
@@ -610,13 +610,13 @@ def run_matching_algorithm(data, config):
 
 def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
     # Force debug mode to True for our critical test cases
-    if region in ["London", "Singapore", "New York"]:
+    if region in ["London", "Singapore", "New York", "Houston"]:
         debug_mode = True
         print(f"\n🔍🔍🔍 ENTERING CRITICAL REGION: {region} 🔍🔍🔍")
         
     # Special debug to check for our test participants
-    test_participants = ['73177784103', '50625303450']
-    test_circles = ['IP-SIN-01', 'IP-LON-04']
+    test_participants = ['73177784103', '50625303450', '72549701782']
+    test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
     
     # Check if our test participants are in this region
     for p_id in test_participants:
