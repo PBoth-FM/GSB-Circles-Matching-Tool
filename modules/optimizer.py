@@ -6,36 +6,60 @@ from itertools import combinations
 from utils.helpers import determine_unmatched_reason
 
 # Special test case handler for critical examples
-def deduplicate_circles(circles_list):
+def deduplicate_circles(circles_list, debug_mode=False):
     """
     Deduplicates circles by circle_id, merging member lists and updating counts.
     
     Args:
         circles_list: List of dictionaries (circles)
+        debug_mode: Whether to print debug information
         
     Returns:
         Deduplicated list of circles
     """
+    if debug_mode:
+        print(f"\n🔄 DEDUPLICATING {len(circles_list)} CIRCLES")
+    
     merged = {}
     
     for circle in circles_list:
         c_id = circle['circle_id']
         if c_id not in merged:
-            # Copy to avoid mutation
+            # Copy to avoid mutation and ensure all required fields exist
             merged[c_id] = {
                 **circle,
-                'members': list(circle.get('members', []))  # ensure list
+                'members': list(circle.get('members', [])),  # ensure list
+                'is_existing': circle.get('is_existing', False),  # ensure field exists
+                'new_members': circle.get('new_members', 0),  # ensure field exists
+                'member_count': circle.get('member_count', len(circle.get('members', [])))  # ensure field exists
             }
+            
+            if debug_mode and c_id in ['IP-SIN-01', 'IP-LON-04']:
+                print(f"  Added circle {c_id} to merged dictionary with:")
+                print(f"    members: {len(merged[c_id]['members'])}")
+                print(f"    is_existing: {merged[c_id]['is_existing']}")
+                print(f"    new_members: {merged[c_id]['new_members']}")
         else:
             existing = merged[c_id]
-            # Merge members
-            merged_members = set(existing['members']) | set(circle.get('members', []))
+            # Merge members safely
+            merged_members = set(existing.get('members', [])) | set(circle.get('members', []))
             existing['members'] = list(merged_members)
-            # Update counts
+            
+            # Update counts safely
             existing['member_count'] = len(merged_members)
-            existing['new_members'] += circle.get('new_members', 0)
-            # Keep is_existing True if either is
-            existing['is_existing'] = existing['is_existing'] or circle.get('is_existing', False)
+            existing['new_members'] = existing.get('new_members', 0) + circle.get('new_members', 0)
+            
+            # Keep is_existing True if either is (using safe get with defaults)
+            existing['is_existing'] = existing.get('is_existing', False) or circle.get('is_existing', False)
+            
+            if debug_mode and c_id in ['IP-SIN-01', 'IP-LON-04']:
+                print(f"  Merged duplicate circle {c_id}:")
+                print(f"    members: {len(existing['members'])}")
+                print(f"    is_existing: {existing['is_existing']}")
+                print(f"    new_members: {existing['new_members']}")
+    
+    if debug_mode:
+        print(f"  Successfully deduplicated to {len(merged)} circles")
     
     return list(merged.values())
 
@@ -535,9 +559,8 @@ def run_matching_algorithm(data, config):
     print("\n🔄 DEDUPLICATING CIRCLES BY CIRCLE_ID")
     print(f"  Before deduplication: {len(all_circles)} circles")
     
-    # Use our global deduplication function
-    deduped_circles = deduplicate_circles(all_circles)
-    print(f"  After deduplication: {len(deduped_circles)} circles")
+    # Use our global deduplication function with debug mode
+    deduped_circles = deduplicate_circles(all_circles, debug_mode=debug_mode)
     
     # Convert results to DataFrames
     results_df = pd.DataFrame(all_results)
