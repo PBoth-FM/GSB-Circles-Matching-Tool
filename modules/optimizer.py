@@ -22,7 +22,15 @@ def deduplicate_circles(circles_list, debug_mode=False):
     
     merged = {}
     
-    for circle in circles_list:
+    for i, circle in enumerate(circles_list):
+        # Defensive check for required keys
+        if 'circle_id' not in circle:
+            if debug_mode:
+                print(f"⚠️ WARNING: Circle at index {i} is missing 'circle_id' key")
+                print(f"  Circle data: {circle}")
+                print(f"  Skipping this circle")
+            continue  # Skip this invalid circle
+        
         c_id = circle['circle_id']
         if c_id not in merged:
             # Copy to avoid mutation and ensure all required fields exist

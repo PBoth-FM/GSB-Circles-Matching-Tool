@@ -2015,10 +2015,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             else:
                 # This might be a renamed circle - find the original circle ID
                 original_id = None
-                for old_id, new_id in circle_id_mapping.items():
-                    if new_id == circle_id:
-                        original_id = old_id
-                        break
+                
+                # Check if circle_id_mapping exists (might not if we didn't do any renaming)
+                if 'circle_id_mapping' in locals() or 'circle_id_mapping' in globals():
+                    for old_id, new_id in circle_id_mapping.items():
+                        if new_id == circle_id:
+                            original_id = old_id
+                            break
                 
                 # Use the metadata from the original circle
                 if original_id and original_id in circle_metadata:
@@ -2058,11 +2061,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             if debug_mode:
                 original_id_debug = ""
-                if circle_id in circle_id_mapping.values():
-                    for old_id, new_id in circle_id_mapping.items():
-                        if new_id == circle_id:
-                            original_id_debug = f" (renamed from {old_id})"
-                            break
+                
+                # Check if circle_id_mapping exists
+                if 'circle_id_mapping' in locals() or 'circle_id_mapping' in globals():
+                    if circle_id in circle_id_mapping.values():
+                        for old_id, new_id in circle_id_mapping.items():
+                            if new_id == circle_id:
+                                original_id_debug = f" (renamed from {old_id})"
+                                break
                 
                 print(f"  Created new circle {circle_id}{original_id_debug} with {len(members)} members")
     
@@ -2105,10 +2111,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             else:
                 # This might be a renamed circle - find the original circle ID
                 original_id = None
-                for old_id, new_id in circle_id_mapping.items():
-                    if new_id == c_id:
-                        original_id = old_id
-                        break
+                
+                # Check if circle_id_mapping exists (might not if we didn't do any renaming)
+                if 'circle_id_mapping' in locals() or 'circle_id_mapping' in globals():
+                    for old_id, new_id in circle_id_mapping.items():
+                        if new_id == c_id:
+                            original_id = old_id
+                            break
                 
                 # Use the metadata from the original circle
                 if original_id and original_id in circle_metadata:
