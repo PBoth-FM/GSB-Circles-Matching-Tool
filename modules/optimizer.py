@@ -593,9 +593,9 @@ def run_matching_algorithm(data, config):
         if debug_mode:
             print(f"Matched {matched_count} out of {total_count} participants ({matched_percentage:.2f}%)")
     
-    # Force test case matching to ensure specific participants go to specific circles
-    # Enable forced test case matching to ensure consistent behavior for test cases
-    results_df, circles_df, unmatched_df = force_test_case_matching(results_df, circles_df, unmatched_df)
+    # Removed forced test case matching to evaluate general algorithm performance
+    # We want the algorithm to work correctly without special cases
+    # results_df, circles_df, unmatched_df = force_test_case_matching(results_df, circles_df, unmatched_df)
     
     # Restore original stdout
     sys.stdout = original_stdout
