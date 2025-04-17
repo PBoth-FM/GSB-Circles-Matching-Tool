@@ -1519,11 +1519,41 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             if compatibility[(p, j)] == 0:
                 prob += x[p, j] == 0, f"Incompatible_match_{p}_{j}"
                 
-    # Create compatibility matrix for existing circles
+    # Create compatibility matrix for existing circles with enhanced logging
     existing_circle_compatibility = {}
+    compatible_count_by_circle = {}  # Track compatibility counts by circle
+    
     if existing_circle_list:
+        # Initialize compatibility count tracking
+        for e in range(len(existing_circle_list)):
+            circle_id, _ = existing_circle_list[e]
+            compatible_count_by_circle[e] = 0
+            
+        # Print circle information for all existing circles
+        if debug_mode:
+            print(f"\n🔍 EXISTING CIRCLE COMPATIBILITY CHECK - {len(existing_circle_list)} circles")
+            for e, (circle_id, circle_data) in enumerate(existing_circle_list):
+                print(f"  Circle {e}: {circle_id}")
+                print(f"    Subregion: {circle_data.get('subregion', 'Unknown')}")
+                print(f"    Meeting time: {circle_data.get('meeting_time', 'Unknown')}")
+                print(f"    Current members: {len(circle_data.get('members', []))}")
+                print(f"    Max additions: {circle_data.get('max_additions', 0)}")
+        
+        # Check compatibility for each participant with each circle
         for p in participants:
             p_row = remaining_df[remaining_df['Encoded ID'] == p].iloc[0]
+            
+            # Print participant information for specific participants if debugging
+            if debug_mode and p in ['73177784103', '50625303450']:
+                print(f"\n👤 PARTICIPANT DETAIL: {p}")
+                print(f"  Location preferences: ")
+                print(f"    1st: {p_row.get('first_choice_location', 'Unknown')}")
+                print(f"    2nd: {p_row.get('second_choice_location', 'Unknown')}")
+                print(f"    3rd: {p_row.get('third_choice_location', 'Unknown')}")
+                print(f"  Time preferences: ")
+                print(f"    1st: {p_row.get('first_choice_time', 'Unknown')}")
+                print(f"    2nd: {p_row.get('second_choice_time', 'Unknown')}")
+                print(f"    3rd: {p_row.get('third_choice_time', 'Unknown')}")
             
             for e in range(len(existing_circle_list)):
                 circle_id, circle_data = existing_circle_list[e]
@@ -1540,6 +1570,9 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     standardize_time_preference(p_row['second_choice_time']),
                     standardize_time_preference(p_row['third_choice_time'])
                 ]
+                
+                # Track if we're checking our test examples
+                is_test_example = (p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04'])
                 
                 # Enhanced location compatibility checking
                 # First try exact match with participant preferences
