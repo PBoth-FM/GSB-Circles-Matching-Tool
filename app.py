@@ -127,8 +127,10 @@ def process_uploaded_file(uploaded_file):
             if len(deduplication_messages) > 0:
                 st.warning(f"Found and fixed {len(deduplication_messages)} duplicate Encoded IDs")
             
-            # Process and normalize data
-            processed_data = process_data(df)
+            # Process and normalize data - pass debug_mode from session state if available
+            debug_mode = st.session_state.get('debug_mode', False)
+            
+            processed_data = process_data(df, debug_mode=debug_mode)
             
             # Check for "Moving out" status records that will be excluded
             moving_out_count = 0
@@ -140,7 +142,7 @@ def process_uploaded_file(uploaded_file):
                 if moving_out_count > 0:
                     st.info(f"{moving_out_count} records with 'Moving Out' status will be excluded from matching")
             
-            normalized_data = normalize_data(processed_data)
+            normalized_data = normalize_data(processed_data, debug_mode=debug_mode)
             st.session_state.processed_data = normalized_data
             
             st.success(f"Data processed successfully! {len(normalized_data)} participants loaded.")

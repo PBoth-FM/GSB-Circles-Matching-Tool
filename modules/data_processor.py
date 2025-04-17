@@ -121,12 +121,13 @@ def calculate_class_vintage(gsb_class):
     else:
         return "61+ yrs"
 
-def process_data(df):
+def process_data(df, debug_mode=False):
     """
     Process and clean the participant data
     
     Args:
         df: Pandas DataFrame with participant data
+        debug_mode: Boolean to enable debug prints
         
     Returns:
         Processed DataFrame
@@ -232,12 +233,13 @@ def process_data(df):
     
     return processed_df
 
-def normalize_data(df):
+def normalize_data(df, debug_mode=False):
     """
     Normalize region and subregion data
     
     Args:
         df: Pandas DataFrame with processed participant data
+        debug_mode: Boolean to enable debug prints
         
     Returns:
         DataFrame with normalized region and subregion data
