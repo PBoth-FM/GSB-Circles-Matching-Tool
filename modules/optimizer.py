@@ -68,11 +68,22 @@ def force_test_case_matching(results_df, circles_df, unmatched_df):
         circles_df.loc[cidx, 'member_count'] += 1
         circles_df.loc[cidx, 'new_members'] += 1
         
-        # Update circle members list
-        members_list = circles_df.loc[cidx, 'members']
-        if isinstance(members_list, list):
-            members_list.append(participant_id)
-            circles_df.loc[cidx, 'members'] = members_list
+        # Update circle members list - using the pandas-safe approach
+        # Get the current members list (might be a copy, not the original)
+        current_members = circles_df.loc[cidx, 'members']
+        
+        # Create a new list with the participant added
+        if isinstance(current_members, list):
+            # Make a safe copy of the list first
+            updated_members = current_members.copy()
+            # Append to our copy
+            updated_members.append(participant_id)
+            # Update the dataframe with the new list
+            circles_df.at[cidx, 'members'] = updated_members
+            
+            # Use print directly as this is always a critical operation that should be logged
+            print(f"  Added {participant_id} to circle {circle_id} members list")
+            print(f"  Circle now has {len(updated_members)} members")
         
         modified = True
         print(f"  ✅ Successfully forced test case match")
@@ -1009,9 +1020,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             # We have enough good matches to grow this circle
             new_members = [p for p, _ in best_matches[:needed_size]]
             
-            # Update the circle data
-            circle_data['members'].extend(new_members)
-            circle_data['member_count'] = len(circle_data['members'])
+            # Update the circle data - pandas-safe approach
+            # Create a new combined list first
+            combined_members = circle_data['members'].copy()
+            combined_members.extend(new_members)
+            
+            # Update with the new combined list
+            circle_data['members'] = combined_members
+            circle_data['member_count'] = len(combined_members)
             circle_data['new_members'] = needed_size
             
             # Count the hosts in the combined group
@@ -1904,8 +1920,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 
             # Update the circle data with new members
             circle_data['new_members'] = len(new_members)
-            circle_data['members'].extend(new_members)
-            circle_data['member_count'] = len(circle_data['members'])
+            
+            # Create a new list first (pandas-safe approach)
+            updated_members = circle_data['members'].copy() 
+            updated_members.extend(new_members)
+            
+            # Update with the new combined list
+            circle_data['members'] = updated_members
+            circle_data['member_count'] = len(updated_members)
             
             # Add this circle to the circles list (it's already in existing_circles)
             circles.append(circle_data)
