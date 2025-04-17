@@ -806,28 +806,34 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Import region code mapping utilities
     from utils.normalization import get_region_code
     
-    # Count new circles per region for proper incrementing
-    new_circle_counts = {}
+    # Step 1: Group potential circles by region code for sequential numbering
+    regions_and_times = {}
     
-    for idx, (subregion, time_slot) in enumerate(new_circle_candidates):
-        # Get the standardized region code from the mapping
-        region_code = get_region_code(region)
-        
-        # Determine format based on whether it's virtual or in-person
-        # Default to in-person (IP) if we can't determine
-        format_prefix = "V" if "Virtual" in region else "IP"
-        
-        # Track new circles by region code for proper incremental numbering
-        if region_code not in new_circle_counts:
-            new_circle_counts[region_code] = 1
-        else:
-            new_circle_counts[region_code] += 1
-            
-        # Use the incremental count for this region
-        circle_num = str(new_circle_counts[region_code]).zfill(2)  # Format as 01, 02, etc.
+    # Get the standardized region code for the current region
+    region_code = get_region_code(region)
+    
+    # Initialize counter for this region - always start from 1
+    counter = 1
+    
+    # Determine format based on whether it's virtual or in-person
+    format_prefix = "V" if "Virtual" in region else "IP"
+    
+    if debug_mode:
+        print(f"Creating new circle IDs for region {region} (code: {region_code})")
+    
+    # For each subregion and time slot combination
+    for subregion, time_slot in new_circle_candidates:
+        # Format the counter as a 2-digit number (01, 02, etc.)
+        circle_num = str(counter).zfill(2)
         
         # Generate a unique ID for this potential new circle using the correct format
         circle_id = f"{format_prefix}-NEW-{region_code}-{circle_num}"
+        
+        if debug_mode:
+            print(f"  Created new circle ID: {circle_id} for subregion: {subregion}, time: {time_slot}")
+        
+        # Increment the counter for the next circle in this region
+        counter += 1
         
         new_circle_ids.append(circle_id)
         new_circle_metadata[circle_id] = {
