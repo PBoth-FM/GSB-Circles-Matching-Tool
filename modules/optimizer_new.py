@@ -2155,8 +2155,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         test_participant_dict['proposed_NEW_Subregion'] = 'Houston'
         test_participant_dict['proposed_NEW_DayTime'] = 'M-Th (Evenings)'
         test_participant_dict['unmatched_reason'] = ""  # Clear any unmatched reason
-        test_participant_dict['location_score'] = 3  # Max score
-        test_participant_dict['time_score'] = 3  # Max score
+        test_participant_dict['location_score'] = "3"  # Max score as string
+        test_participant_dict['time_score'] = "3"  # Max score as string
         
         # Add to results list
         results.append(test_participant_dict)
