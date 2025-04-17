@@ -876,28 +876,33 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Track which variables were created for verification
     created_vars = []
     
-    # [CONSULTANT RECOMMENDATION] - Ensure test participant is part of optimization
-    # Critical test case: Add Houston test participant explicitly
-    test_participant_id = '72549701782'
-    test_participant_found = test_participant_id in remaining_df['Encoded ID'].values
-    
-    # Log whether test participant is found in the data
-    print(f"\n🔍 TEST PARTICIPANT CHECK: {'Found' if test_participant_found else 'NOT FOUND'} in data: {test_participant_id}")
+    # Keep debug logs but remove special case handling
+    # Leave debug logs to help troubleshoot without forcing specific participants
+    # Track debug logs but without special case handling
     if 'houston_debug_logs' not in globals():
         globals()['houston_debug_logs'] = []
-    houston_debug_logs.append(f"TEST PARTICIPANT CHECK: {'Found' if test_participant_found else 'NOT FOUND'} in data: {test_participant_id}")
     
-    # Build participants list first (moved up from below)
+    # Just use the participants from the remaining dataframe without special cases
     participants = remaining_df['Encoded ID'].tolist()
     
-    # CRITICAL FIX - UNCONDITIONALLY add our test participant
-    # We want to always create variables for this participant in every region
-    # This ensures LP variables will be created
-    if not test_participant_found:
-        print(f"🔧 CRITICAL FIX: Explicitly adding test participant {test_participant_id} to participants list")
-        houston_debug_logs.append(f"ADDING TEST PARTICIPANT {test_participant_id} to participants list")
-        participants.append(test_participant_id)
-        
+    # Log participants being processed in this region
+    print(f"\n🔍 Processing {len(participants)} participants in region {region}")
+    
+    # Define test participants for debug logging only (but no special handling)
+    test_participants = ['73177784103', '50625303450', '72549701782']
+    test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+    
+    # Log which test participants are in this region (for debugging only)
+    for test_id in test_participants:
+        if test_id in participants:
+            test_row = remaining_df[remaining_df['Encoded ID'] == test_id]
+            if not test_row.empty:
+                first_row = test_row.iloc[0]
+                print(f"DEBUG: Test participant {test_id} found in region {region}")
+                print(f"  Status: {first_row.get('Status', 'Unknown')}")
+                print(f"  Region: {first_row.get('Derived_Region', first_row.get('Current_Region', 'Unknown'))}")
+                houston_debug_logs.append(f"Test participant {test_id} found in region {region}")
+            
     # Special logging if this is Houston region
     if "Houston" in region or "Texas" in region:
         print(f"🔍 Processing region containing Houston: {region}")

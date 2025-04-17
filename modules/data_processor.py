@@ -283,10 +283,36 @@ def normalize_data(df):
     # Per PRD 4.3.2: For CURRENT-CONTINUING participants, use current_region; for all others, use requested_region_from_form
     if 'Status' in normalized_df.columns and 'Current_Region' in normalized_df.columns and 'Requested_Region' in normalized_df.columns:
         # Create a derived region column for grouping
+        # Per PRD: For CURRENT-CONTINUING participants, use current_region
+        # But for "Current-MOVING INTO REGION" and NEW participants, use requested_region
         normalized_df['Derived_Region'] = normalized_df.apply(
-            lambda row: row['Current_Region'] if row['Status'] == 'CURRENT-CONTINUING' else row['Requested_Region'], 
+            lambda row: row['Requested_Region'] 
+                       if row['Status'] == 'NEW' or 
+                          (pd.notna(row.get('Raw_Status')) and 'MOVING INTO REGION' in str(row.get('Raw_Status', '')))
+                       else row['Current_Region'], 
             axis=1
         )
+        
+        # Add debug to track region assignments - use the function parameter
+        if debug_mode:
+            print("\n🔍 CHECKING DERIVED REGION ASSIGNMENTS")
+            moving_participants = normalized_df[normalized_df.apply(
+                lambda row: pd.notna(row.get('Raw_Status')) and 'MOVING INTO REGION' in str(row.get('Raw_Status', '')),
+                axis=1
+            )]
+            
+            if not moving_participants.empty:
+                print(f"Found {len(moving_participants)} participants with 'MOVING INTO REGION' status")
+                for _, row in moving_participants.iterrows():
+                    print(f"ID: {row['Encoded ID']} - Current: {row['Current_Region']} → Requested: {row['Requested_Region']} → Derived: {row['Derived_Region']}")
+                    
+            # Check test participants specifically
+            test_participants = ['73177784103', '50625303450', '72549701782']
+            for p_id in test_participants:
+                if p_id in normalized_df['Encoded ID'].values:
+                    p_row = normalized_df[normalized_df['Encoded ID'] == p_id].iloc[0]
+                    print(f"Test participant {p_id} - Current: {p_row['Current_Region']} → Requested: {p_row['Requested_Region']} → Derived: {p_row['Derived_Region']}")
+                    print(f"  Status: {p_row.get('Status', 'Unknown')}, Raw Status: {p_row.get('Raw_Status', 'Unknown')}")
     
     # Add score calculation fields
     normalized_df = calculate_preference_scores(normalized_df)
