@@ -413,6 +413,39 @@ def render_debug_tab():
     """Render the debug tab content"""
     st.subheader("Debug Information")
 
+    # Add special Houston debug section at the top
+    st.write("### Houston Circles Debug")
+    
+    # Check if we have debug logs available from the optimizer
+    try:
+        from modules.optimizer_new import houston_debug_logs
+        
+        if len(houston_debug_logs) > 0:
+            st.warning("Houston Debug Information Available")
+            
+            for i, log_entry in enumerate(houston_debug_logs):
+                with st.expander(f"Houston Debug Entry #{i+1}", expanded=True if i==0 else False):
+                    st.text(log_entry)
+                    
+            # Add a special test case section
+            st.write("### Houston Test Participant")
+            st.info("Test Participant ID: 72549701782 should match with Houston Circle IP-HOU-02")
+            
+            if 'results' in st.session_state and st.session_state.results is not None:
+                results_df = st.session_state.results
+                
+                # Find matching row for our test participant
+                test_participant = results_df[results_df['Encoded ID'] == '72549701782']
+                if not test_participant.empty:
+                    st.write("Test participant status:")
+                    st.dataframe(test_participant[['Encoded ID', 'Status', 'proposed_NEW_circles_id', 'unmatched_reason']])
+                else:
+                    st.warning("Test participant 72549701782 not found in results")
+        else:
+            st.info("No Houston debug information available yet. Run the algorithm with Debug Mode enabled.")
+    except Exception as e:
+        st.info(f"Houston debug logs not available yet: {str(e)}")
+
     if 'config' in st.session_state and st.session_state.config.get('debug_mode', False):
         # Display status counts if available
         if 'status_counts' in st.session_state:

@@ -1354,25 +1354,72 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 if len(assigned_members) == 0 and meta['max_additions'] > 0:
                     compatible_participants = [p_id for p_id in participants if compatibility.get((p_id, c_id), 0) == 1]
                     print(f"    ⚠️ WARNING: Found {len(compatible_participants)} compatible participants but none were assigned!")
+                    
+                    # Store this warning in a global debug log for UI display
+                    if 'houston_debug_logs' not in globals():
+                        globals()['houston_debug_logs'] = []
+                    
+                    debug_entry = f"HOUSTON CIRCLE {c_id}:\n"
+                    debug_entry += f"  Meeting time: {meta['meeting_time']}\n"
+                    debug_entry += f"  Subregion: {meta['subregion']}\n"
+                    debug_entry += f"  Maximum additions: {meta['max_additions']}\n"
+                    debug_entry += f"  Found {len(compatible_participants)} compatible participants but NONE were assigned!\n"
+                    
                     if compatible_participants:
                         print(f"    Compatible participants:")
+                        debug_entry += f"  Compatible participants:\n"
                         for p_id in compatible_participants[:5]:  # limit to 5 to avoid overwhelming logs
                             p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
                             assigned_circle = circle_assignments.get(p_id, "UNMATCHED")
                             print(f"      - {p_id} (Assigned to: {assigned_circle})")
+                            debug_entry += f"    - Participant {p_id} (Assigned to: {assigned_circle})\n"
                             
                             # If assigned to a different circle, show preference comparison
                             if assigned_circle != "UNMATCHED" and assigned_circle != c_id:
                                 other_meta = circle_metadata[assigned_circle]
                                 print(f"        → Assigned to {assigned_circle} (Subregion: {other_meta['subregion']}, Time: {other_meta['meeting_time']})")
+                                debug_entry += f"      → Assigned to {assigned_circle} (Subregion: {other_meta['subregion']}, Time: {other_meta['meeting_time']})\n"
                                 
                                 # Calculate preference score for both circles
                                 houston_score = preference_scores.get((p_id, c_id), 0)
                                 assigned_score = preference_scores.get((p_id, assigned_circle), 0)
                                 print(f"        → Preference scores: {c_id}={houston_score}, {assigned_circle}={assigned_score}")
-                                print(f"        → Decision factor: {'Better preference match' if assigned_score > houston_score else 'Unknown (investigate constraints)'}")
+                                debug_entry += f"      → Preference scores: {c_id}={houston_score}, {assigned_circle}={assigned_score}\n"
+                                
+                                decision_factor = 'Better preference match' if assigned_score > houston_score else 'Unknown (investigate constraints)'
+                                print(f"        → Decision factor: {decision_factor}")
+                                debug_entry += f"      → Decision factor: {decision_factor}\n"
+                                
+                                # Special check for test participants and constraint issues
+                                if p_id == '72549701782' and c_id == 'IP-HOU-02':
+                                    debug_entry += "      → CRITICAL TEST CASE INVESTIGATION:\n"
+                                    debug_entry += f"        Test participant 72549701782 should match with IP-HOU-02 but didn't\n"
+                                    
+                                    # Check if the LP variable was properly created
+                                    if (p_id, c_id) in x:
+                                        var_value = "UNKNOWN (couldn't retrieve)" 
+                                        try:
+                                            var_value = x[(p_id, c_id)].value()
+                                            debug_entry += f"        LP variable exists with value: {var_value}\n"
+                                        except:
+                                            debug_entry += f"        LP variable exists but couldn't retrieve value\n"
+                                    else:
+                                        debug_entry += f"        ERROR: LP variable for (72549701782, IP-HOU-02) doesn't exist!\n"
+                                    
+                                    # Check if constraints prevented this match
+                                    debug_entry += f"        Investigating constraint conflicts:\n"
+                                    # Check one-circle-per-participant constraint
+                                    debug_entry += f"          Participant was assigned to {assigned_circle} instead\n"
+                                    # Check host requirement constraint if applicable
+                                    is_host = p_row.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host']
+                                    debug_entry += f"          Host status: {'Is a host' if is_host else 'Not a host'}\n"
+                                    # Check if preference scores played a role
+                                    debug_entry += f"          Houston score ({houston_score}) vs Assigned circle score ({assigned_score})\n"
                     else:
                         print(f"    ❌ No compatible participants found despite having capacity")
+                        debug_entry += f"  ❌ No compatible participants found despite having capacity\n"
+                    
+                    globals()['houston_debug_logs'].append(debug_entry)
             
             # Check if any of our test participants were assigned to test circles
             for p_id in test_participants:
