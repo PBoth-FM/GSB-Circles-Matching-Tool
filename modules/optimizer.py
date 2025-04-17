@@ -167,7 +167,7 @@ def run_matching_algorithm(data, config):
     print("\n🔍🔍🔍 MATCHING ALGORITHM START - CHECKING FOR TEST CASES 🔍🔍🔍")
     
     # Check for our example participants
-    example_participants = ['73177784103', '50625303450']
+    example_participants = ['73177784103', '50625303450', '72549701782']
     for p_id in example_participants:
         if p_id in data['Encoded ID'].values:
             p_row = data[data['Encoded ID'] == p_id].iloc[0]
