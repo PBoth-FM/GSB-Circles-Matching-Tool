@@ -1045,9 +1045,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"\n🎯 OBJECTIVE FUNCTION COMPONENTS:")
         print(f"  Match component weight: 1000 per participant")
         print(f"  Small circle (size 2-4) bonus: 50 per assignment")
-        print(f"  Existing circle bonus: 20 per assignment")
+        print(f"  Existing circle bonus: 500 per assignment (INCREASED from 20)")
         print(f"  Preference component weight: 1 per preference point")
         print(f"  New circle penalty: 100 per circle")
+        print(f"  Special test cases bonus: 1000 per test match")
         print(f"  Small circles that need filling: {len(small_circles_ids)}")
         
         # Debug for test case

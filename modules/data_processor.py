@@ -436,11 +436,18 @@ def is_time_compatible(time1, time2, is_important=False):
             print(f"  ✅ COMPATIBLE - Direct string match after standardization")
         return True
     
-    # Special handling for "Varies (Varies)" or just "Varies" - compatible with anything
+    # Special handling for "Varies" - compatible with anything
     # This makes the matching more flexible
-    if any(v in s for s in [std_time1, std_time2] for v in ["Varies (Varies)", "Varies ("]):
+    # Check for "Varies" in standard format and also any occurrence of "Varies" in either part
+    if any(v in s.lower() for s in [std_time1.lower(), std_time2.lower()] for v in ["varies (varies)", "varies ("]):
         if is_important:
             print(f"  ✅ COMPATIBLE - One preference includes 'Varies' which matches anything")
+        return True
+        
+    # Also check if "Varies" appears anywhere in the string (more flexible matching)
+    if any("varies" in s.lower() for s in [time1, time2, std_time1, std_time2]):
+        if is_important:
+            print(f"  ✅ COMPATIBLE - One preference contains 'Varies' which improves flexibility")
         return True
         
     # Enhanced flexibility - if one has "Any" in it, it's compatible
