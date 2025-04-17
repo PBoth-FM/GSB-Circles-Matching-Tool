@@ -1025,8 +1025,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Now continue with normal processing to make sure everything else is set correctly
             # DON'T SKIP - we want all other compatibility values to be set properly too!!
             
-        # Normal processing for regular participants
-        p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+        # Normal processing for regular participants - with defensive coding
+        # First check if this participant exists in the dataframe
+        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        
+        if matching_rows.empty:
+            # Participant not in dataframe - likely the test participant in a region
+            # where it shouldn't be processed - create defensive defaults and skip
+            print(f"⚠️ Defensive coding: Participant {p_id} not found in region dataframe")
+            participant_compatible_circles[p_id] = []
+            continue
+        
+        # For participants that exist in the dataframe, process normally
+        p_row = matching_rows.iloc[0]
         participant_compatible_circles[p_id] = []
         
         # Get participant preferences
@@ -1158,7 +1169,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"\n⚠️ Participants with NO compatible circles:")
             for p_id in participants:
                 if not participant_compatible_circles[p_id]:
-                    p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                    # Check if participant exists in dataframe
+                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                    if matching_rows.empty:
+                        print(f"  Participant {p_id} not found in dataset (likely test participant)")
+                        continue
+                    
+                    # Participant exists - get row and print details
+                    p_row = matching_rows.iloc[0]
                     print(f"  Participant {p_id}:")
                     print(f"    Location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
                     print(f"    Time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
@@ -1179,7 +1197,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 continue
             
             # Normal processing for participants in the dataframe
-            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+            matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+            if matching_rows.empty:
+                print(f"⚠️ Participant {p_id} not found in dataframe during EXISTING CIRCLES check")
+                continue
+                
+            p_row = matching_rows.iloc[0]
             
             # Use our safe string comparison to check for Houston in any of the location preferences
             is_houston_participant = any(safe_string_match(loc, 'Houston') for loc in [
@@ -1259,8 +1282,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     preference_scores[(p_id, c_id)] = 0
             continue
         
-        # Regular participant processing
-        p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+        # Regular participant processing with defensive coding
+        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        if matching_rows.empty:
+            print(f"⚠️ Participant {p_id} not found in dataframe during preference score calculation")
+            # Set default preference scores of 0 for this participant and continue
+            for c_id in all_circle_ids:
+                preference_scores[(p_id, c_id)] = 0
+            continue
+            
+        p_row = matching_rows.iloc[0]
         
         for c_id in all_circle_ids:
             meta = circle_metadata[c_id]
