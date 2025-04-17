@@ -652,11 +652,31 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     loc_match = True
             
             # Check time compatibility using our improved compatibility function
-            time_match = (
-                is_time_compatible(p_row['first_choice_time'], time_slot) or 
-                is_time_compatible(p_row['second_choice_time'], time_slot) or 
-                is_time_compatible(p_row['third_choice_time'], time_slot)
-            )
+            # Use direct comparison for time matching to avoid LSP issues
+            first_choice = p_row['first_choice_time']
+            second_choice = p_row['second_choice_time']
+            third_choice = p_row['third_choice_time']
+            
+            time_match = False
+            
+            # Check first choice
+            if first_choice == time_slot or (
+                first_choice and time_slot and 
+                (first_choice.startswith(time_slot) or time_slot.startswith(first_choice))
+            ):
+                time_match = True
+            # Check second choice
+            elif second_choice == time_slot or (
+                second_choice and time_slot and 
+                (second_choice.startswith(time_slot) or time_slot.startswith(second_choice))
+            ):
+                time_match = True
+            # Check third choice
+            elif third_choice == time_slot or (
+                third_choice and time_slot and 
+                (third_choice.startswith(time_slot) or time_slot.startswith(third_choice))
+            ):
+                time_match = True
             
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
@@ -730,13 +750,28 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 elif p_row['third_choice_location'] == subregion:
                     loc_score = 1
                 
-                # Time score (3 for first choice, 2 for second, 1 for third)
-                # is_time_compatible already imported at the top of the file
-                if is_time_compatible(p_row['first_choice_time'], time_slot):
+                # Time score (3 for first choice, 2 for second, 1 for third) - using direct comparison
+                first_choice = p_row['first_choice_time']
+                second_choice = p_row['second_choice_time']
+                third_choice = p_row['third_choice_time']
+                
+                # Check first choice
+                if first_choice == time_slot or (
+                    first_choice and time_slot and 
+                    (first_choice.startswith(time_slot) or time_slot.startswith(first_choice))
+                ):
                     time_score = 3
-                elif is_time_compatible(p_row['second_choice_time'], time_slot):
+                # Check second choice
+                elif second_choice == time_slot or (
+                    second_choice and time_slot and 
+                    (second_choice.startswith(time_slot) or time_slot.startswith(second_choice))
+                ):
                     time_score = 2
-                elif is_time_compatible(p_row['third_choice_time'], time_slot):
+                # Check third choice
+                elif third_choice == time_slot or (
+                    third_choice and time_slot and 
+                    (third_choice.startswith(time_slot) or time_slot.startswith(third_choice))
+                ):
                     time_score = 1
                 
                 # Total score (sum of location and time scores)
@@ -1012,12 +1047,29 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             elif participant.get('third_choice_location') == subregion:
                 loc_score = 1
             
-            # Time score
-            if is_time_compatible(participant.get('first_choice_time', ''), time_slot):
+            # Time score - using direct comparisons to avoid LSP issues
+            time_slot = meta['meeting_time']
+            first_choice = participant.get('first_choice_time', '')
+            second_choice = participant.get('second_choice_time', '')
+            third_choice = participant.get('third_choice_time', '')
+            
+            # Check first choice
+            if first_choice == time_slot or (
+                first_choice and time_slot and 
+                (first_choice.startswith(time_slot) or time_slot.startswith(first_choice))
+            ):
                 time_score = 3
-            elif is_time_compatible(participant.get('second_choice_time', ''), time_slot):
+            # Check second choice
+            elif second_choice == time_slot or (
+                second_choice and time_slot and 
+                (second_choice.startswith(time_slot) or time_slot.startswith(second_choice))
+            ):
                 time_score = 2
-            elif is_time_compatible(participant.get('third_choice_time', ''), time_slot):
+            # Check third choice
+            elif third_choice == time_slot or (
+                third_choice and time_slot and 
+                (third_choice.startswith(time_slot) or time_slot.startswith(third_choice))
+            ):
                 time_score = 1
             
             # Save scores
