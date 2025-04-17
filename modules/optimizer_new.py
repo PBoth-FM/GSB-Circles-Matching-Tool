@@ -5,6 +5,15 @@ import pulp
 import streamlit as st
 from utils.helpers import generate_circle_id
 from modules.data_processor import is_time_compatible
+from utils.region_mapper import (
+    normalize_region_name,
+    extract_region_code_from_circle_id,
+    get_region_from_circle_or_participant,
+    map_circles_to_regions
+)
+
+# Global debug flag to trace region mapping issues
+TRACE_REGION_MAPPING = True
 
 def get_unique_preferences(df, columns):
     """
