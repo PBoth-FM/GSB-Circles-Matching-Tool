@@ -527,8 +527,8 @@ def run_matching_algorithm(data, config):
             print(f"Matched {matched_count} out of {total_count} participants ({matched_percentage:.2f}%)")
     
     # Force test case matching to ensure specific participants go to specific circles
-    # This is a direct approach to fix the matching for known test cases
-    results_df, circles_df, unmatched_df = force_test_case_matching(results_df, circles_df, unmatched_df)
+    # Removed forced test case matching to evaluate general algorithm performance
+    # results_df, circles_df, unmatched_df = force_test_case_matching(results_df, circles_df, unmatched_df)
     
     # Restore original stdout
     sys.stdout = original_stdout
@@ -1215,14 +1215,38 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if debug_mode:
                     print(f"🧪 TEST CASE OVERRIDE: Forcing max_additions=1 for test circle {circle_id}")
     
+    # Get all viable circles with capacity for new members
     viable_circles = [circle for circle_id, circle in existing_circles.items() 
                      if circle.get('max_additions', 0) > 0]
                      
     # Add extensive debug for region matching
     if debug_mode:
-        print(f"\n📋 VIABLE CIRCLES REGION MATCHING DEBUG:")
+        print(f"\n📋 VIABLE CIRCLES DETAILED DEBUG:")
         all_circles_count = len(existing_circles)
         capacity_circles_count = sum(1 for c in existing_circles.values() if c.get('max_additions', 0) > 0)
+        
+        # Print detailed info for all existing circles
+        print(f"\nALL EXISTING CIRCLES ({all_circles_count}):")
+        for circle_id, circle_data in existing_circles.items():
+            max_additions = circle_data.get('max_additions', 0)
+            member_count = len(circle_data.get('members', []))
+            subregion = circle_data.get('subregion', 'Unknown')
+            meeting_time = circle_data.get('meeting_time', 'Unknown')
+            region = circle_data.get('region', 'Unknown')
+            is_viable = max_additions > 0
+            
+            print(f"  Circle {circle_id}:")
+            print(f"    Region: {region}")
+            print(f"    Subregion: {subregion}")
+            print(f"    Meeting time: {meeting_time}")
+            print(f"    Current members: {member_count}")
+            print(f"    Max additions: {max_additions}")
+            print(f"    Is viable: {'✅ Yes' if is_viable else '❌ No'}")
+            
+        # Show viable circles summary
+        print(f"\nVIABLE CIRCLES SUMMARY:")
+        print(f"  {capacity_circles_count} of {all_circles_count} circles have capacity for new members")
+        print(f"  {len(viable_circles)} circles will be used in optimization")
         print(f"  Total circles with capacity: {capacity_circles_count}/{all_circles_count}")
         
         # Print all circles with capacity
@@ -1763,22 +1787,15 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"  Same region: {p_row.get('Derived_Region', p_row.get('Requested_Region', 'Unknown')) == circle_data.get('region', 'Unknown')}")
     
     # Primary objective: maximize number of matched participants (1000 points each)
-    # Secondary objective: Give higher priority to existing circle assignments (50 points each)
-    # Tertiary objective: maximize preference satisfaction (up to 6 points per participant)
+    # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
+    # No bonus for existing circle assignments - treat all assignments equally to maximize total matched participants
     
     if existing_circle_list:
-        # Base matching objective - 1000 points per matched participant
-        base_match_obj = 1000 * (
+        # Match objective - 1000 points per matched participant, regardless of circle type
+        match_obj = 1000 * (
             pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options))) + 
             pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list)))
         )
-        
-        # Add bonus for existing circle assignments (50 points each)
-        # This incentivizes the optimizer to prefer adding to existing circles
-        existing_match_bonus = 50 * pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list)))
-        
-        # Combined matching objective
-        match_obj = base_match_obj + existing_match_bonus
     else:
         match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
     
