@@ -564,6 +564,9 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 circle_members = region_df[region_df[current_col] == c_id]
                 if not circle_members.empty:
                     print(f"🔎 Test circle {c_id} has {len(circle_members)} members in region {region}")
+                    
+    # Print a notice about the new optimizer implementation
+    print(f"\n🔄 Using new circle ID-based optimizer for region {region}")
     """
     Optimize matching within a single region
     
