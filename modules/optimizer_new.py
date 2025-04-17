@@ -132,6 +132,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     circles = []
     unmatched = []
     
+    # Central registry to track processed circle IDs and prevent duplicates
+    processed_circle_ids = set()
+    
     # Track timing for performance analysis
     start_time = time.time()
     
@@ -427,7 +430,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         circle_copy = circle_data.copy()
                         circle_copy['is_continuing'] = True
                         circle_copy['new_members'] = 0
-                        circles.append(circle_copy)
+                        # Only add if it's not already in the registry
+                        if circle_id not in processed_circle_ids:
+                            circles.append(circle_copy)
+                            processed_circle_ids.add(circle_id)
+                            if debug_mode:
+                                print(f"  Added existing viable circle {circle_id} to results (initial processing)")
                     # Otherwise add to small circles list (2-4 members)
                     elif len(members) >= 2 and len(members) <= 4:
                         small_circles[circle_id] = circle_data
@@ -1213,7 +1221,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # Add to circles list (only once per circle ID)
             processed_circles.add(circle_id)
-            circles.append(updated_circle)
+            # Check our central registry to ensure we don't add duplicates
+            if circle_id not in processed_circle_ids:
+                circles.append(updated_circle)
+                processed_circle_ids.add(circle_id)
+                if debug_mode:
+                    print(f"  Added existing circle {circle_id} to results (post-optimization)")
+            elif debug_mode:
+                print(f"  Skipped adding duplicate circle {circle_id} (already in results)")
         
         # Create new circles from active ones
         for circle_id in active_new_circles:
@@ -1238,8 +1253,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             new_circle['sometimes_hosts'] = sum(1 for p_id in members 
                                               if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes')
             
-            # Add to circles list
-            circles.append(new_circle)
+            # Add to circles list (new circles should never be duplicates, but check anyway)
+            if circle_id not in processed_circle_ids:
+                circles.append(new_circle)
+                processed_circle_ids.add(circle_id)
+                if debug_mode:
+                    print(f"  Added new circle {circle_id} to results")
             
             if debug_mode:
                 print(f"  Created new circle {circle_id} with {len(members)} members")
