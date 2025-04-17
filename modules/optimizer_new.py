@@ -910,27 +910,26 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Create variables for all participant-circle pairs
     for p_id in participants:
-        # Special handling for test participant if not in remaining_df
-        if p_id == test_participant_id and not test_participant_found:
-            # Create dummy data for the test participant, assuming Houston location
-            is_houston_participant = True
-            print(f"✅ Creating SPECIAL variables for test participant {p_id}")
-            houston_debug_logs.append(f"Creating SPECIAL variables for test participant {p_id}")
-        else:
-            # Get row data from dataframe
-            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
-            is_houston_participant = any('Houston' in str(loc) if isinstance(loc, str) else False for loc in [
-                p_row.get('first_choice_location'), 
-                p_row.get('second_choice_location'), 
-                p_row.get('third_choice_location')
-            ])
+        # Get row data from dataframe (with defensive coding)
+        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        if matching_rows.empty:
+            print(f"⚠️ Warning: Participant {p_id} not found in region dataframe")
+            # Skip this participant to avoid errors
+            continue
+            
+        # Get participant data
+        p_row = matching_rows.iloc[0]
+        
+        # For debug logging only
+        is_houston_participant = any('Houston' in str(loc) if isinstance(loc, str) else False for loc in [
+            p_row.get('first_choice_location'), 
+            p_row.get('second_choice_location'), 
+            p_row.get('third_choice_location')
+        ])
         
         for c_id in all_circle_ids:
-            # CRITICAL FIX: Ensure test variables are always created
-            is_test_case = (p_id == test_participant_id and c_id == 'IP-HOU-02')
-            if is_test_case:
-                print(f"🌟 CREATING CRITICAL TEST VARIABLE: x[{p_id}, {c_id}]")
-                houston_debug_logs.append(f"CREATING CRITICAL TEST VARIABLE: x[{p_id}, {c_id}]")
+            # For debug logging only
+            is_test_case = (p_id in test_participants and c_id in test_circles)
                 
             # Create all variables regardless of compatibility - constraints will handle restrictions
             x[(p_id, c_id)] = pulp.LpVariable(f"x_{p_id}_{c_id}", cat=pulp.LpBinary)
@@ -978,57 +977,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     for c_id in new_circle_ids:
         y[c_id] = pulp.LpVariable(f"y_{c_id}", cat=pulp.LpBinary)
     
-    # [CRITICAL FIX - FINAL ATTEMPT] - Create a special variable just for Houston and don't depend on compatibility
+    # Removed forced test case handling for Houston participants
+    # Let the algorithm work naturally based on compatibility
+    houston_debug_logs.append(f"Forced test case handling REMOVED per user request")
+    
+    # Keep variable for debug tracking only
     houston_test_id = '72549701782'
     
-    # Make sure we have the variable for the Houston case
-    # This is a critical test case requested by the client
-    print(f"🔴 LAST RESORT APPROACH: Creating direct variable x[{houston_test_id}, IP-HOU-02]")
-    houston_debug_logs.append(f"LAST RESORT: Creating direct variable x[{houston_test_id}, IP-HOU-02]")
-    
-    # Directly create the variable without relying on the participants list
-    x[(houston_test_id, 'IP-HOU-02')] = pulp.LpVariable(f"x_{houston_test_id}_IP-HOU-02", cat=pulp.LpBinary)
-    
-    # Add a special 1,000,000 point bonus for this specific assignment
-    # This will override all other considerations in the model
-    # Creating a separate variable that will be added to the objective
-    houston_test_fix = 1000000 * x[(houston_test_id, 'IP-HOU-02')]
-    print(f"🔴 Adding EXTREME PRIORITY (1,000,000 points) to objective for Houston test case")
-    houston_debug_logs.append(f"Adding EXTREME PRIORITY (1,000,000 points) to objective for Houston test case")
-        
-    # Ensure this participant and circle are in our tracking data
-    if houston_test_id not in participants:
-        participants.append(houston_test_id)
-    if 'IP-HOU-02' not in all_circle_ids:
-        all_circle_ids.append('IP-HOU-02')
-        # Make sure we have the metadata
-        if 'IP-HOU-02' not in circle_metadata:
-            circle_metadata['IP-HOU-02'] = {
-                'circle_id': 'IP-HOU-02',
-                'subregion': 'Houston',
-                'meeting_time': 'M-Th (Evenings)',
-                'max_additions': 5,
-                'region': 'Texas',
-                'is_existing': True
-            }
+    # Just for logging/debugging (no forced variables)
+    houston_debug_logs.append(f"Will track Houston test case participant {houston_test_id} without forcing match")
     
     for p_id in participants:
-        # Special case handling for our test participant - ALWAYS force compatibility
-        if p_id == test_participant_id:
-            print(f"🚨 CRITICAL FIX: Special handling for test participant {p_id}")
-            houston_debug_logs.append(f"SPECIAL HANDLING for test participant {p_id}")
-            
-            # Mark the test participant as compatible with their target circle
-            # This is a critical fix to bypass normal compatibility checks for our test case
-            participant_compatible_circles[p_id] = ['IP-HOU-02']  # directly set this
-            
-            # Force compatibility with IP-HOU-02 unconditionally
-            compatibility[(p_id, 'IP-HOU-02')] = 1
-            print(f"🌟 CRITICAL TEST FIX: Forced compatibility between {p_id} and IP-HOU-02")
-            houston_debug_logs.append(f"FORCED COMPATIBILITY for test participant {p_id} with IP-HOU-02")
-            
-            # Now continue with normal processing to make sure everything else is set correctly
-            # DON'T SKIP - we want all other compatibility values to be set properly too!!
+        # Removed special case handling for test participants
+        # All participants are now processed normally
+        # Debug logs are still kept for tracking purposes
             
         # Normal processing for regular participants - with defensive coding
         # First check if this participant exists in the dataframe
@@ -1192,14 +1154,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Check if participant has any compatible existing circles
             existing_circle_options = [c for c in participant_compatible_circles[p_id] if c in existing_circle_ids]
             
-            # Special handling for test participant that might not be in dataframe
-            if p_id == test_participant_id and not test_participant_found:
-                is_houston_participant = True
-                print(f"\n🌟 CRITICAL TEST PARTICIPANT: {p_id}")
+            # Check if this is a test participant (only for debugging purposes)
+            if p_id in test_participants:
+                print(f"\n🔍 TEST PARTICIPANT: {p_id}")
                 print(f"  Compatible with {len(existing_circle_options)} existing circles")
                 for c_id in existing_circle_options:
                     print(f"  - {c_id}")
-                continue
+                # Don't continue, process normally
             
             # Normal processing for participants in the dataframe
             matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
@@ -1275,17 +1236,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Calculate preference scores for each compatible participant-circle pair
     preference_scores = {}
     for p_id in participants:
-        # Special handling for test participant that might not be in dataframe
-        if p_id == test_participant_id and not test_participant_found:
-            # For the test participant, set artificial high preference score for IP-HOU-02
-            for c_id in all_circle_ids:
-                if c_id == 'IP-HOU-02':
-                    preference_scores[(p_id, c_id)] = 6  # Max preference score (3 + 3)
-                    print(f"🌟 Setting artificial high preference score (6) for test participant with IP-HOU-02")
-                    houston_debug_logs.append(f"Setting artificial high preference score (6) for test participant with IP-HOU-02")
-                else:
-                    preference_scores[(p_id, c_id)] = 0
-            continue
+        # Removed special case handling for test participants
+        # All participants are processed normally
         
         # Regular participant processing with defensive coding
         matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
@@ -1458,12 +1410,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Log detailed information about the compatibility
             houston_circle_meta = circle_metadata['IP-HOU-02']
             
-            # Test if the test participant is in the remaining_df
-            test_participant_found = test_participant_id in remaining_df['Encoded ID'].values
+            # Check if this participant is in the region's dataframe 
+            # (regular compatibility check, no special handling)
+            participant_in_data = p_id in remaining_df['Encoded ID'].values
             
-            houston_debug_entry = "HOUSTON CRITICAL TEST CASE DEBUGGING:\n"
+            houston_debug_entry = "HOUSTON TEST CASE DEBUG INFORMATION (WITHOUT SPECIAL HANDLING):\n"
             
-            if test_participant_found:
+            if participant_in_data:
                 # If participant exists in data, get actual preferences
                 p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
                 houston_debug_entry += f"Participant 72549701782 location preferences:\n"
@@ -1475,9 +1428,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 houston_debug_entry += f"  Second: {p_row['second_choice_time']}\n"
                 houston_debug_entry += f"  Third: {p_row['third_choice_time']}\n"
             else:
-                # Participant isn't in the data, use placeholder/default values
-                houston_debug_entry += "⚠️ TEST PARTICIPANT NOT FOUND IN DATA - USING FORCED COMPATIBILITY\n"
-                houston_debug_entry += "Participant 72549701782 is being forced to match with IP-HOU-02 regardless of preferences\n"
+                # Participant isn't in this region's data - will use normal compatibility
+                houston_debug_entry += "Participant 72549701782 not found in this region's data\n"
+                houston_debug_entry += "Will be processed normally through regular region matching\n"
             
             # Add circle information
             houston_debug_entry += f"IP-HOU-02 information:\n"
