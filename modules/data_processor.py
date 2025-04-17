@@ -415,7 +415,7 @@ def is_time_compatible(time1, time2, is_important=False):
             is_important = (time1, time2) in important_pairs
     
     if is_important:
-        print(f"\n🔍 IMPORTANT COMPATIBILITY CHECK between '{time1}' and '{time2}'")
+        print(f"\n🔍 ENHANCED COMPATIBILITY CHECK between '{time1}' and '{time2}'")
     
     # Handle None, NaN or empty strings
     if pd.isna(time1) or pd.isna(time2) or time1 == '' or time2 == '':
@@ -436,10 +436,17 @@ def is_time_compatible(time1, time2, is_important=False):
             print(f"  ✅ COMPATIBLE - Direct string match after standardization")
         return True
     
-    # Special handling for "Varies (Varies)" which is compatible with anything
-    if "Varies (Varies)" in [std_time1, std_time2]:
+    # Special handling for "Varies (Varies)" or just "Varies" - compatible with anything
+    # This makes the matching more flexible
+    if any(v in s for s in [std_time1, std_time2] for v in ["Varies (Varies)", "Varies ("]):
         if is_important:
-            print(f"  ✅ COMPATIBLE - One preference is 'Varies (Varies)' which matches anything")
+            print(f"  ✅ COMPATIBLE - One preference includes 'Varies' which matches anything")
+        return True
+        
+    # Enhanced flexibility - if one has "Any" in it, it's compatible
+    if any("any" in s.lower() for s in [time1, time2, std_time1, std_time2]):
+        if is_important:
+            print(f"  ✅ COMPATIBLE - One preference includes 'Any' which matches anything")
         return True
     
     # Define helper functions for extracting time components

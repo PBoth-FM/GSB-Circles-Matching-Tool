@@ -1763,18 +1763,26 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"  Same region: {p_row.get('Derived_Region', p_row.get('Requested_Region', 'Unknown')) == circle_data.get('region', 'Unknown')}")
     
     # Primary objective: maximize number of matched participants (1000 points each)
-    # Secondary objective: maximize preference satisfaction (up to 6 points per participant)
-    # All participants count the same whether assigned to new or existing circles (no bonus)
+    # Secondary objective: Give higher priority to existing circle assignments (50 points each)
+    # Tertiary objective: maximize preference satisfaction (up to 6 points per participant)
     
     if existing_circle_list:
-        match_obj = 1000 * (
+        # Base matching objective - 1000 points per matched participant
+        base_match_obj = 1000 * (
             pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options))) + 
             pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list)))
         )
+        
+        # Add bonus for existing circle assignments (50 points each)
+        # This incentivizes the optimizer to prefer adding to existing circles
+        existing_match_bonus = 50 * pulp.lpSum(z[p, e] for p in participants for e in range(len(existing_circle_list)))
+        
+        # Combined matching objective
+        match_obj = base_match_obj + existing_match_bonus
     else:
         match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
     
-    # Combined objective
+    # Combined objective with preference satisfaction
     full_obj_expr = match_obj + obj_expr + existing_circle_obj
     
     prob += full_obj_expr, "Maximize matched participants and preference satisfaction"
