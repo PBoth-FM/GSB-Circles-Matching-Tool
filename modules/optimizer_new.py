@@ -780,21 +780,64 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Create decision variables:
     # x[p_id, c_id] = 1 if participant p_id is assigned to circle c_id
     x = {}
+    
+    # Track which variables were created for verification
+    created_vars = []
+    
+    # Create variables for all participant-circle pairs
     for p_id in remaining_df['Encoded ID'].tolist():
+        p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+        is_houston_participant = any('Houston' in str(loc) for loc in [
+            p_row['first_choice_location'], 
+            p_row['second_choice_location'], 
+            p_row['third_choice_location']
+        ])
+        
         for c_id in all_circle_ids:
+            # Create all variables regardless of compatibility - constraints will handle restrictions
             x[(p_id, c_id)] = pulp.LpVariable(f"x_{p_id}_{c_id}", cat=pulp.LpBinary)
+            created_vars.append((p_id, c_id))
+            
+            # Special debug for Houston-related variables
+            is_houston_circle = 'HOU' in c_id if c_id is not None else False
+            if debug_mode and (is_houston_participant or is_houston_circle):
+                print(f"✅ Created LP variable for {p_id} ↔ {c_id}")
+    
+    # Get all participants (moved this block earlier to fix LSP issue with "unbound" variables)
+    participants = remaining_df['Encoded ID'].tolist()
+    
+    # Create dictionary to track compatibility between participants and circles
+    compatibility = {}
+    participant_compatible_circles = {}
+    for p_id in participants:
+        participant_compatible_circles[p_id] = []
+    
+    if debug_mode:
+        print(f"\n🔢 Created {len(created_vars)} LP variables for {len(participants)} participants and {len(all_circle_ids)} circles")
+        
+        # Verify crucial variables exist for Houston circles
+        for p_id in participants:
+            for c_id in existing_circle_ids:
+                if 'HOU' in c_id:
+                    if (p_id, c_id) in x:
+                        print(f"✅ Confirmed LP variable exists for pair: {p_id} ↔ {c_id}")
+                    else:
+                        print(f"❌ ERROR: No LP variable for Houston pair: {p_id} ↔ {c_id}")
+                        
+        # Special debug for test participants
+        for p_id in test_participants:
+            if p_id in participants:
+                for c_id in test_circles:
+                    if c_id in all_circle_ids:
+                        if (p_id, c_id) in x:
+                            print(f"✅ Confirmed LP variable exists for test pair: {p_id} ↔ {c_id}")
+                        else:
+                            print(f"❌ ERROR: No LP variable for test pair: {p_id} ↔ {c_id}")
     
     # Create binary variables for circle activation (only needed for new circles)
     y = {}
     for c_id in new_circle_ids:
         y[c_id] = pulp.LpVariable(f"y_{c_id}", cat=pulp.LpBinary)
-        
-    # Calculate compatibility between participants and circles
-    compatibility = {}
-    participant_compatible_circles = {}
-    
-    # Get all participants
-    participants = remaining_df['Encoded ID'].tolist()
     
     for p_id in participants:
         p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
@@ -818,6 +861,21 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             meta = circle_metadata[c_id]
             subregion = meta['subregion']
             time_slot = meta['meeting_time']
+            
+            # Debug Houston circles and participant compatibility
+            is_houston_circle = 'HOU' in c_id if c_id is not None else False
+            is_houston_participant = any('Houston' in str(loc) for loc in [p_row['first_choice_location'], 
+                                                                           p_row['second_choice_location'], 
+                                                                           p_row['third_choice_location']])
+            
+            if is_houston_circle or is_houston_participant:
+                print(f"\n🔍 DEBUG - Checking compatibility for Houston-related match:")
+                print(f"  Participant: {p_id}")
+                print(f"  Circle: {c_id}")
+                print(f"  Circle subregion: {subregion}")
+                print(f"  Circle meeting time: {time_slot}")
+                print(f"  Participant choices: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
+                print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
             
             # Enhanced location compatibility checking
             # First try exact match with participant preferences
@@ -922,6 +980,66 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"  Participant {p_id}:")
                     print(f"    Location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
                     print(f"    Time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
+        
+        # NEW CHECK: Specifically check if participants can't match with any EXISTING circles
+        print(f"\n🔍 CHECKING COMPATIBILITY WITH EXISTING CIRCLES:")
+        for p_id in participants:
+            # Check if participant has any compatible existing circles
+            existing_circle_options = [c for c in participant_compatible_circles[p_id] if c in existing_circle_ids]
+            
+            # If this is a Houston participant or there are no existing circle options, print detailed info
+            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+            is_houston_participant = any('Houston' in str(loc) for loc in [
+                p_row['first_choice_location'], 
+                p_row['second_choice_location'], 
+                p_row['third_choice_location']
+            ])
+            
+            if len(existing_circle_options) == 0 or is_houston_participant:
+                print(f"\n🚫 Participant {p_id} has no viable existing circle options:")
+                print(f"  Location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
+                print(f"  Time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
+                
+                # Check compatibility with each existing circle specifically
+                for c_id in existing_circle_ids:
+                    meta = circle_metadata[c_id]
+                    is_houston_circle = 'HOU' in c_id
+                    
+                    if is_houston_participant or is_houston_circle:
+                        print(f"  Checking with existing circle {c_id}:")
+                        print(f"    Circle subregion: {meta['subregion']}")
+                        print(f"    Circle meeting time: {meta['meeting_time']}")
+                        
+                        # Check location match
+                        loc_match = (
+                            (p_row['first_choice_location'] == meta['subregion']) or 
+                            (p_row['second_choice_location'] == meta['subregion']) or 
+                            (p_row['third_choice_location'] == meta['subregion']) or
+                            p_row['first_choice_location'].startswith(meta['subregion']) or 
+                            meta['subregion'].startswith(p_row['first_choice_location']) or
+                            p_row['second_choice_location'].startswith(meta['subregion']) or 
+                            meta['subregion'].startswith(p_row['second_choice_location']) or
+                            p_row['third_choice_location'].startswith(meta['subregion']) or 
+                            meta['subregion'].startswith(p_row['third_choice_location'])
+                        )
+                        
+                        # Check time match - using previous logic
+                        time_match = (
+                            is_time_compatible(p_row['first_choice_time'], meta['meeting_time'], is_important=is_houston_circle) or
+                            is_time_compatible(p_row['second_choice_time'], meta['meeting_time'], is_important=is_houston_circle) or
+                            is_time_compatible(p_row['third_choice_time'], meta['meeting_time'], is_important=is_houston_circle)
+                        )
+                        
+                        print(f"    Location match: {'✓' if loc_match else '✗'}")
+                        print(f"    Time match: {'✓' if time_match else '✗'}")
+                        print(f"    Overall compatibility: {'✅ COMPATIBLE' if loc_match and time_match else '❌ NOT COMPATIBLE'}")
+                        
+                        # If not compatible but this is a Houston circle/participant, provide more details
+                        if not (loc_match and time_match) and (is_houston_circle or is_houston_participant):
+                            print(f"    Checking time compatibility in detail:")
+                            is_time_compatible(p_row['first_choice_time'], meta['meeting_time'], is_important=True)
+                            is_time_compatible(p_row['second_choice_time'], meta['meeting_time'], is_important=True)
+                            is_time_compatible(p_row['third_choice_time'], meta['meeting_time'], is_important=True)
         
         # Check explicitly for test participants
         for p_id in test_participants:
@@ -1219,6 +1337,43 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             new_assignments = sum(1 for p_id, c_id in circle_assignments.items() if c_id in new_circle_ids)
             print(f"  Assigned {new_assignments} participants to new circles")
             
+            # Special check: Houston circle allocations
+            print(f"\n🔍 CHECKING HOUSTON CIRCLE ASSIGNMENTS:")
+            houston_circles = [c_id for c_id in existing_circle_ids if 'HOU' in c_id]
+            for c_id in houston_circles:
+                meta = circle_metadata[c_id]
+                assigned_members = [p_id for p_id, assigned_c_id in circle_assignments.items() if assigned_c_id == c_id]
+                print(f"  Circle {c_id}:")
+                print(f"    Meeting time: {meta['meeting_time']}")
+                print(f"    Subregion: {meta['subregion']}")
+                print(f"    Maximum additions: {meta['max_additions']}")
+                print(f"    New members assigned: {len(assigned_members)}")
+                print(f"    Utilization: {len(assigned_members)}/{meta['max_additions']} slots filled ({(len(assigned_members)/meta['max_additions'])*100 if meta['max_additions'] > 0 else 'N/A'}%)")
+                
+                # If no members assigned but capacity exists, investigate why
+                if len(assigned_members) == 0 and meta['max_additions'] > 0:
+                    compatible_participants = [p_id for p_id in participants if compatibility.get((p_id, c_id), 0) == 1]
+                    print(f"    ⚠️ WARNING: Found {len(compatible_participants)} compatible participants but none were assigned!")
+                    if compatible_participants:
+                        print(f"    Compatible participants:")
+                        for p_id in compatible_participants[:5]:  # limit to 5 to avoid overwhelming logs
+                            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                            assigned_circle = circle_assignments.get(p_id, "UNMATCHED")
+                            print(f"      - {p_id} (Assigned to: {assigned_circle})")
+                            
+                            # If assigned to a different circle, show preference comparison
+                            if assigned_circle != "UNMATCHED" and assigned_circle != c_id:
+                                other_meta = circle_metadata[assigned_circle]
+                                print(f"        → Assigned to {assigned_circle} (Subregion: {other_meta['subregion']}, Time: {other_meta['meeting_time']})")
+                                
+                                # Calculate preference score for both circles
+                                houston_score = preference_scores.get((p_id, c_id), 0)
+                                assigned_score = preference_scores.get((p_id, assigned_circle), 0)
+                                print(f"        → Preference scores: {c_id}={houston_score}, {assigned_circle}={assigned_score}")
+                                print(f"        → Decision factor: {'Better preference match' if assigned_score > houston_score else 'Unknown (investigate constraints)'}")
+                    else:
+                        print(f"    ❌ No compatible participants found despite having capacity")
+            
             # Check if any of our test participants were assigned to test circles
             for p_id in test_participants:
                 if p_id in circle_assignments:
@@ -1256,6 +1411,23 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 if debug_mode:
                     print(f"  No new members added to existing circle {circle_id}")
                     print(f"    Total members: {updated_circle['member_count']}")
+                    
+                    # Check if this circle had capacity but didn't get members (especially for Houston)
+                    max_additions = circle_metadata[circle_id]['max_additions']
+                    if max_additions > 0 and 'HOU' in circle_id:
+                        print(f"  ⚠️ WARNING: Houston circle {circle_id} had capacity for {max_additions} members but got none!")
+                        print(f"    Meeting time: {circle_metadata[circle_id]['meeting_time']}")
+                        print(f"    Subregion: {circle_metadata[circle_id]['subregion']}")
+                        
+                        # Check how many compatible participants existed
+                        compatible_participants = [p_id for p_id in participants 
+                                                 if compatibility.get((p_id, circle_id), 0) == 1]
+                        if compatible_participants:
+                            print(f"    There were {len(compatible_participants)} compatible participants:")
+                            for p_id in compatible_participants[:5]:  # Show first 5 only to avoid clutter
+                                print(f"      - Participant {p_id}")
+                        else:
+                            print(f"    ❌ NO compatible participants found for this circle")
             
             # Add to circles list (only once per circle ID)
             processed_circles.add(circle_id)
