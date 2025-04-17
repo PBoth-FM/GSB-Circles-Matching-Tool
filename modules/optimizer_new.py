@@ -1771,6 +1771,74 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             if y[c_id].value() is not None and abs(y[c_id].value() - 1) < 1e-5:
                 active_new_circles.append(c_id)
         
+        # Renumber active new circles sequentially by region
+        if debug_mode:
+            print("\n🔄 RENUMBERING NEW CIRCLES FOR CONSISTENT NAMING:")
+        
+        # Create a mapping from old circle IDs to new sequential IDs
+        circle_id_mapping = {}
+        
+        # Group active new circles by region
+        active_by_region = {}
+        for c_id in active_new_circles:
+            # Extract the format and region code from the original ID
+            # Format: {Format}-NEW-{RegionCode}-{Number}
+            parts = c_id.split('-')
+            if len(parts) >= 4 and parts[1] == "NEW":
+                format_prefix = parts[0]  # IP or V
+                region_code = parts[2]    # Region code (e.g., BOS, CHI, etc.)
+                
+                if region_code not in active_by_region:
+                    active_by_region[region_code] = []
+                
+                # Store the circle with its metadata
+                meta = circle_metadata[c_id]
+                active_by_region[region_code].append({
+                    'old_id': c_id,
+                    'format_prefix': format_prefix,
+                    'region_code': region_code,
+                    'metadata': meta
+                })
+        
+        # Renumber circles in each region starting from 01
+        for region_code, circles in active_by_region.items():
+            for idx, circle_info in enumerate(circles, start=1):
+                old_id = circle_info['old_id']
+                format_prefix = circle_info['format_prefix']
+                
+                # Create new sequential ID
+                new_id = f"{format_prefix}-NEW-{region_code}-{str(idx).zfill(2)}"
+                
+                # Store in mapping
+                circle_id_mapping[old_id] = new_id
+                
+                if debug_mode:
+                    print(f"  Renaming circle: {old_id} → {new_id}")
+        
+        # Update circle assignments with new IDs
+        updated_circle_assignments = {}
+        for p_id, old_c_id in circle_assignments.items():
+            if old_c_id in circle_id_mapping:
+                # This is an active new circle that has been renumbered
+                updated_circle_assignments[p_id] = circle_id_mapping[old_c_id]
+                if debug_mode:
+                    print(f"  Updated assignment for participant {p_id}: {old_c_id} → {circle_id_mapping[old_c_id]}")
+            else:
+                # This is an existing circle or inactive new circle (keep as is)
+                updated_circle_assignments[p_id] = old_c_id
+        
+        # Replace the original assignments with the updated ones
+        circle_assignments = updated_circle_assignments
+        
+        # Update active_new_circles with the new IDs
+        original_active_new_circles = active_new_circles.copy()
+        active_new_circles = []
+        for old_id in original_active_new_circles:
+            if old_id in circle_id_mapping:
+                active_new_circles.append(circle_id_mapping[old_id])
+            else:
+                active_new_circles.append(old_id)
+        
         if debug_mode:
             print(f"  Assigned {len(circle_assignments)} participants out of {len(participants)}")
             print(f"  Activated {len(active_new_circles)} new circles out of {len(new_circle_ids)}")
@@ -1779,8 +1847,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             existing_assignments = sum(1 for p_id, c_id in circle_assignments.items() if c_id in existing_circle_ids)
             print(f"  Assigned {existing_assignments} participants to existing circles")
             
-            # Check assignments to new circles
-            new_assignments = sum(1 for p_id, c_id in circle_assignments.items() if c_id in new_circle_ids)
+            # Check assignments to new circles - count assignments to both original and renumbered circles
+            new_assignments = 0
+            for p_id, c_id in circle_assignments.items():
+                # Check if this is a new circle (either original ID or renumbered ID)
+                if (c_id in new_circle_ids) or any(c_id == new_id for old_id, new_id in circle_id_mapping.items()):
+                    new_assignments += 1
+            
             print(f"  Assigned {new_assignments} participants to new circles")
             
             # Special check: Houston circle allocations
@@ -1935,12 +2008,32 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         
         # Create new circles from active ones
         for circle_id in active_new_circles:
-            meta = circle_metadata[circle_id]
+            # Get the correct metadata - might be for the original ID if this circle was renamed
+            # First try to use the id directly (for existing circles or circles not renamed)
+            if circle_id in circle_metadata:
+                meta = circle_metadata[circle_id]
+            else:
+                # This might be a renamed circle - find the original circle ID
+                original_id = None
+                for old_id, new_id in circle_id_mapping.items():
+                    if new_id == circle_id:
+                        original_id = old_id
+                        break
+                
+                # Use the metadata from the original circle
+                if original_id and original_id in circle_metadata:
+                    meta = circle_metadata[original_id]
+                else:
+                    # Fallback - shouldn't happen, but defensive coding
+                    print(f"⚠️ WARNING: Could not find metadata for circle {circle_id}")
+                    continue
+            
+            # Get members assigned to this circle
             members = [p_id for p_id, c_id in circle_assignments.items() if c_id == circle_id]
             
-            # Create new circle data
+            # Create new circle data with the potentially renamed circle ID
             new_circle = {
-                'circle_id': circle_id,
+                'circle_id': circle_id,  # Use the new ID (which might be a renamed one)
                 'region': region,
                 'subregion': meta['subregion'],
                 'meeting_time': meta['meeting_time'],
@@ -1964,7 +2057,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"  Added new circle {circle_id} to results")
             
             if debug_mode:
-                print(f"  Created new circle {circle_id} with {len(members)} members")
+                original_id_debug = ""
+                if circle_id in circle_id_mapping.values():
+                    for old_id, new_id in circle_id_mapping.items():
+                        if new_id == circle_id:
+                            original_id_debug = f" (renamed from {old_id})"
+                            break
+                
+                print(f"  Created new circle {circle_id}{original_id_debug} with {len(members)} members")
     
     # Create full results including unmatched participants
     for _, participant in region_df.iterrows():
@@ -1998,12 +2098,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Process participants from the optimization
         if p_id in circle_assignments:
             c_id = circle_assignments[p_id]
-            meta = circle_metadata[c_id]
             
-            # Add assignment information
+            # Get the correct metadata - might need to look up original ID for renamed circles
+            if c_id in circle_metadata:
+                meta = circle_metadata[c_id]
+            else:
+                # This might be a renamed circle - find the original circle ID
+                original_id = None
+                for old_id, new_id in circle_id_mapping.items():
+                    if new_id == c_id:
+                        original_id = old_id
+                        break
+                
+                # Use the metadata from the original circle
+                if original_id and original_id in circle_metadata:
+                    meta = circle_metadata[original_id]
+                else:
+                    # Fallback - shouldn't happen, but defensive coding
+                    if debug_mode:
+                        print(f"⚠️ WARNING: Could not find metadata for circle {c_id}, participant {p_id}")
+                    # Set default values to avoid errors
+                    meta = {
+                        'subregion': 'Unknown',
+                        'meeting_time': 'Unknown'
+                    }
+            
+            # Add assignment information with the renumbered circle ID
             participant_dict['proposed_NEW_circles_id'] = c_id
-            participant_dict['proposed_NEW_Subregion'] = meta['subregion']
-            participant_dict['proposed_NEW_DayTime'] = meta['meeting_time']
+            participant_dict['proposed_NEW_Subregion'] = meta.get('subregion', 'Unknown')
+            participant_dict['proposed_NEW_DayTime'] = meta.get('meeting_time', 'Unknown')
             participant_dict['unmatched_reason'] = ""
             
             # Calculate preference scores
