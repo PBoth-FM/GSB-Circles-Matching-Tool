@@ -22,6 +22,37 @@ houston_debug_logs = []
 test_participants = ['73177784103', '50625303450', '72549701782']  # Example participants for testing
 test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']  # Test circles
 
+# Define a general safe_string_match function at module level for use everywhere
+def safe_string_match(value1, value2):
+    """
+    Safely compare two values that might be strings, numbers, or NaN.
+    
+    Args:
+        value1: First value to compare
+        value2: Second value to compare
+        
+    Returns:
+        bool: True if values match or one is a prefix of the other, False otherwise
+    """
+    # Handle NaN, None values
+    if pd.isna(value1) or pd.isna(value2):
+        return False
+    
+    # Convert to string if needed
+    str1 = str(value1) if not isinstance(value1, str) else value1
+    str2 = str(value2) if not isinstance(value2, str) else value2
+    
+    # Exact match
+    if str1 == str2:
+        return True
+        
+    # Prefix match
+    try:
+        return str1.startswith(str2) or str2.startswith(str1)
+    except (AttributeError, TypeError):
+        # Extra safety in case conversion fails
+        return False
+
 def get_unique_preferences(df, columns):
     """
     Extract unique preference values from specified columns
@@ -1025,22 +1056,34 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"  Participant choices: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
                 print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
             
-            # Enhanced location compatibility checking
+            # Enhanced location compatibility checking with proper type handling
+            # Helper function for safe string comparisons
+            def safe_string_match(value1, value2):
+                # Handle NaN, None values
+                if pd.isna(value1) or pd.isna(value2):
+                    return False
+                
+                # Convert to string if needed
+                str1 = str(value1) if not isinstance(value1, str) else value1
+                str2 = str(value2) if not isinstance(value2, str) else value2
+                
+                # Exact match
+                if str1 == str2:
+                    return True
+                    
+                # Prefix match
+                try:
+                    return str1.startswith(str2) or str2.startswith(str1)
+                except (AttributeError, TypeError):
+                    # Extra safety in case conversion fails
+                    return False
+            
             # First try exact match with participant preferences
             loc_match = (
-                (p_row['first_choice_location'] == subregion) or 
-                (p_row['second_choice_location'] == subregion) or 
-                (p_row['third_choice_location'] == subregion)
+                safe_string_match(p_row['first_choice_location'], subregion) or
+                safe_string_match(p_row['second_choice_location'], subregion) or
+                safe_string_match(p_row['third_choice_location'], subregion)
             )
-            
-            # If no match, try a more flexible approach
-            if not loc_match:
-                if p_row['first_choice_location'].startswith(subregion) or subregion.startswith(p_row['first_choice_location']):
-                    loc_match = True
-                elif p_row['second_choice_location'].startswith(subregion) or subregion.startswith(p_row['second_choice_location']):
-                    loc_match = True
-                elif p_row['third_choice_location'].startswith(subregion) or subregion.startswith(p_row['third_choice_location']):
-                    loc_match = True
             
             # Check time compatibility using is_time_compatible function which properly handles "Varies"
             # Define if this is a special test case that needs detailed debugging
@@ -1146,7 +1189,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # Normal processing for participants in the dataframe
             p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
-            is_houston_participant = any('Houston' in str(loc) if isinstance(loc, str) else False for loc in [
+            
+            # Use our safe string comparison to check for Houston in any of the location preferences
+            is_houston_participant = any(safe_string_match(loc, 'Houston') for loc in [
                 p_row.get('first_choice_location'), 
                 p_row.get('second_choice_location'), 
                 p_row.get('third_choice_location')
@@ -1167,17 +1212,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"    Circle subregion: {meta['subregion']}")
                         print(f"    Circle meeting time: {meta['meeting_time']}")
                         
-                        # Check location match
+                        # Check location match using our safe comparison function
                         loc_match = (
-                            (p_row['first_choice_location'] == meta['subregion']) or 
-                            (p_row['second_choice_location'] == meta['subregion']) or 
-                            (p_row['third_choice_location'] == meta['subregion']) or
-                            p_row['first_choice_location'].startswith(meta['subregion']) or 
-                            meta['subregion'].startswith(p_row['first_choice_location']) or
-                            p_row['second_choice_location'].startswith(meta['subregion']) or 
-                            meta['subregion'].startswith(p_row['second_choice_location']) or
-                            p_row['third_choice_location'].startswith(meta['subregion']) or 
-                            meta['subregion'].startswith(p_row['third_choice_location'])
+                            safe_string_match(p_row['first_choice_location'], meta['subregion']) or
+                            safe_string_match(p_row['second_choice_location'], meta['subregion']) or
+                            safe_string_match(p_row['third_choice_location'], meta['subregion'])
                         )
                         
                         # Check time match - using previous logic
