@@ -47,19 +47,46 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     test_participants = ['73177784103', '50625303450']
     test_circles = ['IP-SIN-01', 'IP-LON-04']
     
-    # Check if our test participants are in this region
+    # SPECIAL DEBUG: Add explicit information about our examples
+    print("\n🚨 CRITICAL TEST CASE DEBUG 🚨")
+    print("Looking for specific test participants:")
     for p_id in test_participants:
         if p_id in region_df['Encoded ID'].values:
-            print(f"🔎 Test participant {p_id} found in region {region}")
+            p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0]
+            print(f"  Found test participant {p_id} in region {region}:")
+            print(f"    Status: {p_row.get('Status', 'Unknown')}")
+            print(f"    Region: {p_row.get('Current_Region', 'Unknown')}")
+            print(f"    Subregion: {p_row.get('Current_Subregion', 'Unknown')}")
+            print(f"    Preferred locations: {p_row.get('first_choice_location', 'Unknown')}, " +
+                 f"{p_row.get('second_choice_location', 'Unknown')}, {p_row.get('third_choice_location', 'Unknown')}")
+            print(f"    Preferred times: {p_row.get('first_choice_time', 'Unknown')}, " +
+                 f"{p_row.get('second_choice_time', 'Unknown')}, {p_row.get('third_choice_time', 'Unknown')}")
+        else:
+            print(f"  Test participant {p_id} not found in region {region}")
             
     # Check if our test circles are being processed for this region
+    print("\nLooking for specific test circles:")
+    circle_found = False
     for current_col in ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']:
         if current_col in region_df.columns:
             for c_id in test_circles:
                 circle_members = region_df[region_df[current_col] == c_id]
                 if not circle_members.empty:
-                    print(f"🔎 Test circle {c_id} has {len(circle_members)} members in region {region}")
+                    circle_found = True
+                    print(f"  Found test circle {c_id} in region {region}:")
+                    print(f"    Number of members: {len(circle_members)}")
+                    print(f"    Member IDs: {circle_members['Encoded ID'].tolist()}")
                     
+                    # Find first row to get circle details
+                    rep_row = circle_members.iloc[0]
+                    if 'Current_Subregion' in rep_row:
+                        print(f"    Subregion: {rep_row.get('Current_Subregion', 'Unknown')}")
+                    if 'Current_DayTime' in rep_row:
+                        print(f"    Meeting time: {rep_row.get('Current_DayTime', 'Unknown')}")
+    
+    if not circle_found:
+        print(f"  No test circles found in region {region}")
+    
     # Print a notice about the new optimizer implementation
     print(f"\n🔄 Using new circle ID-based optimizer for region {region}")
     
