@@ -15,6 +15,13 @@ from utils.region_mapper import (
 # Global debug flag to trace region mapping issues
 TRACE_REGION_MAPPING = True
 
+# Initialize global tracking for Houston circles debug
+houston_debug_logs = []
+
+# Example participants and circles for testing
+test_participants = ['73177784103', '50625303450', '72549701782']  # Example participants for testing
+test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']  # Test circles
+
 def get_unique_preferences(df, columns):
     """
     Extract unique preference values from specified columns
