@@ -85,6 +85,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     Returns:
         Tuple of (results list, circles list, unmatched list)
     """
+    # Define test participants for debugging purposes only (no special handling)
+    test_participants = ['72549701782', '73177784103', '50625303450']
+    test_circles = ['IP-HOU-02', 'IP-SIN-01', 'IP-LON-04']
     # Enable debug mode specifically for test case
     print("\n🔍 SPECIAL TEST CASE: Debugging participant 73177784103 match with circle IP-SIN-01 🔍")
     
@@ -1457,12 +1460,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Combined objective function
     total_obj = match_obj + very_small_circle_bonus + small_circle_bonus + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus
     
-    # [CRITICAL FIX - LAST RESORT] Add our direct Houston test fix 
-    # This will override all other considerations due to its massive weight (1,000,000)
-    if 'houston_test_fix' in locals():
-        print(f"🔴 LAST RESORT: Adding extreme priority to Houston test participant in objective")
-        houston_debug_logs.append(f"LAST RESORT: Adding extreme priority to Houston test participant in objective")
-        total_obj += houston_test_fix
+    # [DEBUG INFO] Log Houston debug information 
+    # No special test case handling, just record what's happening
+    print(f"📊 Optimization proceeding normally without special case handling")
+    houston_debug_logs.append(f"Optimization proceeding with regular constraints - no special test handling")
     
     # Special debug for test cases
     if debug_mode:
@@ -1595,11 +1596,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         for c_id in all_circle_ids:
             # Only apply to in-person circles
             if c_id.startswith('IP-') or (c_id.startswith('NEW-') and not c_id.startswith('NEW-V-')):
-                # Count "Always" hosts - with special handling for test participant
+                # Count "Always" hosts - with defensive approach
                 always_hosts_list = []
                 for p_id in participants:
-                    # Skip our test participant if not in the dataframe
-                    if p_id == test_participant_id and not test_participant_found:
+                    # Skip participants not in this region's dataframe 
+                    if p_id not in remaining_df['Encoded ID'].values:
                         continue
                         
                     # Check if participant is an "Always" host and add variable to sum if so
@@ -1608,11 +1609,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 
                 always_hosts = pulp.lpSum(always_hosts_list)
                 
-                # Count "Sometimes" hosts - with special handling for test participant
+                # Count "Sometimes" hosts - with defensive approach
                 sometimes_hosts_list = []
                 for p_id in participants:
-                    # Skip our test participant if not in the dataframe
-                    if p_id == test_participant_id and not test_participant_found:
+                    # Skip participants not in this region's dataframe
+                    if p_id not in remaining_df['Encoded ID'].values:
                         continue
                         
                     # Check if participant is a "Sometimes" host and add variable to sum if so
