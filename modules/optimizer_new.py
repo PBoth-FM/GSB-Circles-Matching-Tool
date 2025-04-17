@@ -38,6 +38,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     Returns:
         Tuple of (results list, circles list, unmatched list)
     """
+    # Enable debug mode specifically for test case
+    print("\n🔍 SPECIAL TEST CASE: Debugging participant 73177784103 match with circle IP-SIN-01 🔍")
     # Force debug mode to True for our critical test cases
     if region in ["London", "Singapore", "New York"]:
         debug_mode = True
@@ -299,6 +301,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         final_max_additions = 0
                         if debug_mode:
                             print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
+                            
+                        # SPECIAL DEBUG for our test circle
+                        if circle_id == 'IP-SIN-01':
+                            print(f"\n🚨 CRITICAL ISSUE DETECTED: Test circle {circle_id} has max_additions=0!")
+                            print(f"  Co-leader preferences indicate NO new members can be added to this circle")
+                            print(f"  This is likely why participant 73177784103 cannot be matched to this circle")
                     elif max_additions is not None:
                         # Use the minimum valid value provided by co-leaders
                         final_max_additions = max_additions
@@ -434,6 +442,24 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Get all viable circles with capacity for new members
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
                      if circle_data.get('max_additions', 0) > 0}
+                     
+    # SPECIAL DEBUG: Check if our test circle is viable
+    if 'IP-SIN-01' in existing_circles:
+        test_circle = existing_circles['IP-SIN-01']
+        max_adds = test_circle.get('max_additions', 0)
+        is_viable = max_adds > 0
+        
+        print(f"\n🔍 TEST CIRCLE IP-SIN-01 STATUS:")
+        print(f"  Found in existing circles: Yes")
+        print(f"  Max additions: {max_adds}")
+        print(f"  Is viable for optimization: {'✅ Yes' if is_viable else '❌ No'}")
+        
+        if not is_viable:
+            print(f"  ⚠️ IDENTIFIED ISSUE: Test circle IP-SIN-01 has max_additions={max_adds}")
+            print(f"  This means NO new members can be assigned to this circle")
+            print(f"  Participant 73177784103 cannot be matched to this circle due to co-leader preferences")
+    else:
+        print(f"\n❓ TEST CIRCLE IP-SIN-01 NOT FOUND in region")
     
     # Add extensive debug for region matching
     if debug_mode:
