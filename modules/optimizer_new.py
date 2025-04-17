@@ -803,9 +803,32 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     new_circle_ids = []
     new_circle_metadata = {}  # Map IDs to their subregion and time
     
+    # Import region code mapping utilities
+    from utils.normalization import get_region_code
+    
+    # Count new circles per region for proper incrementing
+    new_circle_counts = {}
+    
     for idx, (subregion, time_slot) in enumerate(new_circle_candidates):
-        # Generate a unique ID for this potential new circle
-        circle_id = f"NEW-{region[:3].upper()}-{subregion[:3].upper()}-{idx+1}"
+        # Get the standardized region code from the mapping
+        region_code = get_region_code(region)
+        
+        # Determine format based on whether it's virtual or in-person
+        # Default to in-person (IP) if we can't determine
+        format_prefix = "V" if "Virtual" in region else "IP"
+        
+        # Track new circles by region code for proper incremental numbering
+        if region_code not in new_circle_counts:
+            new_circle_counts[region_code] = 1
+        else:
+            new_circle_counts[region_code] += 1
+            
+        # Use the incremental count for this region
+        circle_num = str(new_circle_counts[region_code]).zfill(2)  # Format as 01, 02, etc.
+        
+        # Generate a unique ID for this potential new circle using the correct format
+        circle_id = f"{format_prefix}-NEW-{region_code}-{circle_num}"
+        
         new_circle_ids.append(circle_id)
         new_circle_metadata[circle_id] = {
             'subregion': subregion,
@@ -1594,8 +1617,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Constraint 6: Host requirement for in-person circles (if enabled)
     if enable_host_requirement:
         for c_id in all_circle_ids:
-            # Only apply to in-person circles
-            if c_id.startswith('IP-') or (c_id.startswith('NEW-') and not c_id.startswith('NEW-V-')):
+            # Only apply to in-person circles - using the correct naming format
+            if c_id.startswith('IP-'):  # This works for both existing IP-xxx and new IP-NEW-xxx circles
                 # Count "Always" hosts - with defensive approach
                 always_hosts_list = []
                 for p_id in participants:
