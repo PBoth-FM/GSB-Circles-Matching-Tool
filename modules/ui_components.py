@@ -471,11 +471,30 @@ def render_debug_tab():
                 with st.expander("IP-HOU-02 Details"):
                     st.dataframe(ip_hou_02)
                     
-                    # Try to extract meeting time
-                    meeting_day = ip_hou_02['Current_Meeting_Day'].iloc[0] if 'Current_Meeting_Day' in ip_hou_02.columns else 'Not available'
-                    meeting_time = ip_hou_02['Current_Meeting_Time'].iloc[0] if 'Current_Meeting_Time' in ip_hou_02.columns else 'Not available'
+                    # Try to extract meeting time with multiple column name options
+                    day_column = None
+                    time_column = None
+                    
+                    # Try different potential column names for meeting day - same logic as in optimizer
+                    for col_name in ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']:
+                        if col_name in ip_hou_02.columns:
+                            day_column = col_name
+                            break
+                    
+                    # Try different potential column names for meeting time
+                    for col_name in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
+                        if col_name in ip_hou_02.columns:
+                            time_column = col_name
+                            break
+                    
+                    # Get meeting day and time, defaulting to 'Not available' if not found
+                    meeting_day = ip_hou_02[day_column].iloc[0] if day_column else 'Not available'
+                    meeting_time = ip_hou_02[time_column].iloc[0] if time_column else 'Not available'
+                    
+                    # Format and display
                     st.write(f"Meeting day: {meeting_day}")
                     st.write(f"Meeting time: {meeting_time}")
+                    st.write(f"Formatted meeting time: {meeting_day} ({meeting_time})")
             else:
                 st.error("❌ IP-HOU-02 circle not found in the data")
                 st.info("The test circle should be in the data but isn't - this is a critical issue")
@@ -514,9 +533,9 @@ def render_debug_tab():
         if len(houston_debug_logs) > 0:
             st.warning("Houston Debug Information Available")
             
-            for i, log_entry in enumerate(houston_debug_logs):
-                with st.expander(f"Houston Debug Entry #{i+1}", expanded=True if i==0 else False):
-                    st.text(log_entry)
+            # Display all log entries in a single text block instead of expandable sections
+            combined_logs = "\n".join([f"Houston Debug Entry #{i+1}\n{entry}\n" for i, entry in enumerate(houston_debug_logs)])
+            st.text_area("Houston Debug Logs (All Entries)", combined_logs, height=400)
                     
             # Add a special test case section
             st.write("### Houston Test Participant")
