@@ -1304,8 +1304,45 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # 4. Fourth goal: Maximize preference satisfaction
     # 5. Fifth goal: Only create new circles when necessary
     
+    # CRITICAL FIX: Add defensive variable checking before objective function construction
+    # Check for the specific problematic ID that caused the KeyError
+    problematic_id = '72960135849'
+    if problematic_id in participants:
+        print(f"🚨 DEFENSIVE CHECK: Found problematic participant ID in data: {problematic_id}")
+        # Ensure we have variables for all this participant's potential circle assignments
+        for c_id in all_circle_ids:
+            if (problematic_id, c_id) not in x:
+                print(f"🔴 MISSING VARIABLE: Creating missing variable for {problematic_id} ↔ {c_id}")
+                x[(problematic_id, c_id)] = pulp.LpVariable(f"x_{problematic_id}_{c_id}", cat=pulp.LpBinary)
+                created_vars.append((problematic_id, c_id))
+    
+    # Verify that all participants have variables created
+    missing_pairs = []
+    for p_id in participants:
+        for c_id in all_circle_ids:
+            if (p_id, c_id) not in x:
+                missing_pairs.append((p_id, c_id))
+                print(f"⚠️ Creating missing variable: {p_id} ↔ {c_id}")
+                x[(p_id, c_id)] = pulp.LpVariable(f"x_{p_id}_{c_id}", cat=pulp.LpBinary)
+    
+    if missing_pairs:
+        print(f"⚠️ Created {len(missing_pairs)} missing variables for objective function")
+        
+    # Log all known variables in debug mode
+    if debug_mode:
+        print(f"\n📊 Variable Creation Statistics:")
+        print(f"  Created {len(created_vars)} variables for {len(participants)} participants and {len(all_circle_ids)} circles")
+        print(f"  Expected {len(participants) * len(all_circle_ids)} total variables")
+        
+        # Check specifically for the error case
+        if (problematic_id, 'IP-HOU-02') in x:
+            print(f"✅ Verified existence of critical variable: ({problematic_id}, IP-HOU-02)")
+        else:
+            print(f"❌ CRITICAL VARIABLE MISSING: ({problematic_id}, IP-HOU-02)")
+    
     # Component 1: Maximize number of matched participants (weight: 1000 per participant)
-    match_obj = 1000 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in all_circle_ids)
+    # DEFENSIVE VERSION: Only use variables that exist in the model
+    match_obj = 1000 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in all_circle_ids if (p_id, c_id) in x)
     
     # Component 2: Bonus for adding to small existing circles (size 2-4) - 50 points per assignment
     # Identify small circles (those with 2-4 members) and prioritize by size
@@ -1334,17 +1371,25 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"  Circle {c_id}: {viable_circles[c_id]['member_count']} current members - 50 point bonus")
     
     # Grant an extra high bonus for very small circles (2-3 members)
-    very_small_circle_bonus = 800 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in very_small_circles_ids)
+    # DEFENSIVE FIX: Only use variables that exist in the model with "if (p_id, c_id) in x" check
+    very_small_circle_bonus = 800 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants 
+                                             for c_id in very_small_circles_ids if (p_id, c_id) in x)
     
     # Normal bonus for circles with 4 members
-    small_circle_bonus = 50 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in small_circles_ids_4)
+    # DEFENSIVE FIX: Only use variables that exist in the model
+    small_circle_bonus = 50 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants 
+                                      for c_id in small_circles_ids_4 if (p_id, c_id) in x)
     
     # Component 3: SIGNIFICANTLY INCREASED bonus for adding to any existing circle - 500 points per assignment
-    existing_circle_bonus = 500 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in existing_circle_ids)
+    # DEFENSIVE FIX: Only use variables that exist in the model
+    existing_circle_bonus = 500 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants 
+                                          for c_id in existing_circle_ids if (p_id, c_id) in x)
     
     # Component 4: Maximize preference satisfaction (weight: 1 per preference point)
+    # DEFENSIVE FIX: Only use variables that exist in the model
     pref_obj = pulp.lpSum(preference_scores[(p_id, c_id)] * x[(p_id, c_id)] 
-                        for p_id in participants for c_id in all_circle_ids)
+                        for p_id in participants for c_id in all_circle_ids
+                        if (p_id, c_id) in x and (p_id, c_id) in preference_scores)
     
     # Component 5: Higher penalty for creating new circles (weight: 100 per circle)
     new_circle_penalty = 100 * pulp.lpSum(y[c_id] for c_id in new_circle_ids)
@@ -1457,12 +1502,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         if p_id == '72549701782':
             houston_debug_logs.append(f"Adding one-circle-per-participant constraint for test participant 72549701782")
         
-        prob += pulp.lpSum(x[(p_id, c_id)] for c_id in all_circle_ids) <= 1, f"one_circle_per_participant_{p_id}"
+        # DEFENSIVE FIX: Only use variables that exist in the model
+        participant_vars = [x[(p_id, c_id)] for c_id in all_circle_ids if (p_id, c_id) in x]
+        
+        if participant_vars:  # Only add constraint if there are variables for this participant
+            prob += pulp.lpSum(participant_vars) <= 1, f"one_circle_per_participant_{p_id}"
+        else:
+            print(f"⚠️ WARNING: No valid variables created for participant {p_id}, skipping constraint")
     
     # Constraint 2: Only assign participants to compatible circles
     for p_id in participants:
         for c_id in all_circle_ids:
-            if compatibility[(p_id, c_id)] == 0:
+            # DEFENSIVE FIX: Only add constraint if the variable and compatibility value exist
+            if (p_id, c_id) in compatibility and compatibility[(p_id, c_id)] == 0 and (p_id, c_id) in x:
                 # Add special debug for Houston test pair
                 if p_id == '72549701782' and c_id == 'IP-HOU-02':
                     is_compatible = "INCOMPATIBLE"
@@ -1475,11 +1527,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     for c_id in new_circle_ids:
         # Circle can only be used if it's activated
         for p_id in participants:
-            prob += x[(p_id, c_id)] <= y[c_id], f"activate_circle_{p_id}_{c_id}"
+            # DEFENSIVE FIX: Only add constraint if the variable exists
+            if (p_id, c_id) in x:
+                prob += x[(p_id, c_id)] <= y[c_id], f"activate_circle_{p_id}_{c_id}"
     
     # Constraint 4: Minimum circle size for new circles (only if activated)
     for c_id in new_circle_ids:
-        prob += pulp.lpSum(x[(p_id, c_id)] for p_id in participants) >= min_circle_size * y[c_id], f"min_size_{c_id}"
+        # DEFENSIVE FIX: Only use variables that exist in the model
+        circle_vars = [x[(p_id, c_id)] for p_id in participants if (p_id, c_id) in x]
+        if circle_vars:  # Only add constraint if there are variables for this circle
+            prob += pulp.lpSum(circle_vars) >= min_circle_size * y[c_id], f"min_size_{c_id}"
+        else:
+            # If no variables, set y[c_id] to 0 (circle cannot be activated)
+            prob += y[c_id] == 0, f"disable_circle_{c_id}"
+            print(f"⚠️ WARNING: No valid variables created for circle {c_id}, forcing y[{c_id}] = 0")
     
     # Constraint 5: Maximum circle size constraints
     # For existing circles: max_additions
@@ -1514,12 +1575,24 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"🛠️ Enforcing capacity for IP-HOU-02: ≤ {max_additions}, #assigned vars: {len(assigned_vars)}")
                 houston_debug_logs.append(f"Enforcing capacity for IP-HOU-02: ≤ {max_additions}, #assigned vars: {len(assigned_vars)}")
         
-        prob += pulp.lpSum(x[(p_id, c_id)] for p_id in participants) <= max_additions, f"max_additions_{c_id}"
+        # DEFENSIVE FIX: Only use variables that exist in the model
+        circle_vars = [x[(p_id, c_id)] for p_id in participants if (p_id, c_id) in x]
+        if circle_vars:  # Only add constraint if there are variables for this circle
+            prob += pulp.lpSum(circle_vars) <= max_additions, f"max_additions_{c_id}"
+        else:
+            print(f"⚠️ WARNING: No valid variables created for circle {c_id}, skipping capacity constraint")
     
     # For new circles: max_circle_size (10)
     max_circle_size = 10
     for c_id in new_circle_ids:
-        prob += pulp.lpSum(x[(p_id, c_id)] for p_id in participants) <= max_circle_size * y[c_id], f"max_size_{c_id}"
+        # DEFENSIVE FIX: Only use variables that exist in the model
+        circle_vars = [x[(p_id, c_id)] for p_id in participants if (p_id, c_id) in x]
+        if circle_vars:  # Only add constraint if there are variables for this circle
+            prob += pulp.lpSum(circle_vars) <= max_circle_size * y[c_id], f"max_size_{c_id}"
+        else:
+            # If no variables, set y[c_id] to 0 (circle cannot be activated)
+            prob += y[c_id] == 0, f"disable_circle_{c_id}"
+            print(f"⚠️ WARNING: No valid variables created for circle {c_id}, forcing y[{c_id}] = 0")
     
     # Constraint 6: Host requirement for in-person circles (if enabled)
     if enable_host_requirement:
