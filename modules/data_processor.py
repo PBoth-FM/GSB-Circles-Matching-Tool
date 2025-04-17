@@ -391,6 +391,11 @@ def is_time_compatible(time1, time2, is_important=False):
         # Circle IP-LON-04 with time "Tuesday (Evenings)" and participant 50625303450
         ("Tuesday (Evenings)", "Monday-Thursday (Evenings)"),
         ("Monday-Thursday (Evenings)", "Tuesday (Evenings)"),
+        # Circle IP-HOU-02 with time "M-Th (Evenings)" and Houston participants
+        ("M-Th (Evenings)", "Monday-Thursday (Evenings)"),
+        ("Monday-Thursday (Evenings)", "M-Th (Evenings)"),
+        ("M-Th (Evenings)", "Monday-thursday (Evenings)"),
+        ("Monday-thursday (Evenings)", "M-Th (Evenings)"),
         # Also check Monday-thursday variants (lowercase t)
         ("Varies (Evenings)", "Monday-thursday (Evenings)"),
         ("Monday-thursday (Evenings)", "Varies (Evenings)"),
@@ -547,14 +552,14 @@ def is_time_compatible(time1, time2, is_important=False):
                 print(f"    Day part 'Varies' expands to all days of the week")
             return all_days
             
-        # Special case: M-Th format 
-        if day_part == 'M-Th':
+        # Special case: M-Th format (handle case variations)
+        if day_part.lower() in ['m-th', 'm-thu', 'm-thur', 'm-thurs', 'm-thursday']:
             if is_important:
-                print(f"    Day part 'M-Th' expands to Monday through Thursday")
+                print(f"    Day part '{day_part}' expands to Monday through Thursday")
             return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
         
         # Special case: handle "monday-thursday" explicitly (including lowercase t issue)
-        if day_part.lower() in ['monday-thursday', 'monday-thurs', 'mon-thurs', 'mon-thu', 'mon-thursday']:
+        if day_part.lower() in ['monday-thursday', 'monday-thurs', 'mon-thurs', 'mon-thu', 'mon-thursday', 'monday-thu', 'mon-t', 'monday-t']:
             if is_important:
                 print(f"    Day part '{day_part}' expands to Monday through Thursday")
             return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
