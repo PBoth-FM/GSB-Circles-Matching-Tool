@@ -731,7 +731,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     loc_score = 1
                 
                 # Time score (3 for first choice, 2 for second, 1 for third)
-                from modules.data_processor import is_time_compatible
+                # is_time_compatible already imported at the top of the file
                 if is_time_compatible(p_row['first_choice_time'], time_slot):
                     time_score = 3
                 elif is_time_compatible(p_row['second_choice_time'], time_slot):
