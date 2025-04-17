@@ -1043,9 +1043,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # Debug Houston circles and participant compatibility
             is_houston_circle = 'HOU' in c_id if c_id is not None else False
-            is_houston_participant = any('Houston' in str(loc) for loc in [p_row['first_choice_location'], 
-                                                                           p_row['second_choice_location'], 
-                                                                           p_row['third_choice_location']])
+            # Use our safe string comparison for Houston participants
+            is_houston_participant = any(safe_string_match(loc, 'Houston') for loc in [
+                p_row.get('first_choice_location'), 
+                p_row.get('second_choice_location'), 
+                p_row.get('third_choice_location')
+            ])
             
             if is_houston_circle or is_houston_participant:
                 print(f"\n🔍 DEBUG - Checking compatibility for Houston-related match:")
@@ -1057,26 +1060,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
             
             # Enhanced location compatibility checking with proper type handling
-            # Helper function for safe string comparisons
-            def safe_string_match(value1, value2):
-                # Handle NaN, None values
-                if pd.isna(value1) or pd.isna(value2):
-                    return False
-                
-                # Convert to string if needed
-                str1 = str(value1) if not isinstance(value1, str) else value1
-                str2 = str(value2) if not isinstance(value2, str) else value2
-                
-                # Exact match
-                if str1 == str2:
-                    return True
-                    
-                # Prefix match
-                try:
-                    return str1.startswith(str2) or str2.startswith(str1)
-                except (AttributeError, TypeError):
-                    # Extra safety in case conversion fails
-                    return False
+            # Using the module-level safe_string_match function
             
             # First try exact match with participant preferences
             loc_match = (
