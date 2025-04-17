@@ -828,32 +828,41 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 elif p_row['third_choice_location'].startswith(subregion) or subregion.startswith(p_row['third_choice_location']):
                     loc_match = True
             
-            # Check time compatibility using our improved compatibility function
-            # Use direct comparison for time matching to avoid LSP issues
+            # Check time compatibility using is_time_compatible function which properly handles "Varies"
+            # Define if this is a special test case that needs detailed debugging
+            is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01') or (p_id == '50625303450' and c_id == 'IP-LON-04')
+            
             first_choice = p_row['first_choice_time']
             second_choice = p_row['second_choice_time']
             third_choice = p_row['third_choice_time']
             
+            # Initialize time match as False
             time_match = False
             
-            # Check first choice
-            if first_choice == time_slot or (
-                first_choice and time_slot and 
-                (first_choice.startswith(time_slot) or time_slot.startswith(first_choice))
-            ):
+            # Check each time preference using is_time_compatible which handles "Varies" as a wildcard
+            if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
                 time_match = True
-            # Check second choice
-            elif second_choice == time_slot or (
-                second_choice and time_slot and 
-                (second_choice.startswith(time_slot) or time_slot.startswith(second_choice))
-            ):
+                if is_test_case:
+                    print(f"  Time compatibility SUCCESS: '{first_choice}' is compatible with '{time_slot}'")
+            elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
                 time_match = True
-            # Check third choice
-            elif third_choice == time_slot or (
-                third_choice and time_slot and 
-                (third_choice.startswith(time_slot) or time_slot.startswith(third_choice))
-            ):
+                if is_test_case:
+                    print(f"  Time compatibility SUCCESS: '{second_choice}' is compatible with '{time_slot}'")
+            elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
                 time_match = True
+                if is_test_case:
+                    print(f"  Time compatibility SUCCESS: '{third_choice}' is compatible with '{time_slot}'")
+            elif is_test_case:
+                print(f"  Time compatibility FAILED: None of:")
+                print(f"    - '{first_choice}'")
+                print(f"    - '{second_choice}'")
+                print(f"    - '{third_choice}'")
+                print(f"  is compatible with '{time_slot}'")
+                
+            # Special compatibility handling for test cases
+            if is_test_case and "Varies" in time_slot and not time_match:
+                print(f"  ⚠️ WARNING: Time compatibility failed despite 'Varies' in time_slot")
+                print(f"  This should have matched due to the wildcard nature of 'Varies'")
             
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
@@ -946,28 +955,22 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 elif p_row['third_choice_location'] == subregion:
                     loc_score = 1
                 
-                # Time score (3 for first choice, 2 for second, 1 for third) - using direct comparison
+                # Time score (3 for first choice, 2 for second, 1 for third) - using is_time_compatible()
                 first_choice = p_row['first_choice_time']
                 second_choice = p_row['second_choice_time']
                 third_choice = p_row['third_choice_time']
                 
-                # Check first choice
-                if first_choice == time_slot or (
-                    first_choice and time_slot and 
-                    (first_choice.startswith(time_slot) or time_slot.startswith(first_choice))
-                ):
+                # Define if this is a special test case
+                is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01') or (p_id == '50625303450' and c_id == 'IP-LON-04')
+                
+                # Check first choice using is_time_compatible for consistent handling of "Varies"
+                if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
                     time_score = 3
                 # Check second choice
-                elif second_choice == time_slot or (
-                    second_choice and time_slot and 
-                    (second_choice.startswith(time_slot) or time_slot.startswith(second_choice))
-                ):
+                elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
                     time_score = 2
                 # Check third choice
-                elif third_choice == time_slot or (
-                    third_choice and time_slot and 
-                    (third_choice.startswith(time_slot) or time_slot.startswith(third_choice))
-                ):
+                elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
                     time_score = 1
                 
                 # Total score (sum of location and time scores)
@@ -1253,29 +1256,23 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             elif participant.get('third_choice_location') == subregion:
                 loc_score = 1
             
-            # Time score - using direct comparisons to avoid LSP issues
+            # Time score - using is_time_compatible() instead of direct comparisons
             time_slot = meta['meeting_time']
             first_choice = participant.get('first_choice_time', '')
             second_choice = participant.get('second_choice_time', '')
             third_choice = participant.get('third_choice_time', '')
             
-            # Check first choice
-            if first_choice == time_slot or (
-                first_choice and time_slot and 
-                (first_choice.startswith(time_slot) or time_slot.startswith(first_choice))
-            ):
+            # Define if this is a special test case
+            is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01') or (p_id == '50625303450' and c_id == 'IP-LON-04')
+            
+            # Check first choice using is_time_compatible for consistent handling of "Varies"
+            if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
                 time_score = 3
             # Check second choice
-            elif second_choice == time_slot or (
-                second_choice and time_slot and 
-                (second_choice.startswith(time_slot) or time_slot.startswith(second_choice))
-            ):
+            elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
                 time_score = 2
             # Check third choice
-            elif third_choice == time_slot or (
-                third_choice and time_slot and 
-                (third_choice.startswith(time_slot) or time_slot.startswith(third_choice))
-            ):
+            elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
                 time_score = 1
             
             # Save scores
