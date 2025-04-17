@@ -291,34 +291,22 @@ def determine_unmatched_reason(participant, context=None):
         return "Very limited compatible options"
     
     # 3. No Preferences Check - most fundamental issue
-    if (not participant.get('first_choice_location') and 
-        not participant.get('second_choice_location') and 
-        not participant.get('third_choice_location') and
-        not participant.get('first_choice_time') and 
-        not participant.get('second_choice_time') and 
-        not participant.get('third_choice_time')):
-        return "No location or time preferences"
+    has_location = bool(participant.get('first_choice_location') or 
+                        participant.get('second_choice_location') or 
+                        participant.get('third_choice_location'))
     
-    # 4. Special Status Check - waitlist participants
-    raw_status = participant.get('Raw_Status', '')
-    status = participant.get('Status', '')
+    has_time = bool(participant.get('first_choice_time') or 
+                    participant.get('second_choice_time') or 
+                    participant.get('third_choice_time'))
     
-    if (isinstance(raw_status, str) and ('WAITLIST' in raw_status.upper() or 'WAIT LIST' in raw_status.upper())) or \
-       (isinstance(status, str) and ('WAITLIST' in status.upper() or 'WAIT LIST' in status.upper())):
-        return "Waitlist - low priority"
+    if not has_location and not has_time:
+        return "No location and/or time preferences"
+    elif not has_location:
+        return "No location preferences"
+    elif not has_time:
+        return "No time preferences"
     
-    # 5. Partial Preference Checks
-    # No Location Preference
-    if (not participant.get('first_choice_location') and 
-        not participant.get('second_choice_location') and 
-        not participant.get('third_choice_location')):
-        return "No location preference"
-    
-    # No Time Preference
-    if (not participant.get('first_choice_time') and 
-        not participant.get('second_choice_time') and 
-        not participant.get('third_choice_time')):
-        return "No time preference"
+    # Note: Removed waitlist check as waitlisted participants should be treated the same as others
     
     # Get participant locations and times
     participant_locations = [

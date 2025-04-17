@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 import pulp
 import streamlit as st
-from utils.helpers import generate_circle_id
+from utils.helpers import generate_circle_id, determine_unmatched_reason
 from modules.data_processor import is_time_compatible
 from utils.region_mapper import (
     normalize_region_name,
@@ -2184,28 +2184,37 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             participant_dict['time_score'] = 0
             participant_dict['total_score'] = 0
             
-            # Determine unmatched reason
-            if p_id in participants:  # This was processed in optimization but didn't get matched
-                # Check for compatibility issues
-                has_compatible_options = bool(participant_compatible_circles.get(p_id, []))
+            # Determine unmatched reason using the more advanced hierarchical decision tree
+            # Build a comprehensive context object with all necessary data for accurate reason determination
+            detailed_context = {
+                # Add information from our optimization context
+                'existing_circles': optimization_context.get('existing_circles', []),
+                'similar_participants': optimization_context.get('similar_participants', {}),
+                'full_circles': optimization_context.get('full_circles', []),
+                'circles_needing_hosts': optimization_context.get('circles_needing_hosts', []),
+                'compatibility_matrix': optimization_context.get('compatibility_matrix', {}),
+                'participant_compatible_options': optimization_context.get('participant_compatible_options', {}),
+                'host_counts': optimization_context.get('host_counts', {}),
                 
-                if not has_compatible_options:
-                    # No compatible circles available
-                    participant_dict['unmatched_reason'] = "No compatible circles available"
-                else:
-                    # Had compatible options but wasn't selected - likely due to constraints
-                    # Could be host requirement or minimum circle size
-                    is_host = participant.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host']
-                    
-                    if enable_host_requirement and not is_host:
-                        # If host requirement enabled and this person isn't a host, that could be why
-                        participant_dict['unmatched_reason'] = "Not matched due to host requirements constraint"
-                    else:
-                        # Generic constraint reason
-                        participant_dict['unmatched_reason'] = "Not matched due to optimization constraints"
-            else:
-                # This participant wasn't even considered in optimization (likely already in a circle)
-                participant_dict['unmatched_reason'] = "Already in a continuing circle"
+                # Add participant-specific compatibility info
+                'participant_compatible_count': {p_id: len(participant_compatible_circles.get(p_id, []))},
+                
+                # Region-specific flags
+                'insufficient_regional_participants': len(region_df) < min_circle_size,
+            }
+            
+            # Debug logging for specific participants of interest
+            if p_id in ['66612429591', '71354564939', '65805240273'] and debug_mode:
+                print(f"\n🔍 DETAILED UNMATCHED REASON CHECK FOR {p_id}:")
+                print(f"  Location prefs: {participant.get('first_choice_location')}, {participant.get('second_choice_location')}, {participant.get('third_choice_location')}")
+                print(f"  Time prefs: {participant.get('first_choice_time')}, {participant.get('second_choice_time')}, {participant.get('third_choice_time')}")
+                print(f"  Compatible circles: {participant_compatible_circles.get(p_id, [])}")
+                print(f"  Region: {participant.get('Requested_Region', 'Unknown')}")
+                print(f"  Total participants in region: {len(region_df)}")
+                print(f"  Host status: {participant.get('host', 'None')}")
+            
+            # Use our enhanced hierarchical decision tree to determine the reason
+            participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, detailed_context)
             
             results.append(participant_dict)
             unmatched.append(participant_dict)
