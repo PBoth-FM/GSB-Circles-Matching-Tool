@@ -1832,8 +1832,24 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     else:
         match_obj = 1000 * pulp.lpSum(x[p, j] for p in participants for j in range(len(circle_options)))
     
-    # Combined objective with preference satisfaction
-    full_obj_expr = match_obj + obj_expr + existing_circle_obj
+    # Define our objective component for encouraging existing circle assignments
+    # Use a higher weight for existing circles to prioritize them over new circles
+    # This directly addresses the issue where new participants aren't being matched to existing circles
+    if existing_circle_list:
+        # Count the total number of participants assigned to existing circles
+        existing_circle_assignment_count = pulp.lpSum(z[p, e] for p in participants 
+                                                    for e in range(len(existing_circle_list)))
+        
+        # Add a strong bonus for using existing circles (weight of 500 per participant)
+        existing_circle_bonus = 500 * existing_circle_assignment_count
+        
+        if debug_mode:
+            print(f"Adding strong bonus for existing circle assignments in objective function")
+    else:
+        existing_circle_bonus = 0
+    
+    # Combined objective with preference satisfaction and existing circle prioritization
+    full_obj_expr = match_obj + obj_expr + existing_circle_obj + existing_circle_bonus
     
     prob += full_obj_expr, "Maximize matched participants and preference satisfaction"
     
