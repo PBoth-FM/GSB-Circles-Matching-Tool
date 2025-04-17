@@ -1517,29 +1517,35 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     standardize_time_preference(p_row['third_choice_time'])
                 ]
                 
-                # Check location compatibility
+                # Enhanced location compatibility checking
+                # First try exact match with participant preferences
                 loc_match = (
                     (p_row['first_choice_location'] == subregion) or 
                     (p_row['second_choice_location'] == subregion) or 
                     (p_row['third_choice_location'] == subregion)
                 )
                 
+                # If no match, try a more flexible approach for circles that aren't at capacity
+                # This allows more participants to get matched to existing circles
+                # Relaxed matching is only applied if the circle has max_additions > 1
+                if not loc_match and circle_data.get('max_additions', 0) > 1:
+                    if p_row['first_choice_location'].startswith(subregion) or subregion.startswith(p_row['first_choice_location']):
+                        loc_match = True
+                    elif p_row['second_choice_location'].startswith(subregion) or subregion.startswith(p_row['second_choice_location']):
+                        loc_match = True
+                    elif p_row['third_choice_location'].startswith(subregion) or subregion.startswith(p_row['third_choice_location']):
+                        loc_match = True
+                
                 # Check time compatibility using our improved compatibility function
                 from modules.data_processor import is_time_compatible
                 
-                # Special case for our example participants - pass is_important=True to is_time_compatible
-                if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
-                    time_match = (
-                        is_time_compatible(p_row['first_choice_time'], time_slot, is_important=True) or 
-                        is_time_compatible(p_row['second_choice_time'], time_slot, is_important=True) or 
-                        is_time_compatible(p_row['third_choice_time'], time_slot, is_important=True)
-                    )
-                else:
-                    time_match = (
-                        is_time_compatible(p_row['first_choice_time'], time_slot) or 
-                        is_time_compatible(p_row['second_choice_time'], time_slot) or 
-                        is_time_compatible(p_row['third_choice_time'], time_slot)
-                    )
+                # Use more detailed time matching for all participants (not just examples)
+                # This helps ensure better compatibility detection
+                time_match = (
+                    is_time_compatible(p_row['first_choice_time'], time_slot, is_important=True) or 
+                    is_time_compatible(p_row['second_choice_time'], time_slot, is_important=True) or 
+                    is_time_compatible(p_row['third_choice_time'], time_slot, is_important=True)
+                )
                 
                 # For more specific debugging of our examples
                 if p in ['73177784103', '50625303450'] and circle_id in ['IP-SIN-01', 'IP-LON-04']:
