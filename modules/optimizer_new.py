@@ -978,33 +978,63 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             else:
                 preference_scores[(p_id, c_id)] = 0
     
-    # Build the objective function:
+    # Build the objective function with adjusted priorities:
     # 1. Primary goal: Maximize number of matched participants (high weight)
-    # 2. Secondary goal: Maximize preference satisfaction
-    # 3. Tertiary goal: Prefer using existing circles over creating new ones when equally good
+    # 2. Secondary goal: Prioritize adding to small existing circles (size 2-4)
+    # 3. Tertiary goal: Prioritize adding to any existing circles
+    # 4. Fourth goal: Maximize preference satisfaction
+    # 5. Fifth goal: Only create new circles when necessary
     
     # Component 1: Maximize number of matched participants (weight: 1000 per participant)
     match_obj = 1000 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in all_circle_ids)
     
-    # Component 2: Maximize preference satisfaction (weight: 1 per preference point)
+    # Component 2: Bonus for adding to small existing circles (size 2-4) - 50 points per assignment
+    # Identify small circles (those with 2-4 members)
+    small_circles_ids = [c_id for c_id in existing_circle_ids 
+                        if viable_circles[c_id]['member_count'] >= 2 and 
+                           viable_circles[c_id]['member_count'] <= 4]
+    
+    if debug_mode:
+        print(f"\n🔍 Small circles (size 2-4) that need filling: {len(small_circles_ids)}")
+        for c_id in small_circles_ids:
+            print(f"  Circle {c_id}: {viable_circles[c_id]['member_count']} current members")
+    
+    # Weight 50 points per assignment to small circles
+    small_circle_bonus = 50 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in small_circles_ids)
+    
+    # Component 3: Bonus for adding to any existing circle - 20 points per assignment
+    existing_circle_bonus = 20 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in existing_circle_ids)
+    
+    # Component 4: Maximize preference satisfaction (weight: 1 per preference point)
     pref_obj = pulp.lpSum(preference_scores[(p_id, c_id)] * x[(p_id, c_id)] 
                         for p_id in participants for c_id in all_circle_ids)
     
-    # Component 3: Small penalty for new circles to prefer using existing circles (weight: 10 per circle)
-    # This creates a very mild preference for filling existing circles when all else is equal
-    new_circle_penalty = 10 * pulp.lpSum(y[c_id] for c_id in new_circle_ids)
+    # Component 5: Higher penalty for creating new circles (weight: 100 per circle)
+    new_circle_penalty = 100 * pulp.lpSum(y[c_id] for c_id in new_circle_ids)
     
     # Combined objective function
-    total_obj = match_obj + pref_obj - new_circle_penalty
+    total_obj = match_obj + small_circle_bonus + existing_circle_bonus + pref_obj - new_circle_penalty
     
-    # Add objective to the problem
-    prob += total_obj, "Maximize matched participants and preference satisfaction"
-    
+    # Special debug for test cases
     if debug_mode:
         print(f"\n🎯 OBJECTIVE FUNCTION COMPONENTS:")
         print(f"  Match component weight: 1000 per participant")
+        print(f"  Small circle (size 2-4) bonus: 50 per assignment")
+        print(f"  Existing circle bonus: 20 per assignment")
         print(f"  Preference component weight: 1 per preference point")
-        print(f"  New circle penalty: 10 per circle")
+        print(f"  New circle penalty: 100 per circle")
+        print(f"  Small circles that need filling: {len(small_circles_ids)}")
+        
+        # Debug for test case
+        if "IP-HOU-02" in existing_circle_ids:
+            ip_hou_02_meta = viable_circles["IP-HOU-02"]
+            print(f"\n🔍 DEBUG: IP-HOU-02 circle data:")
+            print(f"  Current members: {ip_hou_02_meta['member_count']}")
+            print(f"  Max additions: {ip_hou_02_meta['max_additions']}")
+            print(f"  Meeting time: {ip_hou_02_meta['meeting_time']}")
+    
+    # Add objective to the problem
+    prob += total_obj, "Maximize matched participants and preference satisfaction"
     
     # ***************************************************************
     # STEP 4: ADD CONSTRAINTS
@@ -1151,27 +1181,39 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"  ✅ TEST SUCCESS: Participant {p_id} was assigned to test circle {c_id}")
         
         # Update existing circles with new assignments
+        # Keep track of which circles have already been processed
+        processed_circles = set()
+        
         for circle_id in existing_circle_ids:
             circle_data = viable_circles[circle_id]
             new_members = [p_id for p_id, c_id in circle_assignments.items() if c_id == circle_id]
             
+            # Always process each existing circle exactly once, even if no new members
+            # Create a copy of the original data
+            updated_circle = circle_data.copy()
+            
             if new_members:
-                # Create a copy of the original data
-                updated_circle = circle_data.copy()
-                
-                # Update the copy with new members
+                # Update with new members
                 updated_circle['new_members'] = len(new_members)
                 updated_members = updated_circle['members'].copy()
                 updated_members.extend(new_members)
                 updated_circle['members'] = updated_members
                 updated_circle['member_count'] = len(updated_members)
                 
-                # Add to circles list
-                circles.append(updated_circle)
-                
                 if debug_mode:
                     print(f"  Updated existing circle {circle_id} with {len(new_members)} new members")
                     print(f"    Total members: {updated_circle['member_count']}")
+            else:
+                # No new members, but still track the original circle
+                updated_circle['new_members'] = 0
+                
+                if debug_mode:
+                    print(f"  No new members added to existing circle {circle_id}")
+                    print(f"    Total members: {updated_circle['member_count']}")
+            
+            # Add to circles list (only once per circle ID)
+            processed_circles.add(circle_id)
+            circles.append(updated_circle)
         
         # Create new circles from active ones
         for circle_id in active_new_circles:
