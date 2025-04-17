@@ -6,6 +6,39 @@ from itertools import combinations
 from utils.helpers import determine_unmatched_reason
 
 # Special test case handler for critical examples
+def deduplicate_circles(circles_list):
+    """
+    Deduplicates circles by circle_id, merging member lists and updating counts.
+    
+    Args:
+        circles_list: List of dictionaries (circles)
+        
+    Returns:
+        Deduplicated list of circles
+    """
+    merged = {}
+    
+    for circle in circles_list:
+        c_id = circle['circle_id']
+        if c_id not in merged:
+            # Copy to avoid mutation
+            merged[c_id] = {
+                **circle,
+                'members': list(circle.get('members', []))  # ensure list
+            }
+        else:
+            existing = merged[c_id]
+            # Merge members
+            merged_members = set(existing['members']) | set(circle.get('members', []))
+            existing['members'] = list(merged_members)
+            # Update counts
+            existing['member_count'] = len(merged_members)
+            existing['new_members'] += circle.get('new_members', 0)
+            # Keep is_existing True if either is
+            existing['is_existing'] = existing['is_existing'] or circle.get('is_existing', False)
+    
+    return list(merged.values())
+
 def force_test_case_matching(results_df, circles_df, unmatched_df):
     """
     Force match specific test cases that need to be matched for testing purposes
@@ -498,9 +531,17 @@ def run_matching_algorithm(data, config):
         all_circles.extend(region_circles)
         all_unmatched.extend(region_unmatched)
     
+    # Deduplicate circles and merge member lists
+    print("\n🔄 DEDUPLICATING CIRCLES BY CIRCLE_ID")
+    print(f"  Before deduplication: {len(all_circles)} circles")
+    
+    # Use our global deduplication function
+    deduped_circles = deduplicate_circles(all_circles)
+    print(f"  After deduplication: {len(deduped_circles)} circles")
+    
     # Convert results to DataFrames
     results_df = pd.DataFrame(all_results)
-    circles_df = pd.DataFrame(all_circles) if all_circles else pd.DataFrame()
+    circles_df = pd.DataFrame(deduped_circles) if deduped_circles else pd.DataFrame()
     unmatched_df = pd.DataFrame(all_unmatched) if all_unmatched else pd.DataFrame()
     
     # Ensure Class_Vintage is properly preserved in results
