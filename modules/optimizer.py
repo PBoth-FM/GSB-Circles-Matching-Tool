@@ -104,6 +104,8 @@ def run_matching_algorithm(data, config):
     Returns:
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
     """
+    # Import the new optimizer implementation
+    from modules.optimizer_new import optimize_region_v2
     # Critical debugging - look for our test participants and circles
     print("\n🔍🔍🔍 MATCHING ALGORITHM START - CHECKING FOR TEST CASES 🔍🔍🔍")
     
@@ -486,8 +488,8 @@ def run_matching_algorithm(data, config):
                 all_results.append(participant_dict)
             continue
         
-        # Run optimization for this region
-        region_results, region_circles, region_unmatched = optimize_region(
+        # Run optimization for this region using the new circle ID-based optimizer
+        region_results, region_circles, region_unmatched = optimize_region_v2(
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
         
