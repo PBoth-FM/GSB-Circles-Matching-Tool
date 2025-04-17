@@ -416,7 +416,98 @@ def render_debug_tab():
     # Add special Houston debug section at the top
     st.write("### Houston Circles Debug")
     
+    # Show a powerful data verification section FIRST
+    st.subheader("🔴 Data Verification & Variable Tracking")
+    st.write("This section directly inspects input data and model variables to diagnose issues")
+    
+    if 'processed_data' in st.session_state and st.session_state.processed_data is not None:
+        df = st.session_state.processed_data
+        st.success(f"✅ Processed data available with {len(df)} participants")
+        
+        # Check directly for our test participant
+        test_id = '72549701782'
+        if test_id in df['Encoded ID'].values:
+            st.success(f"✅ TEST PARTICIPANT FOUND: {test_id}")
+            
+            # Show test participant details
+            test_row = df[df['Encoded ID'] == test_id].iloc[0]
+            test_info = {
+                "ID": test_id,
+                "Status": test_row.get('Status', 'N/A'),
+                "Current Region": test_row.get('Current_Region', 'N/A'),
+                "Location Preferences": [
+                    test_row.get('first_choice_location', 'N/A'),
+                    test_row.get('second_choice_location', 'N/A'),
+                    test_row.get('third_choice_location', 'N/A')
+                ],
+                "Time Preferences": [
+                    test_row.get('first_choice_time', 'N/A'),
+                    test_row.get('second_choice_time', 'N/A'),
+                    test_row.get('third_choice_time', 'N/A')
+                ]
+            }
+            st.json(test_info)
+        else:
+            st.error(f"❌ TEST PARTICIPANT NOT FOUND: {test_id}")
+            st.info("The test participant should be in the data but isn't - this is a critical issue")
+        
+        # Check for Houston circles
+        houston_filter = df['Current_Circle_ID'].astype(str).str.contains('HOU', na=False)
+        houston_circles = df[houston_filter]
+        
+        if len(houston_circles) > 0:
+            st.success(f"✅ Found {len(houston_circles)} participants in Houston circles")
+            
+            # Get unique circle IDs
+            circle_ids = houston_circles['Current_Circle_ID'].unique()
+            st.write(f"Houston circles: {', '.join(circle_ids)}")
+            
+            # Check specifically for IP-HOU-02
+            ip_hou_02 = df[df['Current_Circle_ID'] == 'IP-HOU-02']
+            if len(ip_hou_02) > 0:
+                st.success(f"✅ IP-HOU-02 circle found with {len(ip_hou_02)} members")
+                
+                # Show detailed info about this circle
+                with st.expander("IP-HOU-02 Details"):
+                    st.dataframe(ip_hou_02)
+                    
+                    # Try to extract meeting time
+                    meeting_day = ip_hou_02['Current_Meeting_Day'].iloc[0] if 'Current_Meeting_Day' in ip_hou_02.columns else 'Not available'
+                    meeting_time = ip_hou_02['Current_Meeting_Time'].iloc[0] if 'Current_Meeting_Time' in ip_hou_02.columns else 'Not available'
+                    st.write(f"Meeting day: {meeting_day}")
+                    st.write(f"Meeting time: {meeting_time}")
+            else:
+                st.error("❌ IP-HOU-02 circle not found in the data")
+                st.info("The test circle should be in the data but isn't - this is a critical issue")
+        else:
+            st.error("❌ No Houston circles found in the data")
+    else:
+        st.error("❌ No processed data available in session state")
+    
+    # Now check results if available
+    if 'results' in st.session_state and st.session_state.results is not None:
+        results_df = st.session_state.results
+        st.success(f"✅ Results data available with {len(results_df)} participants")
+        
+        # Check for test participant in results
+        test_id = '72549701782'
+        test_participant = results_df[results_df['Encoded ID'] == test_id]
+        
+        if not test_participant.empty:
+            match_status = test_participant['proposed_NEW_circles_id'].iloc[0]
+            if match_status == 'IP-HOU-02':
+                st.success(f"✅ SUCCESS: Test participant matched with IP-HOU-02")
+            else:
+                st.error(f"❌ FAILED: Test participant assigned to {match_status}, not IP-HOU-02")
+                
+                # Show detailed match info
+                st.write("Test participant results:")
+                st.dataframe(test_participant)
+        else:
+            st.error(f"❌ Test participant {test_id} not found in results")
+    
     # Check if we have debug logs available from the optimizer
+    st.subheader("Houston Debug Logs")
     try:
         from modules.optimizer_new import houston_debug_logs
         
