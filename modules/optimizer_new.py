@@ -709,6 +709,25 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_compatible = (loc_match and time_match)
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
             
+            # SPECIAL DEBUG FOR TEST CASE - 73177784103 and IP-SIN-01
+            is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01')
+            if is_test_case:
+                print("\n🔍🔍🔍 SPECIAL TEST CASE COMPATIBILITY CHECK 🔍🔍🔍")
+                print(f"Checking compatibility between participant {p_id} and circle {c_id}")
+                print(f"  Circle subregion: '{subregion}'")
+                print(f"  Circle meeting time: '{time_slot}'")
+                print(f"  Participant location preferences:")
+                print(f"    First choice: '{p_row['first_choice_location']}'")
+                print(f"    Second choice: '{p_row['second_choice_location']}'")
+                print(f"    Third choice: '{p_row['third_choice_location']}'")
+                print(f"  Participant time preferences:")
+                print(f"    First choice: '{p_row['first_choice_time']}'")
+                print(f"    Second choice: '{p_row['second_choice_time']}'")
+                print(f"    Third choice: '{p_row['third_choice_time']}'")
+                print(f"  Location match: {loc_match}")
+                print(f"  Time match: {time_match}")
+                print(f"  OVERALL COMPATIBILITY: {'✅ COMPATIBLE' if is_compatible else '❌ NOT COMPATIBLE'}")
+            
             if is_compatible:
                 participant_compatible_circles[p_id].append(c_id)
                 
@@ -862,6 +881,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # For existing circles: max_additions
     for c_id in existing_circle_ids:
         max_additions = circle_metadata[c_id]['max_additions']
+        
+        # Add special debug for test circle
+        if c_id == 'IP-SIN-01':
+            print(f"\n🔍 DEBUG: Maximum additions constraint for test circle {c_id}")
+            print(f"  Maximum allowed additions: {max_additions}")
+            if max_additions == 0:
+                print(f"  ⚠️ WARNING: Circle {c_id} has max_additions=0, which means NO new members can be added!")
+                print(f"  Circle current members: {viable_circles[c_id]['members']}")
+                print(f"  Circle current size: {viable_circles[c_id]['member_count']}")
+        
         prob += pulp.lpSum(x[(p_id, c_id)] for p_id in participants) <= max_additions, f"max_additions_{c_id}"
     
     # For new circles: max_circle_size (10)
