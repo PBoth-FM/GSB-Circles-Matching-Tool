@@ -2468,8 +2468,8 @@ def render_children_analysis(data):
     else:
         st.info("Run the matching algorithm to see the Children diversity within circles.")
     
-    # SECOND: Display Distribution of Children Categories
-    st.subheader("Distribution of Children Categories")
+    # THIRD: Display Distribution of Children Categories
+    st.subheader("Distribution of Children")
     
     # Count by Children Category
     children_counts = df['Children_Category'].value_counts().reindex(children_order).fillna(0).astype(int)
@@ -2501,9 +2501,9 @@ def render_children_analysis(data):
     # Show the plot
     st.plotly_chart(fig, use_container_width=True, key="children_distribution")
     
-    # Create a breakdown by Status if Status column exists
+    # FOURTH: Create a breakdown by Status if Status column exists
     if 'Status' in df.columns:
-        st.subheader("Children Categories by Status")
+        st.subheader("Children by Status")
         
         # Create a crosstab of Children Category vs Status
         status_children = pd.crosstab(
@@ -2552,6 +2552,14 @@ def render_children_analysis(data):
         
         # Show the plot
         st.plotly_chart(fig, use_container_width=True, key="children_status_distribution")
+    
+    # Add definition section
+    st.subheader("Definition")
+    st.write(""""Children Category" consolidates responses to as follows:
+- "No children": use this if the response to Children contains "No children". E.g., if the cell value is "No children,Other (specify)", Children Category is "No children"
+- "First time <=5s": Use this if Children is ("Children 5 and under" OR "Children under 5" OR "Pregnant")
+- "First time 6-18s": Use this if Children contains ("Children 6 through 17", "Children 6-18") AND does NOT contain "Adult Children" or "Adult children")
+- "Adult children / all else": All other Children values.""")
 
 def render_children_diversity_histogram():
     """
