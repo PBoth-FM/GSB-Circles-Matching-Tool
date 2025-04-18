@@ -1691,8 +1691,8 @@ def render_circle_table():
             # Show the table
             st.dataframe(display_df, use_container_width=True)
             
-            # Add an export option
-            if st.button("Export Circle Data to CSV"):
+            # Add an export option with unique key
+            if st.button("Export Circle Data to CSV", key="details_export_circle_data_button"):
                 # Convert DataFrame to CSV
                 csv = circles_df.to_csv(index=False)
                 

@@ -176,7 +176,7 @@ def process_uploaded_file(uploaded_file):
             )
             
             # Add run button once data is loaded
-            if st.button("Run Matching Algorithm"):
+            if st.button("Run Matching Algorithm", key="match_run_algorithm_button"):
                 run_optimization()
                 
             # Display results if available
@@ -185,7 +185,27 @@ def process_uploaded_file(uploaded_file):
                 # render_results_overview() - removed to avoid duplicate charts
                 
                 st.subheader("Circle Composition")
-                render_circle_table()
+                # Use a simplified version without the export button
+                if ('matched_circles' in st.session_state and 
+                    st.session_state.matched_circles is not None and 
+                    not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+                    
+                    # Get the data
+                    circles_df = st.session_state.matched_circles.copy()
+                    
+                    # Extract key columns
+                    display_cols = ['circle_id', 'meeting_time', 'member_count']
+                    display_cols = [col for col in display_cols if col in circles_df.columns]
+                    
+                    if display_cols:
+                        display_df = circles_df[display_cols]
+                        
+                        # Show the table
+                        st.dataframe(display_df, use_container_width=True)
+                    else:
+                        st.warning("Circle data doesn't contain the expected columns.")
+                else:
+                    st.warning("No matching results available. Please run the matching algorithm first.")
                 
                 st.subheader("Unmatched Participants")
                 # We don't need to render the unmatched table in the match tab
