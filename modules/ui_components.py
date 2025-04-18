@@ -196,7 +196,7 @@ def render_demographics_tab():
             filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] == "UNMATCHED"]
     
     # Create tabs for different demographic views
-    demo_tab1, demo_tab2, demo_tab3, demo_tab4, demo_tab5 = st.tabs(["Class Vintage", "Employment", "Industry", "Racial Identity", "Other Demographics"])
+    demo_tab1, demo_tab2, demo_tab3, demo_tab4, demo_tab5, demo_tab6 = st.tabs(["Class Vintage", "Employment", "Industry", "Racial Identity", "Children", "Other Demographics"])
     
     with demo_tab1:
         render_class_vintage_analysis(filtered_data)
@@ -211,6 +211,9 @@ def render_demographics_tab():
         render_racial_identity_analysis(filtered_data)
     
     with demo_tab5:
+        render_children_analysis(filtered_data)
+    
+    with demo_tab6:
         st.info("Additional demographic analyses will be added in future updates.")
 
 def render_vintage_diversity_histogram():
@@ -2374,6 +2377,338 @@ def render_visualizations():
         else:
             st.warning("Preference satisfaction analysis requires matched circle data.")
             
+def render_children_analysis(data):
+    """Render the Children analysis visualizations"""
+    st.subheader("Children Analysis")
+    
+    # Check if data is None
+    if data is None:
+        st.warning("No data available for analysis. Please upload participant data.")
+        return
+    
+    # Create a copy to work with
+    df = data.copy()
+    
+    # Debug: show column names
+    st.caption("Debugging information:")
+    with st.expander("Show data columns and sample values"):
+        st.write("Available columns:")
+        for col in df.columns:
+            st.text(f"- {col}")
+        
+        # Try to find Children column
+        children_col = None
+        for col in df.columns:
+            if "children" in col.lower():
+                children_col = col
+                break
+        
+        if children_col:
+            st.write(f"Found Children column: {children_col}")
+            # Show some sample values
+            sample_values = df[children_col].dropna().head(5).tolist()
+            st.write(f"Sample values: {sample_values}")
+        else:
+            st.write("No Children column found in the data")
+    
+    # Check if we need to create Children Category
+    if 'Children_Category' not in df.columns:
+        if children_col:
+            st.info(f"Creating Children Category from {children_col}...")
+            
+            # Define function to categorize children status
+            def categorize_children(children_value):
+                if pd.isna(children_value):
+                    return None
+                    
+                children_value = str(children_value).strip()
+                
+                # No children category
+                if "No children" in children_value:
+                    return "No children"
+                
+                # First time <=5s
+                if any(term in children_value for term in ["Children 5 and under", "Children under 5", "Pregnant"]):
+                    return "First time <=5s"
+                
+                # First time 6-18s
+                if any(term in children_value for term in ["Children 6 through 17", "Children 6-18"]) and not any(term in children_value for term in ["Adult Children", "Adult children"]):
+                    return "First time 6-18s"
+                
+                # Adult children / all else
+                return "Adult children / all else"
+            
+            # Apply the categorization function
+            df['Children_Category'] = df[children_col].apply(categorize_children)
+            
+            # Show the distribution of categories
+            category_counts = df['Children_Category'].value_counts()
+            st.write("Created Children categories with distribution:")
+            st.write(category_counts)
+        else:
+            st.warning("Children data is not available. Please ensure Children data was included in the uploaded file.")
+            return
+    
+    # Filter out rows with missing Children Category
+    df = df[df['Children_Category'].notna()]
+    
+    if len(df) == 0:
+        st.warning("No Children Category data is available after filtering.")
+        return
+    
+    # Define the proper order for Children Categories
+    children_order = ["No children", "First time <=5s", "First time 6-18s", "Adult children / all else"]
+    
+    # FIRST: Display diversity within circles IF we have matched circles
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            render_children_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Children diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Children diversity within circles.")
+    
+    # SECOND: Display Distribution of Children Categories
+    st.subheader("Distribution of Children Categories")
+    
+    # Count by Children Category
+    children_counts = df['Children_Category'].value_counts().reindex(children_order).fillna(0).astype(int)
+    
+    # Create a DataFrame for plotting
+    children_df = pd.DataFrame({
+        'Children Category': children_counts.index,
+        'Count': children_counts.values
+    })
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        children_df,
+        x='Children Category',
+        y='Count',
+        title='Distribution of Children Categories',
+        text='Count',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis={'categoryorder': 'array', 'categoryarray': children_order},
+        xaxis_title="Children Category",
+        yaxis_title="Count of Participants"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True, key="children_distribution")
+    
+    # Create a breakdown by Status if Status column exists
+    if 'Status' in df.columns:
+        st.subheader("Children Categories by Status")
+        
+        # Create a crosstab of Children Category vs Status
+        status_children = pd.crosstab(
+            df['Children_Category'], 
+            df['Status'],
+            rownames=['Children Category'],
+            colnames=['Status']
+        ).reindex(children_order)
+        
+        # Add a Total column
+        status_children['Total'] = status_children.sum(axis=1)
+        
+        # Calculate percentages
+        for col in status_children.columns:
+            if col != 'Total':
+                status_children[f'{col} %'] = (status_children[col] / status_children['Total'] * 100).round(1)
+        
+        # Reorder columns to group counts with percentages
+        cols = []
+        for status in status_children.columns:
+            if status != 'Total' and not status.endswith(' %'):
+                cols.append(status)
+                cols.append(f'{status} %')
+        cols.append('Total')
+        
+        # Show the table
+        st.dataframe(status_children[cols], use_container_width=True)
+        
+        # Create a stacked bar chart
+        fig = px.bar(
+            status_children.reset_index(),
+            x='Children Category',
+            y=[col for col in status_children.columns if col != 'Total' and not col.endswith(' %')],
+            title='Children Distribution by Status',
+            barmode='stack',
+            color_discrete_sequence=['#8C1515', '#2E2D29']  # Stanford colors
+        )
+        
+        # Customize layout
+        fig.update_layout(
+            xaxis={'categoryorder': 'array', 'categoryarray': children_order},
+            xaxis_title="Children Category",
+            yaxis_title="Count of Participants",
+            legend_title="Status"
+        )
+        
+        # Show the plot
+        st.plotly_chart(fig, use_container_width=True, key="children_status_distribution")
+
+def render_children_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different children categories they contain
+    """
+    # First check if we have the necessary data
+    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
+        st.warning("No matched circles data available to analyze children diversity.")
+        return
+        
+    # Check if the matched_circles dataframe is empty
+    if hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty:
+        st.warning("No matched circles data available (empty dataframe).")
+        return
+        
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze children diversity.")
+        return
+    
+    # Get the circle data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy()
+    
+    # Filter out circles with no members
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        return
+    
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique children categories per circle
+    circle_children_counts = {}
+    circle_children_diversity_scores = {}
+    
+    # Get children data for each member of each circle
+    for _, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        
+        # Initialize empty set to track unique children categories
+        unique_children_categories = set()
+        
+        # Get the list of members for this circle
+        if 'members' in circle_row and circle_row['members']:
+            # For list representation
+            if isinstance(circle_row['members'], list):
+                member_ids = circle_row['members']
+            # For string representation - convert to list
+            elif isinstance(circle_row['members'], str):
+                try:
+                    if circle_row['members'].startswith('['):
+                        member_ids = eval(circle_row['members'])
+                    else:
+                        member_ids = [circle_row['members']]
+                except Exception as e:
+                    # Skip if parsing fails
+                    continue
+            else:
+                # Skip if members data is not in expected format
+                continue
+                
+            # For each member, look up their children category in results_df
+            for member_id in member_ids:
+                member_data = results_df[results_df['Encoded ID'] == member_id]
+                
+                if not member_data.empty and 'Children_Category' in member_data.columns:
+                    children_category = member_data['Children_Category'].iloc[0]
+                    if pd.notna(children_category):
+                        unique_children_categories.add(children_category)
+        
+        # Store the count of unique children categories for this circle
+        if unique_children_categories:  # Only include if there's at least one valid category
+            count = len(unique_children_categories)
+            circle_children_counts[circle_id] = count
+            # Calculate diversity score: 1 point if everyone is in the same category,
+            # 2 points if two categories, 3 points if three categories, etc.
+            circle_children_diversity_scores[circle_id] = count
+    
+    # Create histogram data from the children counts
+    if not circle_children_counts:
+        st.warning("No children data available for circles.")
+        return
+        
+    # Count circles by number of unique children categories
+    diversity_counts = pd.Series(circle_children_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Children Categories': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
+    st.subheader("Children Diversity Within Circles")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Children Categories',
+        y='Number of Circles',
+        title='Distribution of Circles by Number of Children Categories',
+        text='Number of Circles',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Children Categories",
+            tickmode='linear',
+            dtick=1,  # Force integer labels
+            range=[0.5, 4.5]  # Since we have 4 categories max
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True, key="children_diversity_histogram")
+    
+    # Show a table with the data
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
+    
+    # Display the Children diversity score
+    st.subheader("Children Diversity Score")
+    st.write("""
+    For each circle, the children diversity score is calculated as follows:
+    - 1 point: All members in the same children category
+    - 2 points: Members from two different children categories
+    - 3 points: Members from three different children categories
+    - 4 points: Members from all four children categories
+    """)
+    
+    # Calculate average and total diversity scores
+    total_diversity_score = sum(circle_children_diversity_scores.values()) if circle_children_diversity_scores else 0
+    avg_diversity_score = total_diversity_score / len(circle_children_diversity_scores) if circle_children_diversity_scores else 0
+    
+    # Create two columns for the metrics
+    col1, col2 = st.columns(2)
+    
+    # Show average and total scores
+    with col1:
+        st.metric("Average Children Diversity Score", f"{avg_diversity_score:.2f}")
+    with col2:
+        st.metric("Total Children Diversity Score", f"{total_diversity_score}")
+    
+    # Add a brief explanation
+    total_circles = sum(diversity_counts.values)
+    diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
+    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple children categories.")
+
 def render_racial_identity_diversity_histogram():
     """
     Create a histogram showing the distribution of circles based on 
