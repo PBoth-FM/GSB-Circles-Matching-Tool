@@ -114,12 +114,15 @@ def render_demographics_tab():
             filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] == "UNMATCHED"]
     
     # Create tabs for different demographic views
-    demo_tab1, demo_tab2 = st.tabs(["Class Vintage", "Other Demographics"])
+    demo_tab1, demo_tab2, demo_tab3 = st.tabs(["Class Vintage", "Employment", "Other Demographics"])
     
     with demo_tab1:
         render_class_vintage_analysis(filtered_data)
     
     with demo_tab2:
+        render_employment_analysis(filtered_data)
+    
+    with demo_tab3:
         st.info("Additional demographic analyses will be added in future updates.")
 
 def render_vintage_diversity_histogram():
@@ -249,6 +252,323 @@ def render_vintage_diversity_histogram():
     
     st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple class vintages.")
 
+
+def render_employment_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different employment categories they contain
+    """
+    # First check if we have the necessary data
+    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
+        st.warning("No matched circles data available to analyze employment diversity.")
+        return
+        
+    # Check if the matched_circles dataframe is empty
+    if hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty:
+        st.warning("No matched circles data available (empty dataframe).")
+        return
+        
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze employment diversity.")
+        return
+    
+    # Get the circle data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy()
+    
+    # Filter out circles with no members
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        return
+    
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique employment categories per circle
+    circle_employment_counts = {}
+    circle_employment_diversity_scores = {}
+    
+    # Get employment data for each member of each circle
+    for _, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        
+        # Initialize empty set to track unique employment categories
+        unique_employment_categories = set()
+        
+        # Get the list of members for this circle
+        if 'members' in circle_row and circle_row['members']:
+            # For list representation
+            if isinstance(circle_row['members'], list):
+                member_ids = circle_row['members']
+            # For string representation - convert to list
+            elif isinstance(circle_row['members'], str):
+                try:
+                    if circle_row['members'].startswith('['):
+                        member_ids = eval(circle_row['members'])
+                    else:
+                        member_ids = [circle_row['members']]
+                except Exception as e:
+                    # Skip if parsing fails
+                    continue
+            else:
+                # Skip if members data is not in expected format
+                continue
+                
+            # For each member, look up their employment category in results_df
+            for member_id in member_ids:
+                member_data = results_df[results_df['Encoded ID'] == member_id]
+                
+                if not member_data.empty and 'Employment_Category' in member_data.columns:
+                    employment_category = member_data['Employment_Category'].iloc[0]
+                    if pd.notna(employment_category):
+                        unique_employment_categories.add(employment_category)
+        
+        # Store the count of unique employment categories for this circle
+        if unique_employment_categories:  # Only include if there's at least one valid category
+            count = len(unique_employment_categories)
+            circle_employment_counts[circle_id] = count
+            # Calculate diversity score: 1 point if everyone is in the same category,
+            # 2 points if two categories, 3 points if three categories
+            circle_employment_diversity_scores[circle_id] = count
+    
+    # Create histogram data from the employment counts
+    if not circle_employment_counts:
+        st.warning("No employment data available for circles.")
+        return
+        
+    # Count circles by number of unique employment categories
+    diversity_counts = pd.Series(circle_employment_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Employment Categories': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
+    st.subheader("Employment Diversity Within Circles")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Employment Categories',
+        y='Number of Circles',
+        title='Distribution of Circles by Number of Employment Categories',
+        text='Number of Circles',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Employment Categories",
+            tickmode='linear',
+            dtick=1,  # Force integer labels
+            range=[0.5, 3.5]  # Since we have 3 categories max
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Show a table with the data
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
+    
+    # Display the Employment diversity score
+    st.subheader("Employment Diversity Score")
+    st.write("""
+    For each circle, the employment diversity score is calculated as follows:
+    - 1 point: All members in the same employment category
+    - 2 points: Members from two different employment categories
+    - 3 points: Members from all three employment categories
+    """)
+    
+    # Calculate average diversity score
+    avg_diversity_score = sum(circle_employment_diversity_scores.values()) / len(circle_employment_diversity_scores) if circle_employment_diversity_scores else 0
+    
+    # Show average score
+    st.metric("Average Employment Diversity Score", f"{avg_diversity_score:.2f}")
+    
+    # Add a brief explanation
+    total_circles = sum(diversity_counts.values)
+    diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
+    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple employment categories.")
+
+def render_employment_analysis(data):
+    """Render the Employment analysis visualizations"""
+    st.subheader("Employment Distribution")
+    
+    # Create a copy to work with
+    df = data.copy()
+    
+    # Debug: show column names
+    st.caption("Debugging information:")
+    with st.expander("Show data columns and sample values"):
+        st.write("Available columns:")
+        for col in df.columns:
+            st.text(f"- {col}")
+        
+        # Try to find Employment Status column
+        employment_status_col = None
+        for col in df.columns:
+            if "employment status" in col.lower():
+                employment_status_col = col
+                break
+        
+        if employment_status_col:
+            st.write(f"Found Employment Status column: {employment_status_col}")
+            # Show some sample values
+            sample_values = df[employment_status_col].dropna().head(5).tolist()
+            st.write(f"Sample values: {sample_values}")
+        else:
+            st.write("No Employment Status column found in the data")
+    
+    # Check if we need to create Employment Category
+    if 'Employment_Category' not in df.columns:
+        if employment_status_col:
+            st.info(f"Creating Employment Category from {employment_status_col}...")
+            
+            # Define function to categorize employment status
+            def categorize_employment(status):
+                if pd.isna(status):
+                    return None
+                
+                # Convert to string in case it's not
+                status_str = str(status)
+                
+                # Apply categorization rules
+                if "Employed full-time for wages" in status_str:
+                    return "Employed full-time for wages"
+                elif ("Self-Employed" in status_str or "Self-employed" in status_str) and "Employed full-time for wages" not in status_str:
+                    return "Self-employed"
+                else:
+                    return "Other"
+            
+            # Apply the categorization function
+            df['Employment_Category'] = df[employment_status_col].apply(categorize_employment)
+            
+            # Show sample of categorized data
+            st.write("Sample of Employment Categories:")
+            sample_df = pd.DataFrame({
+                'Employment Status': df[employment_status_col].dropna().head(10),
+                'Employment Category': df['Employment_Category'].head(10)
+            })
+            st.dataframe(sample_df)
+        else:
+            st.warning("Employment Status data is not available. Please ensure Employment Status data was included in the uploaded file.")
+            return
+    
+    # Filter out rows with missing Employment Category
+    df = df[df['Employment_Category'].notna()]
+    
+    if len(df) == 0:
+        st.warning("No Employment Category data is available after filtering.")
+        return
+    
+    # Define the proper order for Employment Categories
+    employment_order = [
+        "Employed full-time for wages", "Self-employed", "Other"
+    ]
+    
+    # Count by Employment Category
+    employment_counts = df['Employment_Category'].value_counts().reindex(employment_order).fillna(0).astype(int)
+    
+    # Create a DataFrame for plotting
+    employment_df = pd.DataFrame({
+        'Employment Category': employment_counts.index,
+        'Count': employment_counts.values
+    })
+    
+    st.subheader("Distribution of Employment")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        employment_df,
+        x='Employment Category',
+        y='Count',
+        title='Distribution of Employment Categories',
+        text='Count',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis={'categoryorder': 'array', 'categoryarray': employment_order},
+        xaxis_title="Employment Category",
+        yaxis_title="Count of Participants"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Create a breakdown by Status if Status column exists
+    if 'Status' in df.columns:
+        st.subheader("Employment by Status")
+        
+        # Create a crosstab of Employment Category vs Status
+        status_employment = pd.crosstab(
+            df['Employment_Category'], 
+            df['Status'],
+            rownames=['Employment Category'],
+            colnames=['Status']
+        ).reindex(employment_order)
+        
+        # Add a Total column
+        status_employment['Total'] = status_employment.sum(axis=1)
+        
+        # Calculate percentages
+        for col in status_employment.columns:
+            if col != 'Total':
+                status_employment[f'{col} %'] = (status_employment[col] / status_employment['Total'] * 100).round(1)
+        
+        # Reorder columns to group counts with percentages
+        cols = []
+        for status in status_employment.columns:
+            if status != 'Total' and not status.endswith(' %'):
+                cols.append(status)
+                cols.append(f'{status} %')
+        cols.append('Total')
+        
+        # Show the table
+        st.dataframe(status_employment[cols], use_container_width=True)
+        
+        # Create a stacked bar chart
+        fig = px.bar(
+            status_employment.reset_index(),
+            x='Employment Category',
+            y=[col for col in status_employment.columns if col != 'Total' and not col.endswith(' %')],
+            title='Employment Distribution by Status',
+            barmode='stack',
+            color_discrete_sequence=['#8C1515', '#2E2D29']  # Stanford colors
+        )
+        
+        # Customize layout
+        fig.update_layout(
+            xaxis={'categoryorder': 'array', 'categoryarray': employment_order},
+            xaxis_title="Employment Category",
+            yaxis_title="Count of Participants",
+            legend_title="Status"
+        )
+        
+        # Show the plot
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Only add the employment diversity histogram if matching has been run (circles exist)
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            render_employment_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Employment diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Employment diversity within circles.")
 
 def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
