@@ -161,6 +161,7 @@ def render_vintage_diversity_histogram():
     
     # Dictionary to track unique vintages per circle
     circle_vintage_counts = {}
+    circle_vintage_diversity_scores = {}
     
     # Get vintage data for each member of each circle
     for _, circle_row in circles_df.iterrows():
@@ -199,7 +200,10 @@ def render_vintage_diversity_histogram():
         
         # Store the count of unique vintages for this circle
         if unique_vintages:  # Only include if there's at least one valid vintage
-            circle_vintage_counts[circle_id] = len(unique_vintages)
+            count = len(unique_vintages)
+            circle_vintage_counts[circle_id] = count
+            # The diversity score is the number of unique vintages
+            circle_vintage_diversity_scores[circle_id] = count
     
     # Create histogram data from the vintage counts
     if not circle_vintage_counts:
@@ -244,6 +248,29 @@ def render_vintage_diversity_histogram():
     # Show a table with the data
     st.caption("Data table:")
     st.dataframe(plot_df, hide_index=True)
+    
+    # Display the Vintage diversity score
+    st.subheader("Vintage Diversity Score")
+    st.write("""
+    For each circle, the vintage diversity score is calculated as follows:
+    - 1 point: All members in the same class vintage
+    - 2 points: Members from two different class vintages
+    - 3 points: Members from three different class vintages
+    - And so on, with more points for more diverse circles
+    """)
+    
+    # Calculate average and total diversity scores
+    total_diversity_score = sum(circle_vintage_diversity_scores.values()) if circle_vintage_diversity_scores else 0
+    avg_diversity_score = total_diversity_score / len(circle_vintage_diversity_scores) if circle_vintage_diversity_scores else 0
+    
+    # Create two columns for the metrics
+    col1, col2 = st.columns(2)
+    
+    # Show average and total scores
+    with col1:
+        st.metric("Average Vintage Diversity Score", f"{avg_diversity_score:.2f}")
+    with col2:
+        st.metric("Total Vintage Diversity Score", f"{total_diversity_score}")
     
     # Add a brief explanation
     total_circles = sum(diversity_counts.values)
@@ -388,11 +415,18 @@ def render_employment_diversity_histogram():
     - 3 points: Members from all three employment categories
     """)
     
-    # Calculate average diversity score
-    avg_diversity_score = sum(circle_employment_diversity_scores.values()) / len(circle_employment_diversity_scores) if circle_employment_diversity_scores else 0
+    # Calculate average and total diversity scores
+    total_diversity_score = sum(circle_employment_diversity_scores.values()) if circle_employment_diversity_scores else 0
+    avg_diversity_score = total_diversity_score / len(circle_employment_diversity_scores) if circle_employment_diversity_scores else 0
     
-    # Show average score
-    st.metric("Average Employment Diversity Score", f"{avg_diversity_score:.2f}")
+    # Create two columns for the metrics
+    col1, col2 = st.columns(2)
+    
+    # Show average and total scores
+    with col1:
+        st.metric("Average Employment Diversity Score", f"{avg_diversity_score:.2f}")
+    with col2:
+        st.metric("Total Employment Diversity Score", f"{total_diversity_score}")
     
     # Add a brief explanation
     total_circles = sum(diversity_counts.values)
@@ -577,7 +611,7 @@ def render_employment_analysis(data):
 
 def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
-    st.subheader("Class Vintage Distribution")
+    st.subheader("Class Vintage Analysis")
     
     # Create a copy to work with
     df = data.copy()
@@ -621,6 +655,16 @@ def render_class_vintage_analysis(data):
                 vintage_counts = df['Class_Vintage'].value_counts()
                 st.success(f"Successfully calculated Class Vintage for {len(df[df['Class_Vintage'].notna()])} records")
                 st.write(f"Distribution: {vintage_counts}")
+                
+                # Update session state with the new Class_Vintage
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    # First, create a dictionary mapping Encoded ID to Class_Vintage
+                    vintage_mapping = dict(zip(df['Encoded ID'], df['Class_Vintage']))
+                    
+                    # Then apply this mapping to the results DataFrame
+                    if 'Encoded ID' in st.session_state.results.columns:
+                        st.session_state.results['Class_Vintage'] = st.session_state.results['Encoded ID'].map(vintage_mapping)
+                        st.info("Updated results data with Class Vintage")
             except Exception as e:
                 st.error(f"Error calculating Class Vintage: {str(e)}")
                 return
@@ -639,6 +683,18 @@ def render_class_vintage_analysis(data):
         "01-10 yrs", "11-20 yrs", "21-30 yrs", 
         "31-40 yrs", "41-50 yrs", "51-60 yrs", "61+ yrs"
     ]
+    
+    # FIRST: Display diversity within circles IF we have matched circles
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            render_vintage_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
+    
+    # SECOND: Display Distribution of Class Vintage
+    st.subheader("Distribution of Class Vintage")
     
     # Count by Class Vintage
     vintage_counts = df['Class_Vintage'].value_counts().reindex(vintage_order).fillna(0).astype(int)
@@ -724,15 +780,6 @@ def render_class_vintage_analysis(data):
     
     # We have removed the "Class Vintage by Match Status", "Class Vintage Distribution by Match Status", 
     # and "Match Rate by Class Vintage" sections per user request
-    
-    # Only add the vintage diversity histogram if matching has been run (circles exist)
-    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
-            render_vintage_diversity_histogram()
-        else:
-            st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
-    else:
-        st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
 
 def render_debug_tab():
     """Render the debug tab content"""
