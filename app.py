@@ -253,63 +253,123 @@ def process_uploaded_file(uploaded_file):
                         else:
                             st.write(f"Total unmatched: {len(unmatched_df)} participants")
                             
-                            # Show the unmatched participants table with the specific columns in the requested order
-                            # The requested columns are:
-                            # Encoded ID, Region based on Region Requested, Reason Unmatched, 
-                            # 1st Choice Location, 1st Choice Time, 
-                            # 2nd Choice Location, 2nd Choice Time,
-                            # 3rd Choice Location, 3rd Choice Time
+                            # Create a display DataFrame with just the columns we need
+                            # We'll get the specific columns from the Results CSV by position
                             
-                            # Find key columns
+                            # Get all column names from the DataFrame for debugging
+                            all_columns = list(unmatched_df.columns)
+                            
+                            # Define the display columns based on their position in the CSV
                             display_cols = []
                             
-                            # Add Encoded ID
-                            if 'Encoded ID' in unmatched_df.columns:
-                                display_cols.append('Encoded ID')
+                            # Encoded ID (column 3 in CSV) - Identify by name
+                            encoded_id_col = None
+                            if 'Encoded ID' in all_columns:
+                                encoded_id_col = 'Encoded ID'
+                                display_cols.append(encoded_id_col)
                             
-                            # Add Region - try different possible column names
-                            region_cols = ['Current_Region', 'Region', 'Region Requested']
-                            for col in region_cols:
-                                if col in unmatched_df.columns:
-                                    display_cols.append(col)
+                            # Derived Region (column 32 in CSV)
+                            region_col = None
+                            region_candidates = ['Derived_Region', 'Derived Region', 'Region Requested', 'Region']
+                            for col in region_candidates:
+                                if col in all_columns:
+                                    region_col = col
+                                    display_cols.append(region_col)
                                     break
                             
-                            # Add Reason Unmatched
-                            if 'unmatched_reason' in unmatched_df.columns:
-                                display_cols.append('unmatched_reason')
+                            # Reason Unmatched (column 5 in CSV)
+                            reason_col = None
+                            if 'unmatched_reason' in all_columns:
+                                reason_col = 'unmatched_reason'
+                                display_cols.append(reason_col)
                             
-                            # Find all location and time columns and sort them
+                            # Find choice columns - these need to be identified by position or pattern
+                            
+                            # 1st, 2nd, 3rd Choice Location columns
                             location_cols = []
+                            for col in all_columns:
+                                if any(pattern in col.lower() for pattern in [
+                                    "location_choice_1", "meeting_location_1", "location_pref_1", 
+                                    "1st_choice_location", "first_choice_location"
+                                ]):
+                                    location_cols.append(col)
+                                    break
+                            
+                            for col in all_columns:
+                                if any(pattern in col.lower() for pattern in [
+                                    "location_choice_2", "meeting_location_2", "location_pref_2", 
+                                    "2nd_choice_location", "second_choice_location"
+                                ]):
+                                    location_cols.append(col)
+                                    break
+                                    
+                            for col in all_columns:
+                                if any(pattern in col.lower() for pattern in [
+                                    "location_choice_3", "meeting_location_3", "location_pref_3", 
+                                    "3rd_choice_location", "third_choice_location"
+                                ]):
+                                    location_cols.append(col)
+                                    break
+                            
+                            # 1st, 2nd, 3rd Choice Time columns
                             time_cols = []
+                            for col in all_columns:
+                                if any(pattern in col.lower() for pattern in [
+                                    "time_choice_1", "meeting_time_1", "time_pref_1", 
+                                    "1st_choice_time", "first_choice_time"
+                                ]):
+                                    time_cols.append(col)
+                                    break
                             
-                            # Define patterns to find these columns
-                            location_patterns = ['meeting_location_choice', 'location_choice', 'location_preference']
-                            time_patterns = ['meeting_time_choice', 'time_choice', 'time_preference']
+                            for col in all_columns:
+                                if any(pattern in col.lower() for pattern in [
+                                    "time_choice_2", "meeting_time_2", "time_pref_2", 
+                                    "2nd_choice_time", "second_choice_time"
+                                ]):
+                                    time_cols.append(col)
+                                    break
+                                    
+                            for col in all_columns:
+                                if any(pattern in col.lower() for pattern in [
+                                    "time_choice_3", "meeting_time_3", "time_pref_3", 
+                                    "3rd_choice_time", "third_choice_time"
+                                ]):
+                                    time_cols.append(col)
+                                    break
                             
-                            for col in unmatched_df.columns:
-                                # Check location columns
-                                for pattern in location_patterns:
-                                    if pattern in col.lower() and col not in location_cols:
-                                        location_cols.append(col)
+                            # As a fallback, try to find columns by pattern if positional search failed
+                            if not location_cols or not time_cols:
+                                # Find all location and time columns
+                                pattern_location_cols = []
+                                pattern_time_cols = []
                                 
-                                # Check time columns
-                                for pattern in time_patterns:
-                                    if pattern in col.lower() and col not in time_cols:
-                                        time_cols.append(col)
+                                for col in all_columns:
+                                    if any(pattern in col.lower() for pattern in ['location_choice', 'meeting_location', 'location_pref']):
+                                        pattern_location_cols.append(col)
+                                    if any(pattern in col.lower() for pattern in ['time_choice', 'meeting_time', 'time_pref']):
+                                        pattern_time_cols.append(col)
+                                
+                                # Sort them to ensure they're in order (1st, 2nd, 3rd)
+                                pattern_location_cols.sort()
+                                pattern_time_cols.sort()
+                                
+                                # Use up to 3 of each
+                                location_cols = pattern_location_cols[:3]
+                                time_cols = pattern_time_cols[:3]
                             
-                            # Sort to ensure proper ordering of 1st, 2nd, 3rd choices
-                            location_cols.sort()
-                            time_cols.sort()
-                            
-                            # Add first 3 location-time pairs to display columns
-                            for i in range(min(3, len(location_cols), len(time_cols))):
+                            # Add the location and time columns to display_cols, interleaving them
+                            for i in range(min(3, max(len(location_cols), len(time_cols)))):
                                 if i < len(location_cols):
                                     display_cols.append(location_cols[i])
                                 if i < len(time_cols):
                                     display_cols.append(time_cols[i])
-                                    
-                            # Filter to only include columns that exist in the dataframe
-                            display_cols = [col for col in display_cols if col in unmatched_df.columns]
+                            
+                            # Remove any columns that don't exist in the dataframe
+                            display_cols = [col for col in display_cols if col in all_columns]
+                            
+                            # Debug info
+                            # st.write(f"All columns: {all_columns}")
+                            # st.write(f"Display columns: {display_cols}")
                             
                             if display_cols:
                                 st.dataframe(unmatched_df[display_cols], use_container_width=True)
