@@ -2186,6 +2186,25 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # Determine unmatched reason using the more advanced hierarchical decision tree
             # Build a comprehensive context object with all necessary data for accurate reason determination
+            
+            # Build a dict of participant counts by region to address "Insufficient participants in region" issue
+            if 'region_participant_count' not in globals():
+                # Calculate region counts from all participants
+                globals()['region_participant_count'] = {}
+                
+                # Count all participants by requested region
+                if 'all_regions_df' in globals():
+                    for region_name in all_regions_df['Requested_Region'].dropna().unique():
+                        count = len(all_regions_df[all_regions_df['Requested_Region'] == region_name])
+                        globals()['region_participant_count'][region_name] = count
+                        
+                        if debug_mode:
+                            print(f"Region {region_name} has {count} participants")
+                else:
+                    # Fallback if we don't have global access - use current region_df
+                    current_region = region_df['Requested_Region'].iloc[0] if not region_df.empty else region
+                    globals()['region_participant_count'] = {current_region: len(region_df)}
+            
             detailed_context = {
                 # Add information from our optimization context
                 'existing_circles': optimization_context.get('existing_circles', []),
@@ -2199,18 +2218,25 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Add participant-specific compatibility info
                 'participant_compatible_count': {p_id: len(participant_compatible_circles.get(p_id, []))},
                 
-                # Region-specific flags
+                # Region-specific flags with enhanced validation
                 'insufficient_regional_participants': len(region_df) < min_circle_size,
+                
+                # Add the region participant counts
+                'region_participant_count': globals().get('region_participant_count', {}),
+                
+                # Pass debug mode to enable logging
+                'debug_mode': debug_mode,
             }
             
             # Debug logging for specific participants of interest
-            if p_id in ['66612429591', '71354564939', '65805240273'] and debug_mode:
+            if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
                 print(f"\n🔍 DETAILED UNMATCHED REASON CHECK FOR {p_id}:")
                 print(f"  Location prefs: {participant.get('first_choice_location')}, {participant.get('second_choice_location')}, {participant.get('third_choice_location')}")
                 print(f"  Time prefs: {participant.get('first_choice_time')}, {participant.get('second_choice_time')}, {participant.get('third_choice_time')}")
                 print(f"  Compatible circles: {participant_compatible_circles.get(p_id, [])}")
                 print(f"  Region: {participant.get('Requested_Region', 'Unknown')}")
                 print(f"  Total participants in region: {len(region_df)}")
+                print(f"  Participant count in {participant.get('Requested_Region', 'Unknown')}: {globals().get('region_participant_count', {}).get(participant.get('Requested_Region', ''), 0)}")
                 print(f"  Host status: {participant.get('host', 'None')}")
             
             # Use our enhanced hierarchical decision tree to determine the reason

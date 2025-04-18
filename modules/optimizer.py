@@ -554,6 +554,10 @@ def run_matching_algorithm(data, config):
                 all_results.append(participant_dict)
             continue
         
+        # Store the full dataset globally for accurate region participant counting
+        # This will be used by the optimizer to determine if "Insufficient participants in region" is accurate
+        globals()['all_regions_df'] = data
+        
         # Run optimization for this region using the new circle ID-based optimizer
         region_results, region_circles, region_unmatched = optimize_region_v2(
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode

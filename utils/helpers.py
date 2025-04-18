@@ -269,7 +269,34 @@ def determine_unmatched_reason(participant, context=None):
     # Get participant ID
     p_id = participant.get('Encoded ID', '')
     
-    # Special context flags from optimizer
+    # Debug logging for problematic IDs
+    debug_mode = context.get('debug_mode', False)
+    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+        print(f"\n🔍 HIERARCHICAL REASON DETERMINATION for {p_id}:")
+    
+    # *** REARRANGED PRIORITY ORDER - PREFERENCES FIRST ***
+    
+    # 1. No Preferences Check - most fundamental issue (MOVED TO TOP PRIORITY)
+    has_location = bool(participant.get('first_choice_location') or 
+                        participant.get('second_choice_location') or 
+                        participant.get('third_choice_location'))
+    
+    has_time = bool(participant.get('first_choice_time') or 
+                    participant.get('second_choice_time') or 
+                    participant.get('third_choice_time'))
+    
+    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+        print(f"  - Has location preferences: {has_location}")
+        print(f"  - Has time preferences: {has_time}")
+    
+    if not has_location and not has_time:
+        return "No location and/or time preferences"
+    elif not has_location:
+        return "No location preferences"
+    elif not has_time:
+        return "No time preferences"
+    
+    # 2. Special context flags from optimizer - only if preferences exist
     if context.get('no_preferences', False):
         return "No location or time preferences"
     
@@ -279,32 +306,41 @@ def determine_unmatched_reason(participant, context=None):
     if context.get('no_time_preferences', False):
         return "No time preference"
     
-    if context.get('insufficient_regional_participants', False):
+    # 3. Check regional participant counts - add verification
+    # Only mark as insufficient if there are truly too few participants
+    region = participant.get('Requested_Region', '')
+    participant_count = context.get('region_participant_count', {}).get(region, 0)
+    
+    # Only apply this reason if there are actually too few participants (less than 5)
+    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+        print(f"  - Region: {region}")
+        print(f"  - Region participant count: {participant_count}")
+    
+    # Only mark as insufficient if there are less than 5 participants in the region
+    if participant_count < 5 and context.get('insufficient_regional_participants', False):
         return "Insufficient participants in region"
     
-    # 1. No Compatible Options Check
-    if p_id in context.get('participant_compatible_options', {}) and not context['participant_compatible_options'][p_id]:
+    # 4. No Compatible Options Check
+    has_compatible_options = False
+    if p_id in context.get('participant_compatible_options', {}):
+        has_compatible_options = bool(context['participant_compatible_options'][p_id])
+    
+    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+        print(f"  - Has compatible options: {has_compatible_options}")
+    
+    if not has_compatible_options:
         return "No compatible location-time combinations"
     
-    # 2. Very Limited Options Check - if there are very few compatible options
-    if p_id in context.get('participant_compatible_count', {}) and context['participant_compatible_count'][p_id] < 2:
-        return "Very limited compatible options"
-    
-    # 3. No Preferences Check - most fundamental issue
-    has_location = bool(participant.get('first_choice_location') or 
-                        participant.get('second_choice_location') or 
-                        participant.get('third_choice_location'))
-    
-    has_time = bool(participant.get('first_choice_time') or 
-                    participant.get('second_choice_time') or 
-                    participant.get('third_choice_time'))
-    
-    if not has_location and not has_time:
-        return "No location and/or time preferences"
-    elif not has_location:
-        return "No location preferences"
-    elif not has_time:
-        return "No time preferences"
+    # 5. Very Limited Options Check - if there are very few compatible options
+    # Only apply this if the participant has at least some preferences
+    if p_id in context.get('participant_compatible_count', {}):
+        option_count = context['participant_compatible_count'][p_id]
+        
+        if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+            print(f"  - Compatible option count: {option_count}")
+        
+        if option_count < 2:
+            return "Very limited compatible options"
     
     # Note: Removed waitlist check as waitlisted participants should be treated the same as others
     
