@@ -1470,7 +1470,7 @@ def render_debug_tab():
                             st.write(f"Original: '{parsing_result['original']}'")
                             st.write(f"Valid: {parsing_result['is_valid']}")
                             st.write(f"Days found: {', '.join(parsing_result['days_found']) if parsing_result['days_found'] else 'None'}")
-                            st.write(f"Period: {parsing_result['period_found'] or 'Not found'}")
+                            st.write(f"Period: {parsing_result.get('period_found', 'Not found')}")
                             st.write("---")
                         
                         # Count parsing successes and failures
