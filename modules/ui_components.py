@@ -196,7 +196,7 @@ def render_demographics_tab():
             filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] == "UNMATCHED"]
     
     # Create tabs for different demographic views
-    demo_tab1, demo_tab2, demo_tab3, demo_tab4, demo_tab5, demo_tab6 = st.tabs(["Class Vintage", "Employment", "Industry", "Racial Identity", "Children", "Other Demographics"])
+    demo_tab1, demo_tab2, demo_tab3, demo_tab4, demo_tab5, demo_tab6 = st.tabs(["Class Vintage", "Employment", "Industry", "Racial Identity", "Children", "Circles Detail"])
     
     with demo_tab1:
         render_class_vintage_analysis(filtered_data)
@@ -214,7 +214,7 @@ def render_demographics_tab():
         render_children_analysis(filtered_data)
     
     with demo_tab6:
-        st.info("Additional demographic analyses will be added in future updates.")
+        render_circles_detail()
 
 def render_vintage_diversity_histogram():
     """
@@ -2918,6 +2918,222 @@ def render_racial_identity_diversity_histogram():
     diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
     
     st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple racial identity categories.")
+    
+def render_circles_detail():
+    """Render the Circles Detail tab with comprehensive diversity metrics for each circle"""
+    st.subheader("Circles Detail")
+    
+    # Explanation text
+    st.write("""
+    Diversity scores represent the number of categories represented in a circle. 
+    E.g., if a circle has members from two different industry categories, its industry diversity score is 2. 
+    Total diversity is the sum across all diversity scores (Vintage, Employment, RI and Children).
+    """)
+    
+    # First check if we have the necessary data
+    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
+        st.warning("No matched circles data available. Please run the matching algorithm first.")
+        return
+        
+    # Check if the matched_circles dataframe is empty
+    if hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty:
+        st.warning("No matched circles data available (empty dataframe).")
+        return
+        
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze circle diversity.")
+        return
+    
+    # Get the circle data and results data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy()
+    
+    # Filter out circles with no members
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        return
+    
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+        
+    # Region filter dropdown
+    available_regions = sorted(circles_df['region'].dropna().unique().tolist())
+    available_regions = ["All Regions"] + available_regions
+    
+    selected_region = st.selectbox("Filter by Region", options=available_regions, index=0)
+    
+    # Apply region filter if not "All Regions"
+    if selected_region != "All Regions":
+        circles_df = circles_df[circles_df['region'] == selected_region]
+        
+    if len(circles_df) == 0:
+        st.warning(f"No circles found in the {selected_region} region.")
+        return
+        
+    # Create a dataframe to store circle diversity metrics
+    diversity_data = []
+    
+    # Process each circle to calculate diversity metrics
+    for _, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        region = circle_row.get('region', 'Unknown')
+        subregion = circle_row.get('subregion', 'Unknown')
+        
+        # Get member count
+        member_count = circle_row.get('member_count', 0)
+        
+        # Get the list of members for this circle
+        members = []
+        if 'members' in circle_row and circle_row['members']:
+            # For list representation
+            if isinstance(circle_row['members'], list):
+                members = circle_row['members']
+            # For string representation - convert to list
+            elif isinstance(circle_row['members'], str):
+                try:
+                    if circle_row['members'].startswith('['):
+                        members = eval(circle_row['members'])
+                    else:
+                        members = [circle_row['members']]
+                except Exception:
+                    members = []
+        
+        # Initialize sets to track unique categories for each diversity type
+        unique_vintages = set()
+        unique_employment_categories = set()
+        unique_ri_categories = set()
+        unique_children_categories = set()
+        
+        # Track category counts for determining top categories
+        vintage_counts = {}
+        employment_counts = {}
+        ri_counts = {}
+        children_counts = {}
+        
+        # For each member, look up their demographic data
+        for member_id in members:
+            member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            if not member_data.empty:
+                # Vintage diversity
+                if 'Class_Vintage' in member_data.columns:
+                    vintage = member_data['Class_Vintage'].iloc[0]
+                    if pd.notna(vintage):
+                        unique_vintages.add(vintage)
+                        vintage_counts[vintage] = vintage_counts.get(vintage, 0) + 1
+                
+                # Employment diversity
+                if 'Employment_Category' in member_data.columns:
+                    employment = member_data['Employment_Category'].iloc[0]
+                    if pd.notna(employment):
+                        unique_employment_categories.add(employment)
+                        employment_counts[employment] = employment_counts.get(employment, 0) + 1
+                
+                # Racial Identity diversity
+                if 'Racial_Identity_Category' in member_data.columns:
+                    ri = member_data['Racial_Identity_Category'].iloc[0]
+                    if pd.notna(ri):
+                        unique_ri_categories.add(ri)
+                        ri_counts[ri] = ri_counts.get(ri, 0) + 1
+                
+                # Children diversity
+                if 'Children_Category' in member_data.columns:
+                    children = member_data['Children_Category'].iloc[0]
+                    if pd.notna(children):
+                        unique_children_categories.add(children)
+                        children_counts[children] = children_counts.get(children, 0) + 1
+        
+        # Calculate diversity scores
+        vintage_score = len(unique_vintages) if unique_vintages else 0
+        employment_score = len(unique_employment_categories) if unique_employment_categories else 0
+        ri_score = len(unique_ri_categories) if unique_ri_categories else 0
+        children_score = len(unique_children_categories) if unique_children_categories else 0
+        
+        # Calculate total diversity score
+        total_score = vintage_score + employment_score + ri_score + children_score
+        
+        # Determine top categories (with percentages)
+        vintage_top = "None"
+        employment_top = "None"
+        ri_top = "None"
+        children_top = "None"
+        
+        if vintage_counts:
+            top_vintage = max(vintage_counts.items(), key=lambda x: x[1])
+            vintage_pct = (top_vintage[1] / member_count) * 100 if member_count > 0 else 0
+            vintage_top = f"{top_vintage[0]} ({vintage_pct:.1f}%)"
+        
+        if employment_counts:
+            top_employment = max(employment_counts.items(), key=lambda x: x[1])
+            employment_pct = (top_employment[1] / member_count) * 100 if member_count > 0 else 0
+            employment_top = f"{top_employment[0]} ({employment_pct:.1f}%)"
+        
+        if ri_counts:
+            top_ri = max(ri_counts.items(), key=lambda x: x[1])
+            ri_pct = (top_ri[1] / member_count) * 100 if member_count > 0 else 0
+            ri_top = f"{top_ri[0]} ({ri_pct:.1f}%)"
+        
+        if children_counts:
+            top_children = max(children_counts.items(), key=lambda x: x[1])
+            children_pct = (top_children[1] / member_count) * 100 if member_count > 0 else 0
+            children_top = f"{top_children[0]} ({children_pct:.1f}%)"
+        
+        # Add to diversity data
+        diversity_data.append({
+            'Circle ID': circle_id,
+            'Region': region,
+            'Subregion': subregion,
+            'Participants': member_count,
+            'Total Diversity Score': total_score,
+            'Vintage Score': vintage_score,
+            'Vintage Top Category': vintage_top,
+            'Employment Score': employment_score,
+            'Employment Top Category': employment_top,
+            'RI Score': ri_score,
+            'RI Top Category': ri_top,
+            'Children Score': children_score,
+            'Children Top Category': children_top
+        })
+    
+    # Create DataFrame from diversity data
+    if diversity_data:
+        diversity_df = pd.DataFrame(diversity_data)
+        
+        # Show the table with sorting enabled
+        st.dataframe(
+            diversity_df,
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # Summary statistics
+        st.subheader("Summary Statistics")
+        
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            st.metric("Total Circles", len(diversity_df))
+        
+        with col2:
+            avg_total_score = diversity_df['Total Diversity Score'].mean()
+            st.metric("Avg Total Score", f"{avg_total_score:.2f}")
+        
+        with col3:
+            avg_vintage_score = diversity_df['Vintage Score'].mean()
+            st.metric("Avg Vintage Score", f"{avg_vintage_score:.2f}")
+        
+        with col4:
+            avg_employment_score = diversity_df['Employment Score'].mean()
+            st.metric("Avg Employment Score", f"{avg_employment_score:.2f}")
+        
+        with col5:
+            avg_participants = diversity_df['Participants'].mean()
+            st.metric("Avg Participants", f"{avg_participants:.1f}")
+    else:
+        st.warning("No diversity data could be calculated for the selected circles.")
 
 def render_racial_identity_analysis(data):
     """Render the Racial Identity analysis visualizations"""
