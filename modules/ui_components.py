@@ -1650,7 +1650,7 @@ def render_results_overview():
         )
         
         # Plot with unique key
-        st.plotly_chart(fig, use_container_width=True, key="results_overview_circle_size_dist")
+        st.plotly_chart(fig, use_container_width=True, key="details_overview_circle_size_dist")
     
     # Show unmatched reasons if available
     render_unmatched_table()
