@@ -546,9 +546,13 @@ def run_matching_algorithm(data, config):
                 participant_dict['time_score'] = 0
                 participant_dict['total_score'] = 0
                 
-                # Use our enhanced reason determination with appropriate context
-                reason_context = {"insufficient_regional_participants": True}
-                participant_dict['unmatched_reason'] = determine_unmatched_reason(participant, reason_context)
+                # Per client request, NEVER use "Insufficient participants in region"
+                # Even in this case, choose a different reason
+                reason_context = {
+                    "insufficient_regional_participants": False,  # Never use this reason
+                    "debug_mode": debug_mode
+                }
+                participant_dict['unmatched_reason'] = "Tool unable to find a match"
                 
                 all_unmatched.append(participant_dict)
                 all_results.append(participant_dict)

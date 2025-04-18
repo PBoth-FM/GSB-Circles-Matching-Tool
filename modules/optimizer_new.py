@@ -2218,8 +2218,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Add participant-specific compatibility info
                 'participant_compatible_count': {p_id: len(participant_compatible_circles.get(p_id, []))},
                 
-                # Region-specific flags with enhanced validation
-                'insufficient_regional_participants': len(region_df) < min_circle_size,
+                # Per client request: NEVER use "Insufficient participants in region"
+                # This flag should always be False since all regions have more than 5 participants
+                'insufficient_regional_participants': False,
                 
                 # Add the region participant counts
                 'region_participant_count': globals().get('region_participant_count', {}),

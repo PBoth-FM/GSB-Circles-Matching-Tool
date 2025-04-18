@@ -304,19 +304,18 @@ def determine_unmatched_reason(participant, context=None):
     if context.get('no_time_preferences', False):
         return "No time preference"
     
-    # 3. Check regional participant counts - add verification
-    # Only mark as insufficient if there are truly too few participants
+    # 3. PER CLIENT REQUEST: NEVER USE "Insufficient participants in region"
+    # We've verified all regions have more than 5 participants in total
+    # Adding debug logs to help diagnose why this was being triggered
     region = participant.get('Requested_Region', '')
     participant_count = context.get('region_participant_count', {}).get(region, 0)
     
-    # Only apply this reason if there are actually too few participants (less than 5)
-    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+    if debug_mode:
         print(f"  - Region: {region}")
         print(f"  - Region participant count: {participant_count}")
-    
-    # Only mark as insufficient if there are less than 5 participants in the region
-    if participant_count < 5 and context.get('insufficient_regional_participants', False):
-        return "Insufficient participants in region"
+        print(f"  - Insufficient flag was: {context.get('insufficient_regional_participants', False)}")
+        
+    # We'll never use this reason, even if the flag is set
     
     # 4. No Compatible Options Check
     has_compatible_options = False
