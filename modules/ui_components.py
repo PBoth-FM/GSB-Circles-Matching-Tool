@@ -4,117 +4,199 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import re
+import io
+import base64
 
+# Function to render different tabs in the UI
 def render_match_tab():
     """Render the main matching tab content"""
-    st.subheader("Upload Participant Data")
+    # Organizing into columns
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.subheader("Upload Participant Data")
+        
+        # File uploader for participant data
+        uploaded_file = st.file_uploader("Upload a CSV file with participant data", type=["csv"])
+        
+        if uploaded_file is not None:
+            # Add a 'Process Data' button for explicit processing
+            process_button = st.button("Process Data")
+            
+            if process_button or 'processed_data' not in st.session_state:
+                # If button is clicked or no processed data exists, process the data
+                from app import process_uploaded_file
+                process_uploaded_file(uploaded_file)
+                st.success("Data processed successfully!")
+                st.session_state.button_clicked = True
+        else:
+            # Clear session state if no file is uploaded
+            if 'processed_data' in st.session_state:
+                st.warning("File removed. Upload a new file to continue.")
+                # Keep a backup of the current data for inspection
+                if 'backup_data' not in st.session_state:
+                    st.session_state.backup_data = st.session_state.processed_data.copy() if st.session_state.processed_data is not None else None
+                
+                # Clear current working data
+                st.session_state.processed_data = None
+                st.session_state.button_clicked = False
+    
+    with col2:
+        st.subheader("Matching Algorithm")
+        
+        # Optimization button with options - only if data has been processed
+        if 'processed_data' in st.session_state and st.session_state.processed_data is not None:
+            from app import run_optimization
+            
+            # Create expandable section for advanced options
+            with st.expander("Advanced Options"):
+                st.selectbox("Circle Size Preference", 
+                            options=["Balanced", "Larger Circles", "Smaller Circles"],
+                            index=0,
+                            key="circle_size_pref",
+                            help="'Balanced' tries to get everyone in a circle. 'Larger Circles' favors having fewer, larger circles. 'Smaller Circles' favors more intimate groups.")
+                
+                # Weight for location preferences
+                st.slider("Location Match Weight", 
+                        min_value=1.0, 
+                        max_value=10.0, 
+                        value=5.0, 
+                        step=0.5,
+                        key="location_weight",
+                        help="Higher values prioritize participants' location preferences over other factors.")
+                
+                # Weight for time preferences
+                st.slider("Time Match Weight", 
+                        min_value=1.0, 
+                        max_value=10.0, 
+                        value=5.0, 
+                        step=0.5,
+                        key="time_weight",
+                        help="Higher values prioritize participants' time preferences over other factors.")
+                
+                # Weight for full circles (only relevant for Balanced mode)
+                st.slider("Complete Circle Weight", 
+                        min_value=1.0, 
+                        max_value=10.0, 
+                        value=3.0, 
+                        step=0.5,
+                        key="circle_weight",
+                        help="Higher values prioritize having complete circles over partial matches.")
+                
+                # Tradeoff between honoring existing circles and optimizing for preferences
+                st.slider("Existing Circle Preservation", 
+                        min_value=0.0, 
+                        max_value=10.0, 
+                        value=7.0, 
+                        step=0.5,
+                        key="existing_circle_weight",
+                        help="Higher values favor keeping members in their current circles rather than moving them.")
+                
+                # Maximum iterations for the solver
+                st.number_input("Max Solver Iterations", 
+                                min_value=1000, 
+                                max_value=1000000, 
+                                value=100000, 
+                                step=10000,
+                                key="max_iterations",
+                                help="Maximum number of iterations for the optimization solver. Higher values may improve solutions but take longer.")
+                
+                # Tolerance for solver convergence
+                st.number_input("Solver Tolerance", 
+                                min_value=0.0001, 
+                                max_value=0.1, 
+                                value=0.001, 
+                                format="%f",
+                                step=0.001,
+                                key="solver_tolerance",
+                                help="Numerical tolerance for solver convergence. Lower values give more precise results but may take longer.")
+            
+            # Run Optimization button
+            if st.button("Run Matching Algorithm"):
+                with st.spinner("Running optimization - this may take a moment..."):
+                    run_optimization()
+                
+                # Show results
+                if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+                    st.success("Matching completed successfully!")
+                    st.session_state.active_tab = 1  # Switch to Results tab
+                    
+                    # Use this to force a rerun to switch tabs
+                    # Replaced st.experimental_rerun() with st.rerun()
+                    st.rerun()
+        else:
+            st.info("Upload and process data to enable matching.")
 
-    # File uploader functionality is now handled directly in app.py through match_tab_callback
-    # This function remains as a placeholder for imported reference
-    st.info("Please upload a CSV file with participant data to begin.")
-
-    # Show file format instructions
-    with st.expander("CSV File Format Requirements"):
-        st.markdown("""
-            ### Required Columns
-            - **Encoded ID**: Unique identifier for each participant
-            - **Status**: Current status (e.g., 'CURRENT-CONTINUING', 'NEW', 'MOVING OUT')
-            - **Requested_Region**: Preferred region
-            - **first_choice_location**: First choice location/subregion
-            - **first_choice_time**: First choice meeting time
-            - **second_choice_location**: Second choice location/subregion (optional)
-            - **second_choice_time**: Second choice meeting time (optional)
-            - **third_choice_location**: Third choice location/subregion (optional)
-            - **third_choice_time**: Third choice meeting time (optional)
-            - **host**: Hosting preference ('Always', 'Sometimes', 'Never Host', 'n/a', or blank)
-
-            ### Sample Format
-            ```
-            Encoded ID,Status,Requested_Region,first_choice_location,first_choice_time,...
-            123456789,NEW,South Florida,Miami,Monday (Evening),...
-            987654321,CURRENT-CONTINUING,Boston,Cambridge/Somerville,Saturday (Morning),...
-            ```
-            """)
 
 def render_details_tab():
     """Render the details tab content"""
-    if 'results' not in st.session_state or st.session_state.results is None:
-        st.info("Run the matching algorithm first to see detailed results.")
+    if ('matched_circles' not in st.session_state or 
+        st.session_state.matched_circles is None or 
+        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+        st.warning("No matching results available. Please run the matching algorithm first.")
         return
-
-    st.subheader("Match Details")
-
-    # Performance metrics
-    if 'exec_time' in st.session_state:
-        st.metric("Execution Time", f"{st.session_state.exec_time:.2f} seconds")
-
-    # Create tabs for different detail views
-    detail_tab1, detail_tab2, detail_tab3 = st.tabs(["Circle Details", "Participant Details", "Visualizations"])
-
+    
+    # Create tabs for different views
+    detail_tab1, detail_tab2, detail_tab3 = st.tabs(["Overview", "Circles", "Participants"])
+    
     with detail_tab1:
-        render_circle_details()
-
+        render_results_overview()
+    
     with detail_tab2:
+        render_circle_details()
+    
+    with detail_tab3:
         render_participant_details()
 
-    with detail_tab3:
-        render_visualizations()
 
 def render_demographics_tab():
     """Render the demographics analysis tab content"""
     st.subheader("Demographics Analysis")
     
-    # Check if we have results or processed data to work with
-    if ('results' not in st.session_state or st.session_state.results is None) and \
-       ('processed_data' not in st.session_state or st.session_state.processed_data is None):
-        st.info("Run the matching algorithm first to see demographic analysis.")
-        return
-    
-    # Get the data to work with - prefer results data if available, otherwise use processed data
-    if 'results' in st.session_state and st.session_state.results is not None:
-        data = st.session_state.results.copy()
-    else:
-        data = st.session_state.processed_data.copy()
-    
-    # Add region and match status filters
+    # Add filter by region and match status at the top
     col1, col2 = st.columns(2)
     
-    # Filter by region
-    regions = ["All"]
-    # Add region options if available 
-    if 'Derived_Region' in data.columns:
-        regions.extend(sorted(data['Derived_Region'].dropna().unique().tolist()))
-    elif 'Requested_Region' in data.columns:
-        regions.extend(sorted(data['Requested_Region'].dropna().unique().tolist()))
-    
     with col1:
-        selected_region = st.selectbox("Filter by Region", regions)
+        # Get available regions
+        available_regions = []
+        if 'processed_data' in st.session_state and st.session_state.processed_data is not None:
+            df = st.session_state.processed_data
+            if 'Current_Region' in df.columns:
+                available_regions = sorted(df['Current_Region'].dropna().unique().tolist())
+            elif 'Region' in df.columns:
+                available_regions = sorted(df['Region'].dropna().unique().tolist())
+            
+        # Add "All Regions" option
+        available_regions = ["All Regions"] + available_regions
+        
+        # Region filter
+        selected_region = st.selectbox("Filter by Region", options=available_regions, index=0)
     
-    # Filter by match status if results are available
     with col2:
-        match_options = ["All", "Matched", "Unmatched"]
-        selected_match = st.selectbox("Filter by Match Status", match_options)
+        # Match status filter
+        match_options = ["All Participants", "Matched", "Unmatched"]
+        selected_match = st.selectbox("Filter by Match Status", options=match_options, index=0)
     
-    # Apply filters
-    filtered_data = data.copy()
-    
-    # Apply region filter
-    if selected_region != "All":
-        if 'Derived_Region' in filtered_data.columns:
-            filtered_data = filtered_data[filtered_data['Derived_Region'] == selected_region]
-        elif 'Requested_Region' in filtered_data.columns:
-            filtered_data = filtered_data[filtered_data['Requested_Region'] == selected_region]
-    
-    # Apply match status filter if results are available
-    if 'results' in st.session_state and selected_match != "All":
+    # Get the filtered data based on selections
+    filtered_data = None
+    if 'processed_data' in st.session_state and st.session_state.processed_data is not None:
+        filtered_data = st.session_state.processed_data.copy()
+        
+        # Apply region filter if not "All Regions"
+        if selected_region != "All Regions":
+            if 'Current_Region' in filtered_data.columns:
+                filtered_data = filtered_data[filtered_data['Current_Region'] == selected_region]
+            elif 'Region' in filtered_data.columns:
+                filtered_data = filtered_data[filtered_data['Region'] == selected_region]
+        
+        # Apply match status filter
         if selected_match == "Matched" and 'proposed_NEW_circles_id' in filtered_data.columns:
             filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] != "UNMATCHED"]
         elif selected_match == "Unmatched" and 'proposed_NEW_circles_id' in filtered_data.columns:
             filtered_data = filtered_data[filtered_data['proposed_NEW_circles_id'] == "UNMATCHED"]
     
     # Create tabs for different demographic views
-    demo_tab1, demo_tab2, demo_tab3 = st.tabs(["Class Vintage", "Employment", "Other Demographics"])
+    demo_tab1, demo_tab2, demo_tab3, demo_tab4 = st.tabs(["Class Vintage", "Employment", "Industry", "Other Demographics"])
     
     with demo_tab1:
         render_class_vintage_analysis(filtered_data)
@@ -123,6 +205,9 @@ def render_demographics_tab():
         render_employment_analysis(filtered_data)
     
     with demo_tab3:
+        render_industry_analysis(filtered_data)
+    
+    with demo_tab4:
         st.info("Additional demographic analyses will be added in future updates.")
 
 def render_vintage_diversity_histogram():
@@ -435,9 +520,170 @@ def render_employment_diversity_histogram():
     
     st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple employment categories.")
 
+def render_industry_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different industry categories they contain
+    """
+    # First check if we have the necessary data
+    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
+        st.warning("No matched circles data available to analyze industry diversity.")
+        return
+        
+    # Check if the matched_circles dataframe is empty
+    if hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty:
+        st.warning("No matched circles data available (empty dataframe).")
+        return
+        
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze industry diversity.")
+        return
+    
+    # Get the circle data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy()
+    
+    # Filter out circles with no members
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        return
+    
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique industry categories per circle
+    circle_industry_counts = {}
+    circle_industry_diversity_scores = {}
+    
+    # Get industry data for each member of each circle
+    for _, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        
+        # Initialize empty set to track unique industry categories
+        unique_industry_categories = set()
+        
+        # Get the list of members for this circle
+        if 'members' in circle_row and circle_row['members']:
+            # For list representation
+            if isinstance(circle_row['members'], list):
+                member_ids = circle_row['members']
+            # For string representation - convert to list
+            elif isinstance(circle_row['members'], str):
+                try:
+                    if circle_row['members'].startswith('['):
+                        member_ids = eval(circle_row['members'])
+                    else:
+                        member_ids = [circle_row['members']]
+                except Exception as e:
+                    # Skip if parsing fails
+                    continue
+            else:
+                # Skip if members data is not in expected format
+                continue
+                
+            # For each member, look up their industry category in results_df
+            for member_id in member_ids:
+                member_data = results_df[results_df['Encoded ID'] == member_id]
+                
+                if not member_data.empty and 'Industry_Category' in member_data.columns:
+                    industry_category = member_data['Industry_Category'].iloc[0]
+                    if pd.notna(industry_category):
+                        unique_industry_categories.add(industry_category)
+        
+        # Store the count of unique industry categories for this circle
+        if unique_industry_categories:  # Only include if there's at least one valid category
+            count = len(unique_industry_categories)
+            circle_industry_counts[circle_id] = count
+            # Calculate diversity score: 1 point if everyone is in the same category,
+            # 2 points if two categories, etc.
+            circle_industry_diversity_scores[circle_id] = count
+    
+    # Create histogram data from the industry counts
+    if not circle_industry_counts:
+        st.warning("No industry data available for circles.")
+        return
+        
+    # Count circles by number of unique industry categories
+    diversity_counts = pd.Series(circle_industry_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Industry Categories': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
+    st.subheader("Industry Diversity Within Circles")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Industry Categories',
+        y='Number of Circles',
+        title='Distribution of Circles by Number of Industry Categories',
+        text='Number of Circles',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Industry Categories",
+            tickmode='linear',
+            dtick=1,  # Force integer labels
+            range=[0.5, 4.5]  # Since we have 4 categories max
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Show a table with the data
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
+    
+    # Display the Industry diversity score
+    st.subheader("Industry Diversity Score")
+    st.write("""
+    For each circle, the industry diversity score is calculated as follows:
+    - 1 point: All members in the same industry category
+    - 2 points: Members from two different industry categories
+    - 3 points: Members from three different industry categories
+    - 4 points: Members from all four industry categories
+    """)
+    
+    # Calculate average and total diversity scores
+    total_diversity_score = sum(circle_industry_diversity_scores.values()) if circle_industry_diversity_scores else 0
+    avg_diversity_score = total_diversity_score / len(circle_industry_diversity_scores) if circle_industry_diversity_scores else 0
+    
+    # Create two columns for the metrics
+    col1, col2 = st.columns(2)
+    
+    # Show average and total scores
+    with col1:
+        st.metric("Average Industry Diversity Score", f"{avg_diversity_score:.2f}")
+    with col2:
+        st.metric("Total Industry Diversity Score", f"{total_diversity_score}")
+    
+    # Add a brief explanation
+    total_circles = sum(diversity_counts.values)
+    diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
+    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple industry categories.")
+
 def render_employment_analysis(data):
     """Render the Employment analysis visualizations"""
     st.subheader("Employment Analysis")
+    
+    # Check if data is None
+    if data is None:
+        st.warning("No data available for analysis. Please upload participant data.")
+        return
     
     # Create a copy to work with
     df = data.copy()
@@ -483,7 +729,7 @@ def render_employment_analysis(data):
                 elif ("Self-Employed" in status_str or "Self-employed" in status_str) and "Employed full-time for wages" not in status_str:
                     return "Self-employed"
                 else:
-                    return "Other"
+                    return "All Else"
             
             # Apply the categorization function
             df['Employment_Category'] = df[employment_status_col].apply(categorize_employment)
@@ -511,7 +757,7 @@ def render_employment_analysis(data):
     
     # Define the proper order for Employment Categories
     employment_order = [
-        "Employed full-time for wages", "Self-employed", "Other"
+        "Employed full-time for wages", "Self-employed", "All Else"
     ]
     
     # FIRST: Display diversity within circles IF we have matched circles
@@ -607,11 +853,197 @@ def render_employment_analysis(data):
         
         # Show the plot
         st.plotly_chart(fig, use_container_width=True)
+
+
+def render_industry_analysis(data):
+    """Render the Industry analysis visualizations"""
+    st.subheader("Industry Analysis")
     
+    # Check if data is None
+    if data is None:
+        st.warning("No data available for analysis. Please upload participant data.")
+        return
+    
+    # Create a copy to work with
+    df = data.copy()
+    
+    # Debug: show column names
+    st.caption("Debugging information:")
+    with st.expander("Show data columns and sample values"):
+        st.write("Available columns:")
+        for col in df.columns:
+            st.text(f"- {col}")
+        
+        # Try to find Industry Sector column
+        industry_sector_col = None
+        for col in df.columns:
+            if "industry sector" in col.lower():
+                industry_sector_col = col
+                break
+        
+        if industry_sector_col:
+            st.write(f"Found Industry Sector column: {industry_sector_col}")
+            # Show some sample values
+            sample_values = df[industry_sector_col].dropna().head(5).tolist()
+            st.write(f"Sample values: {sample_values}")
+        else:
+            st.write("No Industry Sector column found in the data")
+    
+    # Check if we need to create Industry Category
+    if 'Industry_Category' not in df.columns:
+        if industry_sector_col:
+            st.info(f"Creating Industry Category from {industry_sector_col}...")
+            
+            # Define function to categorize industry sector
+            def categorize_industry(sector):
+                if pd.isna(sector):
+                    return None
+                
+                # Convert to string in case it's not
+                sector_str = str(sector)
+                
+                # Apply categorization rules
+                if "Technology" in sector_str:
+                    return "Technology"
+                elif "Consulting" in sector_str and "Technology" not in sector_str:
+                    return "Consulting"
+                elif any(term in sector_str for term in ["Finance", "Investment", "Private Equity"]) and \
+                     "Technology" not in sector_str and "Consulting" not in sector_str:
+                    return "Finance / Investment / Private Equity"
+                else:
+                    return "All Else"
+            
+            # Apply the categorization function
+            df['Industry_Category'] = df[industry_sector_col].apply(categorize_industry)
+            
+            # Update session state with the new Industry_Category
+            if 'results' in st.session_state and st.session_state.results is not None:
+                # Copy the newly created Industry_Category to the results DataFrame
+                # First, create a dictionary mapping Encoded ID to Industry_Category
+                ind_cat_mapping = dict(zip(df['Encoded ID'], df['Industry_Category']))
+                
+                # Then apply this mapping to the results DataFrame
+                if 'Encoded ID' in st.session_state.results.columns:
+                    st.session_state.results['Industry_Category'] = st.session_state.results['Encoded ID'].map(ind_cat_mapping)
+                    st.info("Updated results data with Industry Categories")
+        else:
+            st.warning("Industry Sector data is not available. Please ensure Industry Sector data was included in the uploaded file.")
+            return
+    
+    # Filter out rows with missing Industry Category
+    df = df[df['Industry_Category'].notna()]
+    
+    if len(df) == 0:
+        st.warning("No Industry Category data is available after filtering.")
+        return
+    
+    # Define the proper order for Industry Categories
+    industry_order = [
+        "Technology", "Consulting", "Finance / Investment / Private Equity", "All Else"
+    ]
+    
+    # FIRST: Display diversity within circles IF we have matched circles
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            render_industry_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Industry diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Industry diversity within circles.")
+    
+    # SECOND: Display Distribution of Industry
+    st.subheader("Distribution of Industry")
+    
+    # Count by Industry Category
+    industry_counts = df['Industry_Category'].value_counts().reindex(industry_order).fillna(0).astype(int)
+    
+    # Create a DataFrame for plotting
+    industry_df = pd.DataFrame({
+        'Industry Category': industry_counts.index,
+        'Count': industry_counts.values
+    })
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        industry_df,
+        x='Industry Category',
+        y='Count',
+        title='Distribution of Industry Categories',
+        text='Count',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis={'categoryorder': 'array', 'categoryarray': industry_order},
+        xaxis_title="Industry Category",
+        yaxis_title="Count of Participants"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Create a breakdown by Status if Status column exists
+    if 'Status' in df.columns:
+        st.subheader("Industry by Status")
+        
+        # Create a crosstab of Industry Category vs Status
+        status_industry = pd.crosstab(
+            df['Industry_Category'], 
+            df['Status'],
+            rownames=['Industry Category'],
+            colnames=['Status']
+        ).reindex(industry_order)
+        
+        # Add a Total column
+        status_industry['Total'] = status_industry.sum(axis=1)
+        
+        # Calculate percentages
+        for col in status_industry.columns:
+            if col != 'Total':
+                status_industry[f'{col} %'] = (status_industry[col] / status_industry['Total'] * 100).round(1)
+        
+        # Reorder columns to group counts with percentages
+        cols = []
+        for status in status_industry.columns:
+            if status != 'Total' and not status.endswith(' %'):
+                cols.append(status)
+                cols.append(f'{status} %')
+        cols.append('Total')
+        
+        # Show the table
+        st.dataframe(status_industry[cols], use_container_width=True)
+        
+        # Create a stacked bar chart
+        fig = px.bar(
+            status_industry.reset_index(),
+            x='Industry Category',
+            y=[col for col in status_industry.columns if col != 'Total' and not col.endswith(' %')],
+            title='Industry Distribution by Status',
+            barmode='stack',
+            color_discrete_sequence=['#8C1515', '#2E2D29']  # Stanford colors
+        )
+        
+        # Customize layout
+        fig.update_layout(
+            xaxis={'categoryorder': 'array', 'categoryarray': industry_order},
+            xaxis_title="Industry Category",
+            yaxis_title="Count of Participants",
+            legend_title="Status"
+        )
+        
+        # Show the plot
+        st.plotly_chart(fig, use_container_width=True)
 
 def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
     st.subheader("Class Vintage Analysis")
+    
+    # Check if data is None
+    if data is None:
+        st.warning("No data available for analysis. Please upload participant data.")
+        return
     
     # Create a copy to work with
     df = data.copy()
@@ -880,1170 +1312,1061 @@ def render_debug_tab():
         results_df = st.session_state.results
         st.success(f"✅ Results data available with {len(results_df)} participants")
         
-        # Check for test participant in results
-        test_id = '72549701782'
-        test_participant = results_df[results_df['Encoded ID'] == test_id]
+        # Check unmatched counts
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            unmatched = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED']
+            st.info(f"Unmatched participants: {len(unmatched)} out of {len(results_df)} ({len(unmatched)/len(results_df)*100:.2f}%)")
         
-        if not test_participant.empty:
-            match_status = test_participant['proposed_NEW_circles_id'].iloc[0]
-            if match_status == 'IP-HOU-02':
-                st.success(f"✅ SUCCESS: Test participant matched with IP-HOU-02")
-            else:
-                st.error(f"❌ FAILED: Test participant assigned to {match_status}, not IP-HOU-02")
-                
-                # Show detailed match info
-                st.write("Test participant results:")
-                st.dataframe(test_participant)
-        else:
-            st.error(f"❌ Test participant {test_id} not found in results")
-    
-    # Check if we have debug logs available from the optimizer
-    st.subheader("Houston Debug Logs")
-    try:
-        from modules.optimizer_new import houston_debug_logs
+        # Check for missing preference data
+        missing_prefs_cols = []
+        for pref_type in ['location', 'time']:
+            for choice_num in range(1, 4):
+                col_name = f'first_choice_{pref_type}'
+                if col_name in results_df.columns:
+                    missing_count = results_df[col_name].isna().sum()
+                    if missing_count > 0:
+                        missing_prefs_cols.append(f"{col_name}: {missing_count} missing")
         
-        if len(houston_debug_logs) > 0:
-            st.warning("Houston Debug Information Available")
-            
-            # Display all log entries in a single text block instead of expandable sections
-            combined_logs = "\n".join([f"Houston Debug Entry #{i+1}\n{entry}\n" for i, entry in enumerate(houston_debug_logs)])
-            st.text_area("Houston Debug Logs (All Entries)", combined_logs, height=400)
-                    
-            # Add a special test case section
-            st.write("### Houston Test Participant")
-            st.info("Test Participant ID: 72549701782 should match with Houston Circle IP-HOU-02")
-            
-            if 'results' in st.session_state and st.session_state.results is not None:
-                results_df = st.session_state.results
-                
-                # Find matching row for our test participant
-                test_participant = results_df[results_df['Encoded ID'] == '72549701782']
-                if not test_participant.empty:
-                    st.write("Test participant status:")
-                    st.dataframe(test_participant[['Encoded ID', 'Status', 'proposed_NEW_circles_id', 'unmatched_reason']])
-                else:
-                    st.warning("Test participant 72549701782 not found in results")
+        if missing_prefs_cols:
+            st.warning("⚠️ Missing preference data:")
+            for col_info in missing_prefs_cols:
+                st.text(f"- {col_info}")
         else:
-            st.info("No Houston debug information available yet. Run the algorithm with Debug Mode enabled.")
-    except Exception as e:
-        st.info(f"Houston debug logs not available yet: {str(e)}")
-
-    if 'config' in st.session_state and st.session_state.config.get('debug_mode', False):
-        # Display status counts if available
-        if 'status_counts' in st.session_state:
-            st.write("### Participant Status Counts")
-            status_df = pd.DataFrame({
-                'Status': list(st.session_state.status_counts.keys()),
-                'Count': list(st.session_state.status_counts.values())
-            })
-            st.dataframe(status_df, use_container_width=True)
-
-        # Display result counts by status if available
-        # Make sure results exists and is not None before checking columns
-        if ('results' in st.session_state and 
-            st.session_state.results is not None and 
-            isinstance(st.session_state.results, pd.DataFrame) and
-            'Status' in st.session_state.results.columns):
-            
-            st.write("### Results Status Counts")
-            results_status_counts = st.session_state.results['Status'].value_counts().reset_index()
-            results_status_counts.columns = ['Status', 'Count']
-            st.dataframe(results_status_counts, use_container_width=True)
-
-            # Count matched versus unmatched for each status - check that required column exists
-            if 'proposed_NEW_circles_id' in st.session_state.results.columns:
-                st.write("### Status Match Rates")
-                match_by_status = pd.crosstab(
-                    st.session_state.results['Status'], 
-                    st.session_state.results['proposed_NEW_circles_id'] != 'UNMATCHED',
-                    rownames=['Status'], 
-                    colnames=['Matched']
-                ).reset_index()
-            else:
-                # Create a simple dataframe if required columns aren't available
-                st.warning("Match rates unavailable - missing required column 'proposed_NEW_circles_id'")
-                # Create placeholder dataframe for further processing
-                match_by_status = pd.DataFrame({
-                    'Status': st.session_state.results['Status'].unique(),
-                    'Unmatched': 0,
-                    'Matched': 0
+            st.success("✅ All preference columns are populated")
+        
+        # Examine unmatched reasons
+        if 'unmatched_reason' in results_df.columns:
+            unmatched_reasons = results_df['unmatched_reason'].value_counts()
+            if not unmatched_reasons.empty:
+                st.subheader("Unmatched Reasons")
+                
+                # Create a DataFrame for plotting
+                reason_df = pd.DataFrame({
+                    'Reason': unmatched_reasons.index,
+                    'Count': unmatched_reasons.values
                 })
-        else:
-            # Skip this section if results dataframe doesn't exist or lacks required columns
-            if 'results' in st.session_state:
-                st.warning("Cannot display result statistics - results data may be corrupted")
-            return
-            
-        # Only if we have match_by_status dataframe
-        if 'match_by_status' in locals():
-            # Handle potential errors in the debug tab by using a more robust approach
-            try:
-                # Start with a more direct approach - get basic info columns
-                match_by_status['Total'] = match_by_status.sum(axis=1, numeric_only=True)
                 
-                # Handle the case where the boolean column might not be properly converted
-                if True in match_by_status.columns:
-                    match_by_status_safe = match_by_status.copy()
+                # Create a bar chart
+                fig = px.bar(
+                    reason_df,
+                    x='Reason',
+                    y='Count',
+                    title='Distribution of Unmatched Reasons',
+                    text='Count',
+                    color_discrete_sequence=['#8C1515']
+                )
+                
+                fig.update_traces(textposition='outside')
+                fig.update_layout(
+                    xaxis_title="Unmatched Reason",
+                    yaxis_title="Count of Participants"
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Create a table
+                st.dataframe(reason_df)
+                
+                # Examine specific reasons
+                if 'NO_LOCATION_MATCH' in unmatched_reasons:
+                    no_location_match = results_df[results_df['unmatched_reason'] == 'NO_LOCATION_MATCH']
                     
-                    # Convert the Matched column to numeric safely
-                    matched_values = match_by_status_safe[True].apply(lambda x: 1 if x == True else 0 if x == False else 0)
-                    
-                    # Calculate match percentage
-                    match_by_status['Match %'] = (matched_values / match_by_status['Total'] * 100).round(1).fillna(0)
-                else:
-                    # If True column doesn't exist, set defaults
-                    match_by_status['Match %'] = 0
-            except Exception as e:
-                # If any error occurs, use a simpler approach
-                st.error(f"Error in status calculations: {str(e)}")
-                # Set safe defaults
-                try:
-                    match_by_status['Total'] = match_by_status.iloc[:, 1:].sum(axis=1)
-                    match_by_status['Match %'] = 0
-                except Exception:
-                    st.error("Could not calculate match statistics")
-                    return
-
-            # Rename columns for clarity
-            match_by_status.columns = ['Status', 'Unmatched', 'Matched', 'Total', 'Match %']
-
-            st.dataframe(match_by_status, use_container_width=True)
-
-        # Display data samples if available
-        if 'df' in st.session_state:
-            st.write("### Raw Data Preview")
-            st.dataframe(st.session_state.df.head(), use_container_width=True)
-
-            # Show column names for debugging
-            st.write("### Column Names")
-            st.write(list(st.session_state.df.columns))
-
-        if 'processed_data' in st.session_state:
-            st.write("### Processed Data Preview")
-            st.dataframe(st.session_state.processed_data.head(), use_container_width=True)
-
-            # Count participants by status in processed data
-            if 'Status' in st.session_state.processed_data.columns:
-                st.write("### Processed Data Status Counts (Binary)")
-                processed_status_counts = st.session_state.processed_data['Status'].value_counts().reset_index()
-                processed_status_counts.columns = ['Status', 'Count']
-                st.dataframe(processed_status_counts, use_container_width=True)
-
-            # Display Raw_Status counts if available
-            if 'Raw_Status' in st.session_state.processed_data.columns:
-                st.write("### Processed Data Detailed Status Counts")
-                raw_status_counts = st.session_state.processed_data['Raw_Status'].value_counts().reset_index()
-                raw_status_counts.columns = ['Raw Status', 'Count']
-                st.dataframe(raw_status_counts, use_container_width=True)
-
-        # Time compatibility tester
-        st.write("### Time Compatibility Tester")
-        col1, col2 = st.columns(2)
-
-        with col1:
-            time1 = st.text_input("Time Preference 1", "Monday (Evening)")
-
-        with col2:
-            time2 = st.text_input("Time Preference 2", "Monday-Thursday (Evening)")
-
-        if st.button("Test Compatibility"):
-            # Import the standardization and compatibility functions
-            from modules.data_processor import standardize_time_preference, is_time_compatible
-            
-            # Standardize both inputs
-            std_time1 = standardize_time_preference(time1)
-            std_time2 = standardize_time_preference(time2)
-            
-            # Show original and standardized formats
-            st.write("#### Original Values:")
-            st.write(f"Time 1: '{time1}'")
-            st.write(f"Time 2: '{time2}'")
-            
-            st.write("#### Standardized Values:")
-            st.write(f"Time 1: '{std_time1}'")
-            st.write(f"Time 2: '{std_time2}'")
-            
-            # Extract detailed components for explanation
-            def extract_days_and_period_demo(time_str):
-                """Demonstration version that returns detailed info for display"""
-                # Default time period if not specified
-                time_period = "Days"
-                
-                # Extract time period from parentheses if present
-                if '(' in time_str and ')' in time_str:
-                    time_period = time_str[time_str.find('(')+1:time_str.find(')')]
-                
-                # Extract days part (before parentheses)
-                days_part = time_str.split('(')[0].strip()
-                
-                # Special handling for "Varies"
-                if days_part.lower() == 'varies':
-                    # "Varies" matches with any day
-                    return {
-                        'days_part': days_part, 
-                        'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-                        'time_period': time_period,
-                        'is_varies': True,
-                        'is_range': False,
-                        'start_day': None,
-                        'end_day': None
-                    }
-                
-                # Special handling for "M-Th" format
-                if days_part == "M-Th":
-                    return {
-                        'days_part': days_part,
-                        'days': ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
-                        'time_period': time_period,
-                        'is_range': True,
-                        'start_day': 'Monday',
-                        'end_day': 'Thursday',
-                        'is_varies': False
-                    }
-                
-                # Day abbreviation mappings
-                day_abbreviations = {
-                    "m": "monday",
-                    "mon": "monday",
-                    "t": "tuesday", 
-                    "tue": "tuesday",
-                    "tues": "tuesday",
-                    "w": "wednesday",
-                    "wed": "wednesday",
-                    "th": "thursday",
-                    "thur": "thursday",
-                    "thurs": "thursday",
-                    "f": "friday",
-                    "fri": "friday",
-                    "s": "saturday",
-                    "sa": "saturday",
-                    "sat": "saturday",
-                    "su": "sunday",
-                    "sun": "sunday"
-                }
-                
-                days = []
-                is_range = False
-                start_day = None
-                end_day = None
-                
-                # Handle day ranges with dashes (e.g., Monday-Thursday)
-                if '-' in days_part:
-                    is_range = True
-                    day_range = days_part.split('-')
-                    start_day_raw = day_range[0].strip()
-                    end_day_raw = day_range[1].strip() if len(day_range) > 1 else start_day_raw
-                    
-                    # Convert to lowercase for matching
-                    start_day_lower = start_day_raw.lower()
-                    end_day_lower = end_day_raw.lower()
-                    
-                    # Try to map abbreviations
-                    if start_day_lower in day_abbreviations:
-                        start_day_lower = day_abbreviations[start_day_lower]
+                    with st.expander(f"NO_LOCATION_MATCH ({len(no_location_match)} participants)"):
+                        # Extract regions
+                        regions = []
+                        if 'Current_Region' in no_location_match.columns:
+                            regions = no_location_match['Current_Region'].value_counts()
+                        elif 'Region' in no_location_match.columns:
+                            regions = no_location_match['Region'].value_counts()
                         
-                    if end_day_lower in day_abbreviations:
-                        end_day_lower = day_abbreviations[end_day_lower]
+                        if not regions.empty:
+                            st.write("Regions of participants with NO_LOCATION_MATCH:")
+                            st.dataframe(pd.DataFrame({
+                                'Region': regions.index,
+                                'Count': regions.values
+                            }))
+                
+                # Add a debugging function to check time format issues
+                with st.expander("Time Format Debugging"):
+                    st.subheader("🔍 Time Format Investigation")
+                    st.write("This section helps identify any issues with time format parsing")
                     
-                    # Define the ordering of days for range inclusion
-                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    all_days_lower = [d.lower() for d in all_days]
+                    # Find relevant time columns
+                    time_columns = []
+                    for col in results_df.columns:
+                        if col.endswith('_time') and 'choice' in col:
+                            time_columns.append(col)
                     
-                    # Find indices for the range using case-insensitive comparison
-                    try:
-                        start_idx = all_days_lower.index(start_day_lower)
-                        end_idx = all_days_lower.index(end_day_lower)
+                    if time_columns:
+                        # Select a column to examine
+                        selected_time_col = st.selectbox("Select time column to examine", 
+                                                        options=time_columns,
+                                                        index=0)
                         
-                        # Store properly capitalized days
-                        start_day = all_days[start_idx]
-                        end_day = all_days[end_idx]
+                        # Define a demonstration function to show time parsing
+                        def extract_days_and_period_demo(time_str):
+                            """Demonstration version that returns detailed info for display"""
+                            if pd.isna(time_str) or not time_str:
+                                return {
+                                    "original": str(time_str),
+                                    "is_valid": False,
+                                    "days_found": [],
+                                    "error": "Empty or null value"
+                                }
+                            
+                            # Extract day information
+                            days_mapping = {
+                                'mon': 'Monday',
+                                'tue': 'Tuesday', 
+                                'wed': 'Wednesday',
+                                'thu': 'Thursday',
+                                'fri': 'Friday',
+                                'sat': 'Saturday',
+                                'sun': 'Sunday'
+                            }
+                            
+                            # Convert to lowercase for easier matching
+                            time_str_lower = str(time_str).lower()
+                            
+                            # Find days mentioned in the string
+                            days_found = []
+                            for day_abbr, day_full in days_mapping.items():
+                                if day_abbr in time_str_lower:
+                                    days_found.append(day_full)
+                            
+                            # Check for morning/afternoon/evening
+                            period_found = None
+                            if any(term in time_str_lower for term in ['am', 'morning']):
+                                period_found = 'Morning'
+                            elif any(term in time_str_lower for term in ['pm', 'afternoon']):
+                                period_found = 'Afternoon'
+                            elif 'evening' in time_str_lower:
+                                period_found = 'Evening'
+                            
+                            # Return detailed parsing results
+                            return {
+                                "original": time_str,
+                                "is_valid": bool(days_found),
+                                "days_found": days_found,
+                                "period_found": period_found,
+                                "error": None if days_found else "No valid days found"
+                            }
                         
-                        # Get all days in the range (inclusive)
-                        days = all_days[start_idx:end_idx+1]
-                    except ValueError:
-                        # Fallback if day not recognized
-                        days = [days_part]
-                        start_day = start_day_raw
-                        end_day = end_day_raw
-                else:
-                    # Single day case - handle abbreviations and case sensitivity
-                    day_lower = days_part.lower()
-                    
-                    # Check for abbreviation
-                    if day_lower in day_abbreviations:
-                        day_lower = day_abbreviations[day_lower]
-                    
-                    # Look up proper capitalization
-                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    all_days_lower = [d.lower() for d in all_days]
-                    
-                    try:
-                        idx = all_days_lower.index(day_lower)
-                        days = [all_days[idx]]
-                        start_day = all_days[idx]
-                    except ValueError:
-                        days = [days_part]
-                        start_day = days_part
-                
-                return {
-                    'days_part': days_part,
-                    'days': days,
-                    'time_period': time_period,
-                    'is_range': is_range,
-                    'start_day': start_day,
-                    'end_day': end_day,
-                    'is_varies': False
-                }
-            
-            # Get detailed components
-            details1 = extract_days_and_period_demo(std_time1)
-            details2 = extract_days_and_period_demo(std_time2)
-            
-            # Show detailed breakdown
-            st.write("#### Time 1 Components:")
-            st.write(f"Day part: {details1['days_part']}")
-            st.write(f"Time period: {details1['time_period']}")
-            if details1.get('is_varies', False):
-                st.write("Special case: 'Varies' matches with any day")
-            elif details1.get('is_range', False):
-                st.write(f"Day range: From {details1['start_day']} to {details1['end_day']}")
-            st.write(f"Expanded days: {', '.join(details1['days'])}")
-            
-            st.write("#### Time 2 Components:")
-            st.write(f"Day part: {details2['days_part']}")
-            st.write(f"Time period: {details2['time_period']}")
-            if details2.get('is_varies', False):
-                st.write("Special case: 'Varies' matches with any day")
-            elif details2.get('is_range', False):
-                st.write(f"Day range: From {details2['start_day']} to {details2['end_day']}")
-            st.write(f"Expanded days: {', '.join(details2['days'])}")
-            
-            # Find common days
-            common_days = set(details1['days']).intersection(set(details2['days']))
-            
-            # Special handling for time period compatibility - Case insensitive comparison
-            if details1['time_period'].lower() == 'varies' or details2['time_period'].lower() == 'varies':
-                time_period_match = True
-                time_period_message = "Time periods match (special case: 'Varies' matches with any time period)"
-            else:
-                # Use case-insensitive comparison for time periods
-                time_period_match = details1['time_period'].lower() == details2['time_period'].lower()
-                time_period_message = "Time periods match" if time_period_match else "Time periods don't match"
-            
-            # Calculate final compatibility
-            day_match = len(common_days) > 0
-            
-            # Print detailed debug to check day matching
-            print(f"Day match check: {details1['days']} vs {details2['days']} = {common_days}")
-            print(f"Day match result = {day_match}")
-            
-            # Add more debug info for diagnosis
-            if not day_match:
-                print(f"No day overlap between {details1['days']} and {details2['days']}")
-                # Check case sensitivity
-                lower_days1 = [d.lower() for d in details1['days']]
-                lower_days2 = [d.lower() for d in details2['days']]
-                case_insensitive_common = set(lower_days1).intersection(set(lower_days2))
-                if case_insensitive_common:
-                    print(f"Case-insensitive match would have found: {case_insensitive_common}")
-            
-            final_match = day_match and time_period_match
-            
-            # Check compatibility using different methods
-            direct_match = (time1 == time2)
-            std_match = (std_time1 == std_time2)
-            range_match = is_time_compatible(time1, time2)
-            
-            # Show compatibility details
-            st.write("#### Compatibility Analysis:")
-            st.write(f"Time period compatibility: {'✅' if time_period_match else '❌'} {time_period_message}")
-            st.write(f"Day compatibility: {'✅' if day_match else '❌'} {'Days overlap' if day_match else 'No overlapping days'}")
-            if day_match:
-                st.write(f"Common days: {', '.join(sorted(common_days))}")
-            
-            # Show results
-            st.write("#### Compatibility Results:")
-            st.write(f"Direct string match: {'✅ Compatible' if direct_match else '❌ Not compatible'}")
-            st.write(f"After standardization: {'✅ Compatible' if std_match else '❌ Not compatible'}")
-            st.write(f"With day range handling: {'✅ Compatible' if range_match else '❌ Not compatible'}")
-            
-            # Check if our manual calculation matches the function
-            if final_match != range_match:
-                st.error(f"WARNING: Manual calculation ({final_match}) doesn't match is_time_compatible() result ({range_match}). This indicates a bug in the code.")
-            
-            if range_match:
-                st.success(f"The time preferences are compatible! Days overlap and time periods match.")
-            else:
-                st.warning("The time preferences are not compatible. Either the days don't overlap or the time periods don't match.")
-                
-            # Show day extraction
-            st.write("#### Day Extraction Demo:")
-            
-            def extract_days_demo(time_str):
-                """Simplified version of extract_days_and_period_demo specifically for UI display"""
-                # Standardize time preference
-                std_time = standardize_time_preference(time_str)
-                days_part = std_time.split('(')[0].strip()
-                time_part = std_time[std_time.find('(')+1:std_time.find(')')] if '(' in std_time else "Unknown"
-                
-                # Special handling for "Varies"
-                if days_part.lower() == 'varies':
-                    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], time_part
-                
-                # Special handling for "M-Th" format
-                if days_part == "M-Th":
-                    print(f"Found special format M-Th, expanding to full day names")
-                    return ['Monday', 'Tuesday', 'Wednesday', 'Thursday'], time_part
-                
-                # Day abbreviation mappings - must match the one in is_time_compatible
-                day_abbreviations = {
-                    "m": "monday",
-                    "mon": "monday",
-                    "t": "tuesday",
-                    "tue": "tuesday",
-                    "tues": "tuesday",
-                    "w": "wednesday",
-                    "wed": "wednesday",
-                    "th": "thursday",
-                    "thur": "thursday",
-                    "thurs": "thursday",
-                    "f": "friday",
-                    "fri": "friday",
-                    "s": "saturday",
-                    "sa": "saturday",
-                    "sat": "saturday", 
-                    "su": "sunday",
-                    "sun": "sunday"
-                }
-                
-                # Handle day ranges
-                days = []
-                if '-' in days_part:
-                    day_range = days_part.split('-')
-                    start_day = day_range[0].strip()
-                    end_day = day_range[1].strip()
-                    
-                    # Convert to lowercase for case-insensitive matching
-                    start_day_lower = start_day.lower()
-                    end_day_lower = end_day.lower()
-                    
-                    # Map abbreviations if needed
-                    if start_day_lower in day_abbreviations:
-                        start_day_lower = day_abbreviations[start_day_lower]
-                        print(f"Mapped abbreviated start day {start_day} to {start_day_lower}")
+                        # Simplified version that just returns extracted days
+                        def extract_days_demo(time_str):
+                            """Simplified version of extract_days_and_period_demo specifically for UI display"""
+                            result = extract_days_and_period_demo(time_str)
+                            return result["days_found"]
                         
-                    if end_day_lower in day_abbreviations:
-                        end_day_lower = day_abbreviations[end_day_lower]
-                        print(f"Mapped abbreviated end day {end_day} to {end_day_lower}")
-                    
-                    # Define day ordering for range extraction
-                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    all_days_lower = [day.lower() for day in all_days]
-                    
-                    try:
-                        # Find indices using lowercase comparison
-                        start_idx = all_days_lower.index(start_day_lower)
-                        end_idx = all_days_lower.index(end_day_lower)
+                        # Sample a few values to show parsing
+                        sample_df = results_df[selected_time_col].dropna().sample(min(5, len(results_df))).tolist()
                         
-                        # Extract all days in the range
-                        days = all_days[start_idx:end_idx+1]
-                        print(f"Extracting day range: {start_day}-{end_day} -> {days}")
-                    except ValueError:
-                        # Fallback if day names not recognized
-                        days = [days_part]
-                        print(f"Error parsing day range: {days_part}")
-                else:
-                    # Single day case
-                    day_lower = days_part.lower()
-                    
-                    # Check for abbreviation
-                    if day_lower in day_abbreviations:
-                        day_lower = day_abbreviations[day_lower]
-                        print(f"Mapped abbreviated day {days_part} to {day_lower}")
-                    
-                    # Properly capitalize the day name
-                    all_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-                    all_days_lower = [day.lower() for day in all_days]
-                    
-                    try:
-                        idx = all_days_lower.index(day_lower)
-                        days = [all_days[idx]]
-                    except ValueError:
-                        days = [days_part]
-                        print(f"Could not normalize day: {days_part}")
-                
-                return days, time_part
-            
-            days1, time1_part = extract_days_demo(time1)
-            days2, time2_part = extract_days_demo(time2)
-            
-            st.write(f"Time 1 days: {days1}")
-            st.write(f"Time 1 period: {time1_part}")
-            st.write(f"Time 2 days: {days2}")
-            st.write(f"Time 2 period: {time2_part}")
-            
-            # Check for day overlap
-            overlap = any(day in days2 for day in days1)
-            st.write(f"Day overlap found: {'Yes' if overlap else 'No'}")
-
-        # Region code mapping tester
-        st.write("### Region Code Mapping Tester")
-
-        region_input = st.text_input("Region Input", "South Florida")
-        if st.button("Test Region Normalization"):
-            from utils.normalization import normalize_regions
-            normalized = normalize_regions(region_input)
-            st.write(f"Normalized: {normalized}")
-
-        subregion_input = st.text_input("Subregion Input", "Miami")
-        if st.button("Test Subregion Normalization"):
-            from utils.normalization import normalize_subregions
-            normalized = normalize_subregions(subregion_input)
-            st.write(f"Normalized: {normalized}")
-
-        # Algorithm logs
-        if 'optimization_logs' in st.session_state:
-            st.write("### Optimization Logs")
-            st.text_area("Logs", st.session_state.optimization_logs, height=300)
+                        st.write("Sample parsing results:")
+                        for sample in sample_df:
+                            parsing_result = extract_days_and_period_demo(sample)
+                            st.write(f"Original: '{parsing_result['original']}'")
+                            st.write(f"Valid: {parsing_result['is_valid']}")
+                            st.write(f"Days found: {', '.join(parsing_result['days_found']) if parsing_result['days_found'] else 'None'}")
+                            st.write(f"Period: {parsing_result['period_found'] or 'Not found'}")
+                            st.write("---")
+                        
+                        # Count parsing successes and failures
+                        time_values = results_df[selected_time_col].dropna()
+                        parsing_success = sum(1 for t in time_values if extract_days_demo(t))
+                        parsing_failure = len(time_values) - parsing_success
+                        
+                        st.metric("Time values successfully parsed", 
+                                f"{parsing_success} / {len(time_values)} ({parsing_success/len(time_values)*100:.1f}%)")
+                        
+                        if parsing_failure > 0:
+                            st.warning(f"⚠️ {parsing_failure} time values could not be parsed")
+                            
+                            # Show problematic values
+                            problem_values = [t for t in time_values if not extract_days_demo(t)]
+                            if problem_values:
+                                st.write("Problematic time values:")
+                                for idx, val in enumerate(problem_values[:10]):  # Show at most 10
+                                    st.text(f"{idx+1}. '{val}'")
+                                if len(problem_values) > 10:
+                                    st.text(f"... and {len(problem_values) - 10} more")
+                    else:
+                        st.info("No time-related columns found in the data")
     else:
-        st.info("Enable debug mode in the configuration panel to access debug tools.")
+        st.error("❌ No results data available in session state")
+    
+    # Check for matched circles
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        circles_df = st.session_state.matched_circles
+        if hasattr(circles_df, 'empty') and circles_df.empty:
+            st.error("❌ Matched circles dataframe is empty")
+        else:
+            st.success(f"✅ Matched circles data available with {len(circles_df)} circles")
+            
+            # Count total members
+            total_members = circles_df['member_count'].sum() if 'member_count' in circles_df.columns else "N/A"
+            st.metric("Total matched participants", total_members)
+            
+            # Circle size distribution
+            if 'member_count' in circles_df.columns:
+                circle_sizes = circles_df['member_count'].value_counts().sort_index()
+                
+                st.subheader("Circle Size Distribution")
+                
+                # Create a DataFrame for plotting
+                size_df = pd.DataFrame({
+                    'Circle Size': circle_sizes.index,
+                    'Number of Circles': circle_sizes.values
+                })
+                
+                # Create a bar chart
+                fig = px.bar(
+                    size_df,
+                    x='Circle Size',
+                    y='Number of Circles',
+                    title='Distribution of Circle Sizes',
+                    text='Number of Circles',
+                    color_discrete_sequence=['#8C1515']
+                )
+                
+                fig.update_traces(textposition='outside')
+                fig.update_layout(
+                    xaxis_title="Number of Members in Circle",
+                    yaxis_title="Number of Circles"
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.error("❌ No matched circles data available in session state")
+    
+    # Show information about current session state
+    st.subheader("🔢 Session State Variables")
+    session_keys = list(st.session_state.keys())
+    selected_keys = st.multiselect("Select session state variables to inspect", 
+                                 options=session_keys,
+                                 default=session_keys[:3] if len(session_keys) > 3 else session_keys)
+    
+    if selected_keys:
+        for key in selected_keys:
+            value = st.session_state[key]
+            st.write(f"**{key}**:")
+            if isinstance(value, pd.DataFrame):
+                st.write(f"DataFrame with {len(value)} rows and {len(value.columns)} columns")
+                st.dataframe(value.head(5))
+            elif value is None:
+                st.write("None")
+            elif isinstance(value, (list, tuple, set)):
+                st.write(f"{type(value).__name__} with {len(value)} items")
+                st.write(str(value)[:1000] + "..." if len(str(value)) > 1000 else str(value))
+            else:
+                st.write(str(value)[:1000] + "..." if len(str(value)) > 1000 else str(value))
+
 
 def render_results_overview():
     """Render the results overview section"""
-    if 'results' not in st.session_state or st.session_state.results is None:
+    if ('matched_circles' not in st.session_state or 
+        st.session_state.matched_circles is None or 
+        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+        st.warning("No matching results available. Please run the matching algorithm first.")
         return
-
-    # Results metrics
-    results = st.session_state.results
-    total_participants = len(results)
-    matched_participants = len(results[results['proposed_NEW_circles_id'] != "UNMATCHED"])
-    unmatched_participants = total_participants - matched_participants
-    match_rate = (matched_participants / total_participants * 100) if total_participants > 0 else 0
-
-    st.subheader("Results Overview")
-
-    # Display deduplication messages in a collapsed expander with full list
-    if 'deduplication_messages' in st.session_state and st.session_state.deduplication_messages:
-        with st.expander(f"⚠️ {len(st.session_state.deduplication_messages)} Duplicate Encoded IDs were detected and fixed", expanded=False):
-            for message in st.session_state.deduplication_messages:
-                st.write(f"- {message}")
     
-    # Display excluded "Moving out" records if any were filtered
-    excluded_count = 0
-    if 'status_counts' in st.session_state and 'df' in st.session_state and 'processed_data' in st.session_state:
-        # Try to calculate excluded "Moving out" records
-        try:
-            raw_status_counts = st.session_state.df['Status'].value_counts().to_dict() if 'Status' in st.session_state.df.columns else {}
-            moving_out_count = 0
-            for status, count in raw_status_counts.items():
-                if isinstance(status, str) and "MOVING OUT" in status.upper():
-                    moving_out_count += count
-            
-            if moving_out_count > 0:
-                with st.expander(f"ℹ️ {moving_out_count} records with 'Moving Out' status were excluded", expanded=False):
-                    st.write("Participants with 'Current-MOVING OUT of Region' status were excluded from matching as they are leaving their current region.")
-        except Exception as e:
-            if 'debug_mode' in st.session_state.config and st.session_state.config.get('debug_mode'):
-                st.warning(f"Error calculating excluded records: {str(e)}")
-
-    col1, col2, col3, col4 = st.columns(4)
-
+    st.subheader("Matching Results Overview")
+    
+    # Get the data
+    matched_df = st.session_state.matched_circles
+    results_df = st.session_state.results if 'results' in st.session_state else None
+    
+    # Create columns for the metrics
+    col1, col2, col3 = st.columns(3)
+    
+    # Column 1: Circle stats
     with col1:
-        st.metric("Total Participants", total_participants)
-
+        st.metric("Number of Circles", len(matched_df))
+        
+        # Average circle size
+        if 'member_count' in matched_df.columns:
+            avg_size = matched_df['member_count'].mean()
+            st.metric("Average Circle Size", f"{avg_size:.1f}")
+    
+    # Column 2: Participant stats
     with col2:
-        st.metric("Matched", matched_participants)
-
+        # Total participants
+        total_matched = matched_df['member_count'].sum() if 'member_count' in matched_df.columns else 0
+        st.metric("Participants Matched", total_matched)
+        
+        # Total unmatched
+        if results_df is not None and 'proposed_NEW_circles_id' in results_df.columns:
+            unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+            st.metric("Participants Unmatched", unmatched_count)
+    
+    # Column 3: Success rates
     with col3:
-        st.metric("Unmatched", unmatched_participants)
+        # Match success rate
+        if results_df is not None and 'proposed_NEW_circles_id' in results_df.columns:
+            total_participants = len(results_df)
+            match_rate = (total_matched / total_participants) * 100 if total_participants > 0 else 0
+            st.metric("Match Success Rate", f"{match_rate:.1f}%")
+        
+        # Circles with target size
+        if 'member_count' in matched_df.columns and 'target_size' in matched_df.columns:
+            target_count = len(matched_df[matched_df['member_count'] == matched_df['target_size']])
+            target_pct = (target_count / len(matched_df)) * 100 if len(matched_df) > 0 else 0
+            st.metric("Circles at Target Size", f"{target_count} ({target_pct:.1f}%)")
+    
+    # Distribution of circle sizes
+    if 'member_count' in matched_df.columns:
+        st.subheader("Circle Size Distribution")
+        
+        # Count circles by size
+        size_counts = matched_df['member_count'].value_counts().sort_index()
+        
+        # Create a DataFrame for plotting
+        size_df = pd.DataFrame({
+            'Circle Size': size_counts.index,
+            'Count': size_counts.values
+        })
+        
+        # Create a bar chart
+        fig = px.bar(
+            size_df,
+            x='Circle Size',
+            y='Count',
+            title='Distribution of Circle Sizes',
+            text='Count',
+            color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+        )
+        
+        # Format
+        fig.update_traces(textposition='outside')
+        fig.update_layout(
+            xaxis=dict(
+                title="Number of Members",
+                tickmode='linear',
+                dtick=1
+            ),
+            yaxis_title="Number of Circles"
+        )
+        
+        # Plot
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Show unmatched reasons if available
+    render_unmatched_table()
+    
+    # Show circle composition table
+    render_circle_table()
 
-    with col4:
-        st.metric("Match Rate", f"{match_rate:.1f}%")
-
-    # If circles data is available
-    if 'matched_circles' in st.session_state and not st.session_state.matched_circles.empty:
-        circles = st.session_state.matched_circles
-
-        # Create a histogram of circle sizes
-        if 'member_count' in circles.columns:
-            st.subheader("Circle Size Distribution")
-
-            # Create a histogram using plotly
-            import plotly.express as px
-
-            # Count circles by size
-            size_counts = circles['member_count'].value_counts().reset_index()
-            size_counts.columns = ['Circle Size', 'Count']
-            size_counts = size_counts.sort_values('Circle Size')
-
-            # Create bar chart
-            fig = px.bar(
-                size_counts,
-                x='Circle Size',
-                y='Count',
-                title='Distribution of Circle Sizes',
-                labels={'Count': 'Number of Circles', 'Circle Size': 'Number of Members'},
-                text='Count'  # Show the count values on bars
-            )
-
-            fig.update_traces(textposition='outside')
-            fig.update_layout(xaxis_title="Number of Members", yaxis_title="Number of Circles")
-
-            # Display the chart
-            st.plotly_chart(fig, use_container_width=True)
 
 def render_circle_table():
     """Render the circle composition table"""
-    if 'matched_circles' not in st.session_state or st.session_state.matched_circles.empty:
-        st.info("No circles have been formed yet.")
+    if ('matched_circles' not in st.session_state or 
+        st.session_state.matched_circles is None or
+        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
         return
-
-    # Create a copy of the circles dataframe to avoid modifying the original
-    circles = st.session_state.matched_circles.copy()
-
-    # Special handling for the members column which could be causing display issues
-    if 'members' in circles.columns:
-        # Convert members to string if it's a list or other object
-        try:
-            circles['members'] = circles['members'].apply(lambda x: str(x) if not isinstance(x, str) else x)
-        except Exception as e:
-            st.error(f"Error converting members column: {str(e)}")
-
-    # Preprocess all numeric columns to ensure they're numeric
-    # This prevents the "not supported between instances of 'float' and 'str'" error
-    for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
-        if col in circles.columns:
-            try:
-                circles[col] = pd.to_numeric(circles[col], errors='coerce').fillna(0).astype(int)
-            except Exception as e:
-                st.error(f"Error converting {col} to numeric: {str(e)}")
-
-    # Make sure new_members column exists (for new circles, this equals member_count)
-    if 'new_members' not in circles.columns and 'member_count' in circles.columns:
-        circles['new_members'] = circles['member_count']
-
-    # Add filter options
-    col1, col2 = st.columns(2)
-
-    # Initialize default values
-    selected_region = 'All'
-    selected_subregion = 'All'
-
-    # Create safe string versions of region and subregion for filters
-    # This prevents the '<' comparison error between float and string
-    try:
-        # Convert all columns to string first for safer operations
-        safe_circles = circles.copy()
-
-        # Convert object columns to strings for filtering
-        for col in ['region', 'subregion']:
-            if col in safe_circles.columns:
-                # Replace any None/NaN values with empty string before conversion
-                safe_circles[col] = safe_circles[col].fillna('')
-                safe_circles[col] = safe_circles[col].astype(str)
-
-        # Now create the filters using the safe string columns
-        with col1:
-            if 'region' in safe_circles.columns:
-                regions = ['All'] + sorted(safe_circles['region'].unique().tolist())
-                selected_region = st.selectbox("Filter by Region", regions)
-
-        with col2:
-            if 'subregion' in safe_circles.columns:
-                subregions = ['All'] + sorted(safe_circles['subregion'].unique().tolist())
-                selected_subregion = st.selectbox("Filter by Subregion", subregions)
-
-        # Apply filters using the safe string columns
-        filtered_circles = safe_circles.copy()
-
-        if selected_region != 'All':
-            filtered_circles = filtered_circles[filtered_circles['region'] == selected_region]
-
-        if selected_subregion != 'All':
-            filtered_circles = filtered_circles[filtered_circles['subregion'] == selected_subregion]
-
-    except Exception as e:
-        st.error(f"Error during filtering setup: {str(e)}")
-        # Create a backup filtered dataset
-        filtered_circles = circles.copy()
-        st.warning("Advanced filtering disabled due to error - showing all circles")
-
-    # Display the filtered circles
-    if not filtered_circles.empty:
-        # Display the count of filtered circles
-        st.write(f"Showing {len(filtered_circles)} circles")
-
-        # Prepare a safer version of the dataframe for display
-        try:
-            # Create a display-only dataframe with simplified columns
-            display_df = pd.DataFrame()
-
-            # Define display-ready columns - explicitly select and convert them
-            column_mapping = {
-                "circle_id": "Circle ID",
-                "region": "Region",
-                "subregion": "Subregion",
-                "meeting_time": "Meeting Time",
-                "member_count": "Member Count",
-                "new_members": "New Members",
-                "max_additions": "Max Additions",
-                "always_hosts": "Always Hosts",
-                "sometimes_hosts": "Sometimes Hosts"
-            }
-
-            # Build display dataframe with clean columns
-            for orig_col, display_col in column_mapping.items():
-                if orig_col in filtered_circles.columns:
-                    # For numeric columns, ensure they're properly converted
-                    if orig_col in ["member_count", "new_members", "always_hosts", "sometimes_hosts"]:
-                        display_df[display_col] = pd.to_numeric(filtered_circles[orig_col], 
-                                                               errors='coerce').fillna(0).astype(int)
-                    else:
-                        # For string columns, ensure they're strings
-                        display_df[display_col] = filtered_circles[orig_col].astype(str)
-
-            # Convert Max Additions to integer format, handling decimals
-            if 'Max Additions' in display_df.columns:
-                # First convert to float to handle any decimal values
-                display_df['Max Additions'] = pd.to_numeric(display_df['Max Additions'], errors='coerce')
-                # Floor decimal values and convert to int, keeping NaN values
-                display_df['Max Additions'] = display_df['Max Additions'].apply(
-                    lambda x: "None" if pd.notnull(x) and x == 0 else int(x) if pd.notnull(x) else x
-                )
-
-            # Display the clean dataframe with row numbers
-            st.dataframe(
-                display_df,
-                use_container_width=True,
-                hide_index=False
-            )
-        except Exception as e:
-            st.error(f"Error preparing display table: {str(e)}")
-
-            # Ultra-fallback - just show the raw data with no column reordering
-            st.write("Using emergency fallback display method:")
-            try:
-                # Just show the raw data as string representations
-                raw_display = pd.DataFrame()
-                for col in filtered_circles.columns:
-                    raw_display[col] = filtered_circles[col].astype(str)
-
-                st.dataframe(
-                    raw_display,
-                    use_container_width=True,
-                    hide_index=True
-                )
-            except Exception as e2:
-                st.error(f"Even fallback display failed: {str(e2)}")
-                st.write("Data cannot be displayed in table format. Please check the downloadable CSV for complete results.")
+    
+    st.subheader("Circle Composition")
+    
+    # Get the data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy() if 'results' in st.session_state else None
+    
+    # Show the table
+    if 'circle_id' in circles_df.columns and 'meeting_time' in circles_df.columns:
+        # Create a display table with key information
+        display_cols = ['circle_id', 'meeting_time', 'meeting_location', 'member_count']
+        display_cols = [col for col in display_cols if col in circles_df.columns]
+        
+        if display_cols:
+            display_df = circles_df[display_cols].copy()
+            
+            # Rename columns for display
+            display_df.columns = [col.replace('_', ' ').title() for col in display_cols]
+            
+            # Sort by circle ID
+            if 'Circle Id' in display_df.columns:
+                display_df = display_df.sort_values('Circle Id')
+            
+            # Show the table
+            st.dataframe(display_df, use_container_width=True)
+            
+            # Add an export option
+            if st.button("Export Circle Data to CSV"):
+                # Convert DataFrame to CSV
+                csv = circles_df.to_csv(index=False)
+                
+                # Create a download link
+                b64 = base64.b64encode(csv.encode()).decode()
+                href = f'<a href="data:file/csv;base64,{b64}" download="circle_data.csv">Download CSV File</a>'
+                st.markdown(href, unsafe_allow_html=True)
+        else:
+            st.warning("Circle data doesn't contain the expected columns.")
     else:
-        st.info("No circles match the selected filters.")
+        st.warning("Circle data doesn't contain circle_id or meeting_time columns.")
+
 
 def render_unmatched_table():
     """Render the unmatched participants table"""
-    if 'unmatched_participants' not in st.session_state or st.session_state.unmatched_participants.empty:
-        st.info("All participants have been matched.")
+    if 'results' not in st.session_state or st.session_state.results is None:
         return
-
-    # Create a deep copy to avoid modifying the original
-    unmatched = st.session_state.unmatched_participants.copy()
-
-    # Pre-process all columns to ensure consistent types
-    for col in unmatched.columns:
-        try:
-            # For every column, normalize to string if it's an object type (might contain mixed types)
-            if unmatched[col].dtype == 'object':
-                unmatched[col] = unmatched[col].fillna('').astype(str)
-        except Exception as e:
-            st.error(f"Error pre-processing column {col}: {str(e)}")
-
-    # Add filter options
-    col1, col2 = st.columns(2)
-
-    # Initialize default values
-    selected_reason = 'All'
-    selected_region = 'All'
-
-    # Create filters only after converting all columns to consistent types
-    try:
-        with col1:
-            if 'unmatched_reason' in unmatched.columns:
-                # Use the string-converted column for consistent filters
-                reasons = ['All'] + sorted(unmatched['unmatched_reason'].unique().tolist())
-                selected_reason = st.selectbox("Filter by Reason", reasons)
-
-        with col2:
-            if 'Requested_Region' in unmatched.columns:
-                # Use the string-converted column for consistent filters
-                regions = ['All'] + sorted(unmatched['Requested_Region'].unique().tolist())
-                selected_region = st.selectbox("Filter by Requested Region", regions, key="unmatched_region")
-
-        # Apply filters to the pre-processed dataframe
-        filtered_unmatched = unmatched.copy()
-
-        # Filter by reason if selected
-        if 'unmatched_reason' in unmatched.columns and selected_reason != 'All':
-            filtered_unmatched = filtered_unmatched[filtered_unmatched['unmatched_reason'] == selected_reason]
-
-        # Filter by region if selected
-        if 'Requested_Region' in unmatched.columns and selected_region != 'All':
-            filtered_unmatched = filtered_unmatched[filtered_unmatched['Requested_Region'] == selected_region]
-
-    except Exception as e:
-        st.error(f"Error setting up filters: {str(e)}")
-        # Fall back to showing all participants without filtering
-        filtered_unmatched = unmatched.copy()
-        st.warning("Filtering disabled due to error - showing all unmatched participants")
-
-    # Display the filtered unmatched participants
-    if not filtered_unmatched.empty:
-        # Display the count of unmatched participants
-        st.write(f"Showing {len(filtered_unmatched)} unmatched participants")
-
-        # Prepare a safer version of the dataframe for display
-        try:
-            # Create a completely new display dataframe with carefully controlled types
-            display_df = pd.DataFrame()
-
-            # Define display-ready columns with nice names
-            column_mapping = {
-                "Encoded ID": "Participant ID",
-                "Requested_Region": "Region",
-                "unmatched_reason": "Reason Unmatched",
-                "first_choice_location": "1st Choice Location",
-                "first_choice_time": "1st Choice Time",
-                "second_choice_location": "2nd Choice Location",
-                "second_choice_time": "2nd Choice Time",
-                "host": "Host Status"
-            }
-
-            # Build display dataframe with only the columns we need
-            for orig_col, display_col in column_mapping.items():
-                if orig_col in filtered_unmatched.columns:
-                    # For all columns, ensure they're strings for consistent display
-                    display_df[display_col] = filtered_unmatched[orig_col].fillna('').astype(str)
-
-            # Display the clean dataframe with row numbers
-            st.dataframe(
-                display_df,
-                use_container_width=True,
-                hide_index=False
-            )
-        except Exception as e:
-            st.error(f"Error preparing display table: {str(e)}")
-
-            # Ultra-fallback - just list IDs and reasons in text format
-            st.write("Using emergency fallback display method:")
-            try:
-                # Display 1 participant per line with basic info
-                for i in range(min(100, len(filtered_unmatched))): # Limit to 100 to avoid cluttering
-                    row = filtered_unmatched.iloc[i]
-                    id_val = row.get('Encoded ID', 'Unknown ID')
-                    reason = row.get('unmatched_reason', 'Unknown reason')
-                    st.write(f"• Participant: {id_val} - Reason: {reason}")
-
-                if len(filtered_unmatched) > 100:
-                    st.write(f"... and {len(filtered_unmatched) - 100} more participants")
-            except Exception as e2:
-                st.error(f"Even fallback display failed: {str(e2)}")
-                st.write("Data cannot be displayed. Please check the downloadable CSV for complete results.")
+    
+    # Get unmatched participants
+    results_df = st.session_state.results.copy()
+    
+    if 'proposed_NEW_circles_id' not in results_df.columns:
+        return
+    
+    unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED']
+    
+    if len(unmatched_df) == 0:
+        st.success("All participants were successfully matched!")
+        return
+    
+    st.subheader(f"Unmatched Participants ({len(unmatched_df)})")
+    
+    # Show reasons for being unmatched
+    if 'unmatched_reason' in unmatched_df.columns:
+        reasons = unmatched_df['unmatched_reason'].value_counts()
+        
+        # Create a DataFrame for plotting
+        reason_df = pd.DataFrame({
+            'Reason': reasons.index,
+            'Count': reasons.values
+        })
+        
+        # Create a bar chart
+        fig = px.bar(
+            reason_df,
+            x='Reason',
+            y='Count',
+            title='Reasons for Unmatched Participants',
+            text='Count',
+            color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+        )
+        
+        # Format
+        fig.update_traces(textposition='outside')
+        fig.update_layout(
+            xaxis_title="Unmatched Reason",
+            yaxis_title="Number of Participants"
+        )
+        
+        # Plot
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Show the table of unmatched participants
+    display_cols = ['Last Family Name', 'First Given Name', 'Encoded ID', 
+                    'Current_Region', 'Status', 'unmatched_reason']
+    
+    # Filter to available columns
+    display_cols = [col for col in display_cols if col in unmatched_df.columns]
+    
+    if display_cols:
+        st.dataframe(unmatched_df[display_cols], use_container_width=True)
     else:
-        st.info("No unmatched participants match the selected filters.")
+        st.warning("Unmatched participant data doesn't contain the expected columns.")
+
 
 def render_circle_details():
     """Render detailed information about each circle"""
-    if 'matched_circles' not in st.session_state or st.session_state.matched_circles.empty:
-        st.info("No circles have been formed yet.")
+    if ('matched_circles' not in st.session_state or 
+        st.session_state.matched_circles is None or
+        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+        st.warning("No matching results available. Please run the matching algorithm first.")
         return
-
-    circles = st.session_state.matched_circles
-    results = st.session_state.results
-
-    # Create a dropdown to select a circle
-    circle_ids = sorted(circles['circle_id'].unique().tolist())
-    selected_circle = st.selectbox("Select Circle to View", circle_ids)
-
-    # Get the selected circle data
-    circle = circles[circles['circle_id'] == selected_circle].iloc[0]
-
-    # Display circle information
-    st.subheader(f"Circle: {selected_circle}")
-
-    col1, col2, col3, col4 = st.columns(4)
-
+    
+    # Get the data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy() if 'results' in st.session_state else None
+    
+    # If results aren't available, we can't show member details
+    if results_df is None:
+        st.warning("Participant data is not available. Cannot show detailed circle information.")
+        return
+    
+    # Get all circle IDs
+    circle_ids = circles_df['circle_id'].tolist() if 'circle_id' in circles_df.columns else []
+    
+    if not circle_ids:
+        st.warning("No circle IDs found in the matching results.")
+        return
+    
+    # Sort circle IDs for better UX
+    circle_ids.sort()
+    
+    # Create a selection widget to choose a circle
+    selected_circle = st.selectbox("Select a circle to view details", options=circle_ids)
+    
+    # Get the selected circle's data
+    circle_row = circles_df[circles_df['circle_id'] == selected_circle].iloc[0]
+    
+    # Create columns for the display
+    col1, col2 = st.columns([1, 2])
+    
+    # First column: Circle metadata
     with col1:
-        st.write("**Region:**", circle['region'])
-        st.write("**Subregion:**", circle['subregion'])
-
+        st.subheader(f"Circle: {selected_circle}")
+        
+        # Show circle metadata
+        metadata = {
+            "Meeting Time": circle_row.get('meeting_time', 'Not specified'),
+            "Meeting Location": circle_row.get('meeting_location', 'Not specified'),
+            "Member Count": circle_row.get('member_count', 'Unknown'),
+            "Target Size": circle_row.get('target_size', 'Unknown'),
+        }
+        
+        for key, value in metadata.items():
+            st.write(f"**{key}:** {value}")
+    
+    # Second column: Members table
     with col2:
-        st.write("**Meeting Time:**", circle['meeting_time'])
-        st.write("**Member Count:**", circle['member_count'])
-
-    with col3:
-        st.write("**Always Hosts:**", circle['always_hosts'])
-        st.write("**Sometimes Hosts:**", circle['sometimes_hosts'])
-
-    # Add information about max additions if available
-    with col4:
-        st.write("**New Members:**", circle.get('new_members', 0))
-
-        # Display max_additions if present in the dataframe
-        if 'max_additions' in circle:
-            max_adds = circle['max_additions']
-            if max_adds == 0:
-                st.write("**Max Additions:** None")
-                st.write("*Co-leader preference: no new members allowed*")
-            else:
-                st.write(f"**Max Additions:** {max_adds}")
-                if circle.get('new_members', 0) > 0:
-                    remaining = max(0, max_adds - circle.get('new_members', 0))
-                    st.write(f"*Used {circle.get('new_members', 0)} of {max_adds}, {remaining} remaining*")
-        else:
-            st.write("**Max Additions:** No limit specified")
-
-    # Get all members of this circle
-    if 'members' in circle:
-        try:
-            members = circle['members']
-
-            # Handle different types of members (it might be a string representation of a list)
-            if isinstance(members, str):
+        st.subheader("Members")
+        
+        # Get member IDs
+        member_ids = []
+        if 'members' in circle_row:
+            # Handle both list and string representations
+            if isinstance(circle_row['members'], list):
+                member_ids = circle_row['members']
+            elif isinstance(circle_row['members'], str):
                 try:
-                    # Handle string representation of a list 
-                    if members.startswith('[') and members.endswith(']'):
-                        import ast
-                        members = ast.literal_eval(members)  # Convert string representation to actual list
+                    # Try to evaluate if it's a string representation of a list
+                    if circle_row['members'].startswith('['):
+                        member_ids = eval(circle_row['members'])
                     else:
-                        # Handle comma-separated list
-                        members = [m.strip() for m in members.split(',')]
-                except Exception as e:
-                    st.error(f"Error parsing members string: {str(e)}")
-                    members = []
+                        member_ids = [circle_row['members']]
+                except:
+                    st.error(f"Could not parse member list: {circle_row['members']}")
+        
+        if not member_ids:
+            st.warning("No members found for this circle.")
+            return
+        
+        # Get member data
+        members_df = results_df[results_df['Encoded ID'].isin(member_ids)]
+        
+        # Create a display table
+        display_cols = ['Last Family Name', 'First Given Name', 'Encoded ID', 
+                        'Current_Region', 'Status', 'first_choice_time']
+        
+        # Filter to available columns
+        display_cols = [col for col in display_cols if col in members_df.columns]
+        
+        if display_cols:
+            st.dataframe(members_df[display_cols], use_container_width=True)
+        else:
+            st.warning("Member data doesn't contain the expected columns.")
+    
+    # Show visualizations specific to this circle
+    st.subheader("Circle Analysis")
+    
+    # Create tabs for different visualizations
+    viz_tab1, viz_tab2 = st.tabs(["Time Preferences", "Location Preferences"])
+    
+    with viz_tab1:
+        # Time preference visualization
+        st.write("Time Preferences Distribution")
+        
+        # Extract time preferences
+        time_prefs = []
+        for choice_num in range(1, 4):
+            col_name = f'first_choice_time'
+            if col_name in members_df.columns:
+                prefs = members_df[col_name].dropna().tolist()
+                time_prefs.extend(prefs)
+        
+        if time_prefs:
+            # Create a simple display of common times
+            from collections import Counter
+            time_counts = Counter(time_prefs)
+            
+            # Create a DataFrame for plotting
+            time_df = pd.DataFrame({
+                'Time Preference': list(time_counts.keys()),
+                'Count': list(time_counts.values())
+            }).sort_values('Count', ascending=False)
+            
+            # Show as a table
+            st.dataframe(time_df, use_container_width=True)
+        else:
+            st.info("No time preference data available for this circle.")
+    
+    with viz_tab2:
+        # Location preference visualization
+        st.write("Location Preferences Distribution")
+        
+        # Extract location preferences
+        loc_prefs = []
+        for choice_num in range(1, 4):
+            col_name = f'first_choice_location'
+            if col_name in members_df.columns:
+                prefs = members_df[col_name].dropna().tolist()
+                loc_prefs.extend(prefs)
+        
+        if loc_prefs:
+            # Create a simple display of common locations
+            from collections import Counter
+            loc_counts = Counter(loc_prefs)
+            
+            # Create a DataFrame for plotting
+            loc_df = pd.DataFrame({
+                'Location Preference': list(loc_counts.keys()),
+                'Count': list(loc_counts.values())
+            }).sort_values('Count', ascending=False)
+            
+            # Show as a table
+            st.dataframe(loc_df, use_container_width=True)
+        else:
+            st.info("No location preference data available for this circle.")
 
-            # Make sure members is iterable
-            if not hasattr(members, '__iter__') or isinstance(members, str):
-                members = [members]  # Convert to a list if it's a scalar
-
-            try:
-                # Find members in results
-                circle_members = results[results['Encoded ID'].isin(members)]
-                st.write(f"Found {len(circle_members)} of {len(members)} members in results")
-            except Exception as e:
-                st.error(f"Error filtering members: {str(e)}")
-                circle_members = pd.DataFrame()
-        except Exception as e:
-            st.error(f"Error processing circle members: {str(e)}")
-            circle_members = pd.DataFrame()
-
-        st.write("### Circle Members")
-
-        # Display member information
-        if not circle_members.empty:
-            display_columns = ["Encoded ID", "Status", "host", "Current_Co_Leader", "co_leader_max_new_members", "proposed_NEW_host", "proposed_NEW_co_leader"]
-            display_columns = [col for col in display_columns if col in circle_members.columns]
-
-            st.dataframe(
-                circle_members[display_columns],
-                use_container_width=True,
-                hide_index=True
-            )
 
 def render_participant_details():
     """Render detailed information about individual participants"""
     if 'results' not in st.session_state or st.session_state.results is None:
-        st.info("Run the matching algorithm first to see participant details.")
+        st.warning("No participant data available. Please run the matching algorithm first.")
         return
-
-    results = st.session_state.results
-
-    # Add search by Encoded ID
-    encoded_id = st.text_input("Search by Encoded ID")
-
-    if encoded_id:
-        # Find the participant
-        participant = results[results['Encoded ID'] == encoded_id]
-
-        if not participant.empty:
-            participant = participant.iloc[0]
-
-            st.subheader("Participant Details")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.write("**Encoded ID:**", participant['Encoded ID'])
-                # Display both binary status and detailed status if available
-                st.write("**Status:**", participant['Status'])
-                if 'Raw_Status' in participant:
-                    st.write("**Detailed Status:**", participant['Raw_Status'])
-                st.write("**Requested Region:**", participant.get('Requested_Region', 'N/A'))
-
-            with col2:
-                st.write("**Host Status:**", participant.get('host', 'N/A'))
-                st.write("**Circle Assignment:**", participant.get('proposed_NEW_circles_id', 'N/A'))
-                
-                # Show co-leader preferences if the participant is a co-leader
-                if participant.get('Current_Co_Leader', '').lower() == 'yes':
-                    co_leader_max = participant.get('co_leader_max_new_members', 'Not specified')
-                    st.write("**Co-Leader Max New Members:**", co_leader_max)
-                
-                # Show max_additions value if assigned to a circle
-                if participant.get('proposed_NEW_circles_id', 'UNMATCHED') != 'UNMATCHED' and 'max_additions' in participant:
-                    st.write("**Circle Max Additions:**", participant.get('max_additions', 'Not specified'))
-                
-                if participant.get('proposed_NEW_circles_id', 'UNMATCHED') == 'UNMATCHED':
-                    st.write("**Unmatched Reason:**", participant.get('unmatched_reason', 'N/A'))
-
-            st.write("### Preferences")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                st.write("**1st Location:**", participant.get('first_choice_location', 'N/A'))
-                st.write("**2nd Location:**", participant.get('second_choice_location', 'N/A'))
-                st.write("**3rd Location:**", participant.get('third_choice_location', 'N/A'))
-
-            with col2:
-                st.write("**1st Time:**", participant.get('first_choice_time', 'N/A'))
-                st.write("**2nd Time:**", participant.get('second_choice_time', 'N/A'))
-                st.write("**3rd Time:**", participant.get('third_choice_time', 'N/A'))
-
-            st.write("### Assignment Details")
-
-            if participant.get('proposed_NEW_circles_id', 'UNMATCHED') != 'UNMATCHED':
-                st.write("**Assigned Circle:**", participant.get('proposed_NEW_circles_id', 'N/A'))
-                st.write("**Assigned Subregion:**", participant.get('proposed_NEW_Subregion', 'N/A'))
-                st.write("**Assigned Time:**", participant.get('proposed_NEW_DayTime', 'N/A'))
-                st.write("**Assigned as Host:**", participant.get('proposed_NEW_host', 'No'))
-                st.write("**Assigned as Co-leader:**", participant.get('proposed_NEW_co_leader', 'No'))
-
-                # Calculate preference match scores
-                location_match = (participant.get('first_choice_location', '') == participant.get('proposed_NEW_Subregion', '')) or \
-                                (participant.get('second_choice_location', '') == participant.get('proposed_NEW_Subregion', '')) or \
-                                (participant.get('third_choice_location', '') == participant.get('proposed_NEW_Subregion', ''))
-
-                time_match = (participant.get('first_choice_time', '') == participant.get('proposed_NEW_DayTime', '')) or \
-                            (participant.get('second_choice_time', '') == participant.get('proposed_NEW_DayTime', '')) or \
-                            (participant.get('third_choice_time', '') == participant.get('proposed_NEW_DayTime', ''))
-
-                st.write("**Location Preference Match:**", "Yes" if location_match else "No")
-                st.write("**Time Preference Match:**", "Yes" if time_match else "No")
+    
+    # Get the data
+    results_df = st.session_state.results.copy()
+    
+    # Create a search box for participants
+    search_type = st.radio("Search by", ["Name", "ID"], horizontal=True)
+    
+    if search_type == "Name":
+        # Create search boxes for first and last name
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            first_name_col = 'First Given Name' if 'First Given Name' in results_df.columns else None
+            if first_name_col:
+                first_name_options = [''] + sorted(results_df[first_name_col].dropna().unique().tolist())
+                first_name = st.selectbox("First Name", options=first_name_options)
             else:
-                st.write("This participant could not be matched to a circle.")
-                st.write("**Unmatched Reason:**", participant.get('unmatched_reason', 'N/A'))
-        else:
-            st.warning(f"No participant found with Encoded ID: {encoded_id}")
+                st.warning("First name column not found in data")
+                first_name = None
+        
+        with col2:
+            last_name_col = 'Last Family Name' if 'Last Family Name' in results_df.columns else None
+            if last_name_col:
+                last_name_options = [''] + sorted(results_df[last_name_col].dropna().unique().tolist())
+                last_name = st.selectbox("Last Name", options=last_name_options)
+            else:
+                st.warning("Last name column not found in data")
+                last_name = None
+        
+        # Filter based on name
+        filtered_df = results_df.copy()
+        if first_name and first_name_col:
+            filtered_df = filtered_df[filtered_df[first_name_col] == first_name]
+        if last_name and last_name_col:
+            filtered_df = filtered_df[filtered_df[last_name_col] == last_name]
     else:
-        st.info("Enter an Encoded ID to view participant details.")
+        # Search by ID
+        id_col = 'Encoded ID' if 'Encoded ID' in results_df.columns else None
+        if id_col:
+            id_options = [''] + sorted(results_df[id_col].dropna().unique().tolist())
+            participant_id = st.selectbox("Participant ID", options=id_options)
+            
+            # Filter based on ID
+            filtered_df = results_df[results_df[id_col] == participant_id] if participant_id else results_df
+        else:
+            st.warning("ID column not found in data")
+            filtered_df = results_df
+    
+    # Show the filtered results
+    if len(filtered_df) == 0:
+        st.info("No participants found matching the search criteria.")
+        return
+    elif len(filtered_df) > 10:
+        st.warning(f"Found {len(filtered_df)} participants matching the search criteria. Please refine your search.")
+        
+        # Show a sample of the results
+        st.dataframe(filtered_df.head(10), use_container_width=True)
+        return
+    
+    # Show detailed information for each matching participant
+    for idx, participant in filtered_df.iterrows():
+        # Get the participant ID
+        participant_id = participant.get('Encoded ID', f"Participant {idx}")
+        
+        # Create an expander for this participant
+        with st.expander(f"Participant: {participant_id}", expanded=True):
+            # Create columns for layout
+            col1, col2 = st.columns(2)
+            
+            # Column 1: Basic information
+            with col1:
+                st.subheader("Basic Information")
+                
+                # Show basic participant info
+                basic_fields = ['First Given Name', 'Last Family Name', 'Encoded ID', 
+                                'Current_Region', 'Status']
+                
+                for field in basic_fields:
+                    if field in participant:
+                        st.write(f"**{field.replace('_', ' ').title()}:** {participant[field]}")
+            
+            # Column 2: Match information
+            with col2:
+                st.subheader("Match Information")
+                
+                # Show circle assignment if matched
+                if 'proposed_NEW_circles_id' in participant:
+                    circle_id = participant['proposed_NEW_circles_id']
+                    
+                    if circle_id == 'UNMATCHED':
+                        st.error("**Status:** Unmatched")
+                        
+                        # Show reason if available
+                        if 'unmatched_reason' in participant:
+                            st.write(f"**Reason:** {participant['unmatched_reason']}")
+                    else:
+                        st.success(f"**Assigned Circle:** {circle_id}")
+                        
+                        # Show circle details if available
+                        if ('matched_circles' in st.session_state and 
+                            st.session_state.matched_circles is not None and
+                            'circle_id' in st.session_state.matched_circles.columns):
+                            
+                            circles_df = st.session_state.matched_circles
+                            circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                            
+                            if not circle_info.empty:
+                                circle_row = circle_info.iloc[0]
+                                st.write(f"**Meeting Time:** {circle_row.get('meeting_time', 'Not specified')}")
+                                st.write(f"**Meeting Location:** {circle_row.get('meeting_location', 'Not specified')}")
+                                st.write(f"**Circle Size:** {circle_row.get('member_count', 'Unknown')}")
+            
+            # Show preferences section
+            st.subheader("Preferences")
+            pref_cols = st.columns(2)
+            
+            with pref_cols[0]:
+                st.write("**Time Preferences**")
+                for i in range(1, 4):
+                    time_col = f"{['first', 'second', 'third'][i-1]}_choice_time"
+                    if time_col in participant and pd.notna(participant[time_col]):
+                        st.write(f"{i}. {participant[time_col]}")
+            
+            with pref_cols[1]:
+                st.write("**Location Preferences**")
+                for i in range(1, 4):
+                    loc_col = f"{['first', 'second', 'third'][i-1]}_choice_location"
+                    if loc_col in participant and pd.notna(participant[loc_col]):
+                        st.write(f"{i}. {participant[loc_col]}")
+
 
 def render_visualizations():
     """Render visualizations of the matching results"""
-    if 'results' not in st.session_state or st.session_state.results is None:
-        st.info("Run the matching algorithm first to see visualizations.")
+    if ('matched_circles' not in st.session_state or 
+        st.session_state.matched_circles is None or
+        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty) or
+        'results' not in st.session_state or 
+        st.session_state.results is None):
+        st.warning("No matching results available. Please run the matching algorithm first.")
         return
-
-    results = st.session_state.results
-
+    
     st.subheader("Matching Visualizations")
-
-    # Match rate by region
-    if 'Requested_Region' in results.columns:
-        st.write("### Match Rate by Region")
-
-        try:
-            # Create a safer version of the dataframe for visualization
-            viz_results = results.copy()
-
-            # Make sure the proposed_NEW_circles_id column is string for safe comparison
-            if 'proposed_NEW_circles_id' in viz_results.columns:
-                viz_results['proposed_NEW_circles_id'] = viz_results['proposed_NEW_circles_id'].fillna("UNMATCHED").astype(str)
-
-            # Create stats using the safe dataframe
-            region_stats = viz_results.groupby('Requested_Region').apply(
-                lambda x: pd.Series({
-                    'Total': len(x),
-                    'Matched': sum(x['proposed_NEW_circles_id'] != "UNMATCHED"),
-                    'Unmatched': sum(x['proposed_NEW_circles_id'] == "UNMATCHED"),
-                })
-            ).reset_index()
-        except Exception as e:
-            st.error(f"Error generating region statistics: {str(e)}")
-            # Create a minimal fallback
-            region_stats = pd.DataFrame(columns=['Requested_Region', 'Total', 'Matched', 'Unmatched'])
-            st.warning("Could not generate region statistics due to data type issues.")
-
-        region_stats['Match_Rate'] = (region_stats['Matched'] / region_stats['Total'] * 100).round(1)
-
-        # Create bar chart
-        fig = px.bar(
-            region_stats,
-            x='Requested_Region',
-            y=['Matched', 'Unmatched'],
-            title='Match Rates by Region',
-            labels={'value': 'Participants', 'Requested_Region': 'Region'},
-            hover_data=['Match_Rate'],
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    # Unmatched reasons
-    if 'unmatched_reason' in results.columns:
-        try:
-            # Create a safer version for visualization
-            viz_results = results.copy()
-
-            # Make sure proposed_NEW_circles_id is a string for safe comparison
-            if 'proposed_NEW_circles_id' in viz_results.columns:
-                viz_results['proposed_NEW_circles_id'] = viz_results['proposed_NEW_circles_id'].fillna("UNMATCHED").astype(str)
-
-            # Filter to only unmatched entries
-            unmatched = viz_results[viz_results['proposed_NEW_circles_id'] == "UNMATCHED"]
-
-            if not unmatched.empty:
-                st.write("### Unmatched Reasons")
-
-                # Make sure unmatched_reason is string for safe aggregation
-                unmatched['unmatched_reason'] = unmatched['unmatched_reason'].fillna("Unknown").astype(str)
-
-                reason_counts = unmatched['unmatched_reason'].value_counts().reset_index()
-                reason_counts.columns = ['Reason', 'Count']
-
-                fig = px.pie(
-                    reason_counts,
-                    values='Count',
-                    names='Reason',
-                    title='Reasons for Unmatched Participants'
-                )
-
-                # Only show chart inside the try block if we successfully created it
-                st.plotly_chart(fig, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error generating unmatched reason visualization: {str(e)}")
-            st.warning("Could not generate unmatched reasons visualization due to data type issues.")
-
-    # Circle size distribution
-    if 'matched_circles' in st.session_state and not st.session_state.matched_circles.empty:
-        try:
-            circles = st.session_state.matched_circles.copy()
-
-            if 'member_count' in circles.columns:
-                st.write("### Circle Size Distribution")
-
-                # Ensure member_count is numeric
-                circles['member_count'] = pd.to_numeric(circles['member_count'], errors='coerce').fillna(0).astype(int)
-
-                size_counts = circles['member_count'].value_counts().reset_index()
-                size_counts.columns = ['Circle Size', 'Count']
-                size_counts = size_counts.sort_values('Circle Size')
-
+    
+    # Get the data
+    circles_df = st.session_state.matched_circles.copy()
+    results_df = st.session_state.results.copy()
+    
+    # Create tabs for different visualizations
+    viz_tab1, viz_tab2, viz_tab3 = st.tabs(["Circle Composition", "Regional Distribution", "Preference Satisfaction"])
+    
+    with viz_tab1:
+        # Circle composition visualization
+        st.write("Circle Composition Analysis")
+        
+        # Circle size distribution
+        if 'member_count' in circles_df.columns:
+            # Count circles by size
+            size_counts = circles_df['member_count'].value_counts().sort_index()
+            
+            # Create a DataFrame for plotting
+            size_df = pd.DataFrame({
+                'Circle Size': size_counts.index,
+                'Number of Circles': size_counts.values
+            })
+            
+            # Create a bar chart
+            fig = px.bar(
+                size_df,
+                x='Circle Size',
+                y='Number of Circles',
+                title='Distribution of Circle Sizes',
+                text='Number of Circles',
+                color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+            )
+            
+            # Format
+            fig.update_traces(textposition='outside')
+            fig.update_layout(
+                xaxis=dict(
+                    title="Number of Members",
+                    tickmode='linear',
+                    dtick=1
+                ),
+                yaxis_title="Number of Circles"
+            )
+            
+            # Plot
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Calculate statistics
+            total_circles = len(circles_df)
+            total_members = circles_df['member_count'].sum()
+            avg_size = circles_df['member_count'].mean()
+            
+            # Show metrics
+            cols = st.columns(3)
+            cols[0].metric("Total Circles", total_circles)
+            cols[1].metric("Total Matched Participants", total_members)
+            cols[2].metric("Average Circle Size", f"{avg_size:.1f}")
+        else:
+            st.warning("Circle size data not available.")
+    
+    with viz_tab2:
+        # Regional distribution visualization
+        st.write("Regional Distribution Analysis")
+        
+        # Check for region column
+        region_col = None
+        if 'Current_Region' in results_df.columns:
+            region_col = 'Current_Region'
+        elif 'Region' in results_df.columns:
+            region_col = 'Region'
+        
+        if region_col:
+            # Count participants by region
+            region_counts = results_df[region_col].value_counts()
+            
+            # Create a DataFrame for plotting
+            region_df = pd.DataFrame({
+                'Region': region_counts.index,
+                'Count': region_counts.values
+            }).sort_values('Count', ascending=False)
+            
+            # Create a bar chart
+            fig = px.bar(
+                region_df,
+                x='Region',
+                y='Count',
+                title='Participant Distribution by Region',
+                text='Count',
+                color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+            )
+            
+            # Format
+            fig.update_traces(textposition='outside')
+            fig.update_layout(
+                xaxis_title="Region",
+                yaxis_title="Number of Participants"
+            )
+            
+            # Plot
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Show table
+            st.dataframe(region_df, use_container_width=True)
+            
+            # Create a matched vs unmatched breakdown by region
+            if 'proposed_NEW_circles_id' in results_df.columns:
+                # Create a function to determine match status
+                def get_match_status(circle_id):
+                    return "Unmatched" if circle_id == "UNMATCHED" else "Matched"
+                
+                # Add match status column
+                results_df['Match Status'] = results_df['proposed_NEW_circles_id'].apply(get_match_status)
+                
+                # Create a crosstab
+                region_match = pd.crosstab(
+                    results_df[region_col], 
+                    results_df['Match Status'],
+                    normalize='index'
+                ) * 100
+                
+                # Sort by match rate
+                if 'Matched' in region_match.columns:
+                    region_match = region_match.sort_values('Matched', ascending=False)
+                
+                # Create a bar chart
                 fig = px.bar(
-                    size_counts,
-                    x='Circle Size',
-                    y='Count',
-                    title='Distribution of Circle Sizes'
+                    region_match.reset_index(),
+                    x=region_col,
+                    y=['Matched', 'Unmatched'] if 'Matched' in region_match.columns and 'Unmatched' in region_match.columns else region_match.columns,
+                    title='Match Success Rate by Region (%)',
+                    barmode='stack',
+                    color_discrete_sequence=['#175E54', '#820000']  # Stanford secondary colors
                 )
-
+                
+                # Format
+                fig.update_layout(
+                    xaxis_title="Region",
+                    yaxis_title="Percentage",
+                    yaxis=dict(ticksuffix='%')
+                )
+                
+                # Plot
                 st.plotly_chart(fig, use_container_width=True)
-        except Exception as e:
-            st.error(f"Error generating circle size distribution: {str(e)}")
-            st.warning("Could not generate circle size distribution due to data type issues.")
+        else:
+            st.warning("Region data not available.")
+    
+    with viz_tab3:
+        # Preference satisfaction visualization
+        st.write("Preference Satisfaction Analysis")
+        
+        # Check if we have the necessary preference data
+        if ('proposed_NEW_circles_id' in results_df.columns and 
+            'matched_circles' in st.session_state):
+            
+            # Get only matched participants
+            matched_df = results_df[results_df['proposed_NEW_circles_id'] != 'UNMATCHED'].copy()
+            
+            # Time preference satisfaction
+            st.subheader("Time Preference Satisfaction")
+            
+            # Find columns with time choices
+            time_cols = [col for col in matched_df.columns if 'choice_time' in col]
+            
+            if time_cols and 'proposed_NEW_circles_id' in matched_df.columns:
+                # Function to check if assigned time matches preferences
+                def check_time_match(row):
+                    circle_id = row['proposed_NEW_circles_id']
+                    if circle_id == 'UNMATCHED' or pd.isna(circle_id):
+                        return None
+                    
+                    # Get the assigned circle's time
+                    circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                    if circle_info.empty or 'meeting_time' not in circle_info.columns:
+                        return None
+                    
+                    assigned_time = circle_info.iloc[0]['meeting_time']
+                    if pd.isna(assigned_time):
+                        return None
+                    
+                    # Check each preference
+                    for i, col in enumerate(time_cols):
+                        if col in row and pd.notna(row[col]):
+                            preferred_time = row[col]
+                            # Very simple check - just look for exact match or substring
+                            if preferred_time == assigned_time or preferred_time in assigned_time or assigned_time in preferred_time:
+                                return i+1  # Return the preference number (1, 2, 3)
+                    
+                    return 0  # No match
+                
+                # Apply the function
+                matched_df['time_preference_match'] = matched_df.apply(check_time_match, axis=1)
+                
+                # Count by match result
+                time_match_counts = matched_df['time_preference_match'].value_counts().sort_index()
+                
+                # Create labels
+                match_labels = {
+                    0: "No Match",
+                    1: "1st Choice",
+                    2: "2nd Choice",
+                    3: "3rd Choice",
+                    None: "Not Available"
+                }
+                
+                # Create a DataFrame for plotting
+                match_df = pd.DataFrame({
+                    'Preference Match': [match_labels.get(idx, str(idx)) for idx in time_match_counts.index],
+                    'Count': time_match_counts.values
+                })
+                
+                # Create a pie chart
+                fig = px.pie(
+                    match_df,
+                    names='Preference Match',
+                    values='Count',
+                    title='Time Preference Satisfaction',
+                    color_discrete_sequence=px.colors.qualitative.D3
+                )
+                
+                # Format
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                
+                # Plot
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Calculate the percentage of participants who got one of their preferences
+                matched_count = sum(time_match_counts.get(i, 0) for i in [1, 2, 3])
+                total_count = sum(time_match_counts.values)
+                match_pct = (matched_count / total_count) * 100 if total_count > 0 else 0
+                
+                st.metric("Participants receiving a preferred time", 
+                         f"{matched_count} out of {total_count} ({match_pct:.1f}%)")
+            else:
+                st.warning("Time preference data not available.")
+            
+            # Location preference satisfaction
+            st.subheader("Location Preference Satisfaction")
+            
+            # Find columns with location choices
+            loc_cols = [col for col in matched_df.columns if 'choice_location' in col]
+            
+            if loc_cols and 'proposed_NEW_circles_id' in matched_df.columns:
+                # Function to check if assigned location matches preferences
+                def check_location_match(row):
+                    circle_id = row['proposed_NEW_circles_id']
+                    if circle_id == 'UNMATCHED' or pd.isna(circle_id):
+                        return None
+                    
+                    # Get the assigned circle's location
+                    circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                    if circle_info.empty or 'meeting_location' not in circle_info.columns:
+                        return None
+                    
+                    assigned_loc = circle_info.iloc[0]['meeting_location']
+                    if pd.isna(assigned_loc):
+                        return None
+                    
+                    # Check each preference
+                    for i, col in enumerate(loc_cols):
+                        if col in row and pd.notna(row[col]):
+                            preferred_loc = row[col]
+                            # Very simple check - just look for exact match or substring
+                            if preferred_loc == assigned_loc or preferred_loc in assigned_loc or assigned_loc in preferred_loc:
+                                return i+1  # Return the preference number (1, 2, 3)
+                    
+                    return 0  # No match
+                
+                # Apply the function
+                matched_df['location_preference_match'] = matched_df.apply(check_location_match, axis=1)
+                
+                # Count by match result
+                loc_match_counts = matched_df['location_preference_match'].value_counts().sort_index()
+                
+                # Create a DataFrame for plotting
+                match_df = pd.DataFrame({
+                    'Preference Match': [match_labels.get(idx, str(idx)) for idx in loc_match_counts.index],
+                    'Count': loc_match_counts.values
+                })
+                
+                # Create a pie chart
+                fig = px.pie(
+                    match_df,
+                    names='Preference Match',
+                    values='Count',
+                    title='Location Preference Satisfaction',
+                    color_discrete_sequence=px.colors.qualitative.D3
+                )
+                
+                # Format
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                
+                # Plot
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Calculate the percentage of participants who got one of their preferences
+                matched_count = sum(loc_match_counts.get(i, 0) for i in [1, 2, 3])
+                total_count = sum(loc_match_counts.values)
+                match_pct = (matched_count / total_count) * 100 if total_count > 0 else 0
+                
+                st.metric("Participants receiving a preferred location", 
+                         f"{matched_count} out of {total_count} ({match_pct:.1f}%)")
+            else:
+                st.warning("Location preference data not available.")
+        else:
+            st.warning("Preference satisfaction analysis requires matched circle data.")
