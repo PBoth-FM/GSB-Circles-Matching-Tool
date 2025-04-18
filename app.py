@@ -246,7 +246,7 @@ def process_uploaded_file(uploaded_file):
                     results_df = st.session_state.results
                     
                     if 'proposed_NEW_circles_id' in results_df.columns:
-                        unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED']
+                        unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'].reset_index(drop=True)
                         
                         if len(unmatched_df) == 0:
                             st.success("All participants were successfully matched!")
