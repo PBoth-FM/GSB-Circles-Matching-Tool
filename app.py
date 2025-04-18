@@ -56,18 +56,18 @@ def main():
     st.title("CirclesTool2")
     st.write("GSB Alumni Circle Matching Tool")
     
-    # Create tabs for navigation, adding the Demographics tab
-    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Details", "Demographics", "Debug"])
+    # Create tabs for navigation, moved Demographics after Match per user request
+    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Demographics", "Details", "Debug"])
     
     with tab1:
         # Use our custom match tab function instead of the imported one
         match_tab_callback()
         
     with tab2:
-        render_details_tab()
+        render_demographics_tab()
     
     with tab3:
-        render_demographics_tab()
+        render_details_tab()
             
     with tab4:
         render_debug_tab()

@@ -1646,8 +1646,8 @@ def render_results_overview():
             yaxis_title="Number of Circles"
         )
         
-        # Plot
-        st.plotly_chart(fig, use_container_width=True)
+        # Plot with unique key
+        st.plotly_chart(fig, use_container_width=True, key="results_overview_circle_size_dist")
     
     # Show unmatched reasons if available
     render_unmatched_table()
@@ -1749,8 +1749,8 @@ def render_unmatched_table():
             yaxis_title="Number of Participants"
         )
         
-        # Plot
-        st.plotly_chart(fig, use_container_width=True)
+        # Plot with unique key
+        st.plotly_chart(fig, use_container_width=True, key="unmatched_reasons_chart")
     
     # Show the table of unmatched participants
     display_cols = ['Last Family Name', 'First Given Name', 'Encoded ID', 
