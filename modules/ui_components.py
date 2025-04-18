@@ -328,7 +328,7 @@ def render_vintage_diversity_histogram():
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="plot_331")
     
     # Show a table with the data
     st.caption("Data table:")
@@ -485,7 +485,7 @@ def render_employment_diversity_histogram():
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="plot_488")
     
     # Show a table with the data
     st.caption("Data table:")
@@ -640,7 +640,7 @@ def render_industry_diversity_histogram():
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="plot_643")
     
     # Show a table with the data
     st.caption("Data table:")
@@ -800,7 +800,7 @@ def render_employment_analysis(data):
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="plot_803")
     
     # Create a breakdown by Status if Status column exists
     if 'Status' in df.columns:
@@ -852,7 +852,7 @@ def render_employment_analysis(data):
         )
         
         # Show the plot
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="plot_855")
 
 
 def render_industry_analysis(data):
@@ -982,7 +982,7 @@ def render_industry_analysis(data):
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="plot_985")
     
     # Create a breakdown by Status if Status column exists
     if 'Status' in df.columns:
@@ -1034,7 +1034,7 @@ def render_industry_analysis(data):
         )
         
         # Show the plot
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="plot_1037")
 
 def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
@@ -1156,7 +1156,7 @@ def render_class_vintage_analysis(data):
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, key="plot_1159")
     
     # Create a breakdown by Status
     if 'Status' in df.columns:
@@ -1208,7 +1208,7 @@ def render_class_vintage_analysis(data):
         )
         
         # Show the plot
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key="plot_1211")
     
     # We have removed the "Class Vintage by Match Status", "Class Vintage Distribution by Match Status", 
     # and "Match Rate by Class Vintage" sections per user request
@@ -1362,7 +1362,7 @@ def render_debug_tab():
                     yaxis_title="Count of Participants"
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="plot_1365")
                 
                 # Create a table
                 st.dataframe(reason_df)
@@ -1534,7 +1534,7 @@ def render_debug_tab():
                     yaxis_title="Number of Circles"
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="plot_1537")
     else:
         st.error("❌ No matched circles data available in session state")
     
@@ -2110,7 +2110,7 @@ def render_visualizations():
             )
             
             # Plot
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="plot_2113")
             
             # Calculate statistics
             total_circles = len(circles_df)
@@ -2164,7 +2164,7 @@ def render_visualizations():
             )
             
             # Plot
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="plot_2167")
             
             # Show table
             st.dataframe(region_df, use_container_width=True)
@@ -2207,7 +2207,7 @@ def render_visualizations():
                 )
                 
                 # Plot
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="plot_2210")
         else:
             st.warning("Region data not available.")
     
@@ -2288,7 +2288,7 @@ def render_visualizations():
                 fig.update_traces(textposition='inside', textinfo='percent+label')
                 
                 # Plot
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="plot_2291")
                 
                 # Calculate the percentage of participants who got one of their preferences
                 matched_count = sum(time_match_counts.get(i, 0) for i in [1, 2, 3])
@@ -2357,7 +2357,7 @@ def render_visualizations():
                 fig.update_traces(textposition='inside', textinfo='percent+label')
                 
                 # Plot
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="plot_2360")
                 
                 # Calculate the percentage of participants who got one of their preferences
                 matched_count = sum(loc_match_counts.get(i, 0) for i in [1, 2, 3])
