@@ -1753,7 +1753,7 @@ def render_unmatched_table():
         )
         
         # Plot with unique key
-        st.plotly_chart(fig, use_container_width=True, key="unmatched_reasons_chart")
+        st.plotly_chart(fig, use_container_width=True, key="details_unmatched_reasons_chart")
     
     # Show the table of unmatched participants
     display_cols = ['Last Family Name', 'First Given Name', 'Encoded ID', 

@@ -188,7 +188,8 @@ def process_uploaded_file(uploaded_file):
                 render_circle_table()
                 
                 st.subheader("Unmatched Participants")
-                render_unmatched_table()
+                # We don't need to render the unmatched table in the match tab
+                # render_unmatched_table() - removed to avoid duplicate charts
                 
                 # Download button for results - placed at bottom of page
                 st.download_button(
