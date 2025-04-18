@@ -268,7 +268,8 @@ def process_uploaded_file(uploaded_file):
                                 encoded_id_col = 'Encoded ID'
                                 display_cols.append(encoded_id_col)
                             
-                            # Derived Region (column 32 in CSV)
+                            # Try to find Derived_Region (column 32 in CSV file)
+                            # First approach: Try to find by column name
                             region_col = None
                             region_candidates = ['Derived_Region', 'Derived Region', 'Region Requested', 'Region']
                             for col in region_candidates:
@@ -276,6 +277,10 @@ def process_uploaded_file(uploaded_file):
                                     region_col = col
                                     display_cols.append(region_col)
                                     break
+                                    
+                            # Alternative approach: Enable debug to see all column names
+                            # Uncomment to see columns when debugging
+                            # st.write("All columns in dataframe:", all_columns)
                             
                             # Reason Unmatched (column 5 in CSV)
                             reason_col = None
