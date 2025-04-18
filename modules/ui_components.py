@@ -2389,62 +2389,71 @@ def render_children_analysis(data):
     # Create a copy to work with
     df = data.copy()
     
-    # Debug: show column names
-    st.caption("Debugging information:")
-    with st.expander("Show data columns and sample values"):
-        st.write("Available columns:")
-        for col in df.columns:
-            st.text(f"- {col}")
+    # Try to find Children column
+    children_col = None
+    for col in df.columns:
+        if "children" in col.lower():
+            children_col = col
+            break
+    
+    # Define function to categorize children status
+    def categorize_children(children_value):
+        if pd.isna(children_value):
+            return None
+            
+        children_value = str(children_value).strip()
         
-        # Try to find Children column
-        children_col = None
-        for col in df.columns:
-            if "children" in col.lower():
-                children_col = col
-                break
+        # No children category
+        if "No children" in children_value:
+            return "No children"
         
-        if children_col:
-            st.write(f"Found Children column: {children_col}")
-            # Show some sample values
-            sample_values = df[children_col].dropna().head(5).tolist()
-            st.write(f"Sample values: {sample_values}")
-        else:
-            st.write("No Children column found in the data")
+        # First time <=5s
+        if any(term in children_value for term in ["Children 5 and under", "Children under 5", "Pregnant"]):
+            return "First time <=5s"
+        
+        # First time 6-18s
+        if any(term in children_value for term in ["Children 6 through 17", "Children 6-18"]) and not any(term in children_value for term in ["Adult Children", "Adult children"]):
+            return "First time 6-18s"
+        
+        # Adult children / all else
+        return "Adult children / all else"
     
     # Check if we need to create Children Category
     if 'Children_Category' not in df.columns:
         if children_col:
-            st.info(f"Creating Children Category from {children_col}...")
-            
-            # Define function to categorize children status
-            def categorize_children(children_value):
-                if pd.isna(children_value):
-                    return None
-                    
-                children_value = str(children_value).strip()
-                
-                # No children category
-                if "No children" in children_value:
-                    return "No children"
-                
-                # First time <=5s
-                if any(term in children_value for term in ["Children 5 and under", "Children under 5", "Pregnant"]):
-                    return "First time <=5s"
-                
-                # First time 6-18s
-                if any(term in children_value for term in ["Children 6 through 17", "Children 6-18"]) and not any(term in children_value for term in ["Adult Children", "Adult children"]):
-                    return "First time 6-18s"
-                
-                # Adult children / all else
-                return "Adult children / all else"
-            
             # Apply the categorization function
             df['Children_Category'] = df[children_col].apply(categorize_children)
             
-            # Show the distribution of categories
-            category_counts = df['Children_Category'].value_counts()
-            st.write("Created Children categories with distribution:")
-            st.write(category_counts)
+            # Update the underlying processed data if it exists
+            if 'processed_data' in st.session_state and st.session_state.processed_data is not None:
+                # Check if the column exists in the original processed data
+                if children_col in st.session_state.processed_data.columns:
+                    # Create a temporary dataframe with just ID and Children_Category
+                    if 'Encoded ID' in df.columns and 'Children_Category' in df.columns:
+                        # Get the mapping between ID and Children_Category
+                        mapping_df = df[['Encoded ID', 'Children_Category']].dropna(subset=['Children_Category'])
+                        
+                        # Create a dictionary for quick lookup
+                        children_category_map = dict(zip(mapping_df['Encoded ID'], mapping_df['Children_Category']))
+                        
+                        # Update processed_data with the Children_Category
+                        if 'Encoded ID' in st.session_state.processed_data.columns:
+                            st.session_state.processed_data['Children_Category'] = st.session_state.processed_data['Encoded ID'].map(children_category_map)
+                
+                # Also update the results dataframe if it exists
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    # Check if the column exists in the results dataframe
+                    if children_col in st.session_state.results.columns:
+                        # Update the results dataframe with the Children_Category
+                        if 'Encoded ID' in st.session_state.results.columns:
+                            # Create a temporary dataframe with just ID and Children_Category
+                            mapping_df = df[['Encoded ID', 'Children_Category']].dropna(subset=['Children_Category'])
+                            
+                            # Create a dictionary for quick lookup
+                            children_category_map = dict(zip(mapping_df['Encoded ID'], mapping_df['Children_Category']))
+                            
+                            # Update results with the Children_Category
+                            st.session_state.results['Children_Category'] = st.session_state.results['Encoded ID'].map(children_category_map)
         else:
             st.warning("Children data is not available. Please ensure Children data was included in the uploaded file.")
             return
@@ -2584,72 +2593,43 @@ def render_children_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
-    # Debug: check for Children_Category in results dataframe
-    st.caption("Debugging information:")
-    with st.expander("Children_Category debugging"):
-        st.write("Available columns in results dataframe:")
-        st.write(results_df.columns.tolist())
+    # Check if Children_Category doesn't exist, add it from the Children column
+    if 'Children_Category' not in results_df.columns:
+        # Find the Children column in the results dataframe
+        children_col = None
+        for col in results_df.columns:
+            if "children" in col.lower():
+                children_col = col
+                break
         
-        # Check if Children_Category exists
-        if 'Children_Category' not in results_df.columns:
-            # Create Children_Category if it doesn't exist
-            st.warning("'Children_Category' not found in results dataframe. We'll need to add it.")
+        if children_col:
+            # Define function to categorize children status
+            def categorize_children(children_value):
+                if pd.isna(children_value):
+                    return None
+                    
+                children_value = str(children_value).strip()
+                
+                # No children category
+                if "No children" in children_value:
+                    return "No children"
+                
+                # First time <=5s
+                if any(term in children_value for term in ["Children 5 and under", "Children under 5", "Pregnant"]):
+                    return "First time <=5s"
+                
+                # First time 6-18s
+                if any(term in children_value for term in ["Children 6 through 17", "Children 6-18"]) and not any(term in children_value for term in ["Adult Children", "Adult children"]):
+                    return "First time 6-18s"
+                
+                # Adult children / all else
+                return "Adult children / all else"
             
-            # Find the Children column in the results dataframe
-            children_col = None
-            for col in results_df.columns:
-                if "children" in col.lower():
-                    children_col = col
-                    break
+            # Apply the categorization function to create the column in results_df
+            results_df['Children_Category'] = results_df[children_col].apply(categorize_children)
             
-            if children_col:
-                st.write(f"Found Children column in results: {children_col}")
-                # Show some sample values
-                sample_values = results_df[children_col].dropna().head(5).tolist()
-                st.write(f"Sample values: {sample_values}")
-                
-                # Define function to categorize children status (same as in render_children_analysis)
-                def categorize_children(children_value):
-                    if pd.isna(children_value):
-                        return None
-                        
-                    children_value = str(children_value).strip()
-                    
-                    # No children category
-                    if "No children" in children_value:
-                        return "No children"
-                    
-                    # First time <=5s
-                    if any(term in children_value for term in ["Children 5 and under", "Children under 5", "Pregnant"]):
-                        return "First time <=5s"
-                    
-                    # First time 6-18s
-                    if any(term in children_value for term in ["Children 6 through 17", "Children 6-18"]) and not any(term in children_value for term in ["Adult Children", "Adult children"]):
-                        return "First time 6-18s"
-                    
-                    # Adult children / all else
-                    return "Adult children / all else"
-                
-                # Apply the categorization function to create the column in results_df
-                results_df['Children_Category'] = results_df[children_col].apply(categorize_children)
-                
-                # Update session state with the modified results dataframe
-                st.session_state.results = results_df
-                
-                st.success("Added 'Children_Category' to results dataframe")
-                
-                # Show the distribution of categories
-                category_counts = results_df['Children_Category'].value_counts()
-                st.write("Created Children categories in results with distribution:")
-                st.write(category_counts)
-            else:
-                st.error("No Children column found in results dataframe. Cannot create Children_Category.")
-        else:
-            st.success("'Children_Category' exists in results dataframe")
-            # Show some stats about the column
-            category_counts = results_df['Children_Category'].value_counts()
-            st.write("Children_Category distribution in results:")
-            st.write(category_counts)
+            # Update session state with the modified results dataframe
+            st.session_state.results = results_df
     
     # Filter out circles with no members
     if 'member_count' not in circles_df.columns:
@@ -2665,10 +2645,6 @@ def render_children_diversity_histogram():
     # Dictionary to track unique children categories per circle
     circle_children_counts = {}
     circle_children_diversity_scores = {}
-    
-    # Debug counter for members with/without Children_Category
-    members_with_category = 0
-    members_without_category = 0
     
     # Get children data for each member of each circle
     for _, circle_row in circles_df.iterrows():
@@ -2704,11 +2680,6 @@ def render_children_diversity_histogram():
                     children_category = member_data['Children_Category'].iloc[0]
                     if pd.notna(children_category):
                         unique_children_categories.add(children_category)
-                        members_with_category += 1
-                    else:
-                        members_without_category += 1
-                else:
-                    members_without_category += 1
         
         # Store the count of unique children categories for this circle
         if unique_children_categories:  # Only include if there's at least one valid category
@@ -2717,11 +2688,6 @@ def render_children_diversity_histogram():
             # Calculate diversity score: 1 point if everyone is in the same category,
             # 2 points if two categories, 3 points if three categories, etc.
             circle_children_diversity_scores[circle_id] = count
-    
-    # Debug: Show member counts
-    with st.expander("Member debugging"):
-        st.write(f"Members with Children_Category: {members_with_category}")
-        st.write(f"Members without Children_Category: {members_without_category}")
     
     # Create histogram data from the children counts
     if not circle_children_counts:
