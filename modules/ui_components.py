@@ -1604,8 +1604,81 @@ def render_results_overview():
             unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
             st.metric("Participants Unmatched", unmatched_count)
     
-    # Column 3: Success rates
+    # Column 3: Success rates and Diversity
     with col3:
+        # Calculate total diversity score
+        total_diversity_score = 0
+        if matched_df is not None and results_df is not None:
+            # Process each circle to calculate diversity scores
+            for _, circle_row in matched_df.iterrows():
+                # Skip circles with no members
+                if 'member_count' not in circle_row or circle_row['member_count'] == 0:
+                    continue
+                
+                # Get the list of members for this circle
+                members = []
+                if 'members' in circle_row and circle_row['members']:
+                    # For list representation
+                    if isinstance(circle_row['members'], list):
+                        members = circle_row['members']
+                    # For string representation - convert to list
+                    elif isinstance(circle_row['members'], str):
+                        try:
+                            if circle_row['members'].startswith('['):
+                                members = eval(circle_row['members'])
+                            else:
+                                members = [circle_row['members']]
+                        except Exception:
+                            members = []
+                
+                # Initialize sets to track unique categories for each diversity type
+                unique_vintages = set()
+                unique_employment_categories = set()
+                unique_ri_categories = set()
+                unique_children_categories = set()
+                
+                # For each member, look up their demographic data
+                for member_id in members:
+                    member_data = results_df[results_df['Encoded ID'] == member_id]
+                    
+                    if not member_data.empty:
+                        # Vintage diversity
+                        if 'Class_Vintage' in member_data.columns:
+                            vintage = member_data['Class_Vintage'].iloc[0]
+                            if pd.notna(vintage):
+                                unique_vintages.add(vintage)
+                        
+                        # Employment diversity
+                        if 'Employment_Category' in member_data.columns:
+                            employment = member_data['Employment_Category'].iloc[0]
+                            if pd.notna(employment):
+                                unique_employment_categories.add(employment)
+                        
+                        # Racial Identity diversity
+                        if 'Racial_Identity_Category' in member_data.columns:
+                            ri = member_data['Racial_Identity_Category'].iloc[0]
+                            if pd.notna(ri):
+                                unique_ri_categories.add(ri)
+                        
+                        # Children diversity
+                        if 'Children_Category' in member_data.columns:
+                            children = member_data['Children_Category'].iloc[0]
+                            if pd.notna(children):
+                                unique_children_categories.add(children)
+                
+                # Calculate diversity scores for this circle
+                vintage_score = len(unique_vintages) if unique_vintages else 0
+                employment_score = len(unique_employment_categories) if unique_employment_categories else 0
+                ri_score = len(unique_ri_categories) if unique_ri_categories else 0
+                children_score = len(unique_children_categories) if unique_children_categories else 0
+                
+                # Add to total diversity score
+                circle_total_score = vintage_score + employment_score + ri_score + children_score
+                total_diversity_score += circle_total_score
+        
+        # Display Diversity Score metric (before Match Success Rate)
+        st.metric("Diversity Score", total_diversity_score)
+        
         # Match success rate
         if results_df is not None and 'proposed_NEW_circles_id' in results_df.columns:
             total_participants = len(results_df)
