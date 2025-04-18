@@ -285,16 +285,14 @@ def determine_unmatched_reason(participant, context=None):
                     participant.get('second_choice_time') or 
                     participant.get('third_choice_time'))
     
-    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
+    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A', '55467117205'] and debug_mode:
         print(f"  - Has location preferences: {has_location}")
         print(f"  - Has time preferences: {has_time}")
     
-    if not has_location and not has_time:
+    # Per client request: Use "No location and/or time preferences" whenever either is missing
+    # (not just when both are missing)
+    if not has_location or not has_time:
         return "No location and/or time preferences"
-    elif not has_location:
-        return "No location preferences"
-    elif not has_time:
-        return "No time preferences"
     
     # 2. Special context flags from optimizer - only if preferences exist
     if context.get('no_preferences', False):
@@ -439,9 +437,9 @@ def determine_unmatched_reason(participant, context=None):
         if not hosts_available:
             return "Insufficient hosts for compatible options"
     
-    # 11. Algorithm Optimization Check
+    # 11. Default Reason - per client request, use a simpler message
     # This is our default if all other checks pass but participant is still unmatched
-    return "Algorithm couldn't optimize placement"
+    return "Tool unable to find a match"
 
 def normalize_string(s):
     """
