@@ -403,7 +403,7 @@ def render_employment_diversity_histogram():
 
 def render_employment_analysis(data):
     """Render the Employment analysis visualizations"""
-    st.subheader("Employment Distribution")
+    st.subheader("Employment Analysis")
     
     # Create a copy to work with
     df = data.copy()
@@ -454,13 +454,16 @@ def render_employment_analysis(data):
             # Apply the categorization function
             df['Employment_Category'] = df[employment_status_col].apply(categorize_employment)
             
-            # Show sample of categorized data
-            st.write("Sample of Employment Categories:")
-            sample_df = pd.DataFrame({
-                'Employment Status': df[employment_status_col].dropna().head(10),
-                'Employment Category': df['Employment_Category'].head(10)
-            })
-            st.dataframe(sample_df)
+            # Update session state with the new Employment_Category
+            if 'results' in st.session_state and st.session_state.results is not None:
+                # Copy the newly created Employment_Category to the results DataFrame
+                # First, create a dictionary mapping Encoded ID to Employment_Category
+                emp_cat_mapping = dict(zip(df['Encoded ID'], df['Employment_Category']))
+                
+                # Then apply this mapping to the results DataFrame
+                if 'Encoded ID' in st.session_state.results.columns:
+                    st.session_state.results['Employment_Category'] = st.session_state.results['Encoded ID'].map(emp_cat_mapping)
+                    st.info("Updated results data with Employment Categories")
         else:
             st.warning("Employment Status data is not available. Please ensure Employment Status data was included in the uploaded file.")
             return
@@ -477,6 +480,18 @@ def render_employment_analysis(data):
         "Employed full-time for wages", "Self-employed", "Other"
     ]
     
+    # FIRST: Display diversity within circles IF we have matched circles
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            render_employment_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Employment diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Employment diversity within circles.")
+    
+    # SECOND: Display Distribution of Employment
+    st.subheader("Distribution of Employment")
+    
     # Count by Employment Category
     employment_counts = df['Employment_Category'].value_counts().reindex(employment_order).fillna(0).astype(int)
     
@@ -485,8 +500,6 @@ def render_employment_analysis(data):
         'Employment Category': employment_counts.index,
         'Count': employment_counts.values
     })
-    
-    st.subheader("Distribution of Employment")
     
     # Create histogram using plotly with Stanford cardinal red color
     fig = px.bar(
@@ -561,14 +574,6 @@ def render_employment_analysis(data):
         # Show the plot
         st.plotly_chart(fig, use_container_width=True)
     
-    # Only add the employment diversity histogram if matching has been run (circles exist)
-    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
-            render_employment_diversity_histogram()
-        else:
-            st.info("Run the matching algorithm to see the Employment diversity within circles.")
-    else:
-        st.info("Run the matching algorithm to see the Employment diversity within circles.")
 
 def render_class_vintage_analysis(data):
     """Render the Class Vintage analysis visualizations"""
