@@ -184,8 +184,31 @@ def process_uploaded_file(uploaded_file):
                 # We don't need to render the overview in the match tab
                 # render_results_overview() - removed to avoid duplicate charts
                 
+                # Display stats about the matching
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    results_df = st.session_state.results
+                    total_participants = len(results_df)
+                    matched_count = len(results_df[results_df['proposed_NEW_circles_id'] != 'UNMATCHED']) if 'proposed_NEW_circles_id' in results_df.columns else 0
+                    unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED']) if 'proposed_NEW_circles_id' in results_df.columns else 0
+                    
+                    # Create columns for the metrics
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+                            st.metric("Circles Created", len(st.session_state.matched_circles))
+                    
+                    with col2:
+                        st.metric("Participants Matched", matched_count)
+                        
+                    with col3:
+                        if total_participants > 0:
+                            match_rate = (matched_count / total_participants) * 100
+                            st.metric("Match Success Rate", f"{match_rate:.1f}%")
+                
                 st.subheader("Circle Composition")
-                # Use a simplified version without the export button
+                
+                # Display circle table with specified columns
                 if ('matched_circles' in st.session_state and 
                     st.session_state.matched_circles is not None and 
                     not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
@@ -193,12 +216,21 @@ def process_uploaded_file(uploaded_file):
                     # Get the data
                     circles_df = st.session_state.matched_circles.copy()
                     
-                    # Extract key columns
-                    display_cols = ['circle_id', 'meeting_time', 'member_count']
-                    display_cols = [col for col in display_cols if col in circles_df.columns]
+                    # Extract key columns as specified
+                    display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 'new_members', 'max_additions']
                     
-                    if display_cols:
-                        display_df = circles_df[display_cols]
+                    # Filter to only include columns that exist in the dataframe
+                    existing_cols = [col for col in display_cols if col in circles_df.columns]
+                    
+                    if existing_cols:
+                        display_df = circles_df[existing_cols].copy()
+                        
+                        # Rename columns for display
+                        display_df.columns = [col.replace('_', ' ').title() for col in existing_cols]
+                        
+                        # Sort by circle ID if available
+                        if 'Circle Id' in display_df.columns:
+                            display_df = display_df.sort_values('Circle Id')
                         
                         # Show the table
                         st.dataframe(display_df, use_container_width=True)
@@ -207,9 +239,42 @@ def process_uploaded_file(uploaded_file):
                 else:
                     st.warning("No matching results available. Please run the matching algorithm first.")
                 
+                # Display unmatched participants
                 st.subheader("Unmatched Participants")
-                # We don't need to render the unmatched table in the match tab
-                # render_unmatched_table() - removed to avoid duplicate charts
+                
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    results_df = st.session_state.results
+                    
+                    if 'proposed_NEW_circles_id' in results_df.columns:
+                        unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED']
+                        
+                        if len(unmatched_df) == 0:
+                            st.success("All participants were successfully matched!")
+                        else:
+                            st.write(f"Total unmatched: {len(unmatched_df)} participants")
+                            
+                            # Show reasons for being unmatched if available
+                            if 'unmatched_reason' in unmatched_df.columns:
+                                reasons = unmatched_df['unmatched_reason'].value_counts()
+                                
+                                # Create reason breakdown
+                                reason_df = pd.DataFrame({
+                                    'Reason': reasons.index,
+                                    'Count': reasons.values
+                                })
+                                
+                                # Display reason breakdown
+                                st.write("Breakdown by reason:")
+                                st.dataframe(reason_df, use_container_width=True)
+                                
+                                # Show the unmatched participants table with key info
+                                display_cols = ['Last Family Name', 'First Given Name', 'Current_Region', 'Availability_Window', 'unmatched_reason']
+                                display_cols = [col for col in display_cols if col in unmatched_df.columns]
+                                
+                                if display_cols:
+                                    st.dataframe(unmatched_df[display_cols], use_container_width=True)
+                    else:
+                        st.warning("Results data doesn't contain matching information.")
                 
                 # Download button for results - placed at bottom of page
                 st.download_button(
