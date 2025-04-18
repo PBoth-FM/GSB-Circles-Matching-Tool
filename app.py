@@ -253,26 +253,66 @@ def process_uploaded_file(uploaded_file):
                         else:
                             st.write(f"Total unmatched: {len(unmatched_df)} participants")
                             
-                            # Show reasons for being unmatched if available
-                            if 'unmatched_reason' in unmatched_df.columns:
-                                reasons = unmatched_df['unmatched_reason'].value_counts()
+                            # Show the unmatched participants table with the requested columns
+                            id_col = 'Encoded ID' if 'Encoded ID' in unmatched_df.columns else None
+                            region_col = 'Current_Region' if 'Current_Region' in unmatched_df.columns else ('Region' if 'Region' in unmatched_df.columns else None)
+                            reason_col = 'unmatched_reason' if 'unmatched_reason' in unmatched_df.columns else None
+                            
+                            # Look for location and time preference columns
+                            location_cols = []
+                            time_cols = []
+                            
+                            # Define possible column patterns
+                            location_patterns = ['meeting_location_choice', 'location_choice', 'location_preference']
+                            time_patterns = ['meeting_time_choice', 'time_choice', 'time_preference']
+                            
+                            # Find columns that match these patterns
+                            for col in unmatched_df.columns:
+                                # Check location columns
+                                for pattern in location_patterns:
+                                    if pattern in col.lower() and col not in location_cols:
+                                        location_cols.append(col)
                                 
-                                # Create reason breakdown
-                                reason_df = pd.DataFrame({
-                                    'Reason': reasons.index,
-                                    'Count': reasons.values
-                                })
-                                
-                                # Display reason breakdown
-                                st.write("Breakdown by reason:")
-                                st.dataframe(reason_df, use_container_width=True)
-                                
-                                # Show the unmatched participants table with key info
-                                display_cols = ['Last Family Name', 'First Given Name', 'Current_Region', 'Availability_Window', 'unmatched_reason']
-                                display_cols = [col for col in display_cols if col in unmatched_df.columns]
-                                
-                                if display_cols:
-                                    st.dataframe(unmatched_df[display_cols], use_container_width=True)
+                                # Check time columns
+                                for pattern in time_patterns:
+                                    if pattern in col.lower() and col not in time_cols:
+                                        time_cols.append(col)
+                            
+                            # Sort the location and time columns
+                            location_cols.sort()
+                            time_cols.sort()
+                            
+                            # Limit to first 3 of each if there are more
+                            location_cols = location_cols[:3]
+                            time_cols = time_cols[:3]
+                            
+                            # Build the display columns list
+                            display_cols = []
+                            
+                            # Add ID column if available
+                            if id_col:
+                                display_cols.append(id_col)
+                            
+                            # Add region column if available
+                            if region_col:
+                                display_cols.append(region_col)
+                            
+                            # Add reason column if available
+                            if reason_col:
+                                display_cols.append(reason_col)
+                            
+                            # Add location and time columns in pairs
+                            for i in range(min(len(location_cols), len(time_cols), 3)):
+                                if i < len(location_cols):
+                                    display_cols.append(location_cols[i])
+                                if i < len(time_cols):
+                                    display_cols.append(time_cols[i])
+                            
+                            # Filter to only include columns that exist in the dataframe
+                            display_cols = [col for col in display_cols if col in unmatched_df.columns]
+                            
+                            if display_cols:
+                                st.dataframe(unmatched_df[display_cols], use_container_width=True)
                     else:
                         st.warning("Results data doesn't contain matching information.")
                 
