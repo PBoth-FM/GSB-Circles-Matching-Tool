@@ -829,7 +829,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'reason': "Has capacity" if is_viable else "No capacity (max_additions=0)",
             'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
             'is_small_circle': circle_data.get('member_count', 0) < 5,
-            'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means
+            'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means "None" preference
+            'preference_overridden': False  # By this point, overrides have already been applied above
         }
         
         # Print detailed log for first few circles
@@ -842,13 +843,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         
     # After processing all circles, print a summary
     print(f"🔍 Finished processing {circles_processed} circles for eligibility")
-    print(f"🔍 After processing, circle_eligibility_logs now has {len(circle_eligibility_logs)} entries") None preference
-            'preference_overridden': False  # By this point, overrides have already been applied above
-        }
-        
-        if debug_mode and not is_viable:
-            print(f"⚠️ Circle {circle_id} excluded from optimization: max_additions = {max_additions}")
+    print(f"🔍 After processing, circle_eligibility_logs now has {len(circle_eligibility_logs)} entries")
     
+    # Identify viable circles for optimization
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
                      if circle_data.get('max_additions', 0) > 0}
                      
