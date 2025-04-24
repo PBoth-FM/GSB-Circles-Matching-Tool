@@ -848,6 +848,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Counter for tracking how many circles we're processing
     circles_processed = 0
     
+    # Explicitly declare we're using the global variable
+    global circle_eligibility_logs
+    
     for circle_id, circle_data in existing_circles.items():
         max_additions = circle_data.get('max_additions', 0)
         is_viable = max_additions > 0
@@ -867,6 +870,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means "None" preference
             'preference_overridden': False  # By this point, overrides have already been applied above
         }
+        
+        # Add immediate verification that the log was created
+        print(f"✅ CIRCLE LOG CREATED: {circle_id} → {circle_eligibility_logs[circle_id]['is_eligible']}")
+        
+        # Verify the global variable is being updated
+        assert circle_id in circle_eligibility_logs, f"Failed to add {circle_id} to circle_eligibility_logs!"
         
         # Print detailed log for first few circles
         circles_processed += 1
