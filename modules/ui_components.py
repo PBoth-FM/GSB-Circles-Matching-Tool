@@ -1639,7 +1639,98 @@ def render_debug_tab():
             st.info("No Houston debug logs available. Run the optimization to generate logs.")
     
     with debug_tab3:
-        st.write("### All Circles Debug")
+        st.write("### Circle Eligibility Debug")
+        st.write("This section shows detailed analysis of circle eligibility for optimization")
+        
+        if 'circle_eligibility_logs' in st.session_state and st.session_state.circle_eligibility_logs:
+            eligibility_data = list(st.session_state.circle_eligibility_logs.values())
+            eligibility_df = pd.DataFrame(eligibility_data)
+            
+            if not eligibility_df.empty:
+                st.write(f"Circle eligibility analysis for {len(eligibility_df)} circles:")
+                
+                # Format the display columns
+                if 'is_eligible' in eligibility_df.columns:
+                    eligibility_df['eligible_status'] = eligibility_df['is_eligible'].apply(
+                        lambda x: "✅ Eligible" if x else "❌ Not Eligible")
+                
+                if 'is_test_circle' in eligibility_df.columns:
+                    eligibility_df['test_circle'] = eligibility_df['is_test_circle'].apply(
+                        lambda x: "✅ YES" if x else "NO")
+                
+                # Display columns
+                display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 
+                                'current_members', 'max_additions', 'eligible_status',
+                                'reason', 'test_circle']
+                
+                # Show only columns that exist
+                display_cols = [col for col in display_cols if col in eligibility_df.columns]
+                
+                # Display the DataFrame
+                st.dataframe(eligibility_df[display_cols])
+                
+                # Summary statistics
+                st.write("### Eligibility Statistics")
+                if 'is_eligible' in eligibility_df.columns:
+                    eligible_count = eligibility_df['is_eligible'].sum()
+                    total_count = len(eligibility_df)
+                    
+                    st.write(f"- Total circles: {total_count}")
+                    st.write(f"- Eligible circles: {eligible_count} ({eligible_count/total_count*100:.1f}%)")
+                    
+                    # Group by reason
+                    if 'reason' in eligibility_df.columns:
+                        reason_counts = eligibility_df['reason'].value_counts()
+                        st.write("### Reasons for Ineligibility")
+                        for reason, count in reason_counts.items():
+                            st.write(f"- {reason}: {count}")
+                
+                # Create a text version for the copy button
+                eligibility_text = "CIRCLE ELIGIBILITY ANALYSIS\n\n"
+                
+                if 'is_eligible' in eligibility_df.columns:
+                    eligible_count = eligibility_df['is_eligible'].sum()
+                    total_count = len(eligibility_df)
+                    eligibility_text += f"Total circles: {total_count}\n"
+                    eligibility_text += f"Eligible circles: {eligible_count} ({eligible_count/total_count*100:.1f}%)\n\n"
+                
+                eligibility_text += "CIRCLE DETAILS:\n"
+                for _, row in eligibility_df.iterrows():
+                    circle_text = []
+                    circle_text.append(f"- {row.get('circle_id', 'Unknown')}")
+                    
+                    if 'region' in row:
+                        circle_text.append(f"  Region: {row['region']}")
+                    if 'subregion' in row:
+                        circle_text.append(f"  Subregion: {row['subregion']}")
+                    if 'meeting_time' in row:
+                        circle_text.append(f"  Meeting time: {row['meeting_time']}")
+                    if 'current_members' in row:
+                        circle_text.append(f"  Current members: {row['current_members']}")
+                    if 'max_additions' in row:
+                        circle_text.append(f"  Max additions: {row['max_additions']}")
+                    if 'is_eligible' in row:
+                        circle_text.append(f"  Eligible: {'✅ YES' if row['is_eligible'] else '❌ NO'}")
+                    if 'reason' in row:
+                        circle_text.append(f"  Reason: {row['reason']}")
+                    if 'is_test_circle' in row:
+                        circle_text.append(f"  Test circle: {'✅ YES' if row['is_test_circle'] else 'NO'}")
+                    
+                    eligibility_text += "\n".join(circle_text) + "\n\n"
+                
+                # Create a text area with the info
+                st.text_area("Copy this text to share circle eligibility", eligibility_text, height=300)
+                
+                # Add JavaScript to handle copying to clipboard
+                st.markdown("""
+                <button onclick="navigator.clipboard.writeText(document.querySelectorAll('textarea')[3].value)">
+                    📋 Copy Circle Eligibility Analysis to Clipboard
+                </button>
+                """, unsafe_allow_html=True)
+            else:
+                st.info("No circle eligibility data available to display.")
+        else:
+            st.info("No circle eligibility logs available. Run the optimization to generate this data.")
         
         # Add debug information for matched circles
         if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:

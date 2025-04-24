@@ -2385,4 +2385,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 'special_handling': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
             }
     
+    # Add circle eligibility logs to session state
+    if 'circle_eligibility_logs' in globals() and globals()['circle_eligibility_logs']:
+        if 'circle_eligibility_logs' not in st.session_state:
+            st.session_state.circle_eligibility_logs = {}
+        
+        # Add the logs to session state
+        st.session_state.circle_eligibility_logs.update(globals()['circle_eligibility_logs'])
+    
     return results, circles, unmatched
