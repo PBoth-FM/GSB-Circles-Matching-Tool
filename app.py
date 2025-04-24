@@ -79,9 +79,14 @@ def run_optimization():
     # Reset debug logs at the start of each optimization run
     from modules.optimizer_new import circle_eligibility_logs
     from modules.optimizer_new import debug_eligibility_logs
+    from modules.optimizer_new import update_session_state_eligibility_logs
     
     # Clear all previous logs
-    circle_eligibility_logs.clear()
+    if isinstance(circle_eligibility_logs, dict):
+        print(f"🧹 Clearing previous logs - had {len(circle_eligibility_logs)} entries")
+        circle_eligibility_logs.clear()
+    else:
+        print(f"⚠️ WARNING: circle_eligibility_logs is not a dictionary - type is {type(circle_eligibility_logs)}")
     
     # Log the reset for debugging
     debug_eligibility_logs("Cleared circle eligibility logs before optimization run")
@@ -89,9 +94,12 @@ def run_optimization():
     # Make sure we have a place to store eligibility logs in session state
     if 'circle_eligibility_logs' not in st.session_state:
         st.session_state.circle_eligibility_logs = {}
+        print("📋 Created fresh circle_eligibility_logs in session state")
     else:
         # Clear existing logs in session state
+        len_before = len(st.session_state.circle_eligibility_logs)
         st.session_state.circle_eligibility_logs.clear()
+        print(f"🧹 Cleared {len_before} entries from session state logs")
         
     # Log the reset for debugging
     print("🔄 CRITICAL DEBUG: Reset circle eligibility logs before optimization run")

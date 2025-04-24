@@ -39,48 +39,83 @@ def update_session_state_eligibility_logs():
     Helper function to ensure circle eligibility logs are properly stored in session state.
     Call this whenever eligibility logs are updated to ensure consistency.
     """
-    import streamlit as st
-    global circle_eligibility_logs
-    
-    # ENHANCED DIAGNOSTICS - Print detailed information
-    print(f"\n🔍 CRITICAL DIAGNOSTIC: update_session_state_eligibility_logs called")
-    print(f"🔍 Current global circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
-    
-    # Show the first few circle IDs if any exist
-    if circle_eligibility_logs:
-        circle_ids = list(circle_eligibility_logs.keys())
-        print(f"🔍 Circle IDs in logs: {circle_ids[:5]}{'...' if len(circle_ids) > 5 else ''}")
-        # Show details of first log entry for debugging
-        first_id = circle_ids[0] if circle_ids else None
-        if first_id:
-            print(f"🔍 Sample log entry for {first_id}: {circle_eligibility_logs[first_id]}")
-    else:
-        print("❌ CRITICAL ERROR: Global circle_eligibility_logs is empty!")
-    
-    if 'circle_eligibility_logs' not in st.session_state:
-        st.session_state.circle_eligibility_logs = {}
-        debug_eligibility_logs("Created new circle_eligibility_logs in session state")
-        print("🔍 Created new circle_eligibility_logs in session state")
-    
-    # Count before update for debugging
-    before_count = len(st.session_state.circle_eligibility_logs)
-    
-    # Copy all logs to session state
-    st.session_state.circle_eligibility_logs.update(circle_eligibility_logs)
-    
-    # Count after update for debugging
-    after_count = len(st.session_state.circle_eligibility_logs)
-    debug_eligibility_logs(f"Updated session state: {before_count} → {after_count} logs")
-    print(f"🔍 Updated session state: {before_count} → {after_count} logs")
-    
-    # Additional verification
-    if after_count == 0:
-        print("❌ CRITICAL ERROR: Session state circle_eligibility_logs is still empty after update!")
-    
-    # Trigger the flag
-    global ELIGIBILITY_LOGS_POPULATED
-    ELIGIBILITY_LOGS_POPULATED = True
-    print(f"🔍 Set ELIGIBILITY_LOGS_POPULATED = {ELIGIBILITY_LOGS_POPULATED}")
+    try:
+        import streamlit as st
+        global circle_eligibility_logs
+        
+        # ENHANCED DIAGNOSTICS - Print detailed information
+        print(f"\n🔍 CRITICAL DIAGNOSTIC: update_session_state_eligibility_logs called")
+        print(f"🔍 Current global circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
+        
+        # Debug information about the global variable's actual data type
+        print(f"🔍 Type of global circle_eligibility_logs: {type(circle_eligibility_logs)}")
+        print(f"🔍 Is global circle_eligibility_logs a dictionary? {isinstance(circle_eligibility_logs, dict)}")
+        
+        # Show the first few circle IDs if any exist
+        if circle_eligibility_logs and isinstance(circle_eligibility_logs, dict):
+            circle_ids = list(circle_eligibility_logs.keys())
+            print(f"🔍 Circle IDs in logs: {circle_ids[:5]}{'...' if len(circle_ids) > 5 else ''}")
+            # Show details of first log entry for debugging
+            first_id = circle_ids[0] if circle_ids else None
+            if first_id:
+                print(f"🔍 Sample log entry for {first_id}: {circle_eligibility_logs[first_id]}")
+        else:
+            print("❌ CRITICAL ERROR: Global circle_eligibility_logs is empty or not a dictionary!")
+            # If it's not a dictionary, initialize it as one
+            if not isinstance(circle_eligibility_logs, dict):
+                print("🔧 FIXING: Initializing global circle_eligibility_logs as a dictionary")
+                circle_eligibility_logs = {}
+        
+        # Create session state if needed
+        if 'circle_eligibility_logs' not in st.session_state:
+            try:
+                st.session_state.circle_eligibility_logs = {}
+                print("🔍 Created new circle_eligibility_logs in session state")
+            except Exception as e:
+                print(f"❌ ERROR creating session state: {str(e)}")
+                return False
+        
+        # Count before update for debugging
+        try:
+            before_count = len(st.session_state.circle_eligibility_logs)
+            
+            # Make a deep copy of the logs to prevent reference issues
+            logs_copy = {}
+            for key, value in circle_eligibility_logs.items():
+                if isinstance(value, dict):
+                    logs_copy[key] = value.copy()  # Copy each inner dictionary
+                else:
+                    logs_copy[key] = value
+            
+            # Copy logs to session state
+            st.session_state.circle_eligibility_logs.update(logs_copy)
+            
+            # Count after update for debugging
+            after_count = len(st.session_state.circle_eligibility_logs)
+            print(f"🔍 Updated session state: {before_count} → {after_count} logs")
+            
+            # Additional verification
+            if after_count == 0:
+                print("❌ CRITICAL ERROR: Session state circle_eligibility_logs is still empty after update!")
+                return False
+            
+            # Trigger the flag
+            global ELIGIBILITY_LOGS_POPULATED
+            ELIGIBILITY_LOGS_POPULATED = True
+            print(f"🔍 Set ELIGIBILITY_LOGS_POPULATED = {ELIGIBILITY_LOGS_POPULATED}")
+            
+            # For additional safety, verify a sample entry was properly copied
+            if after_count > 0:
+                sample_key = next(iter(st.session_state.circle_eligibility_logs))
+                print(f"✅ Verification: Session state contains entry for {sample_key}")
+            
+            return True
+        except Exception as e:
+            print(f"❌ ERROR updating session state: {str(e)}")
+            return False
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR in update_session_state_eligibility_logs: {str(e)}")
+        return False
     
 # Add a direct check to display eligibility logs at import time
 debug_eligibility_logs(f"Module initialized with {len(circle_eligibility_logs)} eligibility logs")
