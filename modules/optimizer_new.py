@@ -2576,9 +2576,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Call our helper function that ensures logs are saved to session state
     update_session_state_eligibility_logs()
     
-    # Mark that logs were populated
-    global ELIGIBILITY_LOGS_POPULATED
-    ELIGIBILITY_LOGS_POPULATED = True
+    # The global flag is already updated by the update_session_state_eligibility_logs function
     
     # Debug output for tracking circle eligibility logs
     print(f"\n🔍 FINAL DEBUG: Returning circle eligibility logs from {region} region 🔍")

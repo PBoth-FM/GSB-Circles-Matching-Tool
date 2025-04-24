@@ -77,14 +77,14 @@ def main():
 def run_optimization():
     """Run the optimization algorithm and store results in session state"""
     # Reset debug logs at the start of each optimization run
-    from modules.optimizer_new import circle_eligibility_logs, ELIGIBILITY_LOGS_POPULATED
+    from modules.optimizer_new import circle_eligibility_logs
+    from modules.optimizer_new import debug_eligibility_logs
     
     # Clear all previous logs
     circle_eligibility_logs.clear()
     
-    # Reset the global populated flag 
-    global ELIGIBILITY_LOGS_POPULATED
-    ELIGIBILITY_LOGS_POPULATED = False
+    # Log the reset for debugging
+    debug_eligibility_logs("Cleared circle eligibility logs before optimization run")
     
     # Make sure we have a place to store eligibility logs in session state
     if 'circle_eligibility_logs' not in st.session_state:
