@@ -1,0 +1,1177 @@
+ALL CIRCLES DEBUG DATA
+
+Total circles: 167
+New circles: 0
+Continuing circles: 167
+Total members: 1139
+
+CIRCLE DETAILS:
+- Circle ID: IP-ATL-1
+  Region: Atlanta
+  Meeting time: Varies (Varies)
+  Member count: 11
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-AUS-01
+  Region: Austin
+  Meeting time: Saturday (Days)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-AUS-02
+  Region: Austin
+  Meeting time: M-Th (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-01
+  Region: Boston
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-02
+  Region: Boston
+  Meeting time: M-Th (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-03
+  Region: Boston
+  Meeting time: Sunday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-04
+  Region: Boston
+  Meeting time: Varies (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-05
+  Region: Boston
+  Meeting time: Monday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-06
+  Region: Boston
+  Meeting time: Monday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-BOS-07
+  Region: Boston
+  Meeting time: Tuesday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-CHI-01
+  Region: Chicago
+  Meeting time: Thursday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-CHI-02
+  Region: Chicago
+  Meeting time: Varies (Varies)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-CHI-03
+  Region: Chicago
+  Meeting time: Varies (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-CHI-04
+  Region: Chicago
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-CHI-05
+  Region: Chicago
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-01
+  Region: East Bay
+  Meeting time: Wednesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-02
+  Region: East Bay
+  Meeting time: Sunday (Evenings)
+  Member count: 1
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-03
+  Region: East Bay
+  Meeting time: Wednesday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-04
+  Region: East Bay
+  Meeting time: Sunday (Days)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-05
+  Region: East Bay
+  Meeting time: Wednesday (Days)
+  Member count: 10
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-06
+  Region: East Bay
+  Meeting time: Tuesday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-EAB-07
+  Region: East Bay
+  Meeting time: Wednesday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-HOU-01
+  Region: Houston
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-HOU-02
+  Region: Houston
+  Meeting time: M-Th (Evenings)
+  Member count: 3
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-01
+  Region: Los Angeles
+  Meeting time: Tuesday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-02
+  Region: Los Angeles
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-03
+  Region: Los Angeles
+  Meeting time: Tuesday (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-04
+  Region: Los Angeles
+  Meeting time: Wednesday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-05
+  Region: Los Angeles
+  Meeting time: Tuesday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-06
+  Region: Los Angeles
+  Meeting time: Varies (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-07
+  Region: Los Angeles
+  Meeting time: Wednesday (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-08
+  Region: Los Angeles
+  Meeting time: Monday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-09
+  Region: Los Angeles
+  Meeting time: Wednesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LAX-10
+  Region: Los Angeles
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LON-01
+  Region: London
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LON-02
+  Region: London
+  Meeting time: Thursday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LON-03
+  Region: London
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-LON-04
+  Region: London
+  Meeting time: Tuesday (Evenings)
+  Member count: 8
+  New members: 1
+  Is new circle: False
+
+- Circle ID: IP-LON-05
+  Region: London
+  Meeting time: Varies (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-MAR-01
+  Region: Marin County
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-MAR-02
+  Region: Marin County
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-MAR-03
+  Region: Marin County
+  Meeting time: Thursday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-MAR-04
+  Region: Marin County
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-MXC-01
+  Region: Mexico City
+  Meeting time: Thursday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NAP-01
+  Region: Napa-Sonoma
+  Meeting time: Tuesday (Evenings)
+  Member count: 10
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NBO-01
+  Region: Nairobi
+  Meeting time: Varies (Days)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-01
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-02
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-03
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-04
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-05
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-07
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-08
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-09
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-10
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-11
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-12
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-13
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-14
+  Region: New York
+  Meeting time: Varies (Varies)
+  Member count: 4
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-15
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-16
+  Region: New York
+  Meeting time: Varies (Varies)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-17
+  Region: New York
+  Meeting time: Wednesday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-18
+  Region: New York
+  Meeting time: Varies (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-19
+  Region: New York
+  Meeting time: Varies (Days)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-20
+  Region: New York
+  Meeting time: Wednesday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-21
+  Region: New York
+  Meeting time: M-Th (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-22
+  Region: New York
+  Meeting time: M-Th (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NYC-24
+  Region: New York
+  Meeting time: M-Th (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-01
+  Region: Peninsula
+  Meeting time: Thursday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-02
+  Region: Peninsula
+  Meeting time: Monday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-03
+  Region: Peninsula
+  Meeting time: Tuesday (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-04
+  Region: Peninsula
+  Meeting time: Thursday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-05
+  Region: Peninsula
+  Meeting time: Thursday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-06
+  Region: Peninsula
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-07
+  Region: Peninsula
+  Meeting time: Varies (Varies)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-08
+  Region: Peninsula
+  Meeting time: Monday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-09
+  Region: Peninsula
+  Meeting time: Varies (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-10
+  Region: Peninsula
+  Meeting time: Monday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-11
+  Region: Peninsula
+  Meeting time: Varies (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-12
+  Region: Peninsula
+  Meeting time: Wednesday (Days)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-13
+  Region: Peninsula
+  Meeting time: Wednesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-14
+  Region: Peninsula
+  Meeting time: Varies (Varies)
+  Member count: 3
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-15
+  Region: Peninsula
+  Meeting time: Varies (Varies)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-16
+  Region: Peninsula
+  Meeting time: Thursday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-18
+  Region: Peninsula
+  Meeting time: Tuesday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-19
+  Region: Peninsula
+  Meeting time: Varies (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-20
+  Region: Peninsula
+  Meeting time: M-Th (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-21
+  Region: Peninsula
+  Meeting time: Varies (Evenings)
+  Member count: 4
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-22
+  Region: Peninsula
+  Meeting time: M-Th (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-23
+  Region: Peninsula
+  Meeting time: M-Th (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-24
+  Region: Peninsula
+  Meeting time: M-Th (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-PSA-26
+  Region: Peninsula
+  Meeting time: M-F (Days)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SAN-01
+  Region: San Diego
+  Meeting time: Tuesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SAN-02
+  Region: San Diego
+  Meeting time: Wednesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SEA-01
+  Region: Seattle
+  Meeting time: Wednesday (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SEA-03
+  Region: Seattle
+  Meeting time: Sunday (Days)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFL-01
+  Region: South Florida
+  Meeting time: Varies (Varies)
+  Member count: 1
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-01
+  Region: San Francisco
+  Meeting time: Monday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-02
+  Region: San Francisco
+  Meeting time: Tuesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-03
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-04
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-05
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-06
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-08
+  Region: San Francisco
+  Meeting time: Tuesday (Evenings)
+  Member count: 9
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-10
+  Region: San Francisco
+  Meeting time: Tuesday (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-12
+  Region: San Francisco
+  Meeting time: Varies (Varies)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-13
+  Region: San Francisco
+  Meeting time: Monday (Evenings)
+  Member count: 3
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-14
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 4
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-15
+  Region: San Francisco
+  Meeting time: Wednesday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-16
+  Region: San Francisco
+  Meeting time: Tuesday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-17
+  Region: San Francisco
+  Meeting time: Varies (Varies)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-18
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-19
+  Region: San Francisco
+  Meeting time: Thursday (Evenings)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-22
+  Region: San Francisco
+  Meeting time: Monday (Varies)
+  Member count: 5
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-24
+  Region: San Francisco
+  Meeting time: Tuesday (Evenings)
+  Member count: 3
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-25
+  Region: San Francisco
+  Meeting time: Varies (Varies)
+  Member count: 10
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-26
+  Region: San Francisco
+  Meeting time: Varies (Varies)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-27
+  Region: San Francisco
+  Meeting time: Varies (Varies)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SFO-28
+  Region: San Francisco
+  Meeting time: Varies (Varies)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SHA-01
+  Region: Shanghai
+  Meeting time: Varies (Varies)
+  Member count: 14
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SIN-01
+  Region: Singapore
+  Meeting time: Varies (Evenings)
+  Member count: 8
+  New members: 4
+  Is new circle: False
+
+- Circle ID: IP-SPO-01
+  Region: Sao Paulo
+  Meeting time: Tuesday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-SPO-02
+  Region: Sao Paulo
+  Meeting time: Varies (Varies)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-WDC-01
+  Region: Washington DC
+  Meeting time: Saturday (Days)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-WDC-02
+  Region: Washington DC
+  Meeting time: Wednesday (Evenings)
+  Member count: 6
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-WDC-03
+  Region: Washington DC
+  Meeting time: M-Th (Evenings)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-WDC-04
+  Region: Washington DC
+  Meeting time: Sunday (Days)
+  Member count: 7
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-WDC-05
+  Region: Washington DC
+  Meeting time: Thursday (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-WDC-06
+  Region: Washington DC
+  Meeting time: M-Th (Evenings)
+  Member count: 8
+  New members: 0
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-01
+  Region: San Francisco
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 8
+  New members: 8
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-02
+  Region: San Francisco
+  Meeting time: Sunday (Days)
+  Member count: 6
+  New members: 6
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-03
+  Region: San Francisco
+  Meeting time: Monday-friday (Days)
+  Member count: 9
+  New members: 9
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-04
+  Region: San Francisco
+  Meeting time: Saturday (Days)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-05
+  Region: San Francisco
+  Meeting time: Sunday (Evenings)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-06
+  Region: San Francisco
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 9
+  New members: 9
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFO-07
+  Region: San Francisco
+  Meeting time: Sunday (Days)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-01
+  Region: New York
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 7
+  New members: 7
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-02
+  Region: New York
+  Meeting time: Sunday (Days)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-03
+  Region: New York
+  Meeting time: Monday-friday (Days)
+  Member count: 6
+  New members: 6
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-04
+  Region: New York
+  Meeting time: Saturday (Days)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-05
+  Region: New York
+  Meeting time: Sunday (Evenings)
+  Member count: 6
+  New members: 6
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-06
+  Region: New York
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-07
+  Region: New York
+  Meeting time: Sunday (Days)
+  Member count: 7
+  New members: 7
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-08
+  Region: New York
+  Meeting time: Monday-friday (Days)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-NYC-09
+  Region: New York
+  Meeting time: Saturday (Days)
+  Member count: 6
+  New members: 6
+  Is new circle: False
+
+- Circle ID: IP-NEW-SEA-01
+  Region: Seattle
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 8
+  New members: 8
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-01
+  Region: Peninsula
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-02
+  Region: Peninsula
+  Meeting time: Sunday (Days)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-03
+  Region: Peninsula
+  Meeting time: Monday-friday (Days)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-04
+  Region: Peninsula
+  Meeting time: Saturday (Days)
+  Member count: 8
+  New members: 8
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-05
+  Region: Peninsula
+  Meeting time: Sunday (Evenings)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-06
+  Region: Peninsula
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-PSA-07
+  Region: Peninsula
+  Meeting time: Sunday (Days)
+  Member count: 10
+  New members: 10
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFL-01
+  Region: South Florida
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-SFL-02
+  Region: South Florida
+  Meeting time: Sunday (Days)
+  Member count: 9
+  New members: 9
+  Is new circle: False
+
+- Circle ID: IP-NEW-BOS-01
+  Region: Boston
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-BOS-02
+  Region: Boston
+  Meeting time: Sunday (Days)
+  Member count: 9
+  New members: 9
+  Is new circle: False
+
+- Circle ID: IP-NEW-MAR-01
+  Region: Marin County
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 8
+  New members: 8
+  Is new circle: False
+
+- Circle ID: IP-NEW-CHI-01
+  Region: Chicago
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-CHI-02
+  Region: Chicago
+  Meeting time: Sunday (Days)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-LAX-01
+  Region: Los Angeles
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 6
+  New members: 6
+  Is new circle: False
+
+- Circle ID: IP-NEW-LAX-02
+  Region: Los Angeles
+  Meeting time: Sunday (Days)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-WDC-01
+  Region: Washington DC
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 7
+  New members: 7
+  Is new circle: False
+
+- Circle ID: IP-NEW-WDC-02
+  Region: Washington DC
+  Meeting time: Sunday (Days)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-SPO-01
+  Region: Sao Paulo
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 6
+  New members: 6
+  Is new circle: False
+
+- Circle ID: IP-NEW-LON-01
+  Region: London
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
+- Circle ID: IP-NEW-SIN-01
+  Region: Singapore
+  Meeting time: Monday-thursday (Evenings)
+  Member count: 5
+  New members: 5
+  Is new circle: False
+
