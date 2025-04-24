@@ -231,6 +231,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     circles = []
     unmatched = []
     
+    # Track debug information
+    circle_capacity_debug = {}  # For tracking capacity of circles
+    circle_eligibility_logs = {}  # For tracking circle eligibility decisions
+    
     # Central registry to track processed circle IDs and prevent duplicates
     processed_circle_ids = set()
     
@@ -692,7 +696,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 
                 results.append(participant)
         
-        return results, circles, []
+        return results, circles, [], circle_capacity_debug, circle_eligibility_logs
     
     # Get all unique subregions and time slots for preference matching
     subregions = get_unique_preferences(remaining_df, ['first_choice_location', 'second_choice_location', 'third_choice_location'])
@@ -919,7 +923,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             results.append(participant_dict)
             unmatched.append(participant_dict)
             
-        return results, [], unmatched
+        return results, [], unmatched, {}, circle_eligibility_logs
 
     # ***************************************************************
     # STEP 1: STRUCTURE VARIABLES AROUND REAL AND HYPOTHETICAL CIRCLES
@@ -2501,4 +2505,4 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Add the logs to session state
         st.session_state.circle_eligibility_logs.update(globals()['circle_eligibility_logs'])
     
-    return results, circles, unmatched
+    return results, circles, unmatched, circle_capacity_debug, circle_eligibility_logs

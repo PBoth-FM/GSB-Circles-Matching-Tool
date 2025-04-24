@@ -563,9 +563,17 @@ def run_matching_algorithm(data, config):
         globals()['all_regions_df'] = data
         
         # Run optimization for this region using the new circle ID-based optimizer
-        region_results, region_circles, region_unmatched = optimize_region_v2(
+        region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
+        
+        # Store circle eligibility logs in session state
+        import streamlit as st
+        if 'circle_eligibility_logs' not in st.session_state:
+            st.session_state.circle_eligibility_logs = {}
+        
+        # Update session state with region logs
+        st.session_state.circle_eligibility_logs.update(region_circle_eligibility_logs)
         
         # Add to overall results
         all_results.extend(region_results)
