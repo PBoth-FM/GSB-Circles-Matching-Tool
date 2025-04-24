@@ -2659,9 +2659,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     debug_eligibility_logs(f"Finished processing {len(circle_eligibility_logs)} logs for region {region}")
     
     # Call our helper function that ensures logs are saved to session state
-    update_session_state_eligibility_logs()
-    
-    # The global flag is already updated by the update_session_state_eligibility_logs function
+    # Using the local circle_eligibility_logs dictionary instead of relying on globals
+    update_session_state_eligibility_logs(circle_eligibility_logs)
     
     # Enhanced debug output for tracking circle eligibility logs
     print(f"\n🚨 CRITICAL DIAGNOSTIC: Final eligibility check for {region} region 🚨")
@@ -2705,7 +2704,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # FINAL VERIFICATION: Make sure the logs will be properly saved
     # This calls our helper function to ensure logs are saved to session state
     print(f"\n🚨 FINAL UPDATE: Forcing logs to be saved to session state")
-    update_session_state_eligibility_logs()
+    update_session_state_eligibility_logs(circle_eligibility_logs)
     
     print(f"\n🚨 FINAL CHECK: Returning {len(circle_eligibility_logs)} eligibility logs from {region} region")
     return results, circles, unmatched, circle_capacity_debug, circle_eligibility_logs

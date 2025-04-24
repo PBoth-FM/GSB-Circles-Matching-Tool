@@ -610,9 +610,8 @@ def run_matching_algorithm(data, config):
         else:
             print(f"⚠️ WARNING: No circle eligibility logs found for region {region}")
             
-        # Import the global variable to check
-        from modules.optimizer_new import circle_eligibility_logs as global_logs
-        print(f"📊 GLOBAL LOGS: Currently contains {len(global_logs)} entries")
+        # We no longer need to import the global variable since we're using a parameter-based approach now
+        print(f"📊 LOGS RECEIVED: Region {region} provided {len(region_circle_eligibility_logs)} log entries")
         
         # Add to overall results
         all_results.extend(region_results)
@@ -679,20 +678,12 @@ def run_matching_algorithm(data, config):
         if log_count == 0:
             print("⚠️ CRITICAL WARNING: No eligibility logs found in session state at end of processing")
             
-            # Import the global logs directly as a last resort
-            from modules.optimizer_new import circle_eligibility_logs as global_logs
-            global_log_count = len(global_logs)
+            # We no longer use a global variable approach, so this fallback code is no longer needed.
+            # Instead, we should have already properly saved the logs to session state during each region's processing
             
-            print(f"⚠️ Final fallback: Found {global_log_count} logs in global variable")
-            
-            # If global logs exist, copy them to session state
-            if global_log_count > 0:
-                st.session_state.circle_eligibility_logs = global_logs.copy()
-                print(f"🛠️ FINAL REPAIR: Copied {global_log_count} global logs to session state as emergency fix")
-            
-            # Display a warning if both local and global logs are empty
-            if global_log_count == 0:
-                print("❌ CRITICAL ERROR: Both session state and global logs are empty")
+            print(f"⚠️ WARNING: No circle eligibility logs found in session state at end of processing.")
+            print(f"⚠️ This indicates the logs weren't properly saved during region processing.")
+            print(f"⚠️ Please check the optimize_region_v2 function returns and how the logs are saved.")
         else:
             print(f"✅ Session state has {log_count} logs - everything is good!")
             print(f"💡 Log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}...")
