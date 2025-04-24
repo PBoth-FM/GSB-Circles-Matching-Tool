@@ -169,6 +169,7 @@ def run_matching_algorithm(data, config):
         
     Returns:
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
+        Note: Circle eligibility logs are stored directly in st.session_state.circle_eligibility_logs
     """
     # Import the new optimizer implementation
     from modules.optimizer_new import optimize_region_v2
@@ -593,10 +594,18 @@ def run_matching_algorithm(data, config):
                 print(f"🔍🔍   Value: {region_circle_eligibility_logs[sample_key]}")
                 print(f"🔍🔍   Type: {type(region_circle_eligibility_logs[sample_key])}")
         
-        # Update session state with region logs
+        # Update session state with region logs - THIS IS THE CRITICAL PART
         if region_circle_eligibility_logs:
             # CRITICAL FIX: Make a deep copy to ensure we're not affected by reference issues
-            logs_to_update = region_circle_eligibility_logs.copy()
+            logs_to_update = {}
+            for key, value in region_circle_eligibility_logs.items():
+                if isinstance(value, dict):
+                    # Deep copy each inner dictionary to avoid reference issues
+                    logs_to_update[key] = value.copy()
+                else:
+                    logs_to_update[key] = value
+            
+            # Update session state with these logs
             st.session_state.circle_eligibility_logs.update(logs_to_update)
             logs_added = len(region_circle_eligibility_logs)
             logs_after = len(st.session_state.circle_eligibility_logs)
@@ -607,6 +616,12 @@ def run_matching_algorithm(data, config):
             
             # List the IDs added for debugging
             print(f"📊 CIRCLE ELIGIBILITY: Added circle IDs from {region}: {list(region_circle_eligibility_logs.keys())}")
+            
+            # Add a sample entry to verify content
+            if logs_added > 0:
+                sample_key = next(iter(region_circle_eligibility_logs))
+                sample_value = region_circle_eligibility_logs[sample_key]
+                print(f"📊 SAMPLE LOG ENTRY for {sample_key}: {sample_value}")
         else:
             print(f"⚠️ WARNING: No circle eligibility logs found for region {region}")
             
@@ -688,6 +703,8 @@ def run_matching_algorithm(data, config):
             print(f"✅ Session state has {log_count} logs - everything is good!")
             print(f"💡 Log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}...")
     
+    # IMPORTANT: Make sure the logs saved in session state persist
+    # We don't need to return them since they're already in session state
     return results_df, circles_df, unmatched_df
 
 def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
