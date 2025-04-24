@@ -1642,9 +1642,21 @@ def render_debug_tab():
         st.write("### Circle Eligibility Debug")
         st.write("This section shows detailed analysis of circle eligibility for new member optimization")
         
-        if 'circle_eligibility_logs' in st.session_state and st.session_state.circle_eligibility_logs:
-            eligibility_data = list(st.session_state.circle_eligibility_logs.values())
-            eligibility_df = pd.DataFrame(eligibility_data)
+        # CRITICAL FIX: Improved debugging for session state logs
+        if 'circle_eligibility_logs' in st.session_state:
+            # Add diagnostic info about the logs in session state
+            print(f"🔍 DEBUG UI: Found circle_eligibility_logs in session state with {len(st.session_state.circle_eligibility_logs)} entries")
+            if len(st.session_state.circle_eligibility_logs) > 0:
+                print(f"🔍 DEBUG UI: Session state contains logs for circle IDs: {list(st.session_state.circle_eligibility_logs.keys())[:5]}...")
+                # Convert logs to a DataFrame for display
+                eligibility_data = list(st.session_state.circle_eligibility_logs.values())
+                print(f"🔍 DEBUG UI: Converted {len(eligibility_data)} log entries to a list for DataFrame creation")
+                eligibility_df = pd.DataFrame(eligibility_data)
+                print(f"🔍 DEBUG UI: Created DataFrame with shape {eligibility_df.shape}")
+            else:
+                st.warning("Circle eligibility logs dictionary exists in session state but has no entries.")
+                print("⚠️ WARNING: circle_eligibility_logs exists in session state but is empty!")
+                eligibility_df = pd.DataFrame()
             
             if not eligibility_df.empty:
                 # Overview metrics
