@@ -3255,7 +3255,7 @@ def render_circles_detail():
     st.write("""
     Diversity scores represent the number of categories represented in a circle. 
     E.g., if a circle has members from two different industry categories, its industry diversity score is 2. 
-    Total diversity is the sum across all diversity scores (Vintage, Employment, RI and Children).
+    Total diversity is the sum across all diversity scores (Vintage, Employment, Industry, RI and Children).
     """)
     
     # First check if we have the necessary data
@@ -3332,12 +3332,14 @@ def render_circles_detail():
         # Initialize sets to track unique categories for each diversity type
         unique_vintages = set()
         unique_employment_categories = set()
+        unique_industry_categories = set()
         unique_ri_categories = set()
         unique_children_categories = set()
         
         # Track category counts for determining top categories
         vintage_counts = {}
         employment_counts = {}
+        industry_counts = {}
         ri_counts = {}
         children_counts = {}
         
@@ -3360,6 +3362,13 @@ def render_circles_detail():
                         unique_employment_categories.add(employment)
                         employment_counts[employment] = employment_counts.get(employment, 0) + 1
                 
+                # Industry diversity
+                if 'Industry_Category' in member_data.columns:
+                    industry = member_data['Industry_Category'].iloc[0]
+                    if pd.notna(industry):
+                        unique_industry_categories.add(industry)
+                        industry_counts[industry] = industry_counts.get(industry, 0) + 1
+
                 # Racial Identity diversity
                 if 'Racial_Identity_Category' in member_data.columns:
                     ri = member_data['Racial_Identity_Category'].iloc[0]
@@ -3377,15 +3386,17 @@ def render_circles_detail():
         # Calculate diversity scores
         vintage_score = len(unique_vintages) if unique_vintages else 0
         employment_score = len(unique_employment_categories) if unique_employment_categories else 0
+        industry_score = len(unique_industry_categories) if unique_industry_categories else 0
         ri_score = len(unique_ri_categories) if unique_ri_categories else 0
         children_score = len(unique_children_categories) if unique_children_categories else 0
         
         # Calculate total diversity score
-        total_score = vintage_score + employment_score + ri_score + children_score
+        total_score = vintage_score + employment_score + industry_score + ri_score + children_score
         
         # Determine top categories (with percentages)
         vintage_top = "None"
         employment_top = "None"
+        industry_top = "None"
         ri_top = "None"
         children_top = "None"
         
@@ -3398,6 +3409,11 @@ def render_circles_detail():
             top_employment = max(employment_counts.items(), key=lambda x: x[1])
             employment_pct = (top_employment[1] / member_count) * 100 if member_count > 0 else 0
             employment_top = f"{top_employment[0]} ({employment_pct:.1f}%)"
+        
+        if industry_counts:
+            top_industry = max(industry_counts.items(), key=lambda x: x[1])
+            industry_pct = (top_industry[1] / member_count) * 100 if member_count > 0 else 0
+            industry_top = f"{top_industry[0]} ({industry_pct:.1f}%)"
         
         if ri_counts:
             top_ri = max(ri_counts.items(), key=lambda x: x[1])
@@ -3420,6 +3436,8 @@ def render_circles_detail():
             'Vintage Top Category': vintage_top,
             'Employment Score': employment_score,
             'Employment Top Category': employment_top,
+            'Industry Score': industry_score,
+            'Industry Top Category': industry_top,
             'RI Score': ri_score,
             'RI Top Category': ri_top,
             'Children Score': children_score,
