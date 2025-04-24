@@ -25,6 +25,9 @@ circle_eligibility_logs = {}
 # Debug counter for tracking
 DEBUG_ELIGIBILITY_COUNTER = 0
 
+# Flag to track if eligibility logs were ever populated
+ELIGIBILITY_LOGS_POPULATED = False
+
 # Example participants and circles for testing
 test_participants = ['73177784103', '50625303450', '72549701782']  # Example participants for testing
 test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']  # Test circles
@@ -236,7 +239,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Track debug information
     circle_capacity_debug = {}  # For tracking capacity of circles
+    
+    # Reset eligibility logs for this region
+    global circle_eligibility_logs, ELIGIBILITY_LOGS_POPULATED
     circle_eligibility_logs = {}  # For tracking circle eligibility decisions
+    ELIGIBILITY_LOGS_POPULATED = False  # Will be set to True when populated
     
     # Central registry to track processed circle IDs and prevent duplicates
     processed_circle_ids = set()
@@ -2526,11 +2533,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Add circle eligibility logs to session state
     if 'circle_eligibility_logs' in globals() and globals()['circle_eligibility_logs']:
+        # Mark that logs were populated
+        global ELIGIBILITY_LOGS_POPULATED
+        ELIGIBILITY_LOGS_POPULATED = True
+        
+        # Ensure session state exists
         if 'circle_eligibility_logs' not in st.session_state:
             st.session_state.circle_eligibility_logs = {}
         
         # Add the logs to session state
         st.session_state.circle_eligibility_logs.update(globals()['circle_eligibility_logs'])
+        
+        # CRITICAL: Log explicit confirmation message for debugging
+        print(f"✅ CRITICAL FIX: Added {len(globals()['circle_eligibility_logs'])} eligibility logs to session state for region {region}")
+        print(f"Logs detail why circles can/cannot accept new members.")
     
     # Debug output for tracking circle eligibility logs
     print(f"\n🔍 FINAL DEBUG: Returning circle eligibility logs from {region} region 🔍")
