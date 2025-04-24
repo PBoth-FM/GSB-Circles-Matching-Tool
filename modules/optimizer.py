@@ -567,13 +567,33 @@ def run_matching_algorithm(data, config):
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
         
-        # Store circle eligibility logs in session state
+        # Store circle eligibility logs in session state with enhanced debugging
         import streamlit as st
         if 'circle_eligibility_logs' not in st.session_state:
             st.session_state.circle_eligibility_logs = {}
+            print(f"🆕 Created new circle_eligibility_logs in session state")
+        
+        # Count logs before update
+        logs_before = len(st.session_state.circle_eligibility_logs)
         
         # Update session state with region logs
-        st.session_state.circle_eligibility_logs.update(region_circle_eligibility_logs)
+        if region_circle_eligibility_logs:
+            st.session_state.circle_eligibility_logs.update(region_circle_eligibility_logs)
+            logs_added = len(region_circle_eligibility_logs)
+            logs_after = len(st.session_state.circle_eligibility_logs)
+            
+            # Print detailed debug information
+            print(f"📊 CIRCLE ELIGIBILITY: Added {logs_added} logs from {region}")
+            print(f"📊 CIRCLE ELIGIBILITY: Session state now has {logs_after} logs (was {logs_before})")
+            
+            # List the IDs added for debugging
+            print(f"📊 CIRCLE ELIGIBILITY: Added circle IDs from {region}: {list(region_circle_eligibility_logs.keys())}")
+        else:
+            print(f"⚠️ WARNING: No circle eligibility logs found for region {region}")
+            
+        # Import the global variable to check
+        from modules.optimizer_new import circle_eligibility_logs as global_logs
+        print(f"📊 GLOBAL LOGS: Currently contains {len(global_logs)} entries")
         
         # Add to overall results
         all_results.extend(region_results)
@@ -630,6 +650,33 @@ def run_matching_algorithm(data, config):
     # Add logs to session state for display in the Debug tab
     if 'optimization_logs' in st.session_state:
         st.session_state.optimization_logs = logs
+    
+    # FINAL CHECK: Ensure circle eligibility logs were captured
+    if 'circle_eligibility_logs' in st.session_state:
+        log_count = len(st.session_state.circle_eligibility_logs)
+        print(f"🏁 FINAL LOGS CHECK: Found {log_count} circle eligibility logs in session state")
+        
+        # If no logs, attempt a final fallback import 
+        if log_count == 0:
+            print("⚠️ CRITICAL WARNING: No eligibility logs found in session state at end of processing")
+            
+            # Import the global logs directly as a last resort
+            from modules.optimizer_new import circle_eligibility_logs as global_logs
+            global_log_count = len(global_logs)
+            
+            print(f"⚠️ Final fallback: Found {global_log_count} logs in global variable")
+            
+            # If global logs exist, copy them to session state
+            if global_log_count > 0:
+                st.session_state.circle_eligibility_logs = global_logs.copy()
+                print(f"🛠️ FINAL REPAIR: Copied {global_log_count} global logs to session state as emergency fix")
+            
+            # Display a warning if both local and global logs are empty
+            if global_log_count == 0:
+                print("❌ CRITICAL ERROR: Both session state and global logs are empty")
+        else:
+            print(f"✅ Session state has {log_count} logs - everything is good!")
+            print(f"💡 Log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}...")
     
     return results_df, circles_df, unmatched_df
 

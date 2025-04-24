@@ -33,6 +33,33 @@ def debug_eligibility_logs(message):
     """Helper function to print standardized circle eligibility debug logs"""
     print(f"🔍 CIRCLE ELIGIBILITY DEBUG: {message}")
     
+# Function to directly update circle eligibility logs in session state
+def update_session_state_eligibility_logs():
+    """
+    Helper function to ensure circle eligibility logs are properly stored in session state.
+    Call this whenever eligibility logs are updated to ensure consistency.
+    """
+    import streamlit as st
+    global circle_eligibility_logs
+    
+    if 'circle_eligibility_logs' not in st.session_state:
+        st.session_state.circle_eligibility_logs = {}
+        debug_eligibility_logs("Created new circle_eligibility_logs in session state")
+    
+    # Count before update for debugging
+    before_count = len(st.session_state.circle_eligibility_logs)
+    
+    # Copy all logs to session state
+    st.session_state.circle_eligibility_logs.update(circle_eligibility_logs)
+    
+    # Count after update for debugging
+    after_count = len(st.session_state.circle_eligibility_logs)
+    debug_eligibility_logs(f"Updated session state: {before_count} → {after_count} logs")
+    
+    # Trigger the flag
+    global ELIGIBILITY_LOGS_POPULATED
+    ELIGIBILITY_LOGS_POPULATED = True
+    
 # Add a direct check to display eligibility logs at import time
 debug_eligibility_logs(f"Module initialized with {len(circle_eligibility_logs)} eligibility logs")
 
@@ -252,6 +279,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     global circle_eligibility_logs, ELIGIBILITY_LOGS_POPULATED
     circle_eligibility_logs = {}  # For tracking circle eligibility decisions
     ELIGIBILITY_LOGS_POPULATED = False  # Will be set to True when populated
+    
+    # Debug message
+    debug_eligibility_logs(f"Reset circle eligibility logs for {region} region")
     
     # Central registry to track processed circle IDs and prevent duplicates
     processed_circle_ids = set()
@@ -2539,34 +2569,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 'special_handling': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
             }
     
-    # Add circle eligibility logs to session state
-    if 'circle_eligibility_logs' in globals():
-        # Use our helper function for clear logging
-        debug_eligibility_logs(f"Processing {len(globals()['circle_eligibility_logs'])} logs for region {region}")
-        
-        # Mark that logs were populated EVEN IF the dictionary is empty
-        global ELIGIBILITY_LOGS_POPULATED
-        ELIGIBILITY_LOGS_POPULATED = True
-        
-        # Ensure session state exists
-        if 'circle_eligibility_logs' not in st.session_state:
-            st.session_state.circle_eligibility_logs = {}
-            debug_eligibility_logs("Created new session state for eligibility logs")
-        
-        # Add the logs to session state
-        if globals()['circle_eligibility_logs']:
-            original_count = len(st.session_state.circle_eligibility_logs)
-            st.session_state.circle_eligibility_logs.update(globals()['circle_eligibility_logs'])
-            new_count = len(st.session_state.circle_eligibility_logs)
-            
-            # CRITICAL: Log explicit confirmation message for debugging
-            debug_eligibility_logs(f"Added {len(globals()['circle_eligibility_logs'])} eligibility logs to session state")
-            debug_eligibility_logs(f"Session state went from {original_count} to {new_count} logs")
-            
-            # Log the exact keys that were added
-            debug_eligibility_logs(f"Added circle IDs: {list(globals()['circle_eligibility_logs'].keys())}")
-        else:
-            debug_eligibility_logs(f"WARNING: No eligibility logs to add for region {region}")
+    # CRITICAL FIX: Add circle eligibility logs to session state
+    # Use our dedicated helper function to ensure logs are properly saved
+    debug_eligibility_logs(f"Finished processing {len(circle_eligibility_logs)} logs for region {region}")
+    
+    # Call our helper function that ensures logs are saved to session state
+    update_session_state_eligibility_logs()
+    
+    # Mark that logs were populated
+    global ELIGIBILITY_LOGS_POPULATED
+    ELIGIBILITY_LOGS_POPULATED = True
     
     # Debug output for tracking circle eligibility logs
     print(f"\n🔍 FINAL DEBUG: Returning circle eligibility logs from {region} region 🔍")
