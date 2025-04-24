@@ -2657,9 +2657,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Use our dedicated helper function to ensure logs are properly saved
     debug_eligibility_logs(f"Finished processing {len(circle_eligibility_logs)} logs for region {region}")
     
-    # Call our helper function that ensures logs are saved to session state
-    # Using the local circle_eligibility_logs dictionary instead of relying on globals
-    update_session_state_eligibility_logs(circle_eligibility_logs)
+    # We no longer call update_session_state_eligibility_logs here 
+    # This avoids duplicate/competing updates with the one in run_matching_algorithm
+    # We'll let the calling function handle updating session state directly
+    # The important thing is that we return a complete copy of the logs
     
     # Enhanced debug output for tracking circle eligibility logs
     print(f"\n🚨 CRITICAL DIAGNOSTIC: Final eligibility check for {region} region 🚨")
@@ -2700,10 +2701,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if none_pref_circles:
         print(f"Overridden circle IDs: {none_pref_circles}")
     
-    # FINAL VERIFICATION: Make sure the logs will be properly saved
-    # This calls our helper function to ensure logs are saved to session state
-    print(f"\n🚨 FINAL UPDATE: Forcing logs to be saved to session state")
-    update_session_state_eligibility_logs(circle_eligibility_logs)
+    # FINAL VERIFICATION: Ensure the logs contains valid entries
+    # We'll let the caller (run_matching_algorithm) update the session state
+    # This ensures consistent handling and avoids potential conflicting updates
+    print(f"\n🚨 FINAL CHECK: We have {len(circle_eligibility_logs)} eligibility logs from {region} region")
     
-    print(f"\n🚨 FINAL CHECK: Returning {len(circle_eligibility_logs)} eligibility logs from {region} region")
-    return results, circles, unmatched, circle_capacity_debug, circle_eligibility_logs
+    # Make a final deep copy of the logs to ensure we're returning a clean copy
+    final_logs = {}
+    for key, value in circle_eligibility_logs.items():
+        if isinstance(value, dict):
+            final_logs[key] = value.copy()  # Deep copy dictionaries
+        else:
+            final_logs[key] = value  # Direct copy for non-dict values
+    
+    # Return the final logs copy
+    print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
+    return results, circles, unmatched, circle_capacity_debug, final_logs

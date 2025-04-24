@@ -598,30 +598,37 @@ def run_matching_algorithm(data, config):
         if region_circle_eligibility_logs:
             # CRITICAL FIX: Make a deep copy to ensure we're not affected by reference issues
             logs_to_update = {}
+            
+            # Create deep copies of each log entry
             for key, value in region_circle_eligibility_logs.items():
                 if isinstance(value, dict):
-                    # Deep copy each inner dictionary to avoid reference issues
-                    logs_to_update[key] = value.copy()
+                    logs_to_update[key] = value.copy()  # Copy dict values
                 else:
-                    logs_to_update[key] = value
-            
-            # Update session state with these logs
+                    logs_to_update[key] = value  # Directly copy simple values
+                    
+            # Directly update session state with these logs
             st.session_state.circle_eligibility_logs.update(logs_to_update)
+            
             logs_added = len(region_circle_eligibility_logs)
             logs_after = len(st.session_state.circle_eligibility_logs)
             
             # Print detailed debug information
+            print(f"🔍 CRITICAL UPDATE: Session state logs count changed from {logs_before} to {logs_after}")
             print(f"📊 CIRCLE ELIGIBILITY: Added {logs_added} logs from {region}")
-            print(f"📊 CIRCLE ELIGIBILITY: Session state now has {logs_after} logs (was {logs_before})")
             
-            # List the IDs added for debugging
-            print(f"📊 CIRCLE ELIGIBILITY: Added circle IDs from {region}: {list(region_circle_eligibility_logs.keys())}")
-            
-            # Add a sample entry to verify content
-            if logs_added > 0:
-                sample_key = next(iter(region_circle_eligibility_logs))
-                sample_value = region_circle_eligibility_logs[sample_key]
+            # Very important check - verify a specific entry actually made it
+            if logs_after > 0:
+                sample_key = next(iter(st.session_state.circle_eligibility_logs))
+                print(f"✅ VERIFY: Session state now contains entry for circle {sample_key}")
+                
+                # List the IDs added for debugging (first 5 only)
+                print(f"📊 Added circle IDs: {list(region_circle_eligibility_logs.keys())[:5]}...")
+                
+                # Show one sample entry for verification
+                sample_value = st.session_state.circle_eligibility_logs[sample_key]
                 print(f"📊 SAMPLE LOG ENTRY for {sample_key}: {sample_value}")
+            else:
+                print("❌ CRITICAL ERROR: Session state logs still empty after update!")
         else:
             print(f"⚠️ WARNING: No circle eligibility logs found for region {region}")
             
