@@ -22,17 +22,19 @@ def process_co_leader_max_new_members(value):
     if pd.isna(value) or value is None or value == '':
         return None
     
-    # Handle 'None' literal string
+    # Handle 'None' literal string - return it as a string for consistency
     if isinstance(value, str) and value.strip().lower() == 'none':
         return 'None'
     
     # Try to convert to integer
     try:
-        int_value = int(value)
+        int_value = int(float(value) if isinstance(value, str) and '.' in value else value)
         # Handle 0 as equivalent to 'None' - no new members should be added
         if int_value == 0:
             return 'None'
-        return int_value
+        # Ensure return value is a string for consistency with other possible return values
+        # This prevents the Arrow type error when mixing strings and integers
+        return str(int_value)
     except (ValueError, TypeError):
         # If not a valid number, return None
         return None
