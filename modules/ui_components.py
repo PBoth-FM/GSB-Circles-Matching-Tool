@@ -1658,19 +1658,103 @@ def render_debug_tab():
                     eligibility_df['test_circle'] = eligibility_df['is_test_circle'].apply(
                         lambda x: "✅ YES" if x else "NO")
                 
-                # Display columns
-                display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 
-                                'current_members', 'max_additions', 'eligible_status',
-                                'reason', 'test_circle']
+                # Add tabs to separate eligible from ineligible circles
+                eligible_tab, ineligible_tab = st.tabs(["Eligible Circles", "Ineligible Circles"])
                 
-                # Show only columns that exist
-                display_cols = [col for col in display_cols if col in eligibility_df.columns]
+                with eligible_tab:
+                    # Show only eligible circles
+                    if 'is_eligible' in eligibility_df.columns:
+                        eligible_df = eligibility_df[eligibility_df['is_eligible']].reset_index(drop=True)
+                        
+                        if len(eligible_df) > 0:
+                            st.write(f"Found {len(eligible_df)} circles with capacity for new members")
+                            
+                            # Display columns
+                            display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 
+                                            'current_members', 'max_additions', 'test_circle']
+                            
+                            # Add special columns if available
+                            for col in ['original_preference', 'override_reason', 'preference_value']:
+                                if col in eligible_df.columns and col not in display_cols:
+                                    display_cols.append(col)
+                            
+                            # Show only columns that exist
+                            display_cols = [col for col in display_cols if col in eligible_df.columns]
+                            
+                            # Display the DataFrame
+                            st.dataframe(eligible_df[display_cols])
+                            
+                            # Group by region to see distribution
+                            if 'region' in eligible_df.columns:
+                                st.write("### Eligible Circles by Region")
+                                region_counts = eligible_df['region'].value_counts().reset_index()
+                                region_counts.columns = ['Region', 'Count']
+                                st.dataframe(region_counts)
+                            
+                            # Look for test circles with special handling
+                            test_circles = eligible_df[eligible_df['is_test_circle'] == True]
+                            if len(test_circles) > 0:
+                                st.write(f"### Test Circles ({len(test_circles)})")
+                                st.dataframe(test_circles[display_cols])
+                            
+                            # Find circles with override reason (universal fix applied)
+                            if 'override_reason' in eligible_df.columns:
+                                small_circles = eligible_df[eligible_df['override_reason'].str.contains('small circle', case=False, na=False)]
+                                if len(small_circles) > 0:
+                                    st.write(f"### Small Circles With Universal Fix Applied ({len(small_circles)})")
+                                    st.dataframe(small_circles[display_cols])
+                        else:
+                            st.info("No eligible circles found.")
+                    else:
+                        st.warning("Eligibility status not available in data.")
                 
-                # Display the DataFrame
-                st.dataframe(eligibility_df[display_cols])
+                with ineligible_tab:
+                    # Show only ineligible circles
+                    if 'is_eligible' in eligibility_df.columns:
+                        ineligible_df = eligibility_df[~eligibility_df['is_eligible']].reset_index(drop=True)
+                        
+                        if len(ineligible_df) > 0:
+                            st.write(f"Found {len(ineligible_df)} circles that are NOT eligible for new members")
+                            
+                            # Display columns
+                            display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 
+                                            'current_members', 'max_additions', 'test_circle']
+                            
+                            # Add reason column if available
+                            if 'reason' in ineligible_df.columns:
+                                display_cols.append('reason')
+                            
+                            # Add original preference if available
+                            if 'original_preference' in ineligible_df.columns:
+                                display_cols.append('original_preference')
+                            
+                            # Show only columns that exist
+                            display_cols = [col for col in display_cols if col in ineligible_df.columns]
+                            
+                            # Display the DataFrame
+                            st.dataframe(ineligible_df[display_cols])
+                            
+                            # Group by reason if available
+                            if 'reason' in ineligible_df.columns:
+                                st.write("### Reasons for Ineligibility")
+                                reason_counts = ineligible_df['reason'].value_counts().reset_index()
+                                reason_counts.columns = ['Reason', 'Count']
+                                st.dataframe(reason_counts)
+                            
+                            # Find small circles that could benefit from universal fix
+                            if 'current_members' in ineligible_df.columns:
+                                small_circles = ineligible_df[ineligible_df['current_members'] < 5]
+                                if len(small_circles) > 0:
+                                    st.write(f"### Small Ineligible Circles (Under 5 Members)")
+                                    st.write(f"These circles could potentially benefit from the universal fix:")
+                                    st.dataframe(small_circles[display_cols])
+                        else:
+                            st.success("All circles are eligible for new members.")
+                    else:
+                        st.warning("Eligibility status not available in data.")
                 
-                # Summary statistics
-                st.write("### Eligibility Statistics")
+                # Summary statistics for all circles
+                st.write("### Overall Eligibility Statistics")
                 if 'is_eligible' in eligibility_df.columns:
                     eligible_count = eligibility_df['is_eligible'].sum()
                     total_count = len(eligibility_df)
@@ -1693,9 +1777,15 @@ def render_debug_tab():
                     total_count = len(eligibility_df)
                     eligibility_text += f"Total circles: {total_count}\n"
                     eligibility_text += f"Eligible circles: {eligible_count} ({eligible_count/total_count*100:.1f}%)\n\n"
+                    
+                    # Add universal fix statistics
+                    if 'override_reason' in eligibility_df.columns:
+                        small_circle_fixes = sum(eligibility_df['override_reason'].str.contains('small circle', case=False, na=False))
+                        eligibility_text += f"Small circles with universal fix applied: {small_circle_fixes}\n\n"
                 
-                eligibility_text += "CIRCLE DETAILS:\n"
-                for _, row in eligibility_df.iterrows():
+                # Eligible circles section
+                eligibility_text += "ELIGIBLE CIRCLE DETAILS:\n"
+                for _, row in eligibility_df[eligibility_df['is_eligible']].iterrows():
                     circle_text = []
                     circle_text.append(f"- {row.get('circle_id', 'Unknown')}")
                     
@@ -1709,12 +1799,37 @@ def render_debug_tab():
                         circle_text.append(f"  Current members: {row['current_members']}")
                     if 'max_additions' in row:
                         circle_text.append(f"  Max additions: {row['max_additions']}")
-                    if 'is_eligible' in row:
-                        circle_text.append(f"  Eligible: {'✅ YES' if row['is_eligible'] else '❌ NO'}")
-                    if 'reason' in row:
-                        circle_text.append(f"  Reason: {row['reason']}")
+                    if 'override_reason' in row and pd.notna(row['override_reason']):
+                        circle_text.append(f"  Override reason: {row['override_reason']}")
+                    if 'original_preference' in row and pd.notna(row['original_preference']):
+                        circle_text.append(f"  Original preference: {row['original_preference']}")
                     if 'is_test_circle' in row:
                         circle_text.append(f"  Test circle: {'✅ YES' if row['is_test_circle'] else 'NO'}")
+                    
+                    eligibility_text += "\n".join(circle_text) + "\n\n"
+                
+                # Ineligible circles section
+                eligibility_text += "\nINELIGIBLE CIRCLE DETAILS:\n"
+                for _, row in eligibility_df[~eligibility_df['is_eligible']].iterrows():
+                    circle_text = []
+                    circle_text.append(f"- {row.get('circle_id', 'Unknown')}")
+                    
+                    if 'region' in row:
+                        circle_text.append(f"  Region: {row['region']}")
+                    if 'subregion' in row:
+                        circle_text.append(f"  Subregion: {row['subregion']}")
+                    if 'meeting_time' in row:
+                        circle_text.append(f"  Meeting time: {row['meeting_time']}")
+                    if 'current_members' in row:
+                        circle_text.append(f"  Current members: {row['current_members']}")
+                    if 'max_additions' in row:
+                        circle_text.append(f"  Max additions: {row['max_additions']}")
+                    if 'reason' in row:
+                        circle_text.append(f"  Reason: {row['reason']}")
+                    if 'original_preference' in row and pd.notna(row['original_preference']):
+                        circle_text.append(f"  Original preference: {row['original_preference']}")
+                    if 'is_test_circle' in row:
+                        circle_text.append(f"  Test circle: {'YES' if row['is_test_circle'] else 'NO'}")
                     
                     eligibility_text += "\n".join(circle_text) + "\n\n"
                 
