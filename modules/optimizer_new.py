@@ -478,7 +478,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 'is_eligible': final_max_additions > 0,
                                 'original_preference': 'None',
                                 'override_reason': 'Test circle with special handling' if is_special_circle else 'Small circle needs to reach viable size',
-                                'is_test_circle': is_special_circle
+                                'is_test_circle': is_special_circle,
+                                'is_small_circle': circle_size < 5,
+                                'has_none_preference': True,
+                                'preference_overridden': True
                             }
                             
                             if debug_mode:
@@ -502,7 +505,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 'is_eligible': False,
                                 'original_preference': 'None',
                                 'reason': 'Co-leader requested no new members and circle is already viable',
-                                'is_test_circle': is_special_circle
+                                'is_test_circle': is_special_circle,
+                                'is_small_circle': circle_size < 5,
+                                'has_none_preference': True,
+                                'preference_overridden': False
                             }
                             
                             if debug_mode:
@@ -528,7 +534,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'is_eligible': final_max_additions > 0,
                             'original_preference': 'Specified by co-leader',
                             'preference_value': max_additions,
-                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+                            'is_small_circle': len(members) < 5,
+                            'has_none_preference': False,
+                            'preference_overridden': False
                         }
                         
                         if debug_mode:
@@ -548,7 +557,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'is_eligible': final_max_additions > 0,
                             'original_preference': 'Default',
                             'preference_value': 'Default max total of 8',
-                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+                            'is_small_circle': len(members) < 5,
+                            'has_none_preference': False,
+                            'preference_overridden': False
                         }
                         
                         if debug_mode:
@@ -726,7 +738,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'current_members': circle_data.get('member_count', 0),
             'is_eligible': is_viable,
             'reason': "Has capacity" if is_viable else "No capacity (max_additions=0)",
-            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+            'is_small_circle': circle_data.get('member_count', 0) < 5,
+            'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means None preference
+            'preference_overridden': False  # By this point, overrides have already been applied above
         }
         
         if debug_mode and not is_viable:
