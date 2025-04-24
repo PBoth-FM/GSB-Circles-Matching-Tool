@@ -77,16 +77,19 @@ def main():
 def run_optimization():
     """Run the optimization algorithm and store results in session state"""
     # Reset debug logs at the start of each optimization run
-    from modules.optimizer_new import circle_eligibility_logs
+    # We're no longer importing the global circle_eligibility_logs variable
     from modules.optimizer_new import debug_eligibility_logs
     from modules.optimizer_new import update_session_state_eligibility_logs
     
-    # Clear all previous logs
-    if isinstance(circle_eligibility_logs, dict):
-        print(f"🧹 Clearing previous logs - had {len(circle_eligibility_logs)} entries")
-        circle_eligibility_logs.clear()
-    else:
-        print(f"⚠️ WARNING: circle_eligibility_logs is not a dictionary - type is {type(circle_eligibility_logs)}")
+    # We now manage logs through session state directly instead of a global variable
+    # Initialize the logs dictionary in session state if needed
+    import streamlit as st
+    if 'circle_eligibility_logs' not in st.session_state:
+        st.session_state.circle_eligibility_logs = {}
+    
+    # Clear the existing session state logs
+    st.session_state.circle_eligibility_logs.clear()
+    print(f"🧹 Cleared previous logs from session state")
     
     # Log the reset for debugging
     debug_eligibility_logs("Cleared circle eligibility logs before optimization run")
@@ -124,13 +127,8 @@ def run_optimization():
             if len(st.session_state.circle_eligibility_logs) == 0:
                 print("WARNING: No circle eligibility logs found in session state!")
                 
-                # Import directly from the optimizer module as a fallback
-                from modules.optimizer_new import circle_eligibility_logs
-                print(f"Global circle_eligibility_logs contains {len(circle_eligibility_logs)} entries")
-                
-                # Copy the global logs to session state as a fallback
-                st.session_state.circle_eligibility_logs = circle_eligibility_logs.copy()
-                print(f"Copied {len(st.session_state.circle_eligibility_logs)} entries to session state as fallback")
+                # We no longer use a global variable as fallback since we've migrated to a parameter-based approach
+                print("Please check if optimizer_new.py's update_session_state_eligibility_logs function was called properly")
             
             st.success(f"Matching completed in {st.session_state.exec_time:.2f} seconds!")
             st.session_state.active_tab = "Results"

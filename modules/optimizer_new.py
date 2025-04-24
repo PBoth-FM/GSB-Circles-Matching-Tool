@@ -21,9 +21,9 @@ houston_debug_logs = []
 # Initialize debug counter for tracking
 DEBUG_ELIGIBILITY_COUNTER = 0
 
-# NEW APPROACH: Don't use globals for the circle eligibility logs
-# Instead of a global, we'll create the dictionary in optimize_region_v2 
-# and return it explicitly with the result
+# REFACTORED APPROACH: We completely removed the global circle_eligibility_logs variable
+# Instead, we create the dictionary in optimize_region_v2 
+# and pass it explicitly as parameters to functions that need it
 
 # Create a special log for tracking the circle eligibility logs
 def debug_eligibility_logs(message):
@@ -102,10 +102,9 @@ def update_session_state_eligibility_logs(circle_logs=None):
                 print("❌ CRITICAL ERROR: Session state circle_eligibility_logs is still empty after update!")
                 return False
             
-            # Trigger the flag
-            global ELIGIBILITY_LOGS_POPULATED
-            ELIGIBILITY_LOGS_POPULATED = True
-            print(f"🔍 Set ELIGIBILITY_LOGS_POPULATED = {ELIGIBILITY_LOGS_POPULATED}")
+            # We no longer need the global flag since we're using parameter passing
+            # This implementation relies on the session state to track logs directly
+            print(f"🔍 Successfully updated session state with circle eligibility logs")
             
             # For additional safety, verify a sample entry was properly copied
             if after_count > 0:
