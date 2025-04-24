@@ -842,14 +842,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"🔍 Found {len(existing_circles)} circles in region {region} to evaluate for eligibility")
     print(f"🔍 Circle IDs: {list(existing_circles.keys())[:5]}{'...' if len(existing_circles) > 5 else ''}")
     
+    # Explicitly declare we're using the global variable
+    global circle_eligibility_logs
+    
     # DEBUG: Show what the global circle_eligibility_logs contains before we start
     print(f"🔍 Before adding new logs, circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
     
     # Counter for tracking how many circles we're processing
     circles_processed = 0
-    
-    # Explicitly declare we're using the global variable
-    global circle_eligibility_logs
     
     for circle_id, circle_data in existing_circles.items():
         max_additions = circle_data.get('max_additions', 0)
