@@ -77,12 +77,24 @@ def main():
 def run_optimization():
     """Run the optimization algorithm and store results in session state"""
     # Reset debug logs at the start of each optimization run
-    from modules.optimizer_new import circle_eligibility_logs
+    from modules.optimizer_new import circle_eligibility_logs, ELIGIBILITY_LOGS_POPULATED
+    
+    # Clear all previous logs
     circle_eligibility_logs.clear()
+    
+    # Reset the global populated flag 
+    global ELIGIBILITY_LOGS_POPULATED
+    ELIGIBILITY_LOGS_POPULATED = False
     
     # Make sure we have a place to store eligibility logs in session state
     if 'circle_eligibility_logs' not in st.session_state:
         st.session_state.circle_eligibility_logs = {}
+    else:
+        # Clear existing logs in session state
+        st.session_state.circle_eligibility_logs.clear()
+        
+    # Log the reset for debugging
+    print("🔄 CRITICAL DEBUG: Reset circle eligibility logs before optimization run")
     try:
         with st.spinner("Running matching algorithm..."):
             start_time = time.time()
