@@ -78,7 +78,7 @@ def run_optimization():
     from modules.optimizer_new import circle_eligibility_logs
     circle_eligibility_logs.clear()
     
-    # Make sure we have a place to store circle eligibility logs in session state
+    # Make sure we have a place to store eligibility logs in session state
     if 'circle_eligibility_logs' not in st.session_state:
         st.session_state.circle_eligibility_logs = {}
     try:
@@ -96,6 +96,10 @@ def run_optimization():
             st.session_state.matched_circles = matched_circles
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
+            
+            # Store the circle eligibility logs in session state
+            from modules.optimizer_new import circle_eligibility_logs
+            st.session_state.circle_eligibility_logs = circle_eligibility_logs.copy()
             
             st.success(f"Matching completed in {st.session_state.exec_time:.2f} seconds!")
             st.session_state.active_tab = "Results"

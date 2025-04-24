@@ -1850,7 +1850,60 @@ def render_debug_tab():
                 st.info("No existing circles received new members in the current run.")
         else:
             st.info("No matched circles data available. Run the optimization first.")
+    
+    with debug_tab4:
+        st.write("### All Circles Debug")
+        st.write("This section shows all circle information for deep debugging")
         
+        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+            circle_df = st.session_state.matched_circles
+            
+            # Display all circle data
+            st.write(f"Found {len(circle_df)} circles in the results")
+            st.dataframe(circle_df)
+            
+            # Basic statistics
+            st.write("### Circle Statistics")
+            total_circles = len(circle_df)
+            new_circles = circle_df['is_new_circle'].sum() if 'is_new_circle' in circle_df.columns else 0
+            existing_circles = total_circles - new_circles
+            total_members = circle_df['member_count'].sum() if 'member_count' in circle_df.columns else 0
+            
+            st.write(f"- Total circles: {total_circles}")
+            st.write(f"- New circles: {new_circles}")
+            st.write(f"- Continuing circles: {existing_circles}")
+            st.write(f"- Total members across all circles: {total_members}")
+            
+            # Create a searchable text area with all circle data
+            circle_text = "ALL CIRCLES DEBUG DATA\n\n"
+            circle_text += f"Total circles: {total_circles}\n"
+            circle_text += f"New circles: {new_circles}\n"
+            circle_text += f"Continuing circles: {existing_circles}\n"
+            circle_text += f"Total members: {total_members}\n\n"
+            
+            # Add details for each circle
+            circle_text += "CIRCLE DETAILS:\n"
+            for _, row in circle_df.iterrows():
+                circle_text += f"- Circle ID: {row.get('circle_id', 'Unknown')}\n"
+                circle_text += f"  Region: {row.get('region', 'Unknown')}\n"
+                circle_text += f"  Meeting time: {row.get('meeting_time', 'Unknown')}\n"
+                circle_text += f"  Member count: {row.get('member_count', 0)}\n"
+                circle_text += f"  New members: {row.get('new_members', 0)}\n"
+                circle_text += f"  Is new circle: {row.get('is_new_circle', False)}\n"
+                circle_text += "\n"
+            
+            # Add copy functionality
+            st.text_area("Copy this text to share all circle data", circle_text, height=300)
+            
+            # Add copy button
+            st.markdown("""
+            <button onclick="navigator.clipboard.writeText(document.querySelectorAll('textarea')[3].value)">
+                📋 Copy All Circles Debug to Clipboard
+            </button>
+            """, unsafe_allow_html=True)
+        else:
+            st.info("No matched circles data available. Run the optimization first.")
+            
     # Original Houston Circles Debug section
     st.write("## Original Houston Circles Debug")
     
