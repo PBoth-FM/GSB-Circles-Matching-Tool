@@ -596,25 +596,84 @@ def run_matching_algorithm(data, config):
         
         # Update session state with region logs - THIS IS THE CRITICAL PART
         if region_circle_eligibility_logs:
-            # CRITICAL FIX: Make a deep copy to ensure we're not affected by reference issues
+            # CRITICAL FIX: Create deep copy with explicit contents for debugging
             logs_to_update = {}
             
-            # Create deep copies of each log entry
+            print(f"\n🛠️ CRITICAL FIX: Received logs from {region} with {len(region_circle_eligibility_logs)} entries")
+            print(f"🛠️ Type of region_circle_eligibility_logs: {type(region_circle_eligibility_logs)}")
+            if len(region_circle_eligibility_logs) > 0:
+                print(f"🛠️ First few keys: {list(region_circle_eligibility_logs.keys())[:3]}")
+                example_key = list(region_circle_eligibility_logs.keys())[0]
+                print(f"🛠️ Example value for {example_key}: {region_circle_eligibility_logs[example_key]}")
+            
+            # Create deep copies of each log entry with explicit structure
             for key, value in region_circle_eligibility_logs.items():
                 if isinstance(value, dict):
-                    logs_to_update[key] = value.copy()  # Copy dict values
+                    # Make a very explicit copy of the dictionary
+                    new_dict = {}
+                    for k, v in value.items():
+                        new_dict[k] = v
+                    logs_to_update[key] = new_dict
                 else:
-                    logs_to_update[key] = value  # Directly copy simple values
-                    
+                    logs_to_update[key] = value
+            
+            # FOR TESTING: If no circles were processed, add some test data
+            # This is for debugging purposes only - to verify UI works with data
+            if len(logs_to_update) == 0:
+                print("🔍 ADDING TEST DATA: No real logs, adding sample data to debug UI")
+                # Add test entries for 3 sample circles
+                logs_to_update['IP-TEST-01'] = {
+                    'circle_id': 'IP-TEST-01',
+                    'region': 'Test Region',
+                    'subregion': 'Test Subregion',
+                    'is_eligible': True,
+                    'current_members': 7,
+                    'max_additions': 3,
+                    'is_small_circle': False,
+                    'is_test_circle': True,
+                    'has_none_preference': False,
+                    'preference_overridden': False,
+                    'meeting_time': 'Monday (Evening)'
+                }
+                logs_to_update['IP-TEST-02'] = {
+                    'circle_id': 'IP-TEST-02',
+                    'region': 'Test Region',
+                    'subregion': 'Test Subregion',
+                    'is_eligible': False,
+                    'current_members': 10,
+                    'max_additions': 0,
+                    'is_small_circle': False,
+                    'is_test_circle': True,
+                    'has_none_preference': True,
+                    'preference_overridden': False,
+                    'reason': 'Circle is at maximum capacity (10 members)',
+                    'meeting_time': 'Wednesday (Evening)'
+                }
+                logs_to_update['IP-TEST-03'] = {
+                    'circle_id': 'IP-TEST-03',
+                    'region': 'Test Region',
+                    'subregion': 'Test Subregion',
+                    'is_eligible': True,
+                    'current_members': 4,
+                    'max_additions': 6,
+                    'is_small_circle': True,
+                    'is_test_circle': True,
+                    'has_none_preference': True,
+                    'preference_overridden': True,
+                    'override_reason': 'Small circle override applied',
+                    'meeting_time': 'Friday (Evening)'
+                }
+                print(f"🔍 Added {len(logs_to_update)} test circle entries for debugging")
+            
             # Directly update session state with these logs
             st.session_state.circle_eligibility_logs.update(logs_to_update)
             
-            logs_added = len(region_circle_eligibility_logs)
+            logs_added = len(logs_to_update)
             logs_after = len(st.session_state.circle_eligibility_logs)
             
             # Print detailed debug information
             print(f"🔍 CRITICAL UPDATE: Session state logs count changed from {logs_before} to {logs_after}")
-            print(f"📊 CIRCLE ELIGIBILITY: Added {logs_added} logs from {region}")
+            print(f"📊 CIRCLE ELIGIBILITY: Added {logs_added} logs (real or test data) from {region}")
             
             # Very important check - verify a specific entry actually made it
             if logs_after > 0:
@@ -622,7 +681,7 @@ def run_matching_algorithm(data, config):
                 print(f"✅ VERIFY: Session state now contains entry for circle {sample_key}")
                 
                 # List the IDs added for debugging (first 5 only)
-                print(f"📊 Added circle IDs: {list(region_circle_eligibility_logs.keys())[:5]}...")
+                print(f"📊 Added circle IDs: {list(st.session_state.circle_eligibility_logs.keys())[:5]}...")
                 
                 # Show one sample entry for verification
                 sample_value = st.session_state.circle_eligibility_logs[sample_key]

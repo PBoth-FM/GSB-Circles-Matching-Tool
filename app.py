@@ -93,16 +93,6 @@ def run_optimization():
     
     # Log the reset for debugging
     debug_eligibility_logs("Cleared circle eligibility logs before optimization run")
-    
-    # Make sure we have a place to store eligibility logs in session state
-    if 'circle_eligibility_logs' not in st.session_state:
-        st.session_state.circle_eligibility_logs = {}
-        print("📋 Created fresh circle_eligibility_logs in session state")
-    else:
-        # Clear existing logs in session state
-        len_before = len(st.session_state.circle_eligibility_logs)
-        st.session_state.circle_eligibility_logs.clear()
-        print(f"🧹 Cleared {len_before} entries from session state logs")
         
     # Log the reset for debugging
     print("🔄 CRITICAL DEBUG: Reset circle eligibility logs before optimization run")
