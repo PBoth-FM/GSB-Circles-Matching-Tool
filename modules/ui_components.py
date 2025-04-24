@@ -22,7 +22,12 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
     if matched_circles_df is None or results_df is None:
         return 0
         
-    total_diversity_score = 0
+    # Track the total scores for each diversity category
+    total_vintage_score = 0
+    total_employment_score = 0
+    total_industry_score = 0
+    total_ri_score = 0
+    total_children_score = 0
     
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
@@ -49,6 +54,7 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
         # Initialize sets to track unique categories for each diversity type
         unique_vintages = set()
         unique_employment_categories = set()
+        unique_industry_categories = set()
         unique_ri_categories = set()
         unique_children_categories = set()
         
@@ -69,6 +75,12 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
                     if pd.notna(employment):
                         unique_employment_categories.add(employment)
                 
+                # Industry diversity
+                if 'Industry_Category' in member_data.columns:
+                    industry = member_data['Industry_Category'].iloc[0]
+                    if pd.notna(industry):
+                        unique_industry_categories.add(industry)
+                
                 # Racial Identity diversity
                 if 'Racial_Identity_Category' in member_data.columns:
                     ri = member_data['Racial_Identity_Category'].iloc[0]
@@ -84,12 +96,19 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
         # Calculate diversity scores for this circle
         vintage_score = len(unique_vintages) if unique_vintages else 0
         employment_score = len(unique_employment_categories) if unique_employment_categories else 0
+        industry_score = len(unique_industry_categories) if unique_industry_categories else 0
         ri_score = len(unique_ri_categories) if unique_ri_categories else 0
         children_score = len(unique_children_categories) if unique_children_categories else 0
         
-        # Add to total diversity score
-        circle_total_score = vintage_score + employment_score + ri_score + children_score
-        total_diversity_score += circle_total_score
+        # Add to category totals
+        total_vintage_score += vintage_score
+        total_employment_score += employment_score
+        total_industry_score += industry_score
+        total_ri_score += ri_score
+        total_children_score += children_score
+    
+    # Sum up all the category scores
+    total_diversity_score = total_vintage_score + total_employment_score + total_industry_score + total_ri_score + total_children_score
     
     return total_diversity_score
 
