@@ -18,15 +18,12 @@ TRACE_REGION_MAPPING = True
 # Initialize global tracking for Houston circles debug
 houston_debug_logs = []
 
-# Initialize logging for circle eligibility
-# Use a dictionary where keys are circle IDs to avoid duplicates and overwriting
-circle_eligibility_logs = {}
-
-# Debug counter for tracking
+# Initialize debug counter for tracking
 DEBUG_ELIGIBILITY_COUNTER = 0
 
-# Flag to track if eligibility logs were ever populated
-ELIGIBILITY_LOGS_POPULATED = False
+# NEW APPROACH: Don't use globals for the circle eligibility logs
+# Instead of a global, we'll create the dictionary in optimize_region_v2 
+# and return it explicitly with the result
 
 # Create a special log for tracking the circle eligibility logs
 def debug_eligibility_logs(message):
@@ -34,37 +31,43 @@ def debug_eligibility_logs(message):
     print(f"🔍 CIRCLE ELIGIBILITY DEBUG: {message}")
     
 # Function to directly update circle eligibility logs in session state
-def update_session_state_eligibility_logs():
+def update_session_state_eligibility_logs(circle_logs=None):
     """
     Helper function to ensure circle eligibility logs are properly stored in session state.
     Call this whenever eligibility logs are updated to ensure consistency.
+    
+    Args:
+        circle_logs: Dictionary of circle eligibility logs to store in session state
+                    If None, an empty dictionary will be used
     """
     try:
         import streamlit as st
-        global circle_eligibility_logs
+        
+        # Use provided logs or create an empty dictionary
+        logs_to_store = circle_logs if circle_logs is not None else {}
         
         # ENHANCED DIAGNOSTICS - Print detailed information
         print(f"\n🔍 CRITICAL DIAGNOSTIC: update_session_state_eligibility_logs called")
-        print(f"🔍 Current global circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
+        print(f"🔍 Received logs dictionary with {len(logs_to_store)} entries")
         
-        # Debug information about the global variable's actual data type
-        print(f"🔍 Type of global circle_eligibility_logs: {type(circle_eligibility_logs)}")
-        print(f"🔍 Is global circle_eligibility_logs a dictionary? {isinstance(circle_eligibility_logs, dict)}")
+        # Debug information about the provided dictionary
+        print(f"🔍 Type of logs_to_store: {type(logs_to_store)}")
+        print(f"🔍 Is logs_to_store a dictionary? {isinstance(logs_to_store, dict)}")
         
         # Show the first few circle IDs if any exist
-        if circle_eligibility_logs and isinstance(circle_eligibility_logs, dict):
-            circle_ids = list(circle_eligibility_logs.keys())
+        if logs_to_store and isinstance(logs_to_store, dict):
+            circle_ids = list(logs_to_store.keys())
             print(f"🔍 Circle IDs in logs: {circle_ids[:5]}{'...' if len(circle_ids) > 5 else ''}")
             # Show details of first log entry for debugging
             first_id = circle_ids[0] if circle_ids else None
             if first_id:
-                print(f"🔍 Sample log entry for {first_id}: {circle_eligibility_logs[first_id]}")
+                print(f"🔍 Sample log entry for {first_id}: {logs_to_store[first_id]}")
         else:
-            print("❌ CRITICAL ERROR: Global circle_eligibility_logs is empty or not a dictionary!")
+            print("❌ CRITICAL ERROR: Provided logs dictionary is empty or not a dictionary!")
             # If it's not a dictionary, initialize it as one
-            if not isinstance(circle_eligibility_logs, dict):
-                print("🔧 FIXING: Initializing global circle_eligibility_logs as a dictionary")
-                circle_eligibility_logs = {}
+            if not isinstance(logs_to_store, dict):
+                print("🔧 FIXING: Initializing logs_to_store as a dictionary")
+                logs_to_store = {}
         
         # Create session state if needed
         if 'circle_eligibility_logs' not in st.session_state:
@@ -81,7 +84,7 @@ def update_session_state_eligibility_logs():
             
             # Make a deep copy of the logs to prevent reference issues
             logs_copy = {}
-            for key, value in circle_eligibility_logs.items():
+            for key, value in logs_to_store.items():
                 if isinstance(value, dict):
                     logs_copy[key] = value.copy()  # Copy each inner dictionary
                 else:
@@ -118,7 +121,7 @@ def update_session_state_eligibility_logs():
         return False
     
 # Add a direct check to display eligibility logs at import time
-debug_eligibility_logs(f"Module initialized with {len(circle_eligibility_logs)} eligibility logs")
+debug_eligibility_logs(f"Module initialized with transition to parameter-based circle eligibility logs")
 
 # Example participants and circles for testing
 test_participants = ['73177784103', '50625303450', '72549701782']  # Example participants for testing
@@ -332,13 +335,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Track debug information
     circle_capacity_debug = {}  # For tracking capacity of circles
     
-    # Reset eligibility logs for this region
-    global circle_eligibility_logs, ELIGIBILITY_LOGS_POPULATED
+    # Initialize local eligibility logs for this region
+    # Instead of using a global, we'll create a local variable and return it
     circle_eligibility_logs = {}  # For tracking circle eligibility decisions
-    ELIGIBILITY_LOGS_POPULATED = False  # Will be set to True when populated
     
     # Debug message
-    debug_eligibility_logs(f"Reset circle eligibility logs for {region} region")
+    debug_eligibility_logs(f"Initialized local circle eligibility logs for {region} region")
     
     # Central registry to track processed circle IDs and prevent duplicates
     processed_circle_ids = set()
@@ -842,10 +844,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"🔍 Found {len(existing_circles)} circles in region {region} to evaluate for eligibility")
     print(f"🔍 Circle IDs: {list(existing_circles.keys())[:5]}{'...' if len(existing_circles) > 5 else ''}")
     
-    # Explicitly declare we're using the global variable
-    global circle_eligibility_logs
-    
-    # DEBUG: Show what the global circle_eligibility_logs contains before we start
+    # DEBUG: Show what the local circle_eligibility_logs contains before we start
     print(f"🔍 Before adding new logs, circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
     
     # Counter for tracking how many circles we're processing
