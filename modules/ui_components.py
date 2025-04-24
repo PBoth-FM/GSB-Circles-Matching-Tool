@@ -13,6 +13,13 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
     This function gets the scores for each diversity category by using the same calculation
     methods as in the individual category tabs.
     
+    The total diversity score is the simple sum of all five category scores:
+    - Class Vintage diversity score
+    - Employment diversity score
+    - Industry diversity score
+    - Racial Identity diversity score
+    - Children diversity score
+    
     Parameters:
     matched_circles_df (DataFrame): DataFrame containing circle data
     results_df (DataFrame): DataFrame containing participant data
@@ -3254,8 +3261,12 @@ def render_circles_detail():
     # Explanation text
     st.write("""
     Diversity scores represent the number of categories represented in a circle. 
-    E.g., if a circle has members from two different industry categories, its industry diversity score is 2. 
-    Total diversity is the sum across all diversity scores (Vintage, Employment, Industry, RI and Children).
+    For example:
+    - If a circle has members from two different vintage categories, its Vintage Score is 2
+    - If a circle has members from three different industry categories, its Industry Score is 3
+    
+    Total Diversity Score is the simple sum of all five individual diversity scores:
+    Vintage + Employment + Industry + Racial Identity + Children
     """)
     
     # First check if we have the necessary data
@@ -3458,6 +3469,7 @@ def render_circles_detail():
         # Summary statistics
         st.subheader("Summary Statistics")
         
+        # First row of metrics
         col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
@@ -3475,6 +3487,21 @@ def render_circles_detail():
             avg_employment_score = diversity_df['Employment Score'].mean()
             st.metric("Avg Employment Score", f"{avg_employment_score:.2f}")
         
+        with col5:
+            avg_industry_score = diversity_df['Industry Score'].mean()
+            st.metric("Avg Industry Score", f"{avg_industry_score:.2f}")
+            
+        # Second row of metrics
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
+        with col1:
+            avg_ri_score = diversity_df['RI Score'].mean()
+            st.metric("Avg RI Score", f"{avg_ri_score:.2f}")
+            
+        with col2:
+            avg_children_score = diversity_df['Children Score'].mean()
+            st.metric("Avg Children Score", f"{avg_children_score:.2f}")
+            
         with col5:
             avg_participants = diversity_df['Participants'].mean()
             st.metric("Avg Participants", f"{avg_participants:.1f}")
