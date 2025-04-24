@@ -576,9 +576,28 @@ def run_matching_algorithm(data, config):
         # Count logs before update
         logs_before = len(st.session_state.circle_eligibility_logs)
         
+        # CRITICAL DEBUG: Check exactly what we're getting from optimize_region_v2
+        print(f"\n🔍🔍 DEEP DIAGNOSTIC: optimize_region_v2 returned {type(region_circle_eligibility_logs)} for region_circle_eligibility_logs")
+        print(f"🔍🔍 It contains {len(region_circle_eligibility_logs) if region_circle_eligibility_logs else 0} entries")
+        
+        # Actually print the first few keys to make sure it's valid
+        if region_circle_eligibility_logs and len(region_circle_eligibility_logs) > 0:
+            print(f"🔍🔍 First few keys: {list(region_circle_eligibility_logs.keys())[:3]}")
+            # And print one sample entry to verify content
+            sample_key = list(region_circle_eligibility_logs.keys())[0]
+            print(f"🔍🔍 Sample entry for key {sample_key}:")
+            if isinstance(region_circle_eligibility_logs[sample_key], dict):
+                for k, v in region_circle_eligibility_logs[sample_key].items():
+                    print(f"🔍🔍   {k}: {v}")
+            else:
+                print(f"🔍🔍   Value: {region_circle_eligibility_logs[sample_key]}")
+                print(f"🔍🔍   Type: {type(region_circle_eligibility_logs[sample_key])}")
+        
         # Update session state with region logs
         if region_circle_eligibility_logs:
-            st.session_state.circle_eligibility_logs.update(region_circle_eligibility_logs)
+            # CRITICAL FIX: Make a deep copy to ensure we're not affected by reference issues
+            logs_to_update = region_circle_eligibility_logs.copy()
+            st.session_state.circle_eligibility_logs.update(logs_to_update)
             logs_added = len(region_circle_eligibility_logs)
             logs_after = len(st.session_state.circle_eligibility_logs)
             
