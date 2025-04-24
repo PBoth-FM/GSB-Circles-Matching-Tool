@@ -202,19 +202,41 @@ def process_uploaded_file(uploaded_file):
                         st.metric("Participants Matched", matched_count)
                     
                     with col3:
-                        # Use the helper function from ui_components to calculate the diversity score
-                        from modules.ui_components import calculate_total_diversity_score
+                        # Simply look up the diversity scores from the session state
+                        # These scores are calculated in the individual diversity tabs
                         
-                        # Get the matched circles dataframe
-                        matched_df = None
-                        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                            matched_df = st.session_state.matched_circles
+                        # Default values in case some scores aren't available
+                        vintage_score = 0
+                        employment_score = 0
+                        industry_score = 0
+                        ri_score = 0
+                        children_score = 0
                         
-                        # Calculate diversity score using the helper function
-                        total_diversity_score = calculate_total_diversity_score(matched_df, results_df)
+                        # Look up each diversity score from session state if available
+                        if 'vintage_diversity_score' in st.session_state:
+                            vintage_score = st.session_state.vintage_diversity_score
+                        
+                        if 'employment_diversity_score' in st.session_state:
+                            employment_score = st.session_state.employment_diversity_score
+                        
+                        if 'industry_diversity_score' in st.session_state:
+                            industry_score = st.session_state.industry_diversity_score
+                        
+                        if 'racial_identity_diversity_score' in st.session_state:
+                            ri_score = st.session_state.racial_identity_diversity_score
+                        
+                        if 'children_diversity_score' in st.session_state:
+                            children_score = st.session_state.children_diversity_score
+                        
+                        # Calculate total score as the sum
+                        total_diversity_score = vintage_score + employment_score + industry_score + ri_score + children_score
                         
                         # Display Diversity Score metric
                         st.metric("Diversity Score", total_diversity_score)
+                        
+                        # Log for debugging
+                        print(f"DEBUG - Match page diversity scores: Vintage({vintage_score}) + Employment({employment_score}) + " +
+                              f"Industry({industry_score}) + RI({ri_score}) + Children({children_score}) = Total({total_diversity_score})")
                         
                     with col4:
                         if total_participants > 0:

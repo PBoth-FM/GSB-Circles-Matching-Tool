@@ -661,6 +661,9 @@ def render_vintage_diversity_histogram():
     total_diversity_score = sum(circle_vintage_diversity_scores.values()) if circle_vintage_diversity_scores else 0
     avg_diversity_score = total_diversity_score / len(circle_vintage_diversity_scores) if circle_vintage_diversity_scores else 0
     
+    # Store the total score in session state for use in the Match tab
+    st.session_state.vintage_diversity_score = total_diversity_score
+    
     # Create two columns for the metrics
     col1, col2 = st.columns(2)
     
@@ -817,6 +820,9 @@ def render_employment_diversity_histogram():
     total_diversity_score = sum(circle_employment_diversity_scores.values()) if circle_employment_diversity_scores else 0
     avg_diversity_score = total_diversity_score / len(circle_employment_diversity_scores) if circle_employment_diversity_scores else 0
     
+    # Store the total score in session state for use in the Match tab
+    st.session_state.employment_diversity_score = total_diversity_score
+    
     # Create two columns for the metrics
     col1, col2 = st.columns(2)
     
@@ -972,6 +978,9 @@ def render_industry_diversity_histogram():
     # Calculate average and total diversity scores
     total_diversity_score = sum(circle_industry_diversity_scores.values()) if circle_industry_diversity_scores else 0
     avg_diversity_score = total_diversity_score / len(circle_industry_diversity_scores) if circle_industry_diversity_scores else 0
+    
+    # Store the total score in session state for use in the Match tab
+    st.session_state.industry_diversity_score = total_diversity_score
     
     # Create two columns for the metrics
     col1, col2 = st.columns(2)
@@ -3061,6 +3070,9 @@ def render_children_diversity_histogram():
     total_diversity_score = sum(circle_children_diversity_scores.values()) if circle_children_diversity_scores else 0
     avg_diversity_score = total_diversity_score / len(circle_children_diversity_scores) if circle_children_diversity_scores else 0
     
+    # Store the total score in session state for use in the Match tab
+    st.session_state.children_diversity_score = total_diversity_score
+    
     # Create two columns for the metrics
     col1, col2 = st.columns(2)
     
@@ -3215,6 +3227,9 @@ def render_racial_identity_diversity_histogram():
     # Calculate average and total diversity scores
     total_diversity_score = sum(circle_racial_identity_diversity_scores.values()) if circle_racial_identity_diversity_scores else 0
     avg_diversity_score = total_diversity_score / len(circle_racial_identity_diversity_scores) if circle_racial_identity_diversity_scores else 0
+    
+    # Store the total score in session state for use in the Match tab
+    st.session_state.racial_identity_diversity_score = total_diversity_score
     
     # Create two columns for the metrics
     col1, col2 = st.columns(2)
