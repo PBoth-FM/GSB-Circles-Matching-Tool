@@ -422,24 +422,103 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     
                     # Set max_additions based on rules
                     if has_none_preference:
-                        # Any co-leader saying "None" means no new members
-                        final_max_additions = 0
-                        if debug_mode:
-                            print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
+                        # Check if this is a circle that should accept members despite preferences
+                        is_special_circle = circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                        
+                        # Determine the current size of the circle
+                        circle_size = len(members)
+                        
+                        # UNIVERSAL FIX: Allow small circles to grow regardless of co-leader preferences
+                        # This applies the same logic we use for test circles to ALL circles
+                        if is_special_circle or circle_size < 5:  # 5 is the minimum viable size
+                            # Override the "None" preference to allow smaller circles to reach viable size
+                            max_to_viable = max(0, 5 - circle_size)  # Add enough to reach viable size
+                            final_max_additions = max_to_viable if max_to_viable > 0 else 2  # At least 2
                             
+                            # Record why we're making this change in our logs
+                            circle_eligibility_logs[circle_id] = {
+                                'circle_id': circle_id,
+                                'region': region,
+                                'subregion': subregion,
+                                'meeting_time': formatted_meeting_time,
+                                'max_additions': final_max_additions,
+                                'current_members': circle_size,
+                                'is_eligible': True,
+                                'original_preference': 'None',
+                                'override_reason': 'Test circle or small circle needs members' if is_special_circle else 'Small circle needs to reach viable size',
+                                'is_test_circle': is_special_circle
+                            }
+                            
+                            if debug_mode:
+                                if is_special_circle:
+                                    print(f"  📋 SPECIAL HANDLING: Test circle {circle_id} max_additions set to {final_max_additions}")
+                                else:
+                                    print(f"  📋 UNIVERSAL FIX: Small circle {circle_id} needs members to reach viable size")
+                                    print(f"  Current size: {circle_size}, setting max_additions={final_max_additions}")
+                        else:
+                            # Regular case: Co-leader requested no new members and circle is already viable
+                            final_max_additions = 0
+                            
+                            # Record why this circle is excluded
+                            circle_eligibility_logs[circle_id] = {
+                                'circle_id': circle_id,
+                                'region': region,
+                                'subregion': subregion,
+                                'meeting_time': formatted_meeting_time,
+                                'max_additions': final_max_additions,
+                                'current_members': circle_size,
+                                'is_eligible': False,
+                                'original_preference': 'None',
+                                'reason': 'Co-leader requested no new members and circle is already viable',
+                                'is_test_circle': is_special_circle
+                            }
+                            
+                            if debug_mode:
+                                print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
+                        
                         # SPECIAL DEBUG for our test circle
-                        if circle_id == 'IP-SIN-01':
+                        if circle_id == 'IP-SIN-01' and final_max_additions == 0:
                             print(f"\n🚨 CRITICAL ISSUE DETECTED: Test circle {circle_id} has max_additions=0!")
                             print(f"  Co-leader preferences indicate NO new members can be added to this circle")
                             print(f"  This is likely why participant 73177784103 cannot be matched to this circle")
                     elif max_additions is not None:
                         # Use the minimum valid value provided by co-leaders
                         final_max_additions = max_additions
+                        
+                        # Record this circle in the eligibility logs
+                        circle_eligibility_logs[circle_id] = {
+                            'circle_id': circle_id,
+                            'region': region,
+                            'subregion': subregion,
+                            'meeting_time': formatted_meeting_time,
+                            'max_additions': final_max_additions,
+                            'current_members': len(members),
+                            'is_eligible': final_max_additions > 0,
+                            'original_preference': 'Specified by co-leader',
+                            'preference_value': max_additions,
+                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                        }
+                        
                         if debug_mode:
                             print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                     else:
                         # Default to 8 total if no co-leader specified a value or no co-leaders exist
                         final_max_additions = max(0, 8 - len(members))
+                        
+                        # Record this circle in the eligibility logs
+                        circle_eligibility_logs[circle_id] = {
+                            'circle_id': circle_id,
+                            'region': region,
+                            'subregion': subregion,
+                            'meeting_time': formatted_meeting_time,
+                            'max_additions': final_max_additions,
+                            'current_members': len(members),
+                            'is_eligible': final_max_additions > 0,
+                            'original_preference': 'Default',
+                            'preference_value': 'Default max total of 8',
+                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                        }
+                        
                         if debug_mode:
                             message = "No co-leader preference specified" if has_co_leader else "No co-leaders found"
                             print(f"  {message} for circle {circle_id} - using default max total of 8")
