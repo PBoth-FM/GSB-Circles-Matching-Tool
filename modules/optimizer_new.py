@@ -395,34 +395,29 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         if debug_mode and pd.notna(max_value):
                             print(f"  Co-Leader {member['Encoded ID']} specified max new members: {max_value}")
                         
-                        # Check for "None" literal string preference
-                        if isinstance(max_value, str) and max_value.lower() == "none":
+                        # With our new standardized approach, max_value is always a string
+                        # Check for "None" value (will always be string "None" now)
+                        if max_value == "None":
                             has_none_preference = True
                             if debug_mode:
                                 print(f"  Co-Leader {member['Encoded ID']} specified 'None' - no new members allowed")
                             break
                         
-                        # Check for 0 which should be treated like "None"
-                        elif pd.notna(max_value) and (
-                            (isinstance(max_value, (int, float)) and max_value == 0) or
-                            (isinstance(max_value, str) and max_value.strip() == "0")
-                        ):
-                            has_none_preference = True
-                            if debug_mode:
-                                print(f"  Co-Leader {member['Encoded ID']} specified '0' - no new members allowed")
-                            break
-                        
-                        # Process numeric values
+                        # Process numeric values - all valid numbers are string representations now
                         elif pd.notna(max_value):
                             try:
-                                int_value = int(max_value)
+                                int_value = int(max_value)  # Convert string to int
                                 # If first valid value or smaller than previous minimum
                                 if max_additions is None or int_value < max_additions:
                                     max_additions = int_value
+                                    if debug_mode:
+                                        print(f"  Co-Leader {member['Encoded ID']} specified {int_value} max new members")
                             except (ValueError, TypeError):
-                                # Not a valid number, ignore
+                                # Not a valid number, log error and treat as None
                                 if debug_mode:
-                                    print(f"  Invalid max new members value: {max_value}")
+                                    print(f"  Invalid max new members value: {max_value}, treating as 'None'")
+                                has_none_preference = True
+                                break
                     
                     # Set max_additions based on rules
                     if has_none_preference:

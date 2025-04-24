@@ -99,8 +99,18 @@ def run_optimization():
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
             
-            # No need to re-import circle_eligibility_logs as the optimizer function now returns it
-            # Circle eligibility logs are already stored in session state by the run_matching_algorithm function
+            # DEBUGGING: Check if we actually have eligibility logs in session state
+            print(f"After optimization, circle_eligibility_logs contains {len(st.session_state.circle_eligibility_logs)} entries")
+            if len(st.session_state.circle_eligibility_logs) == 0:
+                print("WARNING: No circle eligibility logs found in session state!")
+                
+                # Import directly from the optimizer module as a fallback
+                from modules.optimizer_new import circle_eligibility_logs
+                print(f"Global circle_eligibility_logs contains {len(circle_eligibility_logs)} entries")
+                
+                # Copy the global logs to session state as a fallback
+                st.session_state.circle_eligibility_logs = circle_eligibility_logs.copy()
+                print(f"Copied {len(st.session_state.circle_eligibility_logs)} entries to session state as fallback")
             
             st.success(f"Matching completed in {st.session_state.exec_time:.2f} seconds!")
             st.session_state.active_tab = "Results"

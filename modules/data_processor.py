@@ -16,27 +16,27 @@ def process_co_leader_max_new_members(value):
         value: The co-leader max new members value to process
         
     Returns:
-        Processed value (None, string 'None', or integer)
+        Processed value (always a string for consistent data typing)
     """
     # Handle None/NaN values
     if pd.isna(value) or value is None or value == '':
-        return None
+        return "None"  # Return string "None" for consistency
     
-    # Handle 'None' literal string
+    # Handle 'None' literal string (case-insensitive)
     if isinstance(value, str) and value.strip().lower() == 'none':
-        return 'None'
+        return "None"  # Standardize to "None" string
     
     # Try to convert to integer
     try:
         int_value = int(float(value) if isinstance(value, str) and '.' in value else value)
         # Handle 0 as equivalent to 'None' - no new members should be added
         if int_value == 0:
-            return 'None'
-        # Return as actual integer - we'll handle type consistency in the optimizer
-        return int_value
+            return "None"
+        # Return as string representation of integer for consistent typing
+        return str(int_value)
     except (ValueError, TypeError):
-        # If not a valid number, return None
-        return None
+        # If not a valid number, return "None" string
+        return "None"
 
 def calculate_class_vintage(gsb_class):
     """
