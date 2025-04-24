@@ -18,6 +18,9 @@ TRACE_REGION_MAPPING = True
 # Initialize global tracking for Houston circles debug
 houston_debug_logs = []
 
+# Initialize logging for circle eligibility
+circle_eligibility_logs = {}
+
 # Example participants and circles for testing
 test_participants = ['73177784103', '50625303450', '72549701782']  # Example participants for testing
 test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']  # Test circles
@@ -596,6 +599,27 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     optimization_context['time_slots'] = time_slots
     
     # Get all viable circles with capacity for new members
+    # Log why circles are or aren't viable
+    for circle_id, circle_data in existing_circles.items():
+        max_additions = circle_data.get('max_additions', 0)
+        is_viable = max_additions > 0
+        
+        # Track detailed eligibility info
+        circle_eligibility_logs[circle_id] = {
+            'circle_id': circle_id,
+            'region': circle_data.get('region', 'Unknown'),
+            'subregion': circle_data.get('subregion', 'Unknown'),
+            'meeting_time': circle_data.get('meeting_time', 'Unknown'),
+            'max_additions': max_additions,
+            'current_members': circle_data.get('member_count', 0),
+            'is_eligible': is_viable,
+            'reason': "Has capacity" if is_viable else "No capacity (max_additions=0)",
+            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+        }
+        
+        if debug_mode and not is_viable:
+            print(f"⚠️ Circle {circle_id} excluded from optimization: max_additions = {max_additions}")
+    
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
                      if circle_data.get('max_additions', 0) > 0}
                      
@@ -2331,5 +2355,34 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"  Test participant already in circle {houston_test_circle}")
                     houston_debug_logs.append(f"Test participant already in circle {houston_test_circle}")
                 break
+    
+    # Store debug logs in session state
+    import streamlit as st
+    if 'houston_debug_logs' not in st.session_state:
+        st.session_state.houston_debug_logs = []
+    
+    # Add the current debug logs to session state
+    if 'houston_debug_logs' in globals():
+        st.session_state.houston_debug_logs = globals()['houston_debug_logs']
+    
+    # Store circle capacity info for debugging why circles aren't getting new members
+    if 'circle_capacity_debug' not in st.session_state:
+        st.session_state.circle_capacity_debug = {}
+    
+    # Add info about all existing circles with capacity
+    for circle_id, circle_data in existing_circles.items():
+        max_additions = circle_data.get('max_additions', 0)
+        if max_additions > 0:
+            st.session_state.circle_capacity_debug[circle_id] = {
+                'circle_id': circle_id,
+                'region': circle_data.get('region', 'Unknown'),
+                'subregion': circle_data.get('subregion', 'Unknown'),
+                'meeting_time': circle_data.get('meeting_time', 'Unknown'),
+                'current_members': circle_data.get('member_count', 0),
+                'max_additions': max_additions,
+                'viable': circle_id in viable_circles,
+                'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04'],
+                'special_handling': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+            }
     
     return results, circles, unmatched

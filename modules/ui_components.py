@@ -1545,9 +1545,213 @@ def render_class_vintage_analysis(data):
 def render_debug_tab():
     """Render the debug tab content"""
     st.subheader("Debug Information")
-
-    # Add special Houston debug section at the top
-    st.write("### Houston Circles Debug")
+    
+    # Add a comprehensive log viewer with copy button
+    st.write("## Optimization Debug Logs")
+    
+    # Create tabs for different sections of debug info
+    debug_tab1, debug_tab2, debug_tab3 = st.tabs(["Circle Capacity Analysis", "Houston Debug Logs", "All Circles Debug"])
+    
+    with debug_tab1:
+        st.write("### Circle Capacity Analysis")
+        st.write("This section shows why circles with capacity might not be receiving new members")
+        
+        if 'circle_capacity_debug' in st.session_state and st.session_state.circle_capacity_debug:
+            # Create a DataFrame from the circle capacity debug info
+            capacity_data = list(st.session_state.circle_capacity_debug.values())
+            capacity_df = pd.DataFrame(capacity_data)
+            
+            # Add columns for clarity
+            if not capacity_df.empty:
+                st.write(f"Found {len(capacity_df)} circles with capacity for new members")
+                
+                # Highlight test circles
+                capacity_df['test_circle'] = capacity_df['is_test_circle'].apply(
+                    lambda x: "✅ YES" if x else "NO")
+                capacity_df['special_handling'] = capacity_df['special_handling'].apply(
+                    lambda x: "✅ YES" if x else "NO")
+                capacity_df['selected_for_optimization'] = capacity_df['viable'].apply(
+                    lambda x: "✅ YES" if x else "❌ NO")
+                
+                # Reorder columns for better readability
+                display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 
+                                'current_members', 'max_additions', 'selected_for_optimization',
+                                'test_circle', 'special_handling']
+                
+                # Display the DataFrame
+                st.dataframe(capacity_df[display_cols])
+                
+                # Provide summary statistics
+                st.write("### Summary Statistics")
+                viable_count = capacity_df['viable'].sum()
+                total_count = len(capacity_df)
+                test_count = capacity_df['is_test_circle'].sum()
+                special_count = capacity_df['special_handling'].sum()
+                
+                st.write(f"- Total circles with capacity: {total_count}")
+                st.write(f"- Circles selected for optimization: {viable_count} ({viable_count/total_count*100:.1f}%)")
+                st.write(f"- Test circles: {test_count}")
+                st.write(f"- Circles with special handling: {special_count}")
+                
+                # Create a text version for the copy button
+                capacity_text = "CIRCLE CAPACITY ANALYSIS\n\n"
+                capacity_text += f"Total circles with capacity: {total_count}\n"
+                capacity_text += f"Circles selected for optimization: {viable_count} ({viable_count/total_count*100:.1f}%)\n"
+                capacity_text += f"Test circles: {test_count}\n"
+                capacity_text += f"Circles with special handling: {special_count}\n\n"
+                
+                capacity_text += "CIRCLES WITH CAPACITY:\n"
+                for _, row in capacity_df.iterrows():
+                    capacity_text += f"- {row['circle_id']} (Region: {row['region']}, Time: {row['meeting_time']})\n"
+                    capacity_text += f"  Current members: {row['current_members']}, Max additions: {row['max_additions']}\n"
+                    capacity_text += f"  Selected for optimization: {'YES' if row['viable'] else 'NO'}\n"
+                    capacity_text += f"  Test circle: {'YES' if row['is_test_circle'] else 'NO'}\n"
+                    capacity_text += f"  Special handling: {'YES' if row['special_handling'] else 'NO'}\n\n"
+                
+                # Create a copy button
+                st.text_area("Copy this text to share capacity analysis", capacity_text, height=300)
+                
+                # Add JavaScript to handle copying to clipboard
+                st.markdown("""
+                <button onclick="navigator.clipboard.writeText(document.querySelector('textarea').value)">
+                    📋 Copy Capacity Analysis to Clipboard
+                </button>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No circle capacity debug information available. Run the optimization to generate this data.")
+    
+    with debug_tab2:
+        st.write("### Houston Debug Logs")
+        
+        if 'houston_debug_logs' in st.session_state and st.session_state.houston_debug_logs:
+            logs = st.session_state.houston_debug_logs
+            logs_text = "\n".join(logs)
+            
+            st.text_area("Houston Debug Logs", logs_text, height=400)
+            
+            # Add JavaScript to handle copying to clipboard
+            st.markdown("""
+            <button onclick="navigator.clipboard.writeText(document.querySelectorAll('textarea')[1].value)">
+                📋 Copy Houston Debug Logs to Clipboard
+            </button>
+            """, unsafe_allow_html=True)
+        else:
+            st.info("No Houston debug logs available. Run the optimization to generate logs.")
+    
+    with debug_tab3:
+        st.write("### All Circles Debug")
+        
+        # Add debug information for matched circles
+        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+            circle_df = st.session_state.matched_circles
+            
+            # Analysis of new assignments to existing circles
+            st.write("#### Analysis of New Assignments to Existing Circles")
+            
+            # Create a list to store circle assignment analysis
+            circle_analysis = []
+            
+            # Extract circle assignment patterns
+            for _, circle_row in circle_df.iterrows():
+                circle_id = circle_row.get('circle_id', 'Unknown')
+                existing_members = circle_row.get('existing_members', 0)
+                new_members = circle_row.get('new_members', 0)
+                is_new = circle_row.get('is_new_circle', False)
+                
+                if not is_new and new_members > 0:
+                    members_list = circle_row.get('members', [])
+                    # Handle different representations of members list
+                    if isinstance(members_list, str) and members_list.startswith('['):
+                        try:
+                            members_list = eval(members_list)
+                        except:
+                            members_list = []
+                    
+                    circle_analysis.append({
+                        'circle_id': circle_id,
+                        'region': circle_row.get('region', 'Unknown'),
+                        'time_slot': circle_row.get('meeting_time', 'Unknown'),
+                        'existing_members': existing_members,
+                        'new_members': new_members,
+                        'total_members': existing_members + new_members,
+                        'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+                        'member_list': members_list
+                    })
+            
+            if circle_analysis:
+                # Convert to DataFrame for easier analysis
+                circle_analysis_df = pd.DataFrame(circle_analysis)
+                
+                # Sort by new members (descending) 
+                circle_analysis_df = circle_analysis_df.sort_values(by='new_members', ascending=False)
+                
+                # Add highlight column for test circles
+                circle_analysis_df['test_circle'] = circle_analysis_df['is_test_circle'].apply(
+                    lambda x: "✅ TEST CIRCLE" if x else "")
+                
+                # Display the DataFrame
+                st.dataframe(circle_analysis_df.drop(columns=['member_list', 'is_test_circle']))
+                
+                # Summary statistics
+                st.write("##### Summary of Circle Assignments")
+                
+                total_existing_circles = len(circle_analysis_df)
+                test_circles_getting_members = circle_analysis_df[circle_analysis_df['is_test_circle']].shape[0]
+                non_test_circles_getting_members = total_existing_circles - test_circles_getting_members
+                
+                st.write(f"- Total existing circles getting new members: {total_existing_circles}")
+                st.write(f"- Test circles getting new members: {test_circles_getting_members}")
+                st.write(f"- Non-test circles getting new members: {non_test_circles_getting_members}")
+                
+                # Only if we have capacity debug info
+                if 'circle_capacity_debug' in st.session_state and st.session_state.circle_capacity_debug:
+                    # Count total circles with capacity
+                    capacity_data = list(st.session_state.circle_capacity_debug.values())
+                    capacity_df = pd.DataFrame(capacity_data)
+                    
+                    if not capacity_df.empty:
+                        total_with_capacity = len(capacity_df)
+                        viable_count = capacity_df['viable'].sum()
+                        
+                        # Calculate percentage of viable circles that got new members
+                        if viable_count > 0:
+                            pct_viable_filled = (total_existing_circles / viable_count) * 100
+                            st.write(f"- Percentage of viable circles that received new members: {pct_viable_filled:.1f}%")
+                        
+                        # Calculate percentage of all circles with capacity that got new members
+                        if total_with_capacity > 0:
+                            pct_capacity_filled = (total_existing_circles / total_with_capacity) * 100
+                            st.write(f"- Percentage of all circles with capacity that received new members: {pct_capacity_filled:.1f}%")
+                
+                # Create text version for copy
+                circles_text = "EXISTING CIRCLES WITH NEW MEMBERS\n\n"
+                circles_text += f"Total existing circles getting new members: {total_existing_circles}\n"
+                circles_text += f"Test circles getting new members: {test_circles_getting_members}\n"
+                circles_text += f"Non-test circles getting new members: {non_test_circles_getting_members}\n\n"
+                
+                # Add details for each circle
+                circles_text += "DETAILS:\n"
+                for _, row in circle_analysis_df.iterrows():
+                    circles_text += f"- {row['circle_id']} ({row['region']}, {row['time_slot']})\n"
+                    circles_text += f"  Existing members: {int(row['existing_members'])}, New members: {int(row['new_members'])}\n"
+                    circles_text += f"  {'✅ TEST CIRCLE' if row['is_test_circle'] else ''}\n\n"
+                
+                # Create a text area with the info
+                st.text_area("Copy this text to share circle assignments", circles_text, height=300)
+                
+                # Add JavaScript to handle copying to clipboard
+                st.markdown("""
+                <button onclick="navigator.clipboard.writeText(document.querySelectorAll('textarea')[2].value)">
+                    📋 Copy Circle Assignments to Clipboard
+                </button>
+                """, unsafe_allow_html=True)
+            else:
+                st.info("No existing circles received new members in the current run.")
+        else:
+            st.info("No matched circles data available. Run the optimization first.")
+        
+    # Original Houston Circles Debug section
+    st.write("## Original Houston Circles Debug")
     
     # Show a powerful data verification section FIRST
     st.subheader("🔴 Data Verification & Variable Tracking")
