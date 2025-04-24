@@ -42,9 +42,25 @@ def update_session_state_eligibility_logs():
     import streamlit as st
     global circle_eligibility_logs
     
+    # ENHANCED DIAGNOSTICS - Print detailed information
+    print(f"\n🔍 CRITICAL DIAGNOSTIC: update_session_state_eligibility_logs called")
+    print(f"🔍 Current global circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
+    
+    # Show the first few circle IDs if any exist
+    if circle_eligibility_logs:
+        circle_ids = list(circle_eligibility_logs.keys())
+        print(f"🔍 Circle IDs in logs: {circle_ids[:5]}{'...' if len(circle_ids) > 5 else ''}")
+        # Show details of first log entry for debugging
+        first_id = circle_ids[0] if circle_ids else None
+        if first_id:
+            print(f"🔍 Sample log entry for {first_id}: {circle_eligibility_logs[first_id]}")
+    else:
+        print("❌ CRITICAL ERROR: Global circle_eligibility_logs is empty!")
+    
     if 'circle_eligibility_logs' not in st.session_state:
         st.session_state.circle_eligibility_logs = {}
         debug_eligibility_logs("Created new circle_eligibility_logs in session state")
+        print("🔍 Created new circle_eligibility_logs in session state")
     
     # Count before update for debugging
     before_count = len(st.session_state.circle_eligibility_logs)
@@ -55,10 +71,16 @@ def update_session_state_eligibility_logs():
     # Count after update for debugging
     after_count = len(st.session_state.circle_eligibility_logs)
     debug_eligibility_logs(f"Updated session state: {before_count} → {after_count} logs")
+    print(f"🔍 Updated session state: {before_count} → {after_count} logs")
+    
+    # Additional verification
+    if after_count == 0:
+        print("❌ CRITICAL ERROR: Session state circle_eligibility_logs is still empty after update!")
     
     # Trigger the flag
     global ELIGIBILITY_LOGS_POPULATED
     ELIGIBILITY_LOGS_POPULATED = True
+    print(f"🔍 Set ELIGIBILITY_LOGS_POPULATED = {ELIGIBILITY_LOGS_POPULATED}")
     
 # Add a direct check to display eligibility logs at import time
 debug_eligibility_logs(f"Module initialized with {len(circle_eligibility_logs)} eligibility logs")
@@ -781,6 +803,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Get all viable circles with capacity for new members
     # Log why circles are or aren't viable
+    print(f"\n🔍 CRITICAL DEBUG: Processing existing_circles for region {region}")
+    print(f"🔍 Found {len(existing_circles)} circles in region {region} to evaluate for eligibility")
+    print(f"🔍 Circle IDs: {list(existing_circles.keys())[:5]}{'...' if len(existing_circles) > 5 else ''}")
+    
+    # DEBUG: Show what the global circle_eligibility_logs contains before we start
+    print(f"🔍 Before adding new logs, circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
+    
+    # Counter for tracking how many circles we're processing
+    circles_processed = 0
+    
     for circle_id, circle_data in existing_circles.items():
         max_additions = circle_data.get('max_additions', 0)
         is_viable = max_additions > 0
@@ -797,7 +829,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'reason': "Has capacity" if is_viable else "No capacity (max_additions=0)",
             'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
             'is_small_circle': circle_data.get('member_count', 0) < 5,
-            'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means None preference
+            'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means
+        }
+        
+        # Print detailed log for first few circles
+        circles_processed += 1
+        if circles_processed <= 3 or circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']:
+            print(f"🔍 Added eligibility log for circle {circle_id}:")
+            print(f"   Region: {circle_data.get('region', 'Unknown')}")
+            print(f"   Max Additions: {max_additions}, Is Viable: {is_viable}")
+            print(f"   Current Members: {circle_data.get('member_count', 0)}")
+        
+    # After processing all circles, print a summary
+    print(f"🔍 Finished processing {circles_processed} circles for eligibility")
+    print(f"🔍 After processing, circle_eligibility_logs now has {len(circle_eligibility_logs)} entries") None preference
             'preference_overridden': False  # By this point, overrides have already been applied above
         }
         
@@ -2578,17 +2623,32 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # The global flag is already updated by the update_session_state_eligibility_logs function
     
-    # Debug output for tracking circle eligibility logs
-    print(f"\n🔍 FINAL DEBUG: Returning circle eligibility logs from {region} region 🔍")
+    # Enhanced debug output for tracking circle eligibility logs
+    print(f"\n🚨 CRITICAL DIAGNOSTIC: Final eligibility check for {region} region 🚨")
     print(f"Total of {len(circle_eligibility_logs)} circle eligibility entries")
-    print(f"Circle IDs with eligibility logs: {list(circle_eligibility_logs.keys())}")
+    
+    # Show the exact contents of circle_eligibility_logs
+    if circle_eligibility_logs:
+        print(f"Circle IDs with eligibility logs: {list(circle_eligibility_logs.keys())}")
+        
+        # Print detail for first few circles as a sample
+        sample_circles = list(circle_eligibility_logs.keys())[:3]
+        print("\n🔍 SAMPLE ELIGIBILITY LOGS:")
+        for c_id in sample_circles:
+            log_entry = circle_eligibility_logs[c_id]
+            print(f"  Circle {c_id}:")
+            for key, value in log_entry.items():
+                print(f"    {key}: {value}")
+    else:
+        print("❌ CRITICAL ERROR: No circle eligibility logs were created!")
+        print("This is likely why circle eligibility debug tab is empty")
     
     # Count how many circles can accept new members
     eligible_circles = [c_id for c_id, data in circle_eligibility_logs.items() if data.get('is_eligible', False)]
     print(f"Circles eligible for new members: {len(eligible_circles)} out of {len(circle_eligibility_logs)}")
     
     if eligible_circles:
-        print(f"Eligible circle IDs: {eligible_circles}")
+        print(f"Eligible circle IDs: {eligible_circles[:5]}{'...' if len(eligible_circles) > 5 else ''}")
     
     # Count small circles vs test circles
     small_circles = [c_id for c_id, data in circle_eligibility_logs.items() if data.get('is_small_circle', False)]
@@ -2602,4 +2662,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if none_pref_circles:
         print(f"Overridden circle IDs: {none_pref_circles}")
     
+    # FINAL VERIFICATION: Make sure the logs will be properly saved
+    # This calls our helper function to ensure logs are saved to session state
+    print(f"\n🚨 FINAL UPDATE: Forcing logs to be saved to session state")
+    update_session_state_eligibility_logs()
+    
+    print(f"\n🚨 FINAL CHECK: Returning {len(circle_eligibility_logs)} eligibility logs from {region} region")
     return results, circles, unmatched, circle_capacity_debug, circle_eligibility_logs
