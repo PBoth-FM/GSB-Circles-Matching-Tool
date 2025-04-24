@@ -1721,12 +1721,17 @@ def render_debug_tab():
                 # Create a text area with the info
                 st.text_area("Copy this text to share circle eligibility", eligibility_text, height=300)
                 
-                # Add JavaScript to handle copying to clipboard
-                st.markdown("""
-                <button onclick="navigator.clipboard.writeText(document.querySelectorAll('textarea')[3].value)">
-                    📋 Copy Circle Eligibility Analysis to Clipboard
-                </button>
-                """, unsafe_allow_html=True)
+                # Add a user-friendly copy button using Streamlit components
+                if st.button("📋 Copy Circle Eligibility Analysis to Clipboard", key="copy_eligibility"):
+                    # This uses st.write with JavaScript for clipboard functionality
+                    st.write(
+                        f"""
+                        <script>
+                        navigator.clipboard.writeText(`{eligibility_text}`);
+                        </script>
+                        """
+                    , unsafe_allow_html=True)
+                    st.success("Copied to clipboard!")
             else:
                 st.info("No circle eligibility data available to display.")
         else:
@@ -1830,12 +1835,17 @@ def render_debug_tab():
                 # Create a text area with the info
                 st.text_area("Copy this text to share circle assignments", circles_text, height=300)
                 
-                # Add JavaScript to handle copying to clipboard
-                st.markdown("""
-                <button onclick="navigator.clipboard.writeText(document.querySelectorAll('textarea')[2].value)">
-                    📋 Copy Circle Assignments to Clipboard
-                </button>
-                """, unsafe_allow_html=True)
+                # Add a user-friendly copy button using Streamlit components
+                if st.button("📋 Copy Circle Assignments to Clipboard", key="copy_assignments"):
+                    # This uses st.write with JavaScript for clipboard functionality
+                    st.write(
+                        f"""
+                        <script>
+                        navigator.clipboard.writeText(`{circles_text}`);
+                        </script>
+                        """
+                    , unsafe_allow_html=True)
+                    st.success("Copied to clipboard!")
             else:
                 st.info("No existing circles received new members in the current run.")
         else:

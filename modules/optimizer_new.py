@@ -19,6 +19,7 @@ TRACE_REGION_MAPPING = True
 houston_debug_logs = []
 
 # Initialize logging for circle eligibility
+# Use a dictionary where keys are circle IDs to avoid duplicates and overwriting
 circle_eligibility_logs = {}
 
 # Example participants and circles for testing
