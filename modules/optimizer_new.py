@@ -22,6 +22,9 @@ houston_debug_logs = []
 # Use a dictionary where keys are circle IDs to avoid duplicates and overwriting
 circle_eligibility_logs = {}
 
+# Debug counter for tracking
+DEBUG_ELIGIBILITY_COUNTER = 0
+
 # Example participants and circles for testing
 test_participants = ['73177784103', '50625303450', '72549701782']  # Example participants for testing
 test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']  # Test circles
@@ -307,9 +310,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Evaluate each existing circle in the region
         # Note: By this point, direct continuation has already been done in the main function
         # so we only need to handle edge cases here
+        print(f"\n🔍 DEBUG: Processing {len(current_circle_members)} existing circles in {region} region")
+        print(f"Circle IDs: {list(current_circle_members.keys())}")
+        
         for circle_id, members in current_circle_members.items():
             # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
             # and meets host requirements (for in-person circles)
+            print(f"\n👉 Processing circle {circle_id} with {len(members)} members")
             if len(members) >= 2:
                 # Check if it's an in-person circle (IP prefix) or virtual circle (V prefix)
                 is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
@@ -426,6 +433,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         
                         # Determine the current size of the circle
                         circle_size = len(members)
+                        
+                        # DEBUG for checking "None" preference handling
+                        global DEBUG_ELIGIBILITY_COUNTER
+                        DEBUG_ELIGIBILITY_COUNTER += 1
+                        
+                        print(f"\n🔍 DEBUG CIRCLE ELIGIBILITY #{DEBUG_ELIGIBILITY_COUNTER} 🔍")
+                        print(f"Circle {circle_id} with {circle_size} members has 'None' preference")
+                        print(f"  Special circle? {is_special_circle}")
+                        print(f"  Small circle? {circle_size < 5}")
+                        print(f"  Region: {region}")
                         
                         # UNIVERSAL FIX: Allow small circles to grow regardless of co-leader preferences
                         # This applies the same logic we use for test circles to ALL circles
@@ -2514,5 +2531,29 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         
         # Add the logs to session state
         st.session_state.circle_eligibility_logs.update(globals()['circle_eligibility_logs'])
+    
+    # Debug output for tracking circle eligibility logs
+    print(f"\n🔍 FINAL DEBUG: Returning circle eligibility logs from {region} region 🔍")
+    print(f"Total of {len(circle_eligibility_logs)} circle eligibility entries")
+    print(f"Circle IDs with eligibility logs: {list(circle_eligibility_logs.keys())}")
+    
+    # Count how many circles can accept new members
+    eligible_circles = [c_id for c_id, data in circle_eligibility_logs.items() if data.get('is_eligible', False)]
+    print(f"Circles eligible for new members: {len(eligible_circles)} out of {len(circle_eligibility_logs)}")
+    
+    if eligible_circles:
+        print(f"Eligible circle IDs: {eligible_circles}")
+    
+    # Count small circles vs test circles
+    small_circles = [c_id for c_id, data in circle_eligibility_logs.items() if data.get('is_small_circle', False)]
+    test_circles = [c_id for c_id, data in circle_eligibility_logs.items() if data.get('is_test_circle', False)]
+    print(f"Small circles: {len(small_circles)}, Test circles: {len(test_circles)}")
+    
+    # Identify circles with "None" preference that were overridden
+    none_pref_circles = [c_id for c_id, data in circle_eligibility_logs.items() 
+                        if data.get('has_none_preference', False) and data.get('preference_overridden', False)]
+    print(f"Circles with 'None' preference that were overridden: {len(none_pref_circles)}")
+    if none_pref_circles:
+        print(f"Overridden circle IDs: {none_pref_circles}")
     
     return results, circles, unmatched, circle_capacity_debug, circle_eligibility_logs
