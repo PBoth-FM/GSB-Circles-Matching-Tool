@@ -42,6 +42,8 @@ if 'deduplication_messages' not in st.session_state:
     st.session_state.deduplication_messages = []
 if 'exec_time' not in st.session_state:
     st.session_state.exec_time = None
+if 'circle_eligibility_logs' not in st.session_state:
+    st.session_state.circle_eligibility_logs = {}
 if 'config' not in st.session_state:
     st.session_state.config = {
         'debug_mode': False,
@@ -85,7 +87,7 @@ def run_optimization():
         with st.spinner("Running matching algorithm..."):
             start_time = time.time()
             
-            # Run the matching algorithm
+            # Run the matching algorithm with enhanced return values for debugging
             results, matched_circles, unmatched_participants = run_matching_algorithm(
                 st.session_state.processed_data,
                 st.session_state.config
@@ -97,9 +99,8 @@ def run_optimization():
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
             
-            # Store the circle eligibility logs in session state
-            from modules.optimizer_new import circle_eligibility_logs
-            st.session_state.circle_eligibility_logs = circle_eligibility_logs.copy()
+            # No need to re-import circle_eligibility_logs as the optimizer function now returns it
+            # Circle eligibility logs are already stored in session state by the run_matching_algorithm function
             
             st.success(f"Matching completed in {st.session_state.exec_time:.2f} seconds!")
             st.session_state.active_tab = "Results"

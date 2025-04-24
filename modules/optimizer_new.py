@@ -12,6 +12,9 @@ from utils.region_mapper import (
     map_circles_to_regions
 )
 
+# Global variable to track circle eligibility logs
+circle_eligibility_logs = {}
+
 # Global debug flag to trace region mapping issues
 TRACE_REGION_MAPPING = True
 
