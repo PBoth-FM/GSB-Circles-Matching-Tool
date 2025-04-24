@@ -1,0 +1,167 @@
+EXISTING CIRCLES WITH NEW MEMBERS
+
+Total existing circles getting new members: 40
+Test circles getting new members: 2
+Non-test circles getting new members: 38
+
+DETAILS:
+- IP-NEW-SFO-05 (San Francisco, Sunday (Evenings))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-SFO-04 (San Francisco, Saturday (Days))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-PSA-06 (Peninsula, Monday-thursday (Evenings))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-PSA-02 (Peninsula, Sunday (Days))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-PSA-01 (Peninsula, Monday-thursday (Evenings))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-PSA-05 (Peninsula, Sunday (Evenings))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-PSA-03 (Peninsula, Monday-friday (Days))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-SFO-07 (San Francisco, Sunday (Days))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-PSA-07 (Peninsula, Sunday (Days))
+  Existing members: 0, New members: 10
+  
+
+- IP-NEW-SFO-06 (San Francisco, Monday-thursday (Evenings))
+  Existing members: 0, New members: 9
+  
+
+- IP-NEW-BOS-02 (Boston, Sunday (Days))
+  Existing members: 0, New members: 9
+  
+
+- IP-NEW-SFL-02 (South Florida, Sunday (Days))
+  Existing members: 0, New members: 9
+  
+
+- IP-NEW-SFO-03 (San Francisco, Monday-friday (Days))
+  Existing members: 0, New members: 9
+  
+
+- IP-NEW-SEA-01 (Seattle, Monday-thursday (Evenings))
+  Existing members: 0, New members: 8
+  
+
+- IP-NEW-PSA-04 (Peninsula, Saturday (Days))
+  Existing members: 0, New members: 8
+  
+
+- IP-NEW-SFO-01 (San Francisco, Monday-thursday (Evenings))
+  Existing members: 0, New members: 8
+  
+
+- IP-NEW-MAR-01 (Marin County, Monday-thursday (Evenings))
+  Existing members: 0, New members: 8
+  
+
+- IP-NEW-NYC-07 (New York, Sunday (Days))
+  Existing members: 0, New members: 7
+  
+
+- IP-NEW-WDC-01 (Washington DC, Monday-thursday (Evenings))
+  Existing members: 0, New members: 7
+  
+
+- IP-NEW-NYC-01 (New York, Monday-thursday (Evenings))
+  Existing members: 0, New members: 7
+  
+
+- IP-NEW-NYC-05 (New York, Sunday (Evenings))
+  Existing members: 0, New members: 6
+  
+
+- IP-NEW-NYC-09 (New York, Saturday (Days))
+  Existing members: 0, New members: 6
+  
+
+- IP-NEW-SFO-02 (San Francisco, Sunday (Days))
+  Existing members: 0, New members: 6
+  
+
+- IP-NEW-NYC-03 (New York, Monday-friday (Days))
+  Existing members: 0, New members: 6
+  
+
+- IP-NEW-LAX-01 (Los Angeles, Monday-thursday (Evenings))
+  Existing members: 0, New members: 6
+  
+
+- IP-NEW-SPO-01 (Sao Paulo, Monday-thursday (Evenings))
+  Existing members: 0, New members: 6
+  
+
+- IP-NEW-CHI-01 (Chicago, Monday-thursday (Evenings))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-BOS-01 (Boston, Monday-thursday (Evenings))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-NYC-08 (New York, Monday-friday (Days))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-NYC-02 (New York, Sunday (Days))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-NYC-04 (New York, Saturday (Days))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-NYC-06 (New York, Monday-thursday (Evenings))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-LAX-02 (Los Angeles, Sunday (Days))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-WDC-02 (Washington DC, Sunday (Days))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-SFL-01 (South Florida, Monday-thursday (Evenings))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-CHI-02 (Chicago, Sunday (Days))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-LON-01 (London, Monday-thursday (Evenings))
+  Existing members: 0, New members: 5
+  
+
+- IP-NEW-SIN-01 (Singapore, Monday-thursday (Evenings))
+  Existing members: 0, New members: 5
+  
+
+- IP-SIN-01 (Singapore, Varies (Evenings))
+  Existing members: 0, New members: 4
+  ✅ TEST CIRCLE
+
+- IP-LON-04 (London, Tuesday (Evenings))
+  Existing members: 0, New members: 1
+  ✅ TEST CIRCLE
+
