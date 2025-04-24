@@ -1640,13 +1640,35 @@ def render_debug_tab():
     
     with debug_tab3:
         st.write("### Circle Eligibility Debug")
-        st.write("This section shows detailed analysis of circle eligibility for optimization")
+        st.write("This section shows detailed analysis of circle eligibility for new member optimization")
         
         if 'circle_eligibility_logs' in st.session_state and st.session_state.circle_eligibility_logs:
             eligibility_data = list(st.session_state.circle_eligibility_logs.values())
             eligibility_df = pd.DataFrame(eligibility_data)
             
             if not eligibility_df.empty:
+                # Overview metrics
+                col1, col2, col3 = st.columns(3)
+                total_circles = len(eligibility_df)
+                
+                with col1:
+                    if 'is_eligible' in eligibility_df.columns:
+                        eligible_count = eligibility_df['is_eligible'].sum()
+                        st.metric("Eligible Circles", f"{eligible_count} / {total_circles}", 
+                                 f"{eligible_count/total_circles:.1%}")
+                
+                with col2:
+                    if 'is_small_circle' in eligibility_df.columns:
+                        small_circles_count = eligibility_df['is_small_circle'].sum()
+                        st.metric("Small Circles (<5 members)", f"{small_circles_count}",
+                                 f"{small_circles_count/total_circles:.1%}")
+                
+                with col3:
+                    if 'has_none_preference' in eligibility_df.columns:
+                        none_pref_count = eligibility_df['has_none_preference'].sum()
+                        st.metric("'None' Preference Circles", f"{none_pref_count}",
+                                 f"{none_pref_count/total_circles:.1%}")
+                
                 st.write(f"Circle eligibility analysis for {len(eligibility_df)} circles:")
                 
                 # Format the display columns
@@ -1658,8 +1680,82 @@ def render_debug_tab():
                     eligibility_df['test_circle'] = eligibility_df['is_test_circle'].apply(
                         lambda x: "✅ YES" if x else "NO")
                 
-                # Add tabs to separate eligible from ineligible circles
-                eligible_tab, ineligible_tab = st.tabs(["Eligible Circles", "Ineligible Circles"])
+                # Add tabs to separate different views
+                overview_tab, eligible_tab, ineligible_tab, test_circles_tab = st.tabs([
+                    "All Circles Overview", "Eligible Circles", "Ineligible Circles", "Test Circles"
+                ])
+                
+                with overview_tab:
+                    st.write(f"### Circle Capacity Overview ({len(eligibility_df)} total circles)")
+                    
+                    # Add small circle flag if not exists
+                    if 'is_small_circle' not in eligibility_df.columns and 'current_members' in eligibility_df.columns:
+                        eligibility_df['is_small_circle'] = eligibility_df['current_members'] < 5
+                    
+                    if 'is_small_circle' in eligibility_df.columns:
+                        eligibility_df['small_circle'] = eligibility_df['is_small_circle'].apply(
+                            lambda x: "✅ YES (<5 members)" if x else "NO")
+                    
+                    # Add preference status if possible
+                    if 'has_none_preference' in eligibility_df.columns and 'preference_overridden' in eligibility_df.columns:
+                        # Create a combined preference column for better readability
+                        eligibility_df['preference_status'] = 'Normal'
+                        
+                        # Set for circles with None preference
+                        mask_none_not_overridden = (eligibility_df['has_none_preference'] == True) & (eligibility_df['preference_overridden'] == False)
+                        eligibility_df.loc[mask_none_not_overridden, 'preference_status'] = "❌ None (honored)"
+                        
+                        # Set for circles with None preference that was overridden
+                        mask_none_overridden = (eligibility_df['has_none_preference'] == True) & (eligibility_df['preference_overridden'] == True)
+                        eligibility_df.loc[mask_none_overridden, 'preference_status'] = "⚠️ None (overridden)"
+                    
+                    # Display columns for all circles
+                    overview_cols = ['circle_id', 'region', 'eligible_status', 'current_members', 
+                                    'max_additions', 'small_circle', 'test_circle']
+                    
+                    # Add preference status if available
+                    if 'preference_status' in eligibility_df.columns:
+                        overview_cols.append('preference_status')
+                    elif 'has_none_preference' in eligibility_df.columns:
+                        overview_cols.append('has_none_preference')
+                    
+                    # Add reason column if available
+                    if 'reason' in eligibility_df.columns:
+                        overview_cols.append('reason')
+                    elif 'override_reason' in eligibility_df.columns:
+                        overview_cols.append('override_reason')
+                    
+                    # Filter to columns that exist
+                    overview_cols = [col for col in overview_cols if col in eligibility_df.columns]
+                    
+                    # Sort by region and circle ID for better readability
+                    if 'region' in eligibility_df.columns and 'circle_id' in eligibility_df.columns:
+                        display_df = eligibility_df.sort_values(['region', 'circle_id'])[overview_cols].reset_index(drop=True)
+                    else:
+                        display_df = eligibility_df[overview_cols].reset_index(drop=True)
+                    
+                    # Display the dataframe
+                    st.dataframe(display_df, use_container_width=True)
+                    
+                    # Group by region to see distribution
+                    if 'region' in eligibility_df.columns:
+                        st.write("### Circles by Region")
+                        region_df = pd.DataFrame()
+                        
+                        # Total circles by region
+                        region_counts = eligibility_df['region'].value_counts().reset_index()
+                        region_counts.columns = ['Region', 'Total Circles']
+                        region_df['Region'] = region_counts['Region']
+                        region_df['Total Circles'] = region_counts['Total Circles']
+                        
+                        # Eligible circles by region
+                        if 'is_eligible' in eligibility_df.columns:
+                            eligible_by_region = eligibility_df[eligibility_df['is_eligible']].groupby('region').size()
+                            eligible_by_region = eligible_by_region.reindex(region_df['Region']).fillna(0).astype(int)
+                            region_df['Eligible Circles'] = eligible_by_region.values
+                            region_df['Eligible %'] = (region_df['Eligible Circles'] / region_df['Total Circles']).apply(lambda x: f"{x:.1%}")
+                        
+                        st.dataframe(region_df, use_container_width=True)
                 
                 with eligible_tab:
                     # Show only eligible circles
@@ -1752,6 +1848,67 @@ def render_debug_tab():
                             st.success("All circles are eligible for new members.")
                     else:
                         st.warning("Eligibility status not available in data.")
+                
+                with test_circles_tab:
+                    # Focus only on test circles
+                    if 'is_test_circle' in eligibility_df.columns:
+                        test_df = eligibility_df[eligibility_df['is_test_circle'] == True].reset_index(drop=True)
+                        
+                        if len(test_df) > 0:
+                            st.write(f"### Test Circles Analysis ({len(test_df)} circles)")
+                            st.write("Special test circles with controlled behavior for testing the algorithm.")
+                            
+                            # Display columns with comprehensive information
+                            display_cols = ['circle_id', 'region', 'eligible_status', 'current_members', 
+                                           'max_additions', 'small_circle']
+                            
+                            # Add preference information
+                            if 'preference_status' in test_df.columns:
+                                display_cols.append('preference_status')
+                            elif 'has_none_preference' in test_df.columns:
+                                display_cols.append('has_none_preference')
+                            
+                            if 'preference_overridden' in test_df.columns:
+                                display_cols.append('preference_overridden') 
+                                
+                            # Add reason/override information
+                            if 'reason' in test_df.columns:
+                                display_cols.append('reason')
+                            if 'override_reason' in test_df.columns:
+                                display_cols.append('override_reason')
+                                
+                            # Show only columns that exist
+                            display_cols = [col for col in display_cols if col in test_df.columns]
+                            
+                            # Display the DataFrame
+                            st.dataframe(test_df[display_cols], use_container_width=True)
+                            
+                            # Special analysis for each test circle
+                            st.write("### Individual Test Circle Details")
+                            
+                            for idx, row in test_df.iterrows():
+                                with st.expander(f"Test Circle: {row.get('circle_id', 'Unknown')}"):
+                                    st.write(f"**Circle ID:** {row.get('circle_id', 'Unknown')}")
+                                    st.write(f"**Region:** {row.get('region', 'Unknown')}")
+                                    st.write(f"**Status:** {row.get('eligible_status', 'Unknown')}")
+                                    st.write(f"**Current Members:** {row.get('current_members', 'Unknown')}")
+                                    st.write(f"**Maximum New Members:** {row.get('max_additions', 'Unknown')}")
+                                    
+                                    if 'has_none_preference' in row:
+                                        st.write(f"**Has 'None' Preference:** {'Yes' if row['has_none_preference'] else 'No'}")
+                                    
+                                    if 'preference_overridden' in row:
+                                        st.write(f"**Preference Overridden:** {'Yes' if row['preference_overridden'] else 'No'}")
+                                    
+                                    if 'reason' in row and pd.notna(row['reason']):
+                                        st.write(f"**Ineligibility Reason:** {row['reason']}")
+                                    
+                                    if 'override_reason' in row and pd.notna(row['override_reason']):
+                                        st.write(f"**Override Reason:** {row['override_reason']}")
+                        else:
+                            st.info("No test circles found in the data.")
+                    else:
+                        st.warning("Test circle information not available in data.")
                 
                 # Summary statistics for all circles
                 st.write("### Overall Eligibility Statistics")
