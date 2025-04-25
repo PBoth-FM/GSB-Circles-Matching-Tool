@@ -1657,8 +1657,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"\n🔍 Processing {len(participants)} participants in region {region}")
     
     # Define test participants for debug logging only (but no special handling)
-    test_participants = ['73177784103', '50625303450', '72549701782']
-    test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+    test_participants = ['73177784103', '50625303450', '72549701782', '76096461703']
+    test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02', 'IP-EAB-07']
+    
+    # DIAGNOSTIC FIX: Add special debug message for East Bay case
+    print("\n🔍 DIAGNOSTIC: Added East Bay target participant 76096461703 to test participants")
+    print("🔍 DIAGNOSTIC: Added East Bay target circle IP-EAB-07 to test circles")
     
     # Log which test participants are in this region (for debugging only)
     for test_id in test_participants:
@@ -1864,7 +1868,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # SPECIAL DEBUG FOR TEST CASE - 73177784103 and IP-SIN-01
             is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01')
-            if is_test_case:
+            
+            # EAST BAY DEBUG: Add special debug for East Bay case
+            is_east_bay_case = (p_id == '76096461703' and c_id == 'IP-EAB-07')
+            if is_test_case or is_east_bay_case:
                 print("\n🔍🔍🔍 SPECIAL TEST CASE COMPATIBILITY CHECK 🔍🔍🔍")
                 print(f"Checking compatibility between participant {p_id} and circle {c_id}")
                 print(f"  Circle subregion: '{subregion}'")
@@ -2250,6 +2257,51 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"  Current members: {ip_hou_02_meta['member_count']}")
             print(f"  Max additions: {ip_hou_02_meta['max_additions']}")
             print(f"  Meeting time: {ip_hou_02_meta['meeting_time']}")
+        
+        # Debug for East Bay case
+        if "IP-EAB-07" in existing_circle_ids:
+            ip_eab_07_meta = viable_circles["IP-EAB-07"]
+            print(f"\n🔍 DIAGNOSTIC: IP-EAB-07 circle data:")
+            print(f"  Current members: {ip_eab_07_meta['member_count']}")
+            print(f"  Max additions: {ip_eab_07_meta['max_additions']}")
+            print(f"  Meeting time: {ip_eab_07_meta['meeting_time']}")
+            print(f"  Region: {ip_eab_07_meta.get('region', 'unknown')}")
+            print(f"  Subregion: {ip_eab_07_meta.get('subregion', 'unknown')}")
+            print(f"  Is in viable_circles: {'Yes' if 'IP-EAB-07' in viable_circles else 'No'}")
+            print(f"  Is in existing_circle_ids: {'Yes' if 'IP-EAB-07' in existing_circle_ids else 'No'}")
+            
+            # Check for the target East Bay participant
+            if '76096461703' in participants:
+                print(f"\n🔍 DIAGNOSTIC: Checking East Bay participant '76096461703':")
+                print(f"  Is in participants list: Yes")
+                print(f"  Compatible with IP-EAB-07: {'Yes' if compatibility.get(('76096461703', 'IP-EAB-07'), 0) == 1 else 'No'}")
+                matching_rows = remaining_df[remaining_df['Encoded ID'] == '76096461703']
+                if not matching_rows.empty:
+                    p_row = matching_rows.iloc[0]
+                    print(f"  First choice location: {p_row['first_choice_location']}")
+                    print(f"  First choice time: {p_row['first_choice_time']}")
+                    print(f"  Region: {p_row.get('Derived_Region', p_row.get('Current_Region', 'Unknown'))}")
+                print(f"  Variable exists: {'Yes' if ('76096461703', 'IP-EAB-07') in x else 'No'}")
+            else:
+                print(f"🔍 DIAGNOSTIC: East Bay participant '76096461703' NOT in participants list for region '{region}'")
+                print(f"  This explains why they can't be matched in this region.")
+                
+            # Additional check for East Bay circle capacity constraint
+            print(f"\n🔍 DIAGNOSTIC: Checking IP-EAB-07 capacity constraint:")
+            max_adds = ip_eab_07_meta.get('max_additions', 0)
+            member_count = ip_eab_07_meta.get('member_count', 0)
+            print(f"  Current members: {member_count}")
+            print(f"  Max additions: {max_adds}")
+            print(f"  Co-leader preference: {ip_eab_07_meta.get('co_leader_preference', 'Unknown')}")
+            
+            if max_adds == 0:
+                print(f"  ⚠️ CRITICAL ISSUE: IP-EAB-07 has max_additions=0!")
+                print(f"  This means NO participants can be assigned to this circle")
+                print(f"  Co-leader preferences are preventing new members")
+                
+                if member_count < 5:
+                    print(f"  🚨 SERIOUS BUGFIX NEEDED: Circle with {member_count} members should ALWAYS")
+                    print(f"  receive new members regardless of co-leader preference!")
     
     # Add objective to the problem
     prob += total_obj, "Maximize matched participants and preference satisfaction"
@@ -2966,6 +3018,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             }
             
             # Debug logging for specific participants of interest
+            if p_id in ['73177784103', '50625303450', '72549701782', '76096461703']:
+                print(f"\n🔍 DIAGNOSTIC: Special test participant {p_id} result:")
+                print(f"  Matched: No (unmatched)")
+                print(f"  Unmatched reason: {reason}")
+                print(f"  Compatible with how many circles: {len(participant_compatible_circles.get(p_id, []))}")
+                
+                # Special check for East Bay participant
+                if p_id == '76096461703':
+                    print(f"\n🔍 DIAGNOSTIC: East Bay participant {p_id} UNMATCHED:")
+                    print(f"  Participant region: {participant_dict.get('region', 'unknown')}")
+                    print(f"  Compatible with IP-EAB-07: {'Yes' if 'IP-EAB-07' in participant_compatible_circles.get(p_id, []) else 'No'}")
+                    print(f"  Unmatched reason: {reason}")
+                    
+                    if 'IP-EAB-07' in viable_circles:
+                        eab_circle = viable_circles['IP-EAB-07']
+                        print(f"  IP-EAB-07 Max additions: {eab_circle.get('max_additions', 0)}")
+                        print(f"  IP-EAB-07 Current size: {eab_circle.get('member_count', 0)}")
+                        print(f"  IP-EAB-07 Region: {eab_circle.get('region', 'unknown')}")
+                        
+                        # DIAGNOSTIC: Check if the participant is in the same region as the circle
+                        print(f"  Regions match: {'Yes' if participant_dict.get('region', '') == eab_circle.get('region', '') else 'No'}")
+                        
+                        # If they're compatible but not matched, explain why
+                        if 'IP-EAB-07' in participant_compatible_circles.get(p_id, []):
+                            if eab_circle.get('max_additions', 0) == 0:
+                                print(f"  🚨 CRITICAL ISSUE: Circle has max_additions=0 despite having capacity")
+                                print(f"  This should be overridden for circles smaller than 5 members")
+                            else:
+                                print(f"  🧩 Circle has room but participant not matched - likely optimization issue")
             if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
                 print(f"\n🔍 DETAILED UNMATCHED REASON CHECK FOR {p_id}:")
                 print(f"  Location prefs: {participant.get('first_choice_location')}, {participant.get('second_choice_location')}, {participant.get('third_choice_location')}")
