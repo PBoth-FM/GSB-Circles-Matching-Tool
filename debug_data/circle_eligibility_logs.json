@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-04-25 15:59:14",
+    "timestamp": "2025-04-25 16:17:17",
     "region": "all_regions",
     "total_logs": 3,
     "added_logs": 3,
@@ -19,7 +19,7 @@
       "current_members": 7,
       "is_eligible": true,
       "reason": "Has capacity",
-      "is_test_circle": true,
+      "is_test_circle": false,
       "is_small_circle": false,
       "has_none_preference": false,
       "preference_overridden": false
@@ -28,30 +28,29 @@
       "circle_id": "IP-TEST-02",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "meeting_time": "Tuesday (Evenings)",
-      "max_additions": 0,
-      "current_members": 10,
-      "is_eligible": false,
-      "reason": "No capacity (max_additions=0)",
-      "is_test_circle": true,
+      "meeting_time": "Monday (Evenings)",
+      "max_additions": 3,
+      "current_members": 7,
+      "is_eligible": true,
+      "reason": "Has capacity",
+      "is_test_circle": false,
       "is_small_circle": false,
-      "has_none_preference": true,
+      "has_none_preference": false,
       "preference_overridden": false
     },
     "IP-TEST-03": {
       "circle_id": "IP-TEST-03",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "meeting_time": "Wednesday (Evenings)",
-      "max_additions": 6,
-      "current_members": 4,
+      "meeting_time": "Monday (Mornings)",
+      "max_additions": 2,
+      "current_members": 3,
       "is_eligible": true,
-      "original_preference": "None",
-      "override_reason": "Small circle needs to reach viable size",
-      "is_test_circle": true,
+      "reason": "Has capacity",
+      "is_test_circle": false,
       "is_small_circle": true,
-      "has_none_preference": true,
-      "preference_overridden": true
+      "has_none_preference": false,
+      "preference_overridden": false
     }
   }
 }
