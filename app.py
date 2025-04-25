@@ -208,10 +208,71 @@ def process_uploaded_file(uploaded_file):
             st.session_state.validation_errors = validation_errors
             st.session_state.deduplication_messages = deduplication_messages
             
+            # ENHANCED DIAGNOSTICS: Print detailed info about the input data
+            print("\n🔬🔬🔬 SUPER DETAILED DATA DIAGNOSTICS IN PROCESS_UPLOADED_FILE 🔬🔬🔬")
+            print(f"🔬 DataFrame shape: {df.shape}")
+            print(f"🔬 DataFrame columns: {df.columns.tolist()}")
+            
             # Count participants by status for debugging
             if 'Status' in df.columns:
                 status_counts = df['Status'].value_counts().to_dict()
                 st.session_state.status_counts = status_counts
+                print(f"🔬 Status counts: {status_counts}")
+            else:
+                print("🔬 'Status' column not found")
+                
+            # Check circle ID column
+            circle_columns = ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']
+            found_col = None
+            for col in circle_columns:
+                if col in df.columns:
+                    found_col = col
+                    break
+                    
+            if found_col:
+                print(f"🔬 Found circle ID column: {found_col}")
+                
+                # Count non-null values
+                non_null_count = df[~df[found_col].isna()].shape[0]
+                print(f"🔬 Participants with non-null {found_col}: {non_null_count}")
+                
+                # Check CURRENT-CONTINUING participants with circle IDs
+                if 'Status' in df.columns:
+                    continuing = df[df['Status'] == 'CURRENT-CONTINUING']
+                    print(f"🔬 CURRENT-CONTINUING participants: {len(continuing)}")
+                    
+                    with_circles = continuing[~continuing[found_col].isna()]
+                    print(f"🔬 CURRENT-CONTINUING with circle IDs: {len(with_circles)}")
+                    
+                    if len(with_circles) > 0:
+                        unique_circles = with_circles[found_col].unique()
+                        print(f"🔬 Unique circle IDs: {len(unique_circles)}")
+                        print(f"🔬 First 10 circle IDs: {list(unique_circles)[:10]}")
+                        
+                        # Get circle member counts
+                        circle_counts = with_circles[found_col].value_counts()
+                        print(f"🔬 Circle member counts (top 10):")
+                        for circle, count in circle_counts.head(10).items():
+                            print(f"   {circle}: {count} members")
+                            
+                        # Check if we have the special test circles in the data
+                        test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                        for test_circle in test_circles:
+                            if test_circle in unique_circles:
+                                print(f"🔬 FOUND TEST CIRCLE {test_circle} in input data!")
+                                members = with_circles[with_circles[found_col] == test_circle]
+                                print(f"   Members: {len(members)}")
+                                
+                                # Check if these members have region information
+                                if 'Current_Region' in members.columns:
+                                    regions = members['Current_Region'].unique()
+                                    print(f"   Regions: {list(regions)}")
+                            else:
+                                print(f"🔬 Test circle {test_circle} NOT found in input data")
+            else:
+                print("🔬 No valid circle ID column found")
+                
+            print("🔬🔬🔬 END OF SUPER DETAILED DATA DIAGNOSTICS 🔬🔬🔬\n")
             
             # Display validation errors if any
             if len(validation_errors) > 0:
