@@ -1656,7 +1656,27 @@ def render_debug_tab():
             else:
                 st.warning("Circle eligibility logs dictionary exists in session state but has no entries.")
                 print("⚠️ WARNING: circle_eligibility_logs exists in session state but is empty!")
-                eligibility_df = pd.DataFrame()
+                
+                # Try to load logs from file as a backup
+                try:
+                    from modules.optimizer_new import load_circle_eligibility_logs_from_file
+                    print("🔄 Attempting to load circle eligibility logs from file...")
+                    
+                    file_logs = load_circle_eligibility_logs_from_file()
+                    if file_logs and len(file_logs) > 0:
+                        print(f"✅ Successfully loaded {len(file_logs)} log entries from file")
+                        eligibility_data = list(file_logs.values())
+                        eligibility_df = pd.DataFrame(eligibility_data)
+                        
+                        # Update session state with these logs for consistency
+                        st.session_state.circle_eligibility_logs = file_logs
+                        st.success(f"Loaded {len(file_logs)} circle eligibility logs from file backup")
+                    else:
+                        print("❌ No logs found in file backup")
+                        eligibility_df = pd.DataFrame()
+                except Exception as e:
+                    print(f"❌ ERROR loading logs from file: {str(e)}")
+                    eligibility_df = pd.DataFrame()
             
             if not eligibility_df.empty:
                 # Overview metrics

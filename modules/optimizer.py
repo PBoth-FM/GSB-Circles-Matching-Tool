@@ -675,6 +675,25 @@ def run_matching_algorithm(data, config):
             print(f"🔍 CRITICAL UPDATE: Session state logs count changed from {logs_before} to {logs_after}")
             print(f"📊 CIRCLE ELIGIBILITY: Added {logs_added} logs (real or test data) from {region}")
             
+            # FILE-BASED BACKUP: Save logs to file as a reliable backup
+            from modules.optimizer_new import save_circle_eligibility_logs_to_file, load_circle_eligibility_logs_from_file
+            
+            try:
+                # First load any existing logs from the file
+                existing_logs = load_circle_eligibility_logs_from_file()
+                
+                # Combine with new logs for this region
+                combined_logs = {**existing_logs, **logs_to_update}
+                
+                # Save the combined logs back to file
+                saved = save_circle_eligibility_logs_to_file(combined_logs, region)
+                if saved:
+                    print(f"✅ Successfully saved combined logs to file ({len(combined_logs)} total entries)")
+                else:
+                    print(f"❌ Failed to save logs to file")
+            except Exception as e:
+                print(f"❌ ERROR during file-based backup: {str(e)}")
+            
             # Very important check - verify a specific entry actually made it
             if logs_after > 0:
                 sample_key = next(iter(st.session_state.circle_eligibility_logs))
@@ -755,16 +774,34 @@ def run_matching_algorithm(data, config):
         log_count = len(st.session_state.circle_eligibility_logs)
         print(f"🏁 FINAL LOGS CHECK: Found {log_count} circle eligibility logs in session state")
         
-        # If no logs, attempt a final fallback import 
+        # If no logs, attempt a final fallback import from file
         if log_count == 0:
             print("⚠️ CRITICAL WARNING: No eligibility logs found in session state at end of processing")
             
-            # We no longer use a global variable approach, so this fallback code is no longer needed.
-            # Instead, we should have already properly saved the logs to session state during each region's processing
+            # Try to load from our file backup
+            from modules.optimizer_new import load_circle_eligibility_logs_from_file
             
-            print(f"⚠️ WARNING: No circle eligibility logs found in session state at end of processing.")
-            print(f"⚠️ This indicates the logs weren't properly saved during region processing.")
-            print(f"⚠️ Please check the optimize_region_v2 function returns and how the logs are saved.")
+            try:
+                # Load logs from file as a fallback
+                file_logs = load_circle_eligibility_logs_from_file()
+                
+                if file_logs and len(file_logs) > 0:
+                    print(f"🔄 RECOVERY: Loaded {len(file_logs)} logs from file backup")
+                    
+                    # Replace session state logs with file logs
+                    st.session_state.circle_eligibility_logs = file_logs
+                    
+                    print(f"✅ Successfully restored logs from file")
+                    print(f"💡 Restored log keys: {list(file_logs.keys())[:10]}...")
+                else:
+                    print("❌ No logs found in file backup either")
+                    print(f"⚠️ This indicates the logs weren't properly saved during region processing.")
+                    print(f"⚠️ Please check the optimize_region_v2 function returns and how the logs are saved.")
+            except Exception as e:
+                print(f"❌ ERROR loading logs from file: {str(e)}")
+                print(f"⚠️ WARNING: No circle eligibility logs found in session state at end of processing.")
+                print(f"⚠️ This indicates the logs weren't properly saved during region processing.")
+                print(f"⚠️ Please check the optimize_region_v2 function returns and how the logs are saved.")
         else:
             print(f"✅ Session state has {log_count} logs - everything is good!")
             print(f"💡 Log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}...")
