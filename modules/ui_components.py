@@ -1642,6 +1642,86 @@ def render_debug_tab():
         st.write("### Circle Eligibility Debug")
         st.write("This section shows detailed analysis of circle eligibility for new member optimization")
         
+        # Add a button to manually test file backup functionality
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            if st.button("Test File Backup"):
+                try:
+                    from modules.optimizer_new import save_circle_eligibility_logs_to_file
+                    
+                    # Create test circle eligibility logs
+                    test_logs = {
+                        'IP-TEST-01': {
+                            'circle_id': 'IP-TEST-01',
+                            'region': 'Test Region',
+                            'subregion': 'Test Subregion',
+                            'is_eligible': True,
+                            'current_members': 7,
+                            'max_additions': 3,
+                            'is_small_circle': False,
+                            'is_test_circle': True,
+                            'has_none_preference': False,
+                            'preference_overridden': False,
+                            'meeting_time': 'Monday (Evening)',
+                            'reason': 'Has capacity'
+                        },
+                        'IP-TEST-02': {
+                            'circle_id': 'IP-TEST-02',
+                            'region': 'Test Region',
+                            'subregion': 'Test Subregion',
+                            'is_eligible': False,
+                            'current_members': 10,
+                            'max_additions': 0,
+                            'is_small_circle': False,
+                            'is_test_circle': True,
+                            'has_none_preference': True,
+                            'preference_overridden': False,
+                            'reason': 'Circle is at maximum capacity (10 members)',
+                            'meeting_time': 'Wednesday (Evening)'
+                        },
+                        'IP-TEST-03': {
+                            'circle_id': 'IP-TEST-03',
+                            'region': 'Test Region',
+                            'subregion': 'Test Subregion',
+                            'is_eligible': True,
+                            'current_members': 4,
+                            'max_additions': 6,
+                            'is_small_circle': True,
+                            'is_test_circle': True,
+                            'has_none_preference': True,
+                            'preference_overridden': True,
+                            'override_reason': 'Small circle override applied',
+                            'meeting_time': 'Friday (Evening)',
+                            'reason': 'Small circle needs to reach viable size'
+                        }
+                    }
+                    
+                    # Save to file for testing
+                    saved = save_circle_eligibility_logs_to_file(test_logs, "Test Region")
+                    if saved:
+                        st.success(f"✅ Successfully saved {len(test_logs)} test logs to file")
+                        # Update session state with the test logs
+                        st.session_state.circle_eligibility_logs = test_logs
+                        st.rerun()  # Refresh the page to see the results
+                    else:
+                        st.error("❌ Failed to save test logs to file")
+                except Exception as e:
+                    st.error(f"❌ Error during file operations: {str(e)}")
+        
+        with col2:
+            if st.button("Load From File"):
+                try:
+                    from modules.optimizer_new import load_circle_eligibility_logs_from_file
+                    file_logs = load_circle_eligibility_logs_from_file()
+                    if file_logs and len(file_logs) > 0:
+                        st.success(f"✅ Loaded {len(file_logs)} logs from file")
+                        st.session_state.circle_eligibility_logs = file_logs
+                        st.rerun()  # Refresh the page to see the results
+                    else:
+                        st.warning("No logs found in file")
+                except Exception as e:
+                    st.error(f"❌ Error loading from file: {str(e)}")
+        
         # CRITICAL FIX: Improved debugging for session state logs
         if 'circle_eligibility_logs' in st.session_state:
             # Add diagnostic info about the logs in session state
