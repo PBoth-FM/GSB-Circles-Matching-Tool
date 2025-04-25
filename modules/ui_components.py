@@ -1556,10 +1556,63 @@ def render_debug_tab():
         st.write("### Circle Capacity Analysis")
         st.write("This section shows why circles with capacity might not be receiving new members")
         
+        # CRITICAL DEBUG: Add bridge from eligibility logs to capacity debug
+        if 'circle_eligibility_logs' in st.session_state and st.session_state.circle_eligibility_logs:
+            print(f"\n🔍 BRIDGE DEBUG: Checking circle_eligibility_logs vs circle_capacity_debug")
+            elig_logs = st.session_state.circle_eligibility_logs
+            print(f"  Found {len(elig_logs)} circles in eligibility logs")
+            
+            # Count circles with capacity in eligibility logs
+            circles_with_capacity = [c_id for c_id, data in elig_logs.items() 
+                                   if data.get('max_additions', 0) > 0]
+            print(f"  Found {len(circles_with_capacity)} circles with max_additions > 0 in eligibility logs")
+            if circles_with_capacity:
+                print(f"  Sample circles with capacity: {circles_with_capacity[:5]}...")
+                
+            # Create circle_capacity_debug if it doesn't exist
+            if 'circle_capacity_debug' not in st.session_state:
+                st.session_state.circle_capacity_debug = {}
+                
+            # Check existing capacity debug data
+            capacity_debug = st.session_state.circle_capacity_debug
+            print(f"  Found {len(capacity_debug)} circles in capacity_debug")
+            
+            # Find circles missing from capacity debug
+            missing_circles = [c_id for c_id in circles_with_capacity if c_id not in capacity_debug]
+            if missing_circles:
+                print(f"  ⚠️ Found {len(missing_circles)} circles with capacity missing from capacity_debug")
+                print(f"  Missing circles: {missing_circles[:10]}...")
+                
+                # CRITICAL FIX: Add missing circles to capacity_debug
+                print(f"  🔧 Adding {len(missing_circles)} missing circles to capacity_debug")
+                for c_id in missing_circles:
+                    circle_data = elig_logs[c_id]
+                    st.session_state.circle_capacity_debug[c_id] = {
+                        'circle_id': c_id,
+                        'region': circle_data.get('region', 'Unknown'),
+                        'subregion': circle_data.get('subregion', 'Unknown'),
+                        'meeting_time': circle_data.get('meeting_time', 'Unknown'),
+                        'current_members': circle_data.get('current_members', 0),
+                        'max_additions': circle_data.get('max_additions', 0),
+                        'viable': True,  # Mark as viable since it has capacity
+                        'is_test_circle': circle_data.get('is_test_circle', False),
+                        'special_handling': circle_data.get('circle_id') in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                    }
+        
         if 'circle_capacity_debug' in st.session_state and st.session_state.circle_capacity_debug:
             # Create a DataFrame from the circle capacity debug info
             capacity_data = list(st.session_state.circle_capacity_debug.values())
             capacity_df = pd.DataFrame(capacity_data)
+            
+            # Add debug logging after creating the DataFrame
+            print(f"\n🔍 CAPACITY DF DEBUG: Created DataFrame with {len(capacity_df)} rows")
+            if not capacity_df.empty:
+                print(f"  Column names: {list(capacity_df.columns)}")
+                if 'max_additions' in capacity_df.columns:
+                    max_add_counts = capacity_df['max_additions'].value_counts().to_dict()
+                    print(f"  max_additions distribution: {max_add_counts}")
+                    circles_with_capacity = (capacity_df['max_additions'] > 0).sum()
+                    print(f"  Circles with max_additions > 0: {circles_with_capacity}")
             
             # Add columns for clarity
             if not capacity_df.empty:

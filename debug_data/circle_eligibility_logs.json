@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "timestamp": "2025-04-25 16:32:05",
+    "timestamp": "2025-04-25 16:55:47",
     "region": "all_regions",
     "total_logs": 141,
     "added_logs": 141,
-    "existing_logs": 3,
+    "existing_logs": 141,
     "regions_processed": [
       "all_regions"
     ]
@@ -1861,8 +1861,8 @@
     "IP-NEW-TES-01": {
       "circle_id": "IP-NEW-TES-01",
       "region": "Test Region",
-      "subregion": "Mid Market/SoMa",
-      "meeting_time": "Sunday (Days)",
+      "subregion": "Russian Hill/Nob Hill/North Beach",
+      "meeting_time": "Saturday (Days)",
       "max_additions": NaN,
       "current_members": 0,
       "is_eligible": true,
@@ -1875,7 +1875,7 @@
     "IP-NEW-TES-02": {
       "circle_id": "IP-NEW-TES-02",
       "region": "Test Region",
-      "subregion": "Mid Market/SoMa",
+      "subregion": "Russian Hill/Nob Hill/North Beach",
       "meeting_time": "Sunday (Evenings)",
       "max_additions": NaN,
       "current_members": 0,
@@ -1889,8 +1889,8 @@
     "IP-NEW-TES-03": {
       "circle_id": "IP-NEW-TES-03",
       "region": "Test Region",
-      "subregion": "Mid Market/SoMa",
-      "meeting_time": "Monday-thursday (Evenings)",
+      "subregion": "Russian Hill/Nob Hill/North Beach",
+      "meeting_time": "Sunday (Days)",
       "max_additions": NaN,
       "current_members": 0,
       "is_eligible": true,
@@ -1903,7 +1903,7 @@
     "IP-NEW-TES-04": {
       "circle_id": "IP-NEW-TES-04",
       "region": "Test Region",
-      "subregion": "Mid Market/SoMa",
+      "subregion": "Russian Hill/Nob Hill/North Beach",
       "meeting_time": "Monday-friday (Days)",
       "max_additions": NaN,
       "current_members": 0,
@@ -1917,8 +1917,8 @@
     "IP-NEW-TES-05": {
       "circle_id": "IP-NEW-TES-05",
       "region": "Test Region",
-      "subregion": "Mid Market/SoMa",
-      "meeting_time": "Saturday (Days)",
+      "subregion": "Russian Hill/Nob Hill/North Beach",
+      "meeting_time": "Monday-thursday (Evenings)",
       "max_additions": NaN,
       "current_members": 0,
       "is_eligible": true,
@@ -1931,8 +1931,8 @@
     "IP-NEW-TES-06": {
       "circle_id": "IP-NEW-TES-06",
       "region": "Test Region",
-      "subregion": "Russian Hill/Nob Hill/North Beach",
-      "meeting_time": "Sunday (Days)",
+      "subregion": "Noe/Mission/Castro",
+      "meeting_time": "Saturday (Days)",
       "max_additions": NaN,
       "current_members": 0,
       "is_eligible": true,
@@ -1960,7 +1960,7 @@
       "circle_id": "IP-NEW-TES-08",
       "region": "Test Region",
       "subregion": "Brooklyn Heights/Downtown Brooklyn",
-      "meeting_time": "Monday-thursday (Evenings)",
+      "meeting_time": "Sunday (Days)",
       "max_additions": NaN,
       "current_members": 0,
       "is_eligible": true,
@@ -1973,8 +1973,8 @@
     "IP-NEW-LON-01": {
       "circle_id": "IP-NEW-LON-01",
       "region": "London",
-      "subregion": "Southwest",
-      "meeting_time": "Sunday (Days)",
+      "subregion": "Southeast",
+      "meeting_time": "Saturday (Days)",
       "max_additions": NaN,
       "current_members": 0,
       "is_eligible": true,
