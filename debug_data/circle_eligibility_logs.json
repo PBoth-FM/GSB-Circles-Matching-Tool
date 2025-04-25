@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "timestamp": "2025-04-25 13:28:43",
+    "region": "Test Region",
+    "total_logs": 3
+  },
+  "logs": {
+    "IP-TEST-01": {
+      "circle_id": "IP-TEST-01",
+      "region": "Test Region",
+      "subregion": "Test Subregion",
+      "is_eligible": true,
+      "current_members": 7,
+      "max_additions": 3,
+      "is_small_circle": false,
+      "is_test_circle": true,
+      "has_none_preference": false,
+      "preference_overridden": false,
+      "meeting_time": "Monday (Evening)",
+      "reason": "Has capacity"
+    },
+    "IP-TEST-02": {
+      "circle_id": "IP-TEST-02",
+      "region": "Test Region",
+      "subregion": "Test Subregion",
+      "is_eligible": false,
+      "current_members": 10,
+      "max_additions": 0,
+      "is_small_circle": false,
+      "is_test_circle": true,
+      "has_none_preference": true,
+      "preference_overridden": false,
+      "reason": "Circle is at maximum capacity (10 members)",
+      "meeting_time": "Wednesday (Evening)"
+    },
+    "IP-TEST-03": {
+      "circle_id": "IP-TEST-03",
+      "region": "Test Region",
+      "subregion": "Test Subregion",
+      "is_eligible": true,
+      "current_members": 4,
+      "max_additions": 6,
+      "is_small_circle": true,
+      "is_test_circle": true,
+      "has_none_preference": true,
+      "preference_overridden": true,
+      "override_reason": "Small circle override applied",
+      "meeting_time": "Friday (Evening)",
+      "reason": "Small circle needs to reach viable size"
+    }
+  }
+}
