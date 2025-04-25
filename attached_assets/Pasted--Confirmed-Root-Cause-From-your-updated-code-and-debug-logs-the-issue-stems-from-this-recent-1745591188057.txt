@@ -1,0 +1,54 @@
+
+🔍 Confirmed Root Cause
+
+From your updated code and debug logs, the issue stems from this recent architectural change:
+
+    circle_eligibility_logs is no longer a global variable — it’s now created locally within optimize_region_v2 and returned, but:
+
+        It is not being aggregated across regions in run_matching_algorithm
+
+        It is never passed to update_session_state_eligibility_logs()
+
+So yes: regular circles are being processed, but their eligibility is not recorded or surfaced, because you only save the logs for the last region, or perhaps none at all depending on control flow.
+✅ Fix Plan
+1. Modify run_matching_algorithm() to collect all eligibility logs
+
+You need to initialize an empty dictionary before looping over regions, then aggregate logs from each region like so:
+
+all_eligibility_logs = {}
+
+for region in regions:
+    results_r, circles_r, unmatched_r, debug_r, logs_r = optimize_region_v2(...)
+    
+    # Merge logs for this region into the master log dictionary
+    if logs_r:
+        all_eligibility_logs.update(logs_r)
+
+2. After the region loop, update Streamlit session state
+
+Once you’ve built the full all_eligibility_logs:
+
+from modules.optimizer_new import update_session_state_eligibility_logs
+update_session_state_eligibility_logs(all_eligibility_logs)
+
+This ensures the UI can access a full, cross-region view of eligibility.
+3. (Optional) Save these logs to disk for offline debugging
+
+You're already using save_circle_eligibility_logs_to_file(). Continue calling that at the same spot:
+
+from modules.optimizer_new import save_circle_eligibility_logs_to_file
+save_circle_eligibility_logs_to_file(all_eligibility_logs, region="all")
+
+✅ Verify Eligibility Is Assessed
+
+You're right to be concerned: if logs are missing, perhaps eligibility checks aren’t run. You can validate this by:
+
+    Dropping print(f"Creating eligibility log for {circle_id}") immediately where you populate each circle_eligibility_logs[circle_id].
+
+    Verifying you enter that block for multiple circle IDs per region (not just test ones).
+
+If not, check:
+
+    Is the loop over existing_circles.items() empty?
+
+    Are current_circle_members not getting populated in your preserve mode?
