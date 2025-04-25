@@ -1319,6 +1319,23 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         small_circles_to_promote = {circle_id: circle_data for circle_id, circle_data in existing_circles.items()
                                   if len(circle_data.get('members', [])) < 5}
         
+        # DIAGNOSTIC: Check specifically for East Bay circle
+        if "IP-EAB-07" in existing_circles:
+            eab_circle = existing_circles["IP-EAB-07"]
+            member_count = len(eab_circle.get('members', []))
+            max_additions = eab_circle.get('max_additions', 0)
+            
+            print(f"\n🔍 DIAGNOSTIC: IP-EAB-07 SMALL CIRCLE CHECK")
+            print(f"  Current members: {member_count}")
+            print(f"  Current max_additions: {max_additions}")
+            print(f"  Is in small_circles_to_promote: {'Yes' if 'IP-EAB-07' in small_circles_to_promote else 'No'}")
+            print(f"  Member count < 5: {'Yes' if member_count < 5 else 'No'}")
+            
+            # Check why it might not be in small_circles_to_promote if it should be
+            if member_count < 5 and "IP-EAB-07" not in small_circles_to_promote:
+                print(f"  🚨 CRITICAL BUG: IP-EAB-07 has {member_count} members but is NOT in small_circles_to_promote!")
+                print(f"  This suggests a fundamental issue with how small circles are identified!")
+        
         if small_circles_to_promote:
             print(f"  🔍 Found {len(small_circles_to_promote)} small circles that should receive new members")
             print(f"  Small circle IDs: {list(small_circles_to_promote.keys())}")
@@ -1334,6 +1351,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     existing_circles[small_id] = small_data
                     viable_circles[small_id] = small_data
                     print(f"    Added {small_id} with max_additions={small_data['max_additions']}")
+                    
+                    # DIAGNOSTIC: Special log for East Bay circle
+                    if small_id == "IP-EAB-07":
+                        print(f"    ✅ DIAGNOSTIC: Successfully added IP-EAB-07 to viable circles!")
+                        print(f"    New max_additions: {small_data['max_additions']}")
+                        print(f"    Original preference: {small_data['original_preference']}")
+                else:
+                    print(f"    {small_id} already has max_additions={small_data.get('max_additions', 0)}")
     
     # REGION MAPPING VERIFICATION: Check if critical test circles are properly available
     print("\n🔍 REGION AND CIRCLE MAPPING VERIFICATION:")
@@ -3021,7 +3046,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             if p_id in ['73177784103', '50625303450', '72549701782', '76096461703']:
                 print(f"\n🔍 DIAGNOSTIC: Special test participant {p_id} result:")
                 print(f"  Matched: No (unmatched)")
-                print(f"  Unmatched reason: {reason}")
+                print(f"  Unmatched reason will be determined later")
                 print(f"  Compatible with how many circles: {len(participant_compatible_circles.get(p_id, []))}")
                 
                 # Special check for East Bay participant
@@ -3029,7 +3054,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"\n🔍 DIAGNOSTIC: East Bay participant {p_id} UNMATCHED:")
                     print(f"  Participant region: {participant_dict.get('region', 'unknown')}")
                     print(f"  Compatible with IP-EAB-07: {'Yes' if 'IP-EAB-07' in participant_compatible_circles.get(p_id, []) else 'No'}")
-                    print(f"  Unmatched reason: {reason}")
+                    print(f"  Unmatched reason will be determined later")
                     
                     if 'IP-EAB-07' in viable_circles:
                         eab_circle = viable_circles['IP-EAB-07']
