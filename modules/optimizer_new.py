@@ -1,5 +1,7 @@
 import time
 import sys
+import json
+import os
 import pandas as pd
 import pulp
 import streamlit as st
@@ -21,6 +23,12 @@ houston_debug_logs = []
 # Initialize debug counter for tracking
 DEBUG_ELIGIBILITY_COUNTER = 0
 
+# File path for circle eligibility logs
+CIRCLE_ELIGIBILITY_LOGS_PATH = './debug_data/circle_eligibility_logs.json'
+
+# Initialize directory for debug data
+os.makedirs(os.path.dirname(CIRCLE_ELIGIBILITY_LOGS_PATH), exist_ok=True)
+
 # REFACTORED APPROACH: We completely removed the global circle_eligibility_logs variable
 # Instead, we create the dictionary in optimize_region_v2 
 # and pass it explicitly as parameters to functions that need it
@@ -29,6 +37,70 @@ DEBUG_ELIGIBILITY_COUNTER = 0
 def debug_eligibility_logs(message):
     """Helper function to print standardized circle eligibility debug logs"""
     print(f"🔍 CIRCLE ELIGIBILITY DEBUG: {message}")
+    
+# Function to save circle eligibility logs to file
+def save_circle_eligibility_logs_to_file(logs, region="all"):
+    """
+    Save circle eligibility logs to a JSON file.
+    
+    Args:
+        logs: Dictionary of circle eligibility logs
+        region: Region being processed (for debugging)
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Add timestamp and region info
+        data_to_save = {
+            "metadata": {
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "region": region,
+                "total_logs": len(logs)
+            },
+            "logs": logs
+        }
+        
+        print(f"\n📝 SAVING CIRCLE ELIGIBILITY LOGS: {len(logs)} entries for region {region}")
+        
+        # Write to file
+        with open(CIRCLE_ELIGIBILITY_LOGS_PATH, 'w') as f:
+            json.dump(data_to_save, f, indent=2)
+        
+        print(f"✅ Successfully saved logs to {CIRCLE_ELIGIBILITY_LOGS_PATH}")
+        return True
+    
+    except Exception as e:
+        print(f"❌ ERROR saving circle eligibility logs to file: {str(e)}")
+        return False
+        
+# Function to load circle eligibility logs from file
+def load_circle_eligibility_logs_from_file():
+    """
+    Load circle eligibility logs from JSON file.
+    
+    Returns:
+        dict: Circle eligibility logs or empty dict if file doesn't exist
+    """
+    try:
+        if os.path.exists(CIRCLE_ELIGIBILITY_LOGS_PATH):
+            with open(CIRCLE_ELIGIBILITY_LOGS_PATH, 'r') as f:
+                data = json.load(f)
+                
+            if "logs" in data and isinstance(data["logs"], dict):
+                print(f"📂 Loaded {len(data['logs'])} circle eligibility logs from file")
+                print(f"📄 File timestamp: {data.get('metadata', {}).get('timestamp', 'unknown')}")
+                return data["logs"]
+            else:
+                print("⚠️ Invalid format in circle eligibility logs file")
+                return {}
+        else:
+            print("ℹ️ No circle eligibility logs file found")
+            return {}
+    
+    except Exception as e:
+        print(f"❌ ERROR loading circle eligibility logs from file: {str(e)}")
+        return {}
     
 # Function to directly update circle eligibility logs in session state
 def update_session_state_eligibility_logs(circle_logs=None):
