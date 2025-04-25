@@ -89,6 +89,42 @@ def load_data(uploaded_file):
         if df.empty:
             validation_errors.append("The uploaded file is empty")
             return df, validation_errors, []
+            
+        # SUPER DETAILED DIAGNOSTICS
+        print("\n🔬🔬🔬 SUPER DETAILED DATA ANALYSIS IN LOAD_DATA 🔬🔬🔬")
+        print(f"🔬 Raw DataFrame shape: {df.shape}")
+        print(f"🔬 Raw columns before mapping: {df.columns.tolist()}")
+        
+        # Check for circle-related columns
+        circle_id_columns = [col for col in df.columns if "circle" in col.lower() and "id" in col.lower()]
+        if circle_id_columns:
+            print(f"🔬 Potential circle ID columns in raw data: {circle_id_columns}")
+            
+            # Check for sample values
+            for col in circle_id_columns:
+                non_null = df[df[col].notna()]
+                if len(non_null) > 0:
+                    sample_values = non_null[col].unique()[:5]
+                    print(f"🔬 Sample values for '{col}': {list(sample_values)}")
+        
+        # Check for status columns
+        status_columns = [col for col in df.columns if "status" in col.lower()]
+        if status_columns:
+            print(f"🔬 Potential status columns in raw data: {status_columns}")
+            for col in status_columns:
+                if col in df.columns:
+                    status_counts = df[col].value_counts().to_dict()
+                    print(f"🔬 '{col}' value counts: {status_counts}")
+                    
+        # Check for test circles in any column
+        test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+        for test_circle in test_circles:
+            for col in df.columns:
+                if df[col].astype(str).str.contains(test_circle).any():
+                    matches = df[df[col].astype(str).str.contains(test_circle)]
+                    print(f"🔬 TEST CIRCLE {test_circle} found in column '{col}' ({len(matches)} matches)")
+                    
+        print("🔬🔬🔬 DETAILED DIAGNOSTICS BEFORE MAPPING 🔬🔬🔬\n")
         
         # Map column names from the data file to the expected column names
         df = map_column_names(df)
