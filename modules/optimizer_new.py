@@ -1304,6 +1304,37 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
                      if circle_data.get('max_additions', 0) > 0}
     
+    # ENHANCED VIABLE CIRCLE DETECTION: List all circles with capacity
+    print(f"\n🔍 VIABLE CIRCLES DETECTION:")
+    print(f"  Found {len(viable_circles)} viable circles with max_additions > 0")
+    
+    # Verify circle viability more thoroughly
+    if viable_circles:
+        print(f"  Viable circle IDs: {list(viable_circles.keys())}")
+    else:
+        print(f"  ⚠️ WARNING: No viable circles found with max_additions > 0!")
+        print(f"  This will prevent any circles from being used in optimization")
+        
+        # Look for small circles that should be eligible regardless of preference
+        small_circles_to_promote = {circle_id: circle_data for circle_id, circle_data in existing_circles.items()
+                                  if len(circle_data.get('members', [])) < 5}
+        
+        if small_circles_to_promote:
+            print(f"  🔍 Found {len(small_circles_to_promote)} small circles that should receive new members")
+            print(f"  Small circle IDs: {list(small_circles_to_promote.keys())}")
+            print(f"  ✅ CRITICAL FIX: Adding these small circles to viable circles regardless of preference")
+            
+            # Add small circles to viable circles with a reasonable max_additions
+            for small_id, small_data in small_circles_to_promote.items():
+                if small_data.get('max_additions', 0) == 0:
+                    small_data['max_additions'] = 5 - len(small_data.get('members', []))  # Add enough to reach 5
+                    small_data['preference_overridden'] = True
+                    small_data['override_reason'] = 'Small circle needs to reach viable size'
+                    small_data['original_preference'] = 'None'
+                    existing_circles[small_id] = small_data
+                    viable_circles[small_id] = small_data
+                    print(f"    Added {small_id} with max_additions={small_data['max_additions']}")
+    
     # REGION MAPPING VERIFICATION: Check if critical test circles are properly available
     print("\n🔍 REGION AND CIRCLE MAPPING VERIFICATION:")
     print(f"  Current region being processed: {region}")
@@ -3050,10 +3081,24 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if 'circle_capacity_debug' not in st.session_state:
         st.session_state.circle_capacity_debug = {}
     
+    # CRITICAL FIX: Add ALL circles with capacity to debugging info
+    print(f"\n🔍 CIRCLE CAPACITY DEBUG POPULATION:")
+    circles_with_capacity = 0
+    circles_without_capacity = 0
+    
+    # Reset the circle_capacity_debug dictionary to ensure fresh data
+    st.session_state.circle_capacity_debug = {}
+    
     # Add info about all existing circles with capacity
     for circle_id, circle_data in existing_circles.items():
         max_additions = circle_data.get('max_additions', 0)
+        # For all circles with capacity (max_additions > 0)
         if max_additions > 0:
+            circles_with_capacity += 1
+            is_in_viable = circle_id in viable_circles
+            if not is_in_viable:
+                print(f"  ⚠️ WARNING: Circle {circle_id} has capacity ({max_additions}) but is not in viable_circles!")
+                
             st.session_state.circle_capacity_debug[circle_id] = {
                 'circle_id': circle_id,
                 'region': circle_data.get('region', 'Unknown'),
@@ -3061,10 +3106,38 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 'meeting_time': circle_data.get('meeting_time', 'Unknown'),
                 'current_members': circle_data.get('member_count', 0),
                 'max_additions': max_additions,
-                'viable': circle_id in viable_circles,
-                'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04'],
+                'viable': is_in_viable,  # Mark whether it's in viable_circles
+                'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02', 'IP-TEST-01', 'IP-TEST-02', 'IP-TEST-03'],
                 'special_handling': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
             }
+        else:
+            circles_without_capacity += 1
+    
+    print(f"  Added {circles_with_capacity} circles with capacity to circle_capacity_debug")
+    print(f"  Skipped {circles_without_capacity} circles without capacity (max_additions=0)")
+    
+    # CRITICAL FIX: Make sure viable_circles is a subset of circles with capacity
+    missing_viable_circles = [c_id for c_id in viable_circles if c_id not in st.session_state.circle_capacity_debug]
+    if missing_viable_circles:
+        print(f"  ⚠️ CRITICAL ERROR: Found {len(missing_viable_circles)} circles in viable_circles but not in circle_capacity_debug")
+        print(f"  Missing circles: {missing_viable_circles}")
+        
+        # Add these missing circles to capacity debug
+        for circle_id in missing_viable_circles:
+            if circle_id in existing_circles:
+                circle_data = existing_circles[circle_id]
+                print(f"  ✅ Adding viable circle {circle_id} to capacity debug")
+                st.session_state.circle_capacity_debug[circle_id] = {
+                    'circle_id': circle_id,
+                    'region': circle_data.get('region', 'Unknown'),
+                    'subregion': circle_data.get('subregion', 'Unknown'),
+                    'meeting_time': circle_data.get('meeting_time', 'Unknown'),
+                    'current_members': circle_data.get('member_count', 0),
+                    'max_additions': circle_data.get('max_additions', 0),
+                    'viable': True,  # It's in viable_circles by definition
+                    'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02', 'IP-TEST-01', 'IP-TEST-02', 'IP-TEST-03'],
+                    'special_handling': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+                }
     
     # CRITICAL FIX: Add circle eligibility logs to session state
     # Use our dedicated helper function to ensure logs are properly saved

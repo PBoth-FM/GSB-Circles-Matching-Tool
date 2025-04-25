@@ -1,0 +1,1136 @@
+CIRCLE ELIGIBILITY ANALYSIS
+
+Total circles: 141
+Eligible circles: 141 (100.0%)
+
+ELIGIBLE CIRCLE DETAILS:
+- IP-TEST-01
+  Region: Test Region
+  Subregion: Test Subregion
+  Meeting time: Monday (Evenings)
+  Current members: 7
+  Max additions: 3.0
+  Test circle: NO
+
+- IP-TEST-02
+  Region: Test Region
+  Subregion: Test Subregion
+  Meeting time: Monday (Evenings)
+  Current members: 7
+  Max additions: 3.0
+  Test circle: NO
+
+- IP-TEST-03
+  Region: Test Region
+  Subregion: Test Subregion
+  Meeting time: Monday (Mornings)
+  Current members: 3
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-ATL-1
+  Region: Atlanta
+  Subregion: Atlanta
+  Meeting time: Varies (Varies)
+  Current members: 11
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-AUS-01
+  Region: Austin
+  Subregion: Westlake/Barton Creek/Bee Cave/Lakeway
+  Meeting time: Saturday (Days)
+  Current members: 9
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-AUS-02
+  Region: Austin
+  Subregion: Central Austin
+  Meeting time: M-Th (Evenings)
+  Current members: 9
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-BOS-01
+  Region: Boston
+  Subregion: West of Boston (e.g. Needham/Wellesley/Natick)
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-BOS-02
+  Region: Boston
+  Subregion: Boston
+  Meeting time: M-Th (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-BOS-03
+  Region: Boston
+  Subregion: Boston
+  Meeting time: Sunday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-BOS-04
+  Region: Boston
+  Subregion: West of Boston (e.g. Needham/Wellesley/Natick)
+  Meeting time: Varies (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-BOS-05
+  Region: Boston
+  Subregion: Northwest of Boston (e.g. Belmont/Lexington/Concord)
+  Meeting time: Monday (Evenings)
+  Current members: 7
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-BOS-06
+  Region: Boston
+  Subregion: Boston
+  Meeting time: Monday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-BOS-07
+  Region: Boston
+  Subregion: n/a (Meeting online only)
+  Meeting time: Tuesday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-CHI-01
+  Region: Chicago
+  Subregion: City-Loop
+  Meeting time: Thursday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-CHI-02
+  Region: Chicago
+  Subregion: City-Northwest/Central
+  Meeting time: Varies (Varies)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-CHI-03
+  Region: Chicago
+  Subregion: North Shore Suburbs
+  Meeting time: Varies (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-CHI-04
+  Region: Chicago
+  Subregion: City-Northside (Lincoln Park/Lakeview)
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-CHI-05
+  Region: Chicago
+  Subregion: City-Loop
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-EAB-01
+  Region: East Bay
+  Subregion: West of Caldecott Tunnel
+  Meeting time: Wednesday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-EAB-02
+  Region: East Bay
+  Subregion: East of Caldecott Tunnel
+  Meeting time: Sunday (Evenings)
+  Current members: 1
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-EAB-03
+  Region: East Bay
+  Subregion: West of Caldecott Tunnel
+  Meeting time: Wednesday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-EAB-04
+  Region: East Bay
+  Subregion: West of Caldecott Tunnel
+  Meeting time: Sunday (Days)
+  Current members: 6
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-EAB-05
+  Region: East Bay
+  Subregion: East of Caldecott Tunnel
+  Meeting time: Wednesday (Days)
+  Current members: 10
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-EAB-06
+  Region: East Bay
+  Subregion: West of Caldecott Tunnel
+  Meeting time: Tuesday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-EAB-07
+  Region: East Bay
+  Subregion: West of Caldecott Tunnel
+  Meeting time: Wednesday (Evenings)
+  Current members: 5
+  Max additions: 3.0
+  Test circle: NO
+
+- IP-HOU-01
+  Region: Houston
+  Subregion: West University/Bellaire
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-HOU-02
+  Region: Houston
+  Subregion: Montrose/River Oaks/Heights
+  Meeting time: M-Th (Evenings)
+  Current members: 3
+  Max additions: 5.0
+  Test circle: ✅ YES
+
+- IP-LAX-01
+  Region: Los Angeles
+  Subregion: Playa Vista/Marina Del Rey/Culver City
+  Meeting time: Tuesday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LAX-02
+  Region: Los Angeles
+  Subregion: Mid City/Mid Wilshire
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LAX-03
+  Region: Los Angeles
+  Subregion: Pasadena/Burbank/Glendale
+  Meeting time: Tuesday (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LAX-04
+  Region: Los Angeles
+  Subregion: Playa Vista/Marina Del Rey/Culver City
+  Meeting time: Wednesday (Evenings)
+  Current members: 5
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-LAX-05
+  Region: Los Angeles
+  Subregion: Pasadena/Burbank/Glendale
+  Meeting time: Tuesday (Evenings)
+  Current members: 5
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-LAX-06
+  Region: Los Angeles
+  Subregion: Brentwood/Santa Monica/Palisades/Malibu
+  Meeting time: Varies (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LAX-07
+  Region: Los Angeles
+  Subregion: South Bay
+  Meeting time: Wednesday (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LAX-08
+  Region: Los Angeles
+  Subregion: Brentwood/Santa Monica/Palisades/Malibu
+  Meeting time: Monday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LAX-09
+  Region: Los Angeles
+  Subregion: Beverly Hills/Westwood
+  Meeting time: Wednesday (Evenings)
+  Current members: 8
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-LAX-10
+  Region: Los Angeles
+  Subregion: Beverly Hills/Westwood
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LON-01
+  Region: London
+  Subregion: Central
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LON-02
+  Region: London
+  Subregion: Central
+  Meeting time: Thursday (Evenings)
+  Current members: 7
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-LON-03
+  Region: London
+  Subregion: Southwest
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-LON-04
+  Region: London
+  Subregion: West
+  Meeting time: Tuesday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: ✅ YES
+
+- IP-LON-05
+  Region: London
+  Subregion: Central
+  Meeting time: Varies (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-MAR-01
+  Region: Marin County
+  Subregion: Marin
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-MAR-02
+  Region: Marin County
+  Subregion: Marin
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-MAR-03
+  Region: Marin County
+  Subregion: Marin
+  Meeting time: Thursday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-MAR-04
+  Region: Marin County
+  Subregion: Marin
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-MXC-01
+  Region: Mexico City
+  Subregion: Mexico City
+  Meeting time: Thursday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NAP-01
+  Region: Napa-Sonoma
+  Subregion: Napa/Sonoma
+  Meeting time: Tuesday (Evenings)
+  Current members: 10
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NBO-01
+  Region: Nairobi
+  Subregion: Nairobi
+  Meeting time: Varies (Days)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-01
+  Region: New York
+  Subregion: West Village
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-02
+  Region: New York
+  Subregion: Flatiron
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-03
+  Region: New York
+  Subregion: Upper East Side
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-04
+  Region: New York
+  Subregion: Tribeca
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-05
+  Region: New York
+  Subregion: Brooklyn Heights/Downtown Brooklyn
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-07
+  Region: New York
+  Subregion: n/a (Meeting online only)
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-08
+  Region: New York
+  Subregion: Westchester
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-09
+  Region: New York
+  Subregion: West Village
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-10
+  Region: New York
+  Subregion: Upper West Side
+  Meeting time: Varies (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-11
+  Region: New York
+  Subregion: Upper West Side
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-12
+  Region: New York
+  Subregion: Upper West Side
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-13
+  Region: New York
+  Subregion: Brooklyn Heights/Downtown Brooklyn
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-14
+  Region: New York
+  Subregion: Upper West Side
+  Meeting time: Varies (Varies)
+  Current members: 4
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-15
+  Region: New York
+  Subregion: Westchester
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-16
+  Region: New York
+  Subregion: Brooklyn Heights/Downtown Brooklyn
+  Meeting time: Varies (Varies)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-17
+  Region: New York
+  Subregion: Flatiron
+  Meeting time: Wednesday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-18
+  Region: New York
+  Subregion: Midtown West
+  Meeting time: Varies (Evenings)
+  Current members: 6
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-NYC-19
+  Region: New York
+  Subregion: Westchester
+  Meeting time: Varies (Days)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-20
+  Region: New York
+  Subregion: Brooklyn Heights/Downtown Brooklyn
+  Meeting time: Wednesday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-21
+  Region: New York
+  Subregion: West Village
+  Meeting time: M-Th (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-22
+  Region: New York
+  Subregion: Chelsea
+  Meeting time: M-Th (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NYC-24
+  Region: New York
+  Subregion: Cobble Hill/Boerum Hill
+  Meeting time: M-Th (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-01
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Thursday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-02
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Monday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-03
+  Region: Peninsula
+  Subregion: Menlo Park
+  Meeting time: Tuesday (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-04
+  Region: Peninsula
+  Subregion: Redwood Shores
+  Meeting time: Thursday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-05
+  Region: Peninsula
+  Subregion: Mid-Peninsula
+  Meeting time: Thursday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-06
+  Region: Peninsula
+  Subregion: Los Altos Hills
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-07
+  Region: Peninsula
+  Subregion: Mid-Peninsula
+  Meeting time: Varies (Varies)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-08
+  Region: Peninsula
+  Subregion: Menlo Park
+  Meeting time: Monday (Evenings)
+  Current members: 5
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-PSA-09
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Varies (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-10
+  Region: Peninsula
+  Subregion: Menlo Park
+  Meeting time: Monday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-11
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Varies (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-12
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Wednesday (Days)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-13
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Wednesday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-14
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Varies (Varies)
+  Current members: 3
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-15
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Varies (Varies)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-16
+  Region: Peninsula
+  Subregion: Mid-Peninsula
+  Meeting time: Thursday (Evenings)
+  Current members: 5
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-PSA-18
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Tuesday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-19
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: Varies (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-20
+  Region: Peninsula
+  Subregion: Mountain View/Los Altos
+  Meeting time: M-Th (Evenings)
+  Current members: 6
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-PSA-21
+  Region: Peninsula
+  Subregion: Mountain View/Los Altos
+  Meeting time: Varies (Evenings)
+  Current members: 4
+  Max additions: 4.0
+  Test circle: NO
+
+- IP-PSA-22
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: M-Th (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-23
+  Region: Peninsula
+  Subregion: Mountain View/Los Altos
+  Meeting time: M-Th (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-24
+  Region: Peninsula
+  Subregion: Redwood City/San Carlos
+  Meeting time: M-Th (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-PSA-26
+  Region: Peninsula
+  Subregion: Palo Alto
+  Meeting time: M-F (Days)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SAN-01
+  Region: San Diego
+  Subregion: San Diego
+  Meeting time: Tuesday (Evenings)
+  Current members: 8
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-SAN-02
+  Region: San Diego
+  Subregion: San Diego
+  Meeting time: Wednesday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SEA-01
+  Region: Seattle
+  Subregion: Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)
+  Meeting time: Wednesday (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SEA-03
+  Region: Seattle
+  Subregion: East Side (Bellevue/Issaquah/Redmond/etc.)
+  Meeting time: Sunday (Days)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFL-01
+  Region: South Florida
+  Subregion: nan
+  Meeting time: Varies (Varies)
+  Current members: 1
+  Max additions: 7.0
+  Test circle: NO
+
+- IP-SFO-01
+  Region: San Francisco
+  Subregion: Russian Hill/Nob Hill/North Beach
+  Meeting time: Monday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-02
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Tuesday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-03
+  Region: San Francisco
+  Subregion: Mission Bay/Potrero
+  Meeting time: Thursday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-04
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Thursday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-05
+  Region: San Francisco
+  Subregion: Mid Market/SoMa
+  Meeting time: Thursday (Evenings)
+  Current members: 5
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-SFO-06
+  Region: San Francisco
+  Subregion: Russian Hill/Nob Hill/North Beach
+  Meeting time: Thursday (Evenings)
+  Current members: 6
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-08
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Tuesday (Evenings)
+  Current members: 9
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-10
+  Region: San Francisco
+  Subregion: Mid Market/SoMa
+  Meeting time: Tuesday (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-12
+  Region: San Francisco
+  Subregion: Hayes/Nopa/Haight
+  Meeting time: Varies (Varies)
+  Current members: 8
+  Max additions: 3.0
+  Test circle: NO
+
+- IP-SFO-13
+  Region: San Francisco
+  Subregion: Mid Market/SoMa
+  Meeting time: Monday (Evenings)
+  Current members: 3
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-14
+  Region: San Francisco
+  Subregion: Russian Hill/Nob Hill/North Beach
+  Meeting time: Thursday (Evenings)
+  Current members: 4
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-15
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Wednesday (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-16
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Tuesday (Evenings)
+  Current members: 6
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-SFO-17
+  Region: San Francisco
+  Subregion: Mid Market/SoMa
+  Meeting time: Varies (Varies)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-18
+  Region: San Francisco
+  Subregion: Excelsior/Glen Park/Bernal
+  Meeting time: Thursday (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-19
+  Region: San Francisco
+  Subregion: Noe/Mission/Castro
+  Meeting time: Thursday (Evenings)
+  Current members: 5
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-22
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Monday (Varies)
+  Current members: 5
+  Max additions: 3.0
+  Test circle: NO
+
+- IP-SFO-24
+  Region: San Francisco
+  Subregion: Russian Hill/Nob Hill/North Beach
+  Meeting time: Tuesday (Evenings)
+  Current members: 3
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-25
+  Region: San Francisco
+  Subregion: Pac Heights/Marina
+  Meeting time: Varies (Varies)
+  Current members: 10
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-26
+  Region: San Francisco
+  Subregion: Buena Vista Park/Ashbury Heights
+  Meeting time: Varies (Varies)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-27
+  Region: San Francisco
+  Subregion: nan
+  Meeting time: Varies (Varies)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SFO-28
+  Region: San Francisco
+  Subregion: Presidio/Marina/Pacific Heights
+  Meeting time: Varies (Varies)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SHA-01
+  Region: Shanghai
+  Subregion: Shanghai
+  Meeting time: Varies (Varies)
+  Current members: 14
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SIN-01
+  Region: Singapore
+  Subregion: Singapore
+  Meeting time: Varies (Evenings)
+  Current members: 4
+  Max additions: 6.0
+  Test circle: ✅ YES
+
+- IP-SPO-01
+  Region: Sao Paulo
+  Subregion: Sao Paulo
+  Meeting time: Tuesday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-SPO-02
+  Region: Sao Paulo
+  Subregion: Sao Paulo
+  Meeting time: Varies (Varies)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-WDC-01
+  Region: Washington DC
+  Subregion: Northwest DC
+  Meeting time: Saturday (Days)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-WDC-02
+  Region: Washington DC
+  Subregion: Varies
+  Meeting time: Wednesday (Evenings)
+  Current members: 6
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-WDC-03
+  Region: Washington DC
+  Subregion: n/a (Meeting online only)
+  Meeting time: M-Th (Evenings)
+  Current members: 7
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-WDC-04
+  Region: Washington DC
+  Subregion: Northwest DC
+  Meeting time: Sunday (Days)
+  Current members: 7
+  Max additions: 2.0
+  Test circle: NO
+
+- IP-WDC-05
+  Region: Washington DC
+  Subregion: Northwest DC
+  Meeting time: Thursday (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-WDC-06
+  Region: Washington DC
+  Subregion: Northwest DC
+  Meeting time: M-Th (Evenings)
+  Current members: 8
+  Max additions: 0.0
+  Test circle: NO
+
+- IP-NEW-TES-01
+  Region: Test Region
+  Subregion: Mid Market/SoMa
+  Meeting time: Sunday (Days)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-02
+  Region: Test Region
+  Subregion: Mid Market/SoMa
+  Meeting time: Sunday (Evenings)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-03
+  Region: Test Region
+  Subregion: Mid Market/SoMa
+  Meeting time: Monday-thursday (Evenings)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-04
+  Region: Test Region
+  Subregion: Mid Market/SoMa
+  Meeting time: Monday-friday (Days)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-05
+  Region: Test Region
+  Subregion: Mid Market/SoMa
+  Meeting time: Saturday (Days)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-06
+  Region: Test Region
+  Subregion: Russian Hill/Nob Hill/North Beach
+  Meeting time: Sunday (Days)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-07
+  Region: Test Region
+  Subregion: Brooklyn Heights/Downtown Brooklyn
+  Meeting time: Sunday (Evenings)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-TES-08
+  Region: Test Region
+  Subregion: Brooklyn Heights/Downtown Brooklyn
+  Meeting time: Monday-thursday (Evenings)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+- IP-NEW-LON-01
+  Region: London
+  Subregion: Southwest
+  Meeting time: Sunday (Days)
+  Current members: 0
+  Max additions: nan
+  Test circle: NO
+
+
+INELIGIBLE CIRCLE DETAILS:

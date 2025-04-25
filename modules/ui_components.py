@@ -1573,13 +1573,33 @@ def render_debug_tab():
                 capacity_df['selected_for_optimization'] = capacity_df['viable'].apply(
                     lambda x: "✅ YES" if x else "❌ NO")
                 
+                # Add column for small circles
+                if 'current_members' in capacity_df.columns:
+                    capacity_df['small_circle'] = capacity_df['current_members'].apply(
+                        lambda x: "✅ YES (<5 members)" if x < 5 else "NO")
+                else:
+                    capacity_df['small_circle'] = "NO"
+                
                 # Reorder columns for better readability
                 display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 
-                                'current_members', 'max_additions', 'selected_for_optimization',
-                                'test_circle', 'special_handling']
+                                'current_members', 'max_additions', 'small_circle',
+                                'selected_for_optimization', 'test_circle', 'special_handling']
                 
-                # Display the DataFrame
-                st.dataframe(capacity_df[display_cols])
+                # Create tabs to show different views of the circles
+                circle_capacity_tab1, circle_capacity_tab2 = st.tabs(["All Circles", "Selected for Optimization"])
+                
+                with circle_capacity_tab1:
+                    # Display all circles with capacity
+                    st.dataframe(capacity_df[display_cols])
+                    
+                with circle_capacity_tab2:
+                    # Only show circles selected for optimization
+                    viable_df = capacity_df[capacity_df['viable'] == True]
+                    if not viable_df.empty:
+                        st.write(f"Found {len(viable_df)} circles that will be considered in optimization")
+                        st.dataframe(viable_df[display_cols])
+                    else:
+                        st.warning("No circles are currently selected for optimization!")
                 
                 # Provide summary statistics
                 st.write("### Summary Statistics")
@@ -1587,9 +1607,11 @@ def render_debug_tab():
                 total_count = len(capacity_df)
                 test_count = capacity_df['is_test_circle'].sum()
                 special_count = capacity_df['special_handling'].sum()
+                small_count = (capacity_df['current_members'] < 5).sum() if 'current_members' in capacity_df.columns else 0
                 
                 st.write(f"- Total circles with capacity: {total_count}")
                 st.write(f"- Circles selected for optimization: {viable_count} ({viable_count/total_count*100:.1f}%)")
+                st.write(f"- Small circles (<5 members): {small_count}")
                 st.write(f"- Test circles: {test_count}")
                 st.write(f"- Circles with special handling: {special_count}")
                 
