@@ -629,53 +629,20 @@ def run_matching_algorithm(data, config):
                 else:
                     logs_to_update[key] = value
             
-            # FOR TESTING: If no circles were processed, add some test data
-            # This is for debugging purposes only - to verify UI works with data
+            # ⚠️ CRITICAL DIAGNOSTIC TEST - Omit test logs to confirm real logs are working
+            # If real logs aren't being saved, we need to know about this
             if len(logs_to_update) == 0:
-                print("🔍 ADDING TEST DATA: No real logs, adding sample data to debug UI")
-                # Add test entries for 3 sample circles
-                logs_to_update['IP-TEST-01'] = {
-                    'circle_id': 'IP-TEST-01',
-                    'region': 'Test Region',
-                    'subregion': 'Test Subregion',
-                    'is_eligible': True,
-                    'current_members': 7,
-                    'max_additions': 3,
-                    'is_small_circle': False,
-                    'is_test_circle': True,
-                    'has_none_preference': False,
-                    'preference_overridden': False,
-                    'meeting_time': 'Monday (Evening)'
-                }
-                logs_to_update['IP-TEST-02'] = {
-                    'circle_id': 'IP-TEST-02',
-                    'region': 'Test Region',
-                    'subregion': 'Test Subregion',
-                    'is_eligible': False,
-                    'current_members': 10,
-                    'max_additions': 0,
-                    'is_small_circle': False,
-                    'is_test_circle': True,
-                    'has_none_preference': True,
-                    'preference_overridden': False,
-                    'reason': 'Circle is at maximum capacity (10 members)',
-                    'meeting_time': 'Wednesday (Evening)'
-                }
-                logs_to_update['IP-TEST-03'] = {
-                    'circle_id': 'IP-TEST-03',
-                    'region': 'Test Region',
-                    'subregion': 'Test Subregion',
-                    'is_eligible': True,
-                    'current_members': 4,
-                    'max_additions': 6,
-                    'is_small_circle': True,
-                    'is_test_circle': True,
-                    'has_none_preference': True,
-                    'preference_overridden': True,
-                    'override_reason': 'Small circle override applied',
-                    'meeting_time': 'Friday (Evening)'
-                }
-                print(f"🔍 Added {len(logs_to_update)} test circle entries for debugging")
+                print("⚠️ CRITICAL WARNING: No real logs received from optimize_region_v2")
+                print("🔍 Looking for logs from all regions...")
+                # Critical debugging message to help diagnose the issue
+                print("🚨 CRITICAL DIAGNOSTIC: Check if optimizer_region_v2 is properly returning logs")
+                print("Logs should be created for ALL circles, not just test circles")
+                
+                # Instead of auto-populating with test data (which masks the issue), 
+                # let's always return empty logs when logs_to_update is empty
+                # This will make it clear when the fixes are working
+                print("⚠️ Deliberately skipping test data generation to confirm fix is working")
+                # Note: If the fix works correctly, this code won't execute because we'll have real logs!
             
             # Directly update session state with these logs
             st.session_state.circle_eligibility_logs.update(logs_to_update)
