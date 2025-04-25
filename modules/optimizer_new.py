@@ -3079,6 +3079,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"\n🚨 CRITICAL DIAGNOSTIC: Final eligibility check for {region} region 🚨")
     print(f"Total of {len(circle_eligibility_logs)} circle eligibility entries")
     
+    # ROOT CAUSE FIX VERIFICATION: Ensure circle logs are properly created and passed up
+    print(f"\n🔧 ROOT CAUSE FIX: Verifying circle eligibility logs for {region}")
+    print(f"Found {len(circle_eligibility_logs)} circles with eligibility logs")
+    
     # Log each entry creation for better debugging
     print(f"\n🔴 CRITICAL LOG CHECK: Circle eligibility for region {region}")
     print(f"CREATED {len(circle_eligibility_logs)} LOGS - DETAILED REGISTRY:")
@@ -3086,6 +3090,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Show the exact contents of circle_eligibility_logs
     if circle_eligibility_logs:
         print(f"Circle IDs with eligibility logs: {list(circle_eligibility_logs.keys())}")
+        
+        # Count real vs. test circles for metrics
+        test_circles = sum(1 for log in circle_eligibility_logs.values() if log.get('is_test_circle', False))
+        real_circles = len(circle_eligibility_logs) - test_circles
+        print(f"🔧 Found {real_circles} real circles and {test_circles} test circles in region {region}")
         
         # Print detail for first few circles as a sample
         sample_circles = list(circle_eligibility_logs.keys())[:3]
