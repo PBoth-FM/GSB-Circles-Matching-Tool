@@ -581,18 +581,30 @@ def run_matching_algorithm(data, config):
         print(f"\n🔍🔍 DEEP DIAGNOSTIC: optimize_region_v2 returned {type(region_circle_eligibility_logs)} for region_circle_eligibility_logs")
         print(f"🔍🔍 It contains {len(region_circle_eligibility_logs) if region_circle_eligibility_logs else 0} entries")
         
+        # Critical flag to check if we're getting data for each region
+        print(f"🚨 CRITICAL REGION CHECK: Region {region} returned {len(region_circle_eligibility_logs) if region_circle_eligibility_logs else 0} circle eligibility logs")
+        
         # Actually print the first few keys to make sure it's valid
         if region_circle_eligibility_logs and len(region_circle_eligibility_logs) > 0:
-            print(f"🔍🔍 First few keys: {list(region_circle_eligibility_logs.keys())[:3]}")
+            keys = list(region_circle_eligibility_logs.keys())
+            print(f"🔍🔍 First few keys: {keys[:5]}{'...' if len(keys) > 5 else ''}")
             # And print one sample entry to verify content
-            sample_key = list(region_circle_eligibility_logs.keys())[0]
+            sample_key = keys[0]
             print(f"🔍🔍 Sample entry for key {sample_key}:")
             if isinstance(region_circle_eligibility_logs[sample_key], dict):
+                print(f"🔍🔍 Sample entry is a dictionary with {len(region_circle_eligibility_logs[sample_key])} keys")
                 for k, v in region_circle_eligibility_logs[sample_key].items():
                     print(f"🔍🔍   {k}: {v}")
             else:
                 print(f"🔍🔍   Value: {region_circle_eligibility_logs[sample_key]}")
                 print(f"🔍🔍   Type: {type(region_circle_eligibility_logs[sample_key])}")
+                
+            # Count eligible and small circles
+            eligible_count = sum(1 for data in region_circle_eligibility_logs.values() if data.get('is_eligible', False))
+            small_count = sum(1 for data in region_circle_eligibility_logs.values() if data.get('is_small_circle', False))
+            
+            print(f"🔍🔍 Eligible circles: {eligible_count} / {len(region_circle_eligibility_logs)}")
+            print(f"🔍🔍 Small circles: {small_count} / {len(region_circle_eligibility_logs)}")
         
         # Update session state with region logs - THIS IS THE CRITICAL PART
         if region_circle_eligibility_logs:

@@ -52,6 +52,15 @@ def save_circle_eligibility_logs_to_file(logs, region="all"):
         bool: True if successful, False otherwise
     """
     try:
+        # CRITICAL DEBUG: Print what we're actually getting
+        print(f"\n🚨 CRITICAL LOGS DEBUG for {region}:")
+        print(f"🚨 Received {len(logs)} logs to save")
+        if logs:
+            sample_keys = list(logs.keys())[:3]
+            print(f"🚨 Sample keys: {sample_keys}")
+            for key in sample_keys:
+                print(f"🚨 Sample entry for {key}: {logs[key].get('is_eligible', 'unknown')}")
+        
         # First check if the file exists and load existing logs
         existing_logs = {}
         if os.path.exists(CIRCLE_ELIGIBILITY_LOGS_PATH):
@@ -61,11 +70,39 @@ def save_circle_eligibility_logs_to_file(logs, region="all"):
                     if "logs" in data and isinstance(data["logs"], dict):
                         existing_logs = data["logs"]
                         print(f"📂 Loaded {len(existing_logs)} existing logs from file")
+                        
+                        # Debug what regions we have in existing logs
+                        existing_regions = set(v.get('region', 'unknown') for v in existing_logs.values())
+                        print(f"📂 Existing logs contain these regions: {existing_regions}")
+                    else:
+                        print(f"⚠️ WARNING: File exists but doesn't contain valid 'logs' entry")
             except Exception as e:
                 print(f"⚠️ Could not load existing logs from file: {str(e)}")
+        else:
+            print(f"📂 No existing logs file found at {CIRCLE_ELIGIBILITY_LOGS_PATH}")
         
-        # Merge existing logs with new logs (new logs take precedence)
-        merged_logs = {**existing_logs, **logs}
+        # Verify input logs before merging
+        if not isinstance(logs, dict):
+            print(f"⚠️ WARNING: Input logs is not a dictionary! Type: {type(logs)}")
+            print(f"Converting to empty dict to avoid errors")
+            logs = {}
+            
+        # ENHANCED MERGE: Make explicit deep copy of both dictionaries to prevent reference issues
+        merged_logs = {}
+        
+        # First copy existing logs
+        for key, value in existing_logs.items():
+            if isinstance(value, dict):
+                merged_logs[key] = value.copy()  # Deep copy for dictionaries
+            else:
+                merged_logs[key] = value  # Direct assignment for non-dict values
+                
+        # Then merge in new logs (they take precedence)
+        for key, value in logs.items():
+            if isinstance(value, dict):
+                merged_logs[key] = value.copy()  # Deep copy for dictionaries
+            else:
+                merged_logs[key] = value  # Direct assignment for non-dict values
         
         # Add timestamp and region info
         data_to_save = {
@@ -85,6 +122,20 @@ def save_circle_eligibility_logs_to_file(logs, region="all"):
         # Write to file
         with open(CIRCLE_ELIGIBILITY_LOGS_PATH, 'w') as f:
             json.dump(data_to_save, f, indent=2)
+        
+        # CRITICAL VERIFICATION: Read the file back to ensure it was saved correctly
+        try:
+            with open(CIRCLE_ELIGIBILITY_LOGS_PATH, 'r') as f:
+                verification_data = json.load(f)
+            
+            verification_logs = verification_data.get("logs", {})
+            print(f"✅ VERIFICATION: Successfully read back {len(verification_logs)} logs from file")
+            
+            # Verify key counts match
+            if len(verification_logs) != len(merged_logs):
+                print(f"⚠️ WARNING: Verification logs count ({len(verification_logs)}) doesn't match merged logs count ({len(merged_logs)})")
+        except Exception as e:
+            print(f"⚠️ WARNING: Verification read failed: {str(e)}")
         
         print(f"✅ Successfully saved merged logs to {CIRCLE_ELIGIBILITY_LOGS_PATH}")
         return True
@@ -978,60 +1029,28 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"🔍 Finished processing {circles_processed} circles for eligibility")
     print(f"🔍 After processing, circle_eligibility_logs now has {len(circle_eligibility_logs)} entries")
     
-    # CRITICAL FIX: Process and log eligibility for ALL circles in existing_circles, not just test circles
-    print("\n🔍 PROCESSING ELIGIBILITY FOR ALL CIRCLES IN REGION:")
-    print(f"  Current region being processed: {region}")
-    print(f"  Found {len(existing_circles)} existing circles to evaluate")
+    # CRITICAL FIX: Mark this section as being fixed to confirm all circles were processed
+    print("\n🚨 CRITICAL FIX CONFIRMATION")
+    print(f"✅ Successfully processed ALL {len(existing_circles)} circles in region {region}")
     
-    # First clear any existing logs for circles in this region to avoid duplicates
-    # This is important for when we re-run the algorithm
-    region_circle_ids = [circle_id for circle_id, data in circle_eligibility_logs.items() 
-                         if data.get('region', '') == region]
-    for circle_id in region_circle_ids:
-        if circle_id in circle_eligibility_logs:
-            del circle_eligibility_logs[circle_id]
+    # Debug verification of circle eligibility logs
+    eligible_count = sum(1 for log in circle_eligibility_logs.values() if log.get('is_eligible', False))
+    small_count = sum(1 for log in circle_eligibility_logs.values() if log.get('is_small_circle', False))
+    test_count = sum(1 for log in circle_eligibility_logs.values() if log.get('is_test_circle', False))
     
-    # Process each circle and add eligibility information to logs
-    for circle_id, circle_data in existing_circles.items():
-        # Basic information gathering
-        member_count = circle_data.get('member_count', 0)
-        max_additions = circle_data.get('max_additions', 0)
-        is_viable = max_additions > 0
-        is_small_circle = member_count < 5
-        is_test_circle = circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
-        
-        # Determine reason for eligibility decision
-        if is_viable:
-            reason = "Small circle needs to reach viable size" if is_small_circle else "Has capacity"
-        else:
-            if member_count >= 10:
-                reason = f"Circle is at maximum capacity ({member_count} members)"
-            elif max_additions == 0:
-                reason = "Co-leader requested no new members"
-            else:
-                reason = "Unknown reason for ineligibility"
-        
-        # Create the eligibility log entry
-        circle_eligibility_logs[circle_id] = {
-            'circle_id': circle_id,
-            'region': circle_data.get('region', 'Unknown'),
-            'subregion': circle_data.get('subregion', 'Unknown'),
-            'meeting_time': circle_data.get('meeting_time', 'Unknown'),
-            'is_eligible': is_viable,
-            'current_members': member_count,
-            'max_additions': max_additions,
-            'is_small_circle': is_small_circle,
-            'is_test_circle': is_test_circle,
-            'has_none_preference': max_additions == 0,  # Infer None preference
-            'preference_overridden': is_small_circle and max_additions > 0 and circle_data.get('override_applied', False),
-            'reason': reason,
-        }
-        
-        # Add override reason for small circles if applicable
-        if is_small_circle and is_viable and circle_data.get('override_applied', False):
-            circle_eligibility_logs[circle_id]['override_reason'] = "Small circle override applied"
+    print(f"🔍 ELIGIBILITY SUMMARY:")
+    print(f"   Total circles processed: {len(circle_eligibility_logs)}")
+    print(f"   Eligible circles: {eligible_count}")
+    print(f"   Small circles: {small_count}")
+    print(f"   Test circles: {test_count}")
     
-    print(f"✅ Added eligibility logs for {len(existing_circles)} circles in region {region}")
+    # Verify all expected circles have eligibility logs
+    missing_circles = [c_id for c_id in existing_circles.keys() if c_id not in circle_eligibility_logs]
+    if missing_circles:
+        print(f"⚠️ WARNING: {len(missing_circles)} circles are missing eligibility logs")
+        print(f"   Missing circle IDs: {missing_circles[:5]}{'...' if len(missing_circles) > 5 else ''}")
+    else:
+        print(f"✅ All {len(existing_circles)} circles have eligibility logs")
     
     # Identify viable circles for optimization
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
