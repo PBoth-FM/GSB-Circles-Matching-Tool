@@ -174,6 +174,97 @@ def run_matching_algorithm(data, config):
     # Import the new optimizer implementation
     from modules.optimizer_new import optimize_region_v2, update_session_state_eligibility_logs
     
+    # 🔬 SUPER DIAGNOSTICS: Analyze data structure before processing
+    print("\n🔬🔬🔬 SUPER DETAILED DATA ANALYSIS BEFORE OPTIMIZATION 🔬🔬🔬")
+    print(f"🔬 Total records in data: {len(data)}")
+    
+    # Check Status distribution
+    if 'Status' in data.columns:
+        status_counts = data['Status'].value_counts().to_dict()
+        print(f"🔬 Status counts: {status_counts}")
+        
+        # Check continuing participants specifically
+        continuing = data[data['Status'] == 'CURRENT-CONTINUING']
+        print(f"🔬 CURRENT-CONTINUING participants: {len(continuing)}")
+        
+        # Check circle ID columns
+        circle_columns = ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']
+        found_col = None
+        
+        for col in circle_columns:
+            if col in data.columns:
+                found_col = col
+                with_circles = continuing[~continuing[col].isna()]
+                print(f"🔬 Found {len(with_circles)} CURRENT-CONTINUING participants with non-null '{col}' values")
+                if len(with_circles) > 0:
+                    unique_circles = with_circles[col].unique()
+                    print(f"🔬 Found {len(unique_circles)} unique circle IDs")
+                    print(f"🔬 Sample circle IDs: {list(unique_circles)[:5]}{'...' if len(unique_circles) > 5 else ''}")
+                    
+                    # Check how many members each circle has
+                    print("\n🔬 TOP 5 CIRCLES BY MEMBER COUNT:")
+                    circle_counts = with_circles[col].value_counts().head(5)
+                    for circle_id, count in circle_counts.items():
+                        print(f"   Circle {circle_id}: {count} members")
+                        
+                    # Add special debugging for a sample circle
+                    if len(unique_circles) > 0:
+                        sample_circle = unique_circles[0]
+                        members = with_circles[with_circles[col] == sample_circle]
+                        print(f"\n🔬 INSPECTING SAMPLE CIRCLE: {sample_circle}")
+                        print(f"   Members: {len(members)}")
+                        
+                        # Check if these members have region and time information
+                        region_col = None
+                        for potential_col in ['Current_Region', 'current_region', 'Current Region']:
+                            if potential_col in members.columns:
+                                region_col = potential_col
+                                break
+                                
+                        time_col = None
+                        for potential_col in ['Current_Meeting_Time', 'current_meeting_time', 'Current Meeting Time']:
+                            if potential_col in members.columns:
+                                time_col = potential_col
+                                break
+                                
+                        # Display region and time information if available
+                        if region_col:
+                            regions = members[region_col].unique()
+                            print(f"   Regions: {list(regions)}")
+                            
+                        if time_col:
+                            times = members[time_col].unique()
+                            print(f"   Meeting times: {list(times)}")
+                break
+                
+        if not found_col:
+            print(f"🔬 Could not find any circle ID columns. Available columns:")
+            print(f"   {list(data.columns)}")
+            
+    # Check if data is being properly passed to region-specific processors
+    print("\n🔬 CHECKING REGION DISTRIBUTION:")
+    if 'Current_Region' in data.columns:
+        region_counts = data['Current_Region'].value_counts().head(10)
+        for region, count in region_counts.items():
+            print(f"   Region {region}: {count} participants")
+            
+            # Check continuing participants in this region
+            if 'Status' in data.columns:
+                region_continuing = data[(data['Current_Region'] == region) & (data['Status'] == 'CURRENT-CONTINUING')]
+                print(f"      CURRENT-CONTINUING: {len(region_continuing)}")
+                
+                # Check if they have circle IDs
+                if found_col:
+                    region_circles = region_continuing[~region_continuing[found_col].isna()]
+                    print(f"      With circle IDs: {len(region_circles)}")
+                    if len(region_circles) > 0:
+                        unique_region_circles = region_circles[found_col].unique()
+                        print(f"      Unique circles: {len(unique_region_circles)}")
+    else:
+        print("   'Current_Region' column not found")
+        
+    print("🔬🔬🔬 END OF SUPER DETAILED DATA ANALYSIS 🔬🔬🔬\n")
+    
     # CRITICAL FIX: Initialize a dictionary to collect all eligibility logs across regions
     # This is the key fix for the issue where logs weren't being aggregated across regions
     all_eligibility_logs = {}
