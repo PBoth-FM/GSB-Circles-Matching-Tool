@@ -2812,6 +2812,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"\n🚨 CRITICAL DIAGNOSTIC: Final eligibility check for {region} region 🚨")
     print(f"Total of {len(circle_eligibility_logs)} circle eligibility entries")
     
+    # Log each entry creation for better debugging
+    print(f"\n🔴 CRITICAL LOG CHECK: Circle eligibility for region {region}")
+    print(f"CREATED {len(circle_eligibility_logs)} LOGS - DETAILED REGISTRY:")
+    
     # Show the exact contents of circle_eligibility_logs
     if circle_eligibility_logs:
         print(f"Circle IDs with eligibility logs: {list(circle_eligibility_logs.keys())}")
@@ -2824,9 +2828,23 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"  Circle {c_id}:")
             for key, value in log_entry.items():
                 print(f"    {key}: {value}")
+                
+        # Verify log structure
+        print("\n✅ LOG VERIFICATION:")
+        for c_id, log in circle_eligibility_logs.items():
+            if not isinstance(log, dict):
+                print(f"⚠️ ERROR: Log for {c_id} is not a dictionary! Type: {type(log)}")
+            if 'circle_id' not in log:
+                print(f"⚠️ ERROR: Log for {c_id} is missing 'circle_id'")
+            if 'is_eligible' not in log:
+                print(f"⚠️ ERROR: Log for {c_id} is missing 'is_eligible'")
     else:
         print("❌ CRITICAL ERROR: No circle eligibility logs were created!")
         print("This is likely why circle eligibility debug tab is empty")
+        
+    # Final critical check
+    print(f"\n🚨 FINAL LOG COUNT CHECK FOR {region}: {len(circle_eligibility_logs)} entries")
+    print(f"These MUST be in the return value for optimize_region_v2 function")
     
     # Count how many circles can accept new members
     eligible_circles = [c_id for c_id, data in circle_eligibility_logs.items() if data.get('is_eligible', False)]
