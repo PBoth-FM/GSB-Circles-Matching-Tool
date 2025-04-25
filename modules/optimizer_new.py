@@ -983,7 +983,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Log why circles are or aren't viable
     print(f"\n🔍 CRITICAL DEBUG: Processing existing_circles for region {region}")
     print(f"🔍 Found {len(existing_circles)} circles in region {region} to evaluate for eligibility")
-    print(f"🔍 Circle IDs: {list(existing_circles.keys())[:5]}{'...' if len(existing_circles) > 5 else ''}")
+    
+    # CRITICAL DEBUG: Print comprehensive information about existing circles
+    if len(existing_circles) == 0:
+        print(f"❌ CRITICAL ISSUE: No existing circles found for region {region}! This explains missing eligibility logs.")
+        print(f"🔍 Check how existing_circles gets populated for this region")
+    else:
+        print(f"🔍 Circle IDs: {list(existing_circles.keys())[:5]}{'...' if len(existing_circles) > 5 else ''}")
+        print(f"🔍 DETAILED EXAMINATION OF FIRST CIRCLE:")
+        first_circle_id = list(existing_circles.keys())[0]
+        first_circle = existing_circles[first_circle_id]
+        print(f"Circle ID: {first_circle_id}")
+        for key, value in first_circle.items():
+            print(f"  {key}: {value}")
     
     # DEBUG: Show what the local circle_eligibility_logs contains before we start
     print(f"🔍 Before adding new logs, circle_eligibility_logs has {len(circle_eligibility_logs)} entries")
