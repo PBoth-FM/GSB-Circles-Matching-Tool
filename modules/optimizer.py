@@ -679,28 +679,41 @@ def run_matching_algorithm(data, config):
             from modules.optimizer_new import save_circle_eligibility_logs_to_file, load_circle_eligibility_logs_from_file
             
             try:
-                # First load any existing logs from the file
-                existing_logs = load_circle_eligibility_logs_from_file()
-                
-                # Combine with new logs for this region
-                combined_logs = {**existing_logs, **logs_to_update}
-                
-                # Save the combined logs back to file
-                saved = save_circle_eligibility_logs_to_file(combined_logs, region)
+                # The improved save_circle_eligibility_logs_to_file function now handles merging internally
+                # This simplifies our code here - we just pass the new logs, and the function handles the merge
+                saved = save_circle_eligibility_logs_to_file(logs_to_update, region)
                 if saved:
-                    print(f"✅ Successfully saved combined logs to file ({len(combined_logs)} total entries)")
+                    print(f"✅ Successfully saved logs to file with automatic merging")
+                    
+                    # Verify by loading logs back from file
+                    file_logs = load_circle_eligibility_logs_from_file()
+                    if file_logs:
+                        file_log_count = len(file_logs)
+                        print(f"✅ Verified file now contains {file_log_count} total log entries")
+                        
+                        # Check for logs from this specific region
+                        region_logs = sum(1 for log in file_logs.values() if log.get('region', '') == region)
+                        print(f"✅ File contains {region_logs} entries for region {region}")
+                    else:
+                        print("⚠️ WARNING: Could not verify logs in file after saving")
                 else:
                     print(f"❌ Failed to save logs to file")
             except Exception as e:
                 print(f"❌ ERROR during file-based backup: {str(e)}")
             
-            # Very important check - verify a specific entry actually made it
+            # Very important check - verify a specific entry actually made it to session state
             if logs_after > 0:
                 sample_key = next(iter(st.session_state.circle_eligibility_logs))
                 print(f"✅ VERIFY: Session state now contains entry for circle {sample_key}")
                 
                 # List the IDs added for debugging (first 5 only)
-                print(f"📊 Added circle IDs: {list(st.session_state.circle_eligibility_logs.keys())[:5]}...")
+                circle_ids = list(st.session_state.circle_eligibility_logs.keys())
+                print(f"📊 Added circle IDs: {circle_ids[:5]}{'...' if len(circle_ids) > 5 else ''}")
+                
+                # Count the number of eligible circles for this region
+                eligible_circles = sum(1 for log in st.session_state.circle_eligibility_logs.values() 
+                                    if log.get('region', '') == region and log.get('is_eligible', False))
+                print(f"📊 Region {region} has {eligible_circles} eligible circles in session state")
                 
                 # Show one sample entry for verification
                 sample_value = st.session_state.circle_eligibility_logs[sample_key]
