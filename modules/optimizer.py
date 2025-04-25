@@ -172,7 +172,11 @@ def run_matching_algorithm(data, config):
         Note: Circle eligibility logs are stored directly in st.session_state.circle_eligibility_logs
     """
     # Import the new optimizer implementation
-    from modules.optimizer_new import optimize_region_v2
+    from modules.optimizer_new import optimize_region_v2, update_session_state_eligibility_logs
+    
+    # CRITICAL FIX: Initialize a dictionary to collect all eligibility logs across regions
+    # This is the key fix for the issue where logs weren't being aggregated across regions
+    all_eligibility_logs = {}
     # Critical debugging - look for our test participants and circles
     print("\n🔍🔍🔍 MATCHING ALGORITHM START - CHECKING FOR TEST CASES 🔍🔍🔍")
     
@@ -568,27 +572,20 @@ def run_matching_algorithm(data, config):
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
         
-        # Store circle eligibility logs in session state with enhanced debugging
-        import streamlit as st
-        if 'circle_eligibility_logs' not in st.session_state:
-            st.session_state.circle_eligibility_logs = {}
-            print(f"🆕 Created new circle_eligibility_logs in session state")
-        
-        # Count logs before update
-        logs_before = len(st.session_state.circle_eligibility_logs)
-        
-        # CRITICAL DEBUG: Check exactly what we're getting from optimize_region_v2
+        # CRITICAL FIX: Add region logs to our aggregated collection dictionary
+        # This is the core fix - we collect logs from all regions, then update session state once at the end
         print(f"\n🔍🔍 DEEP DIAGNOSTIC: optimize_region_v2 returned {type(region_circle_eligibility_logs)} for region_circle_eligibility_logs")
         print(f"🔍🔍 It contains {len(region_circle_eligibility_logs) if region_circle_eligibility_logs else 0} entries")
         
         # Critical flag to check if we're getting data for each region
         print(f"🚨 CRITICAL REGION CHECK: Region {region} returned {len(region_circle_eligibility_logs) if region_circle_eligibility_logs else 0} circle eligibility logs")
         
-        # Actually print the first few keys to make sure it's valid
+        # Detailed verification of what we received 
         if region_circle_eligibility_logs and len(region_circle_eligibility_logs) > 0:
             keys = list(region_circle_eligibility_logs.keys())
             print(f"🔍🔍 First few keys: {keys[:5]}{'...' if len(keys) > 5 else ''}")
-            # And print one sample entry to verify content
+            
+            # Sample entry verification
             sample_key = keys[0]
             print(f"🔍🔍 Sample entry for key {sample_key}:")
             if isinstance(region_circle_eligibility_logs[sample_key], dict):
@@ -599,110 +596,37 @@ def run_matching_algorithm(data, config):
                 print(f"🔍🔍   Value: {region_circle_eligibility_logs[sample_key]}")
                 print(f"🔍🔍   Type: {type(region_circle_eligibility_logs[sample_key])}")
                 
-            # Count eligible and small circles
+            # Statistics for this region
             eligible_count = sum(1 for data in region_circle_eligibility_logs.values() if data.get('is_eligible', False))
             small_count = sum(1 for data in region_circle_eligibility_logs.values() if data.get('is_small_circle', False))
             
             print(f"🔍🔍 Eligible circles: {eligible_count} / {len(region_circle_eligibility_logs)}")
             print(f"🔍🔍 Small circles: {small_count} / {len(region_circle_eligibility_logs)}")
-        
-        # Update session state with region logs - THIS IS THE CRITICAL PART
-        if region_circle_eligibility_logs:
-            # CRITICAL FIX: Create deep copy with explicit contents for debugging
-            logs_to_update = {}
             
-            print(f"\n🛠️ CRITICAL FIX: Received logs from {region} with {len(region_circle_eligibility_logs)} entries")
-            print(f"🛠️ Type of region_circle_eligibility_logs: {type(region_circle_eligibility_logs)}")
-            if len(region_circle_eligibility_logs) > 0:
-                print(f"🛠️ First few keys: {list(region_circle_eligibility_logs.keys())[:3]}")
-                example_key = list(region_circle_eligibility_logs.keys())[0]
-                print(f"🛠️ Example value for {example_key}: {region_circle_eligibility_logs[example_key]}")
+            # CRITICAL FIX: Merge logs into our aggregated collection
+            print(f"🔄 AGGREGATING: Adding {len(region_circle_eligibility_logs)} logs from region {region} to all_eligibility_logs")
             
-            # Create deep copies of each log entry with explicit structure
+            # Create deep copies when adding to the aggregate collection
             for key, value in region_circle_eligibility_logs.items():
                 if isinstance(value, dict):
                     # Make a very explicit copy of the dictionary
                     new_dict = {}
                     for k, v in value.items():
                         new_dict[k] = v
-                    logs_to_update[key] = new_dict
+                    all_eligibility_logs[key] = new_dict
                 else:
-                    logs_to_update[key] = value
-            
-            # ⚠️ CRITICAL DIAGNOSTIC TEST - Omit test logs to confirm real logs are working
-            # If real logs aren't being saved, we need to know about this
-            if len(logs_to_update) == 0:
-                print("⚠️ CRITICAL WARNING: No real logs received from optimize_region_v2")
-                print("🔍 Looking for logs from all regions...")
-                # Critical debugging message to help diagnose the issue
-                print("🚨 CRITICAL DIAGNOSTIC: Check if optimizer_region_v2 is properly returning logs")
-                print("Logs should be created for ALL circles, not just test circles")
-                
-                # Instead of auto-populating with test data (which masks the issue), 
-                # let's always return empty logs when logs_to_update is empty
-                # This will make it clear when the fixes are working
-                print("⚠️ Deliberately skipping test data generation to confirm fix is working")
-                # Note: If the fix works correctly, this code won't execute because we'll have real logs!
-            
-            # Directly update session state with these logs
-            st.session_state.circle_eligibility_logs.update(logs_to_update)
-            
-            logs_added = len(logs_to_update)
-            logs_after = len(st.session_state.circle_eligibility_logs)
-            
-            # Print detailed debug information
-            print(f"🔍 CRITICAL UPDATE: Session state logs count changed from {logs_before} to {logs_after}")
-            print(f"📊 CIRCLE ELIGIBILITY: Added {logs_added} logs (real or test data) from {region}")
-            
-            # FILE-BASED BACKUP: Save logs to file as a reliable backup
-            from modules.optimizer_new import save_circle_eligibility_logs_to_file, load_circle_eligibility_logs_from_file
-            
-            try:
-                # The improved save_circle_eligibility_logs_to_file function now handles merging internally
-                # This simplifies our code here - we just pass the new logs, and the function handles the merge
-                saved = save_circle_eligibility_logs_to_file(logs_to_update, region)
-                if saved:
-                    print(f"✅ Successfully saved logs to file with automatic merging")
+                    all_eligibility_logs[key] = value
                     
-                    # Verify by loading logs back from file
-                    file_logs = load_circle_eligibility_logs_from_file()
-                    if file_logs:
-                        file_log_count = len(file_logs)
-                        print(f"✅ Verified file now contains {file_log_count} total log entries")
-                        
-                        # Check for logs from this specific region
-                        region_logs = sum(1 for log in file_logs.values() if log.get('region', '') == region)
-                        print(f"✅ File contains {region_logs} entries for region {region}")
-                    else:
-                        print("⚠️ WARNING: Could not verify logs in file after saving")
-                else:
-                    print(f"❌ Failed to save logs to file")
-            except Exception as e:
-                print(f"❌ ERROR during file-based backup: {str(e)}")
+            print(f"✅ After adding region {region}, all_eligibility_logs now contains {len(all_eligibility_logs)} total entries")
             
-            # Very important check - verify a specific entry actually made it to session state
-            if logs_after > 0:
-                sample_key = next(iter(st.session_state.circle_eligibility_logs))
-                print(f"✅ VERIFY: Session state now contains entry for circle {sample_key}")
-                
-                # List the IDs added for debugging (first 5 only)
-                circle_ids = list(st.session_state.circle_eligibility_logs.keys())
-                print(f"📊 Added circle IDs: {circle_ids[:5]}{'...' if len(circle_ids) > 5 else ''}")
-                
-                # Count the number of eligible circles for this region
-                eligible_circles = sum(1 for log in st.session_state.circle_eligibility_logs.values() 
-                                    if log.get('region', '') == region and log.get('is_eligible', False))
-                print(f"📊 Region {region} has {eligible_circles} eligible circles in session state")
-                
-                # Show one sample entry for verification
-                sample_value = st.session_state.circle_eligibility_logs[sample_key]
-                print(f"📊 SAMPLE LOG ENTRY for {sample_key}: {sample_value}")
-            else:
-                print("❌ CRITICAL ERROR: Session state logs still empty after update!")
+            # Add an extra verification for test circles
+            test_circles_found = [key for key in keys if key in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']]
+            if test_circles_found:
+                print(f"🔍 Found test circles in this region: {test_circles_found}")
         else:
             print(f"⚠️ WARNING: No circle eligibility logs found for region {region}")
-            
-        # We no longer need to import the global variable since we're using a parameter-based approach now
+        
+        # Tracking information
         print(f"📊 LOGS RECEIVED: Region {region} provided {len(region_circle_eligibility_logs)} log entries")
         
         # Add to overall results
@@ -761,42 +685,66 @@ def run_matching_algorithm(data, config):
     if 'optimization_logs' in st.session_state:
         st.session_state.optimization_logs = logs
     
+    # CRITICAL FIX: Update session state with the aggregated logs from all regions
+    print(f"\n🚨 FINAL AGGREGATION: Collected {len(all_eligibility_logs)} circle eligibility logs across all regions")
+    
+    # Calculate statistics for all logs
+    eligible_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_eligible', False))
+    small_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_small_circle', False))
+    test_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_test_circle', False))
+    
+    print(f"📊 AGGREGATED STATISTICS:")
+    print(f"  Total circles: {len(all_eligibility_logs)}")
+    print(f"  Eligible circles: {eligible_circles} ({eligible_circles/len(all_eligibility_logs):.1%})")
+    print(f"  Small circles: {small_circles} ({small_circles/len(all_eligibility_logs):.1%})")
+    print(f"  Test circles: {test_circles} ({test_circles/len(all_eligibility_logs):.1%})")
+    
+    # Log breakdown by region
+    regions = {}
+    for circle_id, log in all_eligibility_logs.items():
+        region = log.get('region', 'Unknown')
+        if region not in regions:
+            regions[region] = 0
+        regions[region] += 1
+    
+    print(f"📊 CIRCLES BY REGION:")
+    for region, count in regions.items():
+        print(f"  {region}: {count} circles")
+    
+    # Import the session state update function from optimizer_new
+    from modules.optimizer_new import update_session_state_eligibility_logs
+    
+    # Update session state with all logs at once
+    print(f"🔄 Updating session state with {len(all_eligibility_logs)} aggregated eligibility logs")
+    update_session_state_eligibility_logs(all_eligibility_logs)
+    
+    # Save to file for backup
+    from modules.optimizer_new import save_circle_eligibility_logs_to_file
+    
+    # Debug mode automatically enables file backup
+    if debug_mode:
+        try:
+            saved = save_circle_eligibility_logs_to_file(all_eligibility_logs, "all_regions")
+            if saved:
+                print(f"✅ Successfully saved {len(all_eligibility_logs)} eligibility logs to file")
+            else:
+                print(f"❌ Failed to save logs to file")
+        except Exception as e:
+            print(f"❌ ERROR during file-based backup: {str(e)}")
+    
     # FINAL CHECK: Ensure circle eligibility logs were captured
+    # This should now always succeed since we set it directly above
+    import streamlit as st
     if 'circle_eligibility_logs' in st.session_state:
         log_count = len(st.session_state.circle_eligibility_logs)
         print(f"🏁 FINAL LOGS CHECK: Found {log_count} circle eligibility logs in session state")
         
-        # If no logs, attempt a final fallback import from file
         if log_count == 0:
-            print("⚠️ CRITICAL WARNING: No eligibility logs found in session state at end of processing")
-            
-            # Try to load from our file backup
-            from modules.optimizer_new import load_circle_eligibility_logs_from_file
-            
-            try:
-                # Load logs from file as a fallback
-                file_logs = load_circle_eligibility_logs_from_file()
-                
-                if file_logs and len(file_logs) > 0:
-                    print(f"🔄 RECOVERY: Loaded {len(file_logs)} logs from file backup")
-                    
-                    # Replace session state logs with file logs
-                    st.session_state.circle_eligibility_logs = file_logs
-                    
-                    print(f"✅ Successfully restored logs from file")
-                    print(f"💡 Restored log keys: {list(file_logs.keys())[:10]}...")
-                else:
-                    print("❌ No logs found in file backup either")
-                    print(f"⚠️ This indicates the logs weren't properly saved during region processing.")
-                    print(f"⚠️ Please check the optimize_region_v2 function returns and how the logs are saved.")
-            except Exception as e:
-                print(f"❌ ERROR loading logs from file: {str(e)}")
-                print(f"⚠️ WARNING: No circle eligibility logs found in session state at end of processing.")
-                print(f"⚠️ This indicates the logs weren't properly saved during region processing.")
-                print(f"⚠️ Please check the optimize_region_v2 function returns and how the logs are saved.")
+            print("⚠️ CRITICAL WARNING: Session state update failed - no logs found")
+            print("⚠️ This should never happen with the new implementation")
         else:
-            print(f"✅ Session state has {log_count} logs - everything is good!")
-            print(f"💡 Log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}...")
+            print(f"✅ Session state has {log_count} logs - fix successful!")
+            print(f"💡 Sample log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}{'...' if log_count > 10 else ''}")
     
     # IMPORTANT: Make sure the logs saved in session state persist
     # We don't need to return them since they're already in session state
