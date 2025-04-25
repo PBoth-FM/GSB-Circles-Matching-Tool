@@ -689,27 +689,36 @@ def run_matching_algorithm(data, config):
     print(f"\n🚨 FINAL AGGREGATION: Collected {len(all_eligibility_logs)} circle eligibility logs across all regions")
     
     # Calculate statistics for all logs
-    eligible_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_eligible', False))
-    small_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_small_circle', False))
-    test_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_test_circle', False))
-    
     print(f"📊 AGGREGATED STATISTICS:")
     print(f"  Total circles: {len(all_eligibility_logs)}")
-    print(f"  Eligible circles: {eligible_circles} ({eligible_circles/len(all_eligibility_logs):.1%})")
-    print(f"  Small circles: {small_circles} ({small_circles/len(all_eligibility_logs):.1%})")
-    print(f"  Test circles: {test_circles} ({test_circles/len(all_eligibility_logs):.1%})")
+    
+    # Only calculate percentages if we have logs
+    if len(all_eligibility_logs) > 0:
+        eligible_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_eligible', False))
+        small_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_small_circle', False))
+        test_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_test_circle', False))
+        
+        print(f"  Eligible circles: {eligible_circles} ({eligible_circles/len(all_eligibility_logs):.1%})")
+        print(f"  Small circles: {small_circles} ({small_circles/len(all_eligibility_logs):.1%})")
+        print(f"  Test circles: {test_circles} ({test_circles/len(all_eligibility_logs):.1%})")
+    else:
+        print("  No circle eligibility logs found to calculate statistics")
     
     # Log breakdown by region
-    regions = {}
-    for circle_id, log in all_eligibility_logs.items():
-        region = log.get('region', 'Unknown')
-        if region not in regions:
-            regions[region] = 0
-        regions[region] += 1
-    
     print(f"📊 CIRCLES BY REGION:")
-    for region, count in regions.items():
-        print(f"  {region}: {count} circles")
+    
+    if len(all_eligibility_logs) > 0:
+        regions = {}
+        for circle_id, log in all_eligibility_logs.items():
+            region = log.get('region', 'Unknown')
+            if region not in regions:
+                regions[region] = 0
+            regions[region] += 1
+        
+        for region, count in regions.items():
+            print(f"  {region}: {count} circles")
+    else:
+        print("  No circles to show region breakdown")
     
     # Import the session state update function from optimizer_new
     from modules.optimizer_new import update_session_state_eligibility_logs
