@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-04-25 14:49:32",
+    "timestamp": "2025-04-25 14:54:25",
     "region": "all_regions",
     "total_logs": 3,
-    "added_logs": 0,
+    "added_logs": 3,
     "existing_logs": 3,
     "regions_processed": [
       "all_regions"
@@ -14,44 +14,44 @@
       "circle_id": "IP-TEST-01",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "is_eligible": true,
-      "current_members": 7,
+      "meeting_time": "Monday (Evenings)",
       "max_additions": 3,
-      "is_small_circle": false,
+      "current_members": 7,
+      "is_eligible": true,
+      "reason": "Has capacity",
       "is_test_circle": true,
+      "is_small_circle": false,
       "has_none_preference": false,
-      "preference_overridden": false,
-      "meeting_time": "Monday (Evening)",
-      "reason": "Has capacity"
+      "preference_overridden": false
     },
     "IP-TEST-02": {
       "circle_id": "IP-TEST-02",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "is_eligible": false,
-      "current_members": 10,
+      "meeting_time": "Tuesday (Evenings)",
       "max_additions": 0,
-      "is_small_circle": false,
+      "current_members": 10,
+      "is_eligible": false,
+      "reason": "No capacity (max_additions=0)",
       "is_test_circle": true,
+      "is_small_circle": false,
       "has_none_preference": true,
-      "preference_overridden": false,
-      "reason": "Circle is at maximum capacity (10 members)",
-      "meeting_time": "Wednesday (Evening)"
+      "preference_overridden": false
     },
     "IP-TEST-03": {
       "circle_id": "IP-TEST-03",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "is_eligible": true,
-      "current_members": 4,
+      "meeting_time": "Wednesday (Evenings)",
       "max_additions": 6,
-      "is_small_circle": true,
+      "current_members": 4,
+      "is_eligible": true,
+      "original_preference": "None",
+      "override_reason": "Small circle needs to reach viable size",
       "is_test_circle": true,
+      "is_small_circle": true,
       "has_none_preference": true,
-      "preference_overridden": true,
-      "override_reason": "Small circle override applied",
-      "meeting_time": "Friday (Evening)",
-      "reason": "Small circle needs to reach viable size"
+      "preference_overridden": true
     }
   }
 }

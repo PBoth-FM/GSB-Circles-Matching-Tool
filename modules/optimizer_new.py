@@ -925,6 +925,81 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"\n🚨 CRITICAL ISSUE: No existing circles found for region {region}")
         print(f"🔍 Analyzing region_df for potential circles:")
         
+        # DEEP DIAGNOSTICS: Check the data structure in full detail
+        print(f"\n🔬 DEEP DATA DIAGNOSTICS FOR REGION {region}")
+        print(f"🔬 DataFrame shape: {region_df.shape}")
+        
+        # Check status distribution
+        print(f"🔬 Status column values:")
+        if 'Status' in region_df.columns:
+            status_counts = region_df['Status'].value_counts().to_dict()
+            print(f"   Status counts: {status_counts}")
+        else:
+            print(f"   'Status' column not found in DataFrame")
+            
+        # Check for continuing participants
+        if 'Status' in region_df.columns:
+            continuing = region_df[region_df['Status'] == 'CURRENT-CONTINUING']
+            print(f"🔬 CURRENT-CONTINUING participants: {len(continuing)}")
+            
+            # If we have continuing participants, check their circle IDs
+            if len(continuing) > 0:
+                # Check all potential circle ID columns
+                circle_columns = ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']
+                for col in circle_columns:
+                    if col in continuing.columns:
+                        valid_ids = continuing[~continuing[col].isna()]
+                        if len(valid_ids) > 0:
+                            print(f"🔬 Found {len(valid_ids)} participants with non-null '{col}' values")
+                            unique_circles = valid_ids[col].unique()
+                            print(f"🔬 Unique circle IDs: {len(unique_circles)}")
+                            print(f"🔬 Sample circle IDs: {list(unique_circles)[:5]}{'...' if len(unique_circles) > 5 else ''}")
+                            
+                            # Find the first few participants for sample circle ID
+                            if len(unique_circles) > 0:
+                                sample_circle = unique_circles[0]
+                                sample_members = continuing[continuing[col] == sample_circle]
+                                print(f"\n🔬 DETAILED INSPECTION OF CIRCLE {sample_circle}:")
+                                print(f"   Members: {len(sample_members)}")
+                                
+                                # Print full details of a sample participant
+                                if len(sample_members) > 0:
+                                    sample_member = sample_members.iloc[0]
+                                    print(f"\n🔬 SAMPLE MEMBER COMPLETE DATA FOR DIAGNOSTIC:")
+                                    for c, val in sample_member.items():
+                                        print(f"   {c}: {val}")
+                        else:
+                            print(f"🔬 No participants with valid '{col}' values")
+                            
+            # Check meeting time and subregion columns
+            meeting_day_col = None
+            meeting_time_col = None
+            subregion_col = None
+            
+            # Find meeting day column
+            for col in ['Current_Meeting_Day', 'Current Meeting Day', 'current_meeting_day']:
+                if col in region_df.columns:
+                    meeting_day_col = col
+                    break
+                    
+            # Find meeting time column
+            for col in ['Current_Meeting_Time', 'Current Meeting Time', 'current_meeting_time']:
+                if col in region_df.columns:
+                    meeting_time_col = col
+                    break
+                    
+            # Find subregion column
+            for col in ['Current_Subregion', 'Current Subregion', 'current_subregion']:
+                if col in region_df.columns:
+                    subregion_col = col
+                    break
+                    
+            # Print what we found
+            print(f"\n🔬 CRITICAL COLUMN DETECTION:")
+            print(f"   Meeting day column: {meeting_day_col}")
+            print(f"   Meeting time column: {meeting_time_col}")
+            print(f"   Subregion column: {subregion_col}")
+        
         # Check if we have Circle ID column
         current_col = None
         potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
