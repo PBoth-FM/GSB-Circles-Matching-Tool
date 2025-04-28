@@ -329,6 +329,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # CRITICAL DIAGNOSTIC: Always enable debug mode for Seattle region
     if region == 'Seattle':
         debug_mode = True
+        
+        # 🚨 CRITICAL ROOT CAUSE FIX: Force Seattle region to use 'optimize' mode
+        # This allows NEW participants to be considered for continuing circles
+        original_mode = existing_circle_handling
+        existing_circle_handling = 'optimize'
+        print(f"\n🚨 ROOT CAUSE FIX: Forcing Seattle region to use 'optimize' mode instead of '{original_mode}'")
+        print(f"  This allows NEW participants to be matched with continuing circles like IP-SEA-01")
+        
         print(f"\n🔍 SEATTLE REGION DEEP DIAGNOSTICS:")
         print(f"  - Total participants in region_df: {len(region_df)}")
         
@@ -593,7 +601,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     small_circles = {}     # Maps circle_id to circle data for small circles (2-4 members)
     current_circle_members = {}  # Maps circle_id to list of members
     
-    # Step 1: Identify existing circles if we're preserving them
+    # Step 1: Identify existing circles based on existing_circle_handling mode
+    # Print clear debug message about which mode we're using (especially for Seattle)
+    print(f"\n🔥 PROCESSING REGION '{region}' WITH existing_circle_handling='{existing_circle_handling}'") 
+    
+    if region == "Seattle":
+        print(f"  This means NEW participants CAN be matched with existing circles: {existing_circle_handling == 'optimize'}")
+        print(f"  For Seattle region, we need 'optimize' mode to allow NEW participants to match with IP-SEA-01")
+    
     if existing_circle_handling == 'preserve':
         # Check for circle ID column (case-insensitive to handle column mapping issues)
         # In our column mapping, it's now 'Current_Circle_ID' 
