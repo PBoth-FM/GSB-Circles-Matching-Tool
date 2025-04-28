@@ -334,9 +334,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Initialize Seattle debug logs if we're processing Seattle region
     seattle_debug_logs = []
     if region == "Seattle":
+        # Set a flag to indicate we're in Seattle region
+        is_seattle_region = True
         seattle_debug_logs.append(f"Starting Seattle region matching analysis")
+        # Add participant counts
+        seattle_debug_logs.append(f"Total participants in Seattle region: {len(region_df)}")
         # Force debug mode for Seattle region
         debug_mode = True
+        # Make sure logs are initialized in session state
+        import streamlit as st
+        if 'seattle_debug_logs' not in st.session_state:
+            st.session_state.seattle_debug_logs = []
     # Define test participants for debugging purposes only (no special handling)
     test_participants = ['72549701782', '73177784103', '50625303450']
     test_circles = ['IP-HOU-02', 'IP-SIN-01', 'IP-LON-04']
@@ -3592,8 +3600,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         seattle_debug_logs.insert(0, f"=== Seattle Debug Log {timestamp} ===")
         
-        # Add to session state
-        st.session_state.seattle_debug_logs = seattle_debug_logs
+        # Add to session state (append to any existing logs)
+        if 'seattle_debug_logs' in st.session_state:
+            # Keep only the last 1000 logs to prevent excessive memory usage
+            if len(st.session_state.seattle_debug_logs) > 1000:
+                st.session_state.seattle_debug_logs = st.session_state.seattle_debug_logs[-1000:]
+            # Then add the new logs
+            st.session_state.seattle_debug_logs.extend(seattle_debug_logs)
+        else:
+            st.session_state.seattle_debug_logs = seattle_debug_logs
         
         # Also print to console for debugging
         print("\n".join(seattle_debug_logs[:10]) + "\n... (more logs available in UI)")

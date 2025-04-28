@@ -2698,8 +2698,13 @@ def render_debug_tab():
         st.write("### Seattle Compatibility Analysis")
         st.write("This section shows detailed analysis of Seattle circles, especially IP-SEA-01.")
         
-        if 'seattle_debug_logs' in st.session_state and st.session_state.seattle_debug_logs:
-            logs = st.session_state.seattle_debug_logs
+        # Initialize seattle_debug_logs if it doesn't exist
+        if 'seattle_debug_logs' not in st.session_state:
+            st.session_state.seattle_debug_logs = []
+        
+        logs = st.session_state.seattle_debug_logs
+        
+        if logs and len(logs) > 0:
             
             # Create tabs for different views
             seattle_tab1, seattle_tab2, seattle_tab3 = st.tabs(["Complete Logs", "IP-SEA-01 Analysis", "Compatibility Checks"])
