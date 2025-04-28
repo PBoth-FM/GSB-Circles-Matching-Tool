@@ -2870,6 +2870,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     # ENHANCED DIAGNOSTIC: Track if test participant has host attributes
                     if '99999000001' in participants:
                         host_status = "Unknown"
+                        
+                        # Define circle_participants list using participant IDs and circle IDs
+                        # This list should contain tuples of (participant_id, circle_id) that we're considering
+                        circle_participants = [(p_id, c_id) for p_id in participants for c_id in all_circle_ids if (p_id, c_id) in x]
+                        
                         for p in circle_participants:
                             if p[0] == '99999000001':
                                 if p in always_hosts_list:
