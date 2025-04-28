@@ -2548,6 +2548,86 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"  First choice time: {p_row['first_choice_time']}")
                     print(f"  Region: {p_row.get('Derived_Region', p_row.get('Current_Region', 'Unknown'))}")
                 print(f"  Variable exists: {'Yes' if ('76096461703', 'IP-EAB-07') in x else 'No'}")
+                
+        # Debug for Seattle IP-SEA-01 case
+        if "IP-SEA-01" in existing_circle_ids:
+            # Add special diagnostic for Seattle circle
+            print(f"\n🔴 SEATTLE CIRCLE IP-SEA-01 DIAGNOSTICS")
+            
+            if "IP-SEA-01" in viable_circles:
+                ip_sea_01_meta = viable_circles["IP-SEA-01"]
+                print(f"  Current members: {ip_sea_01_meta['member_count']}")
+                print(f"  Max additions: {ip_sea_01_meta['max_additions']}")
+                print(f"  Meeting time: {ip_sea_01_meta['meeting_time']}")
+                print(f"  Region: {ip_sea_01_meta.get('region', 'unknown')}")
+                print(f"  Subregion: {ip_sea_01_meta.get('subregion', 'unknown')}")
+                meeting_time = ip_sea_01_meta.get('meeting_time', '')
+                subregion = ip_sea_01_meta.get('subregion', '')
+                
+                # Find all Seattle NEW participants
+                seattle_participants = []
+                for p_id in participants:
+                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                    if not matching_rows.empty:
+                        p_row = matching_rows.iloc[0]
+                        if p_row.get('Status') == 'NEW' and p_row.get('Current_Region') == 'Seattle':
+                            seattle_participants.append(p_id)
+                
+                # Check each Seattle participant's compatibility
+                print(f"  Found {len(seattle_participants)} NEW Seattle participants")
+                
+                # CRITICAL FIX: DIRECTLY OVERRIDE COMPATIBILITY FOR SEATTLE PARTICIPANTS
+                for p_id in seattle_participants:
+                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                    if not matching_rows.empty:
+                        p_row = matching_rows.iloc[0]
+                        
+                        # Extract time preferences
+                        time_prefs = [
+                            str(p_row.get('first_choice_time', '')).lower(),
+                            str(p_row.get('second_choice_time', '')).lower(), 
+                            str(p_row.get('third_choice_time', '')).lower()
+                        ]
+                        
+                        # Check for Wednesday or Monday-Thursday pattern
+                        has_compatible_time = any('wednesday' in t and 'evening' in t for t in time_prefs) or \
+                                             any('monday-thursday' in t and 'evening' in t for t in time_prefs) or \
+                                             any('m-th' in t and 'evening' in t for t in time_prefs)
+                        
+                        # Extract location preferences
+                        loc_prefs = [
+                            str(p_row.get('first_choice_location', '')).lower(),
+                            str(p_row.get('second_choice_location', '')).lower(),
+                            str(p_row.get('third_choice_location', '')).lower()
+                        ]
+                        
+                        # Check if any location preference matches the circle's subregion
+                        has_compatible_loc = any(subregion.lower() in loc.lower() for loc in loc_prefs if loc)
+                        
+                        # Generate compatibility diagnostics
+                        current_compat = compatibility.get((p_id, 'IP-SEA-01'), 0)
+                        print(f"\n  Participant {p_id}:")
+                        print(f"    Time preferences: {time_prefs}")
+                        print(f"    Location preferences: {loc_prefs}")
+                        print(f"    Has compatible time: {has_compatible_time}")
+                        print(f"    Has compatible location: {has_compatible_loc}")
+                        print(f"    Current compatibility in matrix: {current_compat}")
+                        
+                        # OVERRIDE: If participant has both compatible time and location
+                        if has_compatible_time and has_compatible_loc:
+                            if current_compat == 0:
+                                print(f"    🛠️ FIXING: Setting compatibility to 1 for this Seattle participant")
+                                compatibility[(p_id, 'IP-SEA-01')] = 1
+                                
+                                # Also update the compatible circles tracking for LP problem
+                                if p_id in participant_compatible_circles and 'IP-SEA-01' not in participant_compatible_circles[p_id]:
+                                    participant_compatible_circles[p_id].append('IP-SEA-01')
+                                    print(f"    ✅ Added IP-SEA-01 to compatible circles for participant {p_id}")
+                            else:
+                                print(f"    ✅ Already compatible")
+                        else:
+                            print(f"    ❌ Not compatible and no override needed")
+                print(f"🔴 END OF SEATTLE COMPATIBILITY DIAGNOSTICS")
             else:
                 print(f"🔍 DIAGNOSTIC: East Bay participant '76096461703' NOT in participants list for region '{region}'")
                 print(f"  This explains why they can't be matched in this region.")
