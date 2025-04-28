@@ -60,8 +60,8 @@ def main():
     st.write("GSB Alumni Circle Matching Tool")
     
     # Create tabs for navigation, moved Demographics after Match per user request
-    # Added East Bay Debug tab
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Match", "Demographics", "Details", "Debug", "East Bay Debug"])
+    # Removed East Bay Debug tab to focus on Seattle testing
+    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Demographics", "Details", "Debug"])
     
     with tab1:
         # Use our custom match tab function instead of the imported one
@@ -75,9 +75,6 @@ def main():
             
     with tab4:
         render_debug_tab()
-        
-    with tab5:
-        render_east_bay_debug_tab()
 
 def run_optimization():
     """Run the optimization algorithm and store results in session state"""

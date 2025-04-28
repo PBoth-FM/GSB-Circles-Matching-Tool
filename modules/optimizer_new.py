@@ -2629,11 +2629,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"  Meeting time: {ip_hou_02_meta['meeting_time']}")
         
         # Removed East Bay debugging code to focus exclusively on Seattle test case
-                    print(f"  First choice location: {p_row['first_choice_location']}")
-                    print(f"  First choice time: {p_row['first_choice_time']}")
-                    print(f"  Region: {p_row.get('Derived_Region', p_row.get('Current_Region', 'Unknown'))}")
-                print(f"  Variable exists: {'Yes' if ('76096461703', 'IP-EAB-07') in x else 'No'}")
-                
         # Debug for Seattle IP-SEA-01 case
         if "IP-SEA-01" in existing_circle_ids:
             # Add special diagnostic for Seattle circle
@@ -2744,7 +2739,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # [REMOVED] - Removed special debug for Houston test pair
                 
                 # Removed East Bay specific debugging code to focus exclusively on Seattle test case
-                    
                 # SEATTLE DIAGNOSTIC: Add detailed diagnostics for Seattle participants with IP-SEA-01
                 if c_id == 'IP-SEA-01' and region == 'Seattle':
                     # Check if this is a NEW participant
