@@ -1752,6 +1752,86 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"🔍 Processing Seattle region: {region}")
         st.session_state.seattle_debug_logs.append(f"Processing Seattle region with '{existing_circle_handling}' mode")
     
+    # ***************************************************************
+    # CRITICAL FIX: PRE-ASSIGN CURRENT-CONTINUING MEMBERS TO THEIR CURRENT CIRCLES
+    # ***************************************************************
+    print("\n🚨 CRITICAL FIX: Pre-assigning CURRENT-CONTINUING members to their current circles")
+    
+    # Find the column containing current circle IDs
+    current_col = None
+    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+    
+    # First try direct matches
+    for col in potential_columns:
+        if col in region_df.columns:
+            current_col = col
+            break
+            
+    # If not found, try case-insensitive matching
+    if current_col is None:
+        for col in region_df.columns:
+            if col.lower() in [c.lower() for c in potential_columns]:
+                current_col = col
+                break
+    
+    # Initialize pre-assignment tracking
+    pre_assigned_participants = {}  # Maps participant IDs to their assigned circle
+    pre_assigned_circles = {}  # Maps circles to list of pre-assigned participants
+    participants_to_remove = []  # Track participants to remove from optimization
+    
+    if current_col is not None:
+        # Find all CURRENT-CONTINUING participants with circle IDs
+        continuing_df = region_df[(region_df['Status'] == 'CURRENT-CONTINUING') & region_df[current_col].notna()]
+        
+        print(f"  Found {len(continuing_df)} CURRENT-CONTINUING participants with non-null circle IDs")
+        
+        if not continuing_df.empty:
+            # Process each CURRENT-CONTINUING participant
+            for idx, row in continuing_df.iterrows():
+                p_id = row['Encoded ID']
+                circle_id = str(row[current_col]).strip()
+                
+                # Skip empty or NaN circle IDs (shouldn't happen due to filter above, but just in case)
+                if not circle_id or pd.isna(circle_id):
+                    continue
+                    
+                # Check if this participant is in our participants list (they should be)
+                if p_id in participants:
+                    # Record the pre-assignment
+                    pre_assigned_participants[p_id] = circle_id
+                    
+                    # Add to circle's pre-assigned list
+                    if circle_id not in pre_assigned_circles:
+                        pre_assigned_circles[circle_id] = []
+                    pre_assigned_circles[circle_id].append(p_id)
+                    
+                    # Mark to remove from participants list to avoid double assignment
+                    participants_to_remove.append(p_id)
+                else:
+                    print(f"  ⚠️ CURRENT-CONTINUING participant {p_id} not found in participants list")
+            
+            # Remove pre-assigned participants from the optimization pool
+            for p_id in participants_to_remove:
+                if p_id in participants:
+                    participants.remove(p_id)
+                    
+            print(f"  Pre-assigned {len(pre_assigned_participants)} CURRENT-CONTINUING participants to {len(pre_assigned_circles)} circles")
+            
+            # Update circle capacities after pre-assignment
+            for circle_id, assigned_participants in pre_assigned_circles.items():
+                if circle_id in circle_metadata:
+                    # Reduce max_additions by the number of pre-assigned participants
+                    current_max = circle_metadata[circle_id]['max_additions']
+                    new_max = max(0, current_max - len(assigned_participants))
+                    circle_metadata[circle_id]['max_additions'] = new_max
+                    
+                    print(f"  Updated capacity for circle {circle_id}: {current_max} → {new_max} remaining slots")
+    else:
+        print("  ⚠️ CRITICAL ERROR: Could not find current circle ID column in the dataframe")
+        
+    print(f"  Continuing optimization with {len(participants)} remaining participants (mainly NEW)")
+    # End of CURRENT-CONTINUING pre-assignment
+    
     # Create variables for all participant-circle pairs
     for p_id in participants:
         # Get row data from dataframe (with defensive coding)
@@ -2944,6 +3024,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     results = []
     circle_assignments = {}
     
+    # CRITICAL FIX: First add pre-assigned CURRENT-CONTINUING members to the results
+    if 'pre_assigned_participants' in locals():
+        print(f"\n🚨 CRITICAL FIX: Adding {len(pre_assigned_participants)} pre-assigned CURRENT-CONTINUING members to results")
+        
+        # Add pre-assigned participants to circle_assignments dictionary
+        for p_id, c_id in pre_assigned_participants.items():
+            circle_assignments[p_id] = c_id
+            print(f"  Pre-assigned participant {p_id} → circle {c_id}")
+    
     # [SEATTLE FOCUS] Check if Seattle test participant was matched to IP-SEA-01
     # This is the key compatibility case we're testing
     seattle_test_id = '99999000001'
@@ -2952,7 +3041,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Log this for test case tracking
     print(f"🔍 CHECKING IF SEATTLE TEST CASE MATCHED SUCCESSFULLY")
     
-    # Process assignments to circles
+    # Process assignments from optimization model
     if prob.status == pulp.LpStatusOptimal:
         # First, create a dictionary to track assignments
         for p_id in participants:
@@ -3393,11 +3482,26 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             results.append(participant_dict)
         else:
-            # This participant is unmatched
-            participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
-            participant_dict['location_score'] = 0
-            participant_dict['time_score'] = 0
-            participant_dict['total_score'] = 0
+            # CRITICAL FIX: If this is a CURRENT-CONTINUING participant, they should never be unmatched
+            # This should not happen due to our pre-assignment, but we add an extra safety check
+            if p_row.get('Status') == 'CURRENT-CONTINUING' and current_col and not pd.isna(p_row.get(current_col)):
+                # This should never happen - log error and attempt recovery
+                print(f"🚨 CRITICAL ERROR: CURRENT-CONTINUING participant {p_id} with circle {p_row.get(current_col)} was not assigned!")
+                
+                # Attempt recovery by manually assigning to their current circle
+                current_circle = str(p_row.get(current_col)).strip()
+                participant_dict['proposed_NEW_circles_id'] = current_circle
+                participant_dict['location_score'] = 3  # Maximum score for direct assignment
+                participant_dict['time_score'] = 3      # Maximum score for direct assignment
+                participant_dict['total_score'] = 6     # Sum of loc_score and time_score
+                
+                print(f"🚨 CRITICAL FIX: Manually assigned {p_id} to {current_circle}")
+            else:
+                # This participant is unmatched
+                participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
+                participant_dict['location_score'] = 0
+                participant_dict['time_score'] = 0
+                participant_dict['total_score'] = 0
             
             # Determine unmatched reason using the more advanced hierarchical decision tree
             # Build a comprehensive context object with all necessary data for accurate reason determination
