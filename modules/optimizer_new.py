@@ -3433,3 +3433,145 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Return the final logs copy
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
     return results, circles, unmatched, circle_capacity_debug, final_logs
+
+# East Bay debug function
+def run_east_bay_debug_test():
+    """Run a dedicated test for the East Bay participant and circle"""
+    import streamlit as st
+    
+    logs = []
+    logs.append("🔍 RUNNING EAST BAY DEBUG TEST...")
+    
+    # Time compatibility test
+    test_times = [
+        ("Monday-Thursday (Evenings)", "Wednesday (Evenings)"),
+        ("Monday-Friday (Evenings)", "Wednesday (Evenings)"),
+        ("Weekday (Evenings)", "Wednesday (Evenings)"),
+        ("Monday (Evenings)", "Wednesday (Evenings)"),
+        ("Monday-Thursday (Days)", "Wednesday (Evenings)"),  # Should fail
+        ("Weekend (Evenings)", "Wednesday (Evenings)")       # Should fail
+    ]
+    
+    logs.append("\n🔍 TIME COMPATIBILITY TESTS:")
+    for p_time, c_time in test_times:
+        result = is_time_compatible(p_time, c_time, is_important=True)
+        logs.append(f"  '{p_time}' vs '{c_time}' → {'✅ Compatible' if result else '❌ NOT Compatible'}")
+    
+    # Manual check for the specific East Bay case
+    logs.append("\n🔍 MANUAL EAST BAY CHECK:")
+    p_time = "Monday-Thursday (Evenings)"
+    c_time = "Wednesday (Evenings)"
+    
+    # Test component matching
+    logs.append("  Breaking down compatibility check:")
+    
+    # Get components
+    p_parts = p_time.lower().replace('(', '').replace(')', '').split()
+    c_parts = c_time.lower().replace('(', '').replace(')', '').split()
+    logs.append(f"  Participant time components: {p_parts}")
+    logs.append(f"  Circle time components: {c_parts}")
+    
+    # Day compatibility
+    day_match = False
+    
+    # Check if 'monday-thursday' includes 'wednesday'
+    if 'monday-thursday' in p_time.lower() and 'wednesday' in c_time.lower():
+        logs.append("  Day match test: 'monday-thursday' should include 'wednesday'")
+        day_match = True
+    elif 'monday-friday' in p_time.lower() and 'wednesday' in c_time.lower():
+        logs.append("  Day match test: 'monday-friday' should include 'wednesday'")
+        day_match = True
+    elif 'weekday' in p_time.lower() and 'wednesday' in c_time.lower():
+        logs.append("  Day match test: 'weekday' should include 'wednesday'")
+        day_match = True
+    else:
+        logs.append("  Day match test: No obvious rule to match days")
+        # Generic component matching
+        day_patterns = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", 
+                      "m-th", "m-f", "weekend", "weekday", "varies"]
+        
+        # Find day components
+        p_day = next((c for c in p_parts if any(pattern in c.lower() for pattern in day_patterns)), None)
+        c_day = next((c for c in c_parts if any(pattern in c.lower() for pattern in day_patterns)), None)
+        
+        logs.append(f"  Extracted day components: '{p_day}' vs '{c_day}'")
+        
+        # Check day component relationships
+        if p_day and c_day:
+            if p_day == c_day:
+                logs.append("  Day component exact match")
+                day_match = True
+            elif "varies" in p_day or "varies" in c_day:
+                logs.append("  'Varies' wildcard match")
+                day_match = True
+            else:
+                logs.append("  No day component match found")
+    
+    logs.append(f"  Day compatibility result: {'✅ Compatible' if day_match else '❌ NOT Compatible'}")
+    
+    # Time of day compatibility
+    time_match = False
+    
+    # Check for time of day match (evening, morning, etc.)
+    if "evening" in p_time.lower() and "evening" in c_time.lower():
+        logs.append("  Time of day match: both contain 'evening'")
+        time_match = True
+    elif "morning" in p_time.lower() and "morning" in c_time.lower():
+        logs.append("  Time of day match: both contain 'morning'")
+        time_match = True
+    elif "afternoon" in p_time.lower() and "afternoon" in c_time.lower():
+        logs.append("  Time of day match: both contain 'afternoon'")
+        time_match = True
+    elif "day" in p_time.lower() and "day" in c_time.lower():
+        logs.append("  Time of day match: both contain 'day'")
+        time_match = True
+    else:
+        logs.append("  No time of day match found in strings")
+        
+        # Extract time components
+        time_patterns = ["morning", "afternoon", "evening", "night", "daytime", "day"]
+        p_time_component = next((c for c in p_parts if any(pattern in c.lower() for pattern in time_patterns)), None)
+        c_time_component = next((c for c in c_parts if any(pattern in c.lower() for pattern in time_patterns)), None)
+        
+        logs.append(f"  Extracted time components: '{p_time_component}' vs '{c_time_component}'")
+        
+        if p_time_component and c_time_component:
+            if p_time_component == c_time_component:
+                logs.append("  Time component exact match")
+                time_match = True
+            else:
+                logs.append("  No time component match")
+    
+    logs.append(f"  Time of day compatibility result: {'✅ Compatible' if time_match else '❌ NOT Compatible'}")
+    
+    # Overall compatibility
+    overall_compatible = day_match and time_match
+    logs.append(f"\n  OVERALL COMPATIBILITY: {'✅ COMPATIBLE' if overall_compatible else '❌ NOT COMPATIBLE'}")
+    
+    # Add a detailed explanation of what's happening
+    logs.append("\n🔍 EXPLANATION:")
+    if overall_compatible:
+        logs.append("  The participant and circle SHOULD be compatible based on time preferences.")
+        logs.append("  'Monday-Thursday (Evenings)' should match with 'Wednesday (Evenings)'")
+        logs.append("  The issue may be elsewhere in the matching process.")
+    else:
+        logs.append("  The compatibility check is failing for this pair.")
+        if not day_match:
+            logs.append("  The day component does not match - this indicates a bug in the day matching logic.")
+            logs.append("  'Monday-Thursday' should include 'Wednesday'")
+        if not time_match:
+            logs.append("  The time of day component does not match - this indicates a bug in time matching logic.")
+            logs.append("  Both preferences contain 'Evening', so they should match")
+    
+    # Recommendation for fixing
+    logs.append("\n🔍 RECOMMENDATION:")
+    logs.append("  Based on the analysis, the issue is likely in the time compatibility logic.")
+    logs.append("  Specifically, the function may not recognize that 'Wednesday' is included in 'Monday-Thursday'")
+    logs.append("  Check the following:")
+    logs.append("  1. Look for hardcoded time compatibility rules")
+    logs.append("  2. Check how day ranges like 'Monday-Thursday' are parsed")
+    logs.append("  3. Ensure the function handles 'Weekday', 'Weekend', and 'Varies' correctly")
+    logs.append("  4. Verify time of day matching logic for 'Evening' vs 'Evenings' pluralization")
+    
+    # Return all logs for display in UI
+    return logs

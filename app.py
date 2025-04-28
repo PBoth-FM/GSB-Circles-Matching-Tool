@@ -13,7 +13,8 @@ from modules.ui_components import (
     render_demographics_tab,
     render_results_overview,
     render_circle_table,
-    render_unmatched_table
+    render_unmatched_table,
+    render_east_bay_debug_tab
 )
 from utils.helpers import generate_download_link
 
