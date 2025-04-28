@@ -1542,53 +1542,7 @@ def render_class_vintage_analysis(data):
     # We have removed the "Class Vintage by Match Status", "Class Vintage Distribution by Match Status", 
     # and "Match Rate by Class Vintage" sections per user request
 
-def render_east_bay_debug_tab():
-    """Render the East Bay test case debug tab"""
-    st.header("East Bay Test Case Debug")
-    
-    # Initialize session state for East Bay debug logs if not exists
-    if 'east_bay_debug_logs' not in st.session_state:
-        st.session_state.east_bay_debug_logs = []
-    
-    # Display logs if available
-    if st.session_state.east_bay_debug_logs:
-        st.subheader("Debug Logs")
-        for log in st.session_state.east_bay_debug_logs:
-            st.text(log)
-    else:
-        st.info("No debug logs available yet. Run the matching process to generate logs.")
-    
-    # Add a button to clear logs
-    if st.button("Clear Logs"):
-        st.session_state.east_bay_debug_logs = []
-        st.rerun()
-    
-    st.divider()
-    st.markdown("### How to use this tab:")
-    st.markdown("1. Upload participant data on the Match tab")
-    st.markdown("2. Run the matching process")
-    st.markdown("3. Check this tab for detailed logs about why participant 76096461703 isn't being matched with circle IP-EAB-07")
-    
-    # Section for manual debugging
-    st.subheader("Manual Debug Testing")
-    if st.button("Run East Bay Test"):
-        st.session_state.east_bay_debug_logs.append("Starting East Bay test diagnostic check...")
-        try:
-            # Import the specific debug function
-            from modules.optimizer_new import run_east_bay_debug_test
-            
-            # Run the test and collect logs
-            logs = run_east_bay_debug_test()
-            
-            # Add logs to session state
-            for log in logs:
-                st.session_state.east_bay_debug_logs.append(log)
-                
-            st.session_state.east_bay_debug_logs.append("East Bay test completed.")
-            st.rerun()
-        except Exception as e:
-            st.session_state.east_bay_debug_logs.append(f"Error running test: {str(e)}")
-            st.rerun()
+# East Bay debug tab function was removed to focus exclusively on Seattle test case
 
 def render_debug_tab():
     """Render the debug tab content"""
