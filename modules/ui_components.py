@@ -3163,7 +3163,7 @@ def render_participant_details():
         id_col = 'Encoded ID' if 'Encoded ID' in results_df.columns else None
         if id_col:
             id_options = [''] + sorted(results_df[id_col].dropna().unique().tolist())
-            participant_id = st.selectbox("Participant ID", options=id_options)
+            participant_id = st.selectbox("Participant ID", options=id_options, key="participant_id_filter")
             
             # Filter based on ID
             filtered_df = results_df[results_df[id_col] == participant_id] if participant_id else results_df
