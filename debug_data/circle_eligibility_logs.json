@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-04-28 20:08:02",
+    "timestamp": "2025-04-28 20:17:58",
     "region": "all_regions",
     "total_logs": 141,
-    "added_logs": 92,
+    "added_logs": 1,
     "existing_logs": 141,
     "regions_processed": [
       "all_regions"
@@ -1373,8 +1373,8 @@
       "region": "Seattle",
       "subregion": "Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)",
       "meeting_time": "Evenings",
-      "max_additions": 2,
-      "current_members": 9,
+      "max_additions": 3,
+      "current_members": 5,
       "is_eligible": true,
       "reason": "Has capacity",
       "is_test_circle": false,
