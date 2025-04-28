@@ -464,11 +464,17 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
         if is_circle_time:
             print(f"  ℹ️ The second time preference is the official circle meeting time")
     
-    # SPECIAL CASE FOR CONTINUING CIRCLES: If this is a continuing member and time2 is the circle time,
-    # empty time value for the member should be considered compatible with their circle's time
-    if is_continuing_member and is_circle_time and (pd.isna(time1) or time1 == ''):
+    # ENHANCED FIX: SPECIAL CASE FOR CONTINUING CIRCLES
+    # If this is a continuing member and time2 is the circle time,
+    # ALL time values for the member should be considered compatible with their circle's time
+    # This ensures CURRENT-CONTINUING members stay in their circles regardless of time preferences
+    if is_continuing_member and is_circle_time:
         if is_important:
-            print(f"  ✅ COMPATIBLE - Continuing member with empty time preference matches their circle's time '{time2}'")
+            print(f"  ✅ CRITICAL FIX: CONTINUING member automatically compatible with their circle time '{time2}'")
+            if pd.isna(time1) or time1 == '':
+                print(f"     (Member has empty/missing time preference)")
+            else:
+                print(f"     (Member has time preference '{time1}' but we're ignoring it)")
         return True
     
     # CRITICAL FIX: Special handling for Wednesday in Monday-Thursday ranges

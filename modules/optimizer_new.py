@@ -2184,12 +2184,28 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Enhanced location compatibility checking with proper type handling
             # Using the module-level safe_string_match function
             
-            # First try exact match with participant preferences
-            loc_match = (
-                safe_string_match(p_row['first_choice_location'], subregion) or
-                safe_string_match(p_row['second_choice_location'], subregion) or
-                safe_string_match(p_row['third_choice_location'], subregion)
-            )
+            # Determine if this is a continuing member looking at their current circle
+            is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
+            
+            # ENHANCED FIX: Get current circle ID for this participant
+            current_circle = None
+            if is_continuing_member:
+                current_circle = find_current_circle_id(p_row)
+            
+            # CRITICAL FIX: Automatically match CURRENT-CONTINUING members with their current circle
+            # This ensures they will be matched regardless of location preferences
+            if is_continuing_member and current_circle == c_id:
+                # Location is automatically compatible for continuing members with their current circle
+                loc_match = True
+                if debug_mode:
+                    print(f"✅ CRITICAL FIX: Forcing location compatibility for CURRENT-CONTINUING member {p_id} with their circle {c_id}")
+            else:
+                # First try exact match with participant preferences (normal case)
+                loc_match = (
+                    safe_string_match(p_row['first_choice_location'], subregion) or
+                    safe_string_match(p_row['second_choice_location'], subregion) or
+                    safe_string_match(p_row['third_choice_location'], subregion)
+                )
             
             # Check time compatibility using is_time_compatible function which properly handles "Varies"
             # Define if this is a special test case that needs detailed debugging
@@ -2202,8 +2218,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Initialize time match as False
             time_match = False
             
-            # Determine if this is a continuing member looking at their current circle
-            is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
+            # The is_continuing_member variable is already defined above - no need to redefine
             is_circle_time = True  # The time_slot is always the circle's meeting time
             
             # Special handling for NEW participants - add debug logging
@@ -2277,8 +2292,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     st.session_state.seattle_debug_logs.append(f"  ⚠️ CONTINUING MEMBER COMPATIBILITY: Member has empty time preference")
                     st.session_state.seattle_debug_logs.append(f"  This member's time match = {time_match} for circle {c_id} with time '{time_slot}'")
             
-            # Both location and time must match for compatibility
-            is_compatible = (loc_match and time_match)
+            # CRITICAL FIX: For CURRENT-CONTINUING members, force compatibility with their current circle
+            # regardless of location or time match - this bypasses all normal compatibility requirements
+            if is_continuing_member and current_circle == c_id:
+                is_compatible = True
+                if debug_mode:
+                    print(f"✅ CRITICAL FIX: Forcing OVERALL compatibility for CURRENT-CONTINUING member {p_id} with their circle {c_id}")
+                    print(f"  (Bypassing normal requirement that both location and time must match)")
+            else:
+                # Normal case: Both location and time must match for compatibility
+                is_compatible = (loc_match and time_match)
             
             # SEATTLE ENHANCED COMPATIBILITY: Print detailed debug whenever a NEW member tries to match with IP-SEA-01
             if c_id == 'IP-SEA-01' and p_row.get('Status') == 'NEW' and region == 'Seattle':
