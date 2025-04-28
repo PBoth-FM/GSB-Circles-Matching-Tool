@@ -336,7 +336,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         optimize_circle_capacity,
         find_current_circle_id,
         force_compatibility,
-        ensure_current_continuing_matched
+        ensure_current_continuing_matched,
+        post_process_continuing_members
     )
     
     # Import diagnostic tools for troubleshooting
@@ -4479,8 +4480,36 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         for reason, count in sorted(matching_outcomes.get('unmatched_reason_frequency', {}).items(), key=lambda x: x[1], reverse=True)[:3]:
             print(f"    - {reason}: {count} members")
 
-    # Return the final logs copy
+    # COMPREHENSIVE POST-PROCESSING: Ensure all CURRENT-CONTINUING members are in correct circles
+    print(f"\n🚨 COMPREHENSIVE POST-PROCESSING: Final check for all CURRENT-CONTINUING members")
+    
+    # Use the new post-process function for comprehensive verification
+    updated_results, updated_unmatched, updated_logs = post_process_continuing_members(
+        results, 
+        unmatched, 
+        region_df,
+        final_logs
+    )
+    
+    # Calculate improvement metrics
+    original_matched = len(results)
+    original_unmatched = len(unmatched)
+    final_matched = len(updated_results)
+    final_unmatched = len(updated_unmatched)
+    
+    # Print summary of changes
+    print(f"\n📊 POST-PROCESSING RESULTS:")
+    print(f"  - Before: {original_matched} matched, {original_unmatched} unmatched")
+    print(f"  - After: {final_matched} matched, {final_unmatched} unmatched")
+    
+    improvement = final_matched - original_matched
+    if improvement > 0:
+        print(f"  ✅ FIXED {improvement} CURRENT-CONTINUING members that were incorrectly unmatched")
+    else:
+        print(f"  ℹ️ No additional participants were matched during post-processing")
+    
+    # Return the final logs copy with updated results
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
-    return results, circles, unmatched, circle_capacity_debug, final_logs
+    return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
 
 # East Bay debug function was removed to focus exclusively on Seattle test case
