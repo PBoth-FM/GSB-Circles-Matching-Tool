@@ -484,12 +484,12 @@ def render_demographics_tab():
         available_regions = ["All Regions"] + available_regions
         
         # Region filter
-        selected_region = st.selectbox("Filter by Region", options=available_regions, index=0)
+        selected_region = st.selectbox("Filter by Region", options=available_regions, index=0, key="participant_region_filter")
     
     with col2:
         # Match status filter
         match_options = ["All Participants", "Matched", "Unmatched"]
-        selected_match = st.selectbox("Filter by Match Status", options=match_options, index=0)
+        selected_match = st.selectbox("Filter by Match Status", options=match_options, index=0, key="participant_match_status_filter")
     
     # Get the filtered data based on selections
     filtered_data = None
@@ -2993,7 +2993,7 @@ def render_circle_details():
     circle_ids.sort()
     
     # Create a selection widget to choose a circle
-    selected_circle = st.selectbox("Select a circle to view details", options=circle_ids)
+    selected_circle = st.selectbox("Select a circle to view details", options=circle_ids, key="circle_details_selector")
     
     # Get the selected circle's data
     circle_row = circles_df[circles_df['circle_id'] == selected_circle].iloc[0]
@@ -3138,7 +3138,7 @@ def render_participant_details():
             first_name_col = 'First Given Name' if 'First Given Name' in results_df.columns else None
             if first_name_col:
                 first_name_options = [''] + sorted(results_df[first_name_col].dropna().unique().tolist())
-                first_name = st.selectbox("First Name", options=first_name_options)
+                first_name = st.selectbox("First Name", options=first_name_options, key="participant_first_name_filter")
             else:
                 st.warning("First name column not found in data")
                 first_name = None
@@ -3147,7 +3147,7 @@ def render_participant_details():
             last_name_col = 'Last Family Name' if 'Last Family Name' in results_df.columns else None
             if last_name_col:
                 last_name_options = [''] + sorted(results_df[last_name_col].dropna().unique().tolist())
-                last_name = st.selectbox("Last Name", options=last_name_options)
+                last_name = st.selectbox("Last Name", options=last_name_options, key="participant_last_name_filter")
             else:
                 st.warning("Last name column not found in data")
                 last_name = None
@@ -4167,7 +4167,7 @@ def render_circles_detail():
     available_regions = sorted(circles_df['region'].dropna().unique().tolist())
     available_regions = ["All Regions"] + available_regions
     
-    selected_region = st.selectbox("Filter by Region", options=available_regions, index=0)
+    selected_region = st.selectbox("Filter by Region", options=available_regions, index=0, key="circles_detail_region_filter")
     
     # Apply region filter if not "All Regions"
     if selected_region != "All Regions":
