@@ -4281,14 +4281,31 @@ def render_circles_detail():
         return
         
     # Region filter dropdown
-    available_regions = sorted(circles_df['region'].dropna().unique().tolist())
-    available_regions = ["All Regions"] + available_regions
+    # Debug circle columns to determine correct region column
+    print(f"DEBUG - Circles DataFrame columns: {circles_df.columns.tolist()}")
+    
+    # First check if our reconstructed circles use uppercase 'Region'
+    region_col = None 
+    for possible_col in ['region', 'Region', 'Current_Region', 'proposed_NEW_Region']:
+        if possible_col in circles_df.columns:
+            region_col = possible_col
+            print(f"DEBUG - Found region column: {region_col}")
+            break
+            
+    if not region_col:
+        # Fallback if no region column is found
+        print("DEBUG - No region column found in circles_df, using placeholder")
+        available_regions = ["All Regions"]
+    else:
+        # Use the found region column
+        available_regions = sorted(circles_df[region_col].dropna().unique().tolist())
+        available_regions = ["All Regions"] + available_regions
     
     selected_region = st.selectbox("Filter by Region", options=available_regions, index=0, key="circles_detail_region_filter")
     
-    # Apply region filter if not "All Regions"
-    if selected_region != "All Regions":
-        circles_df = circles_df[circles_df['region'] == selected_region]
+    # Apply region filter if not "All Regions" and we found a region column
+    if selected_region != "All Regions" and region_col:
+        circles_df = circles_df[circles_df[region_col] == selected_region]
         
     if len(circles_df) == 0:
         st.warning(f"No circles found in the {selected_region} region.")
@@ -4300,8 +4317,24 @@ def render_circles_detail():
     # Process each circle to calculate diversity metrics
     for _, circle_row in circles_df.iterrows():
         circle_id = circle_row['circle_id']
-        region = circle_row.get('region', 'Unknown')
-        subregion = circle_row.get('subregion', 'Unknown')
+        
+        # Use the previously determined region column or fallback
+        if region_col:
+            region = circle_row.get(region_col, 'Unknown')
+        else:
+            region = 'Unknown'
+            
+        # Try different versions of subregion column name
+        subregion_col = None
+        for col in ['subregion', 'Subregion', 'Current_Subregion', 'proposed_NEW_Subregion']:
+            if col in circle_row and pd.notna(circle_row[col]):
+                subregion_col = col
+                break
+                
+        if subregion_col:
+            subregion = circle_row[subregion_col]
+        else:
+            subregion = 'Unknown'
         
         # Get member count
         member_count = circle_row.get('member_count', 0)
