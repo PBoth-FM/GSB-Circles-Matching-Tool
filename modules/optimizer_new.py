@@ -334,12 +334,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if region == 'Seattle':
         debug_mode = True
         
-        # 🚨 CRITICAL ROOT CAUSE FIX: Force Seattle region to use 'optimize' mode
-        # This allows NEW participants to be considered for continuing circles
-        original_mode = existing_circle_handling
-        existing_circle_handling = 'optimize'
-        print(f"\n🚨 ROOT CAUSE FIX: Forcing Seattle region to use 'optimize' mode instead of '{original_mode}'")
-        print(f"  This allows NEW participants to be matched with continuing circles like IP-SEA-01")
+        # No longer forcing optimize mode - using the mode selected in the UI
+        print(f"\n🔄 Seattle region is using '{existing_circle_handling}' mode as selected in UI")
+        print(f"  'optimize' mode allows NEW participants to be matched with continuing circles like IP-SEA-01")
+        print(f"  'preserve' mode prevents NEW participants from joining existing circles")
+        print(f"  'dissolve' ignores current circles and creates all new ones")
         
         print(f"\n🔍 SEATTLE REGION DEEP DIAGNOSTICS:")
         print(f"  - Total participants in region_df: {len(region_df)}")
@@ -565,33 +564,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"  This means NEW participants CAN be matched with existing circles: {existing_circle_handling == 'optimize'}")
         print(f"  For Seattle region, we need 'optimize' mode to allow NEW participants to match with IP-SEA-01")
     
-    if existing_circle_handling == 'preserve':
-        # Check for circle ID column (case-insensitive to handle column mapping issues)
-        # In our column mapping, it's now 'Current_Circle_ID' 
-        current_col = None
-        potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
-        
-        # Print potential column names for debugging
-        if debug_mode:
-            print(f"Looking for circle ID column. Options: {potential_columns}")
-            print(f"Available columns: {region_df.columns.tolist()}")
-        
-        # First try direct matches
-        for col in potential_columns:
-            if col in region_df.columns:
+    # Check for circle ID column (case-insensitive to handle column mapping issues) for all modes
+    # We need this column for both 'preserve' and 'optimize' modes
+    current_col = None
+    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+    
+    # Print potential column names for debugging
+    if debug_mode:
+        print(f"Looking for circle ID column. Options: {potential_columns}")
+        print(f"Available columns: {region_df.columns.tolist()}")
+    
+    # First try direct matches
+    for col in potential_columns:
+        if col in region_df.columns:
+            current_col = col
+            break
+            
+    # If not found, try case-insensitive matching
+    if current_col is None:
+        for col in region_df.columns:
+            if col.lower() in [c.lower() for c in potential_columns]:
                 current_col = col
                 break
-                
-        # If not found, try case-insensitive matching
-        if current_col is None:
-            for col in region_df.columns:
-                if col.lower() in [c.lower() for c in potential_columns]:
-                    current_col = col
-                    break
-                
-        if current_col is None and debug_mode:
-            print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
-            return [], [], [], {}, {}  # Return empty results if we can't find the critical column
+            
+    if current_col is None and debug_mode:
+        print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
+        return [], [], [], {}, {}  # Return empty results if we can't find the critical column
+        
+    # Now process based on the selected mode
+    if existing_circle_handling == 'preserve' or existing_circle_handling == 'optimize':
             
         if current_col is not None:
             if debug_mode:

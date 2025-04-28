@@ -97,6 +97,19 @@ def run_optimization():
         
     # Log the reset for debugging
     print("🔄 CRITICAL DEBUG: Reset circle eligibility logs before optimization run")
+    
+    # Update configuration with UI selections
+    # Get circle handling mode from UI (or use default if not set)
+    selected_mode = st.session_state.get('existing_circle_handling', 'optimize')
+    print(f"🔄 Using selected circle handling mode: {selected_mode}")
+    
+    # Update the config with the selected mode
+    st.session_state.config['existing_circle_handling'] = selected_mode
+    
+    # Update other config parameters from UI
+    st.session_state.config['optimization_weight_location'] = st.session_state.get('location_weight', 5.0)
+    st.session_state.config['optimization_weight_time'] = st.session_state.get('time_weight', 5.0)
+    
     try:
         with st.spinner("Running matching algorithm..."):
             start_time = time.time()
@@ -135,6 +148,7 @@ def run_optimization():
             print(f"  Location: {test_participant['first_choice_location']}")
             print(f"  Time: {test_participant['first_choice_time']}")
             print(f"  This participant should match with IP-SEA-01 due to exact location and time match.")
+            print(f"  Circle handling mode: {st.session_state.config['existing_circle_handling']}")
             
             # Run the matching algorithm with enhanced return values for debugging
             results, matched_circles, unmatched_participants = run_matching_algorithm(
