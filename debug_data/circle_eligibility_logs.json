@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-04-28 22:57:18",
+    "timestamp": "2025-04-28 23:03:03",
     "region": "all_regions",
     "total_logs": 141,
-    "added_logs": 1,
+    "added_logs": 128,
     "existing_logs": 141,
     "regions_processed": [
       "all_regions"
@@ -1387,13 +1387,13 @@
       "region": "Seattle",
       "subregion": "Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)",
       "meeting_time": "Wednesday (Evenings)",
-      "max_additions": 4,
-      "current_members": 5,
-      "is_eligible": true,
-      "reason": "Has capacity",
+      "max_additions": 0,
+      "current_members": 9,
+      "is_eligible": false,
+      "reason": "No capacity (max_additions=0)",
       "is_test_circle": false,
       "is_small_circle": false,
-      "has_none_preference": false,
+      "has_none_preference": true,
       "preference_overridden": false
     },
     "IP-SEA-03": {

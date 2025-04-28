@@ -2334,7 +2334,37 @@ def render_debug_tab():
             
             # Display all circle data
             st.write(f"Found {len(circle_df)} circles in the results")
-            st.dataframe(circle_df)
+            
+            # Fix for PyArrow error - ensure members column is consistently formatted
+            if 'members' in circle_df.columns:
+                # Create a deep copy to avoid modifying the original dataframe
+                display_df = circle_df.copy(deep=True)
+                
+                # Convert members lists to string representation for display
+                def format_members(members_data):
+                    if members_data is None:
+                        return "[]"
+                    if isinstance(members_data, list):
+                        # Extract member IDs if they are dictionaries
+                        if members_data and isinstance(members_data[0], dict):
+                            ids = []
+                            for member in members_data:
+                                member_id = member.get('Encoded ID', member.get('participant_id', 'unknown'))
+                                ids.append(str(member_id))
+                            return f"[{len(ids)} members]" # Short representation
+                        else:
+                            return f"[{len(members_data)} members]" # Short representation
+                    # If it's already a string or other type, just convert to string
+                    return str(members_data)
+                
+                # Apply the transformation
+                display_df['members'] = display_df['members'].apply(format_members)
+                
+                # Display the modified dataframe
+                st.dataframe(display_df)
+            else:
+                # If no members column, display the original dataframe
+                st.dataframe(circle_df)
             
             # Basic statistics
             st.write("### Circle Statistics")
