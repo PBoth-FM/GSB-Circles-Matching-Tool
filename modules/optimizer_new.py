@@ -1898,16 +1898,29 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Initialize time match as False
             time_match = False
             
-            # Check each time preference using is_time_compatible which handles "Varies" as a wildcard
-            if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
+            # Determine if this is a continuing member looking at their current circle
+            is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
+            is_circle_time = True  # The time_slot is always the circle's meeting time
+            
+            # Check each time preference using enhanced is_time_compatible with continuing member handling
+            if is_time_compatible(first_choice, time_slot, 
+                                is_important=is_test_case, 
+                                is_continuing_member=is_continuing_member,
+                                is_circle_time=is_circle_time):
                 time_match = True
                 if is_test_case:
                     print(f"  Time compatibility SUCCESS: '{first_choice}' is compatible with '{time_slot}'")
-            elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
+            elif is_time_compatible(second_choice, time_slot, 
+                                  is_important=is_test_case,
+                                  is_continuing_member=is_continuing_member,
+                                  is_circle_time=is_circle_time):
                 time_match = True
                 if is_test_case:
                     print(f"  Time compatibility SUCCESS: '{second_choice}' is compatible with '{time_slot}'")
-            elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
+            elif is_time_compatible(third_choice, time_slot, 
+                                  is_important=is_test_case,
+                                  is_continuing_member=is_continuing_member,
+                                  is_circle_time=is_circle_time):
                 time_match = True
                 if is_test_case:
                     print(f"  Time compatibility SUCCESS: '{third_choice}' is compatible with '{time_slot}'")
@@ -1922,6 +1935,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             if is_test_case and "Varies" in time_slot and not time_match:
                 print(f"  ⚠️ WARNING: Time compatibility failed despite 'Varies' in time_slot")
                 print(f"  This should have matched due to the wildcard nature of 'Varies'")
+                
+            # For Seattle circles, add special debug logging to enhance visibility 
+            is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
+            if region == "Seattle" and is_seattle_circle and 'seattle_debug_logs' in locals():
+                if is_continuing_member and (pd.isna(first_choice) or first_choice == ''):
+                    seattle_debug_logs.append(f"  ⚠️ CONTINUING MEMBER COMPATIBILITY: Member has empty time preference")
+                    seattle_debug_logs.append(f"  This member's time match = {time_match} for circle {c_id} with time '{time_slot}'")
             
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
@@ -1940,13 +1960,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 seattle_debug_logs.append(f"  Location Match: {loc_match}")
                 seattle_debug_logs.append(f"  Time Match: {time_match}")
                 
-                # Log detailed time compatibility checks
+                # Log detailed time compatibility checks with enhanced parameters
                 seattle_debug_logs.append(f"  Detailed time compatibility:")
                 seattle_debug_logs.append(f"    Circle time: '{time_slot}'")
+                seattle_debug_logs.append(f"    Participant status: {p_row.get('Status', 'Unknown')}")
                 seattle_debug_logs.append(f"    Participant times:")
-                seattle_debug_logs.append(f"      1st choice: '{first_choice}' → {is_time_compatible(first_choice, time_slot)}")
-                seattle_debug_logs.append(f"      2nd choice: '{second_choice}' → {is_time_compatible(second_choice, time_slot)}")
-                seattle_debug_logs.append(f"      3rd choice: '{third_choice}' → {is_time_compatible(third_choice, time_slot)}")
+                seattle_debug_logs.append(f"      1st choice: '{first_choice}' → {is_time_compatible(first_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
+                seattle_debug_logs.append(f"      2nd choice: '{second_choice}' → {is_time_compatible(second_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
+                seattle_debug_logs.append(f"      3rd choice: '{third_choice}' → {is_time_compatible(third_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
                 
                 # Extra diagnostics for IP-SEA-01 specifically
                 if c_id == 'IP-SEA-01':
