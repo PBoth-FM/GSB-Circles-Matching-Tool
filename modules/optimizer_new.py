@@ -2659,6 +2659,42 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             prob += pulp.lpSum(participant_vars) <= 1, f"one_circle_per_participant_{p_id}"
         else:
             print(f"⚠️ WARNING: No valid variables created for participant {p_id}, skipping constraint")
+            
+    # New Constraint: CURRENT-CONTINUING participants must stay in their current circles
+    print(f"\n🔍 Adding constraints for CURRENT-CONTINUING participants")
+    current_continuing_participants = {}
+    
+    # Find all CURRENT-CONTINUING participants and their current circle assignments
+    for _, row in region_df.iterrows():
+        if row.get('Status') == 'CURRENT-CONTINUING':
+            participant_id = row['Encoded ID']
+            
+            # Find their current circle ID
+            current_circle_id = None
+            for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
+                if circle_col in row and not pd.isna(row[circle_col]) and str(row[circle_col]).strip() != '':
+                    current_circle_id = str(row[circle_col]).strip()
+                    break
+            
+            if current_circle_id:
+                # Only process if this is a valid existing circle
+                if current_circle_id in existing_circle_ids:
+                    current_continuing_participants[participant_id] = current_circle_id
+                    print(f"  Found CURRENT-CONTINUING participant {participant_id} in circle {current_circle_id}")
+    
+    # Add constraints to ensure CURRENT-CONTINUING participants stay in their current circles
+    continuing_count = 0
+    forced_continuing_count = 0
+    
+    for p_id, circle_id in current_continuing_participants.items():
+        if p_id in participants and (p_id, circle_id) in x:
+            # The participant must be assigned to their current circle
+            prob += x[(p_id, circle_id)] == 1, f"keep_continuing_{p_id}_{circle_id}"
+            continuing_count += 1
+            forced_continuing_count += 1
+            print(f"  ✅ Added constraint to keep participant {p_id} in their current circle {circle_id}")
+    
+    print(f"  Added {forced_continuing_count} constraints for CURRENT-CONTINUING participants (out of {continuing_count} total)")
     
     # Constraint 2: Only assign participants to compatible circles
     for p_id in participants:
