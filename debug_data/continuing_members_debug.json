@@ -1,0 +1,232 @@
+{
+  "total_continuing_members": 10,
+  "members": [
+    {
+      "participant_id": "69764372756",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "60322043139",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "64544472948",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "45661364510",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "51348242793",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "65862281731",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "63326441982",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "62678437897",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "65096735262",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "64564016954",
+      "status": "CURRENT-CONTINUING",
+      "region": "Houston",
+      "circle_id": "IP-HOU-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-HOU-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-HOU-02",
+        "column": "Current_Circle_ID"
+      }
+    }
+  ],
+  "standard_method_success_rate": 1.0,
+  "hybrid_method_success_rate": 0.0,
+  "aggressive_method_success_rate": 1.0,
+  "any_method_success_rate": 1.0,
+  "column_frequency": {
+    "Current_Circle_ID": 10
+  }
+}

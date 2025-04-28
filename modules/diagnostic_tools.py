@@ -147,18 +147,44 @@ def track_matching_outcomes(continuing_debug_info, results, unmatched,
     Args:
         continuing_debug_info: Debug info from track_current_continuing_status
         results: Final matching results
-        unmatched: Unmatched participants
+        unmatched: Unmatched participants (can be list or dict)
         debug_file_path: Path to save debug information
         
     Returns:
         dict: Debug information about matching outcomes
     """
-    # Convert results and unmatched to more accessible formats
+    # Add debug information about the data structures
+    print(f"\n🔍 DIAGNOSTIC DEBUG: Analyzing data structures in track_matching_outcomes")
+    print(f"  Results type: {type(results).__name__}, Length: {len(results) if results else 0}")
+    print(f"  Unmatched type: {type(unmatched).__name__}, Length: {len(unmatched) if unmatched else 0}")
+    
+    # Convert results to a more accessible format
     results_by_id = {}
     for r in results:
         p_id = r.get('participant_id')
         if p_id:
             results_by_id[p_id] = r
+    
+    # Convert unmatched to a more accessible format - handle both list and dict formats
+    unmatched_by_id = {}
+    
+    # Handle different possible formats of the unmatched parameter
+    if isinstance(unmatched, dict):
+        # It's already a dictionary, possibly keyed by participant ID
+        unmatched_by_id = unmatched
+        print(f"  Unmatched is a dictionary with {len(unmatched_by_id)} entries")
+    elif isinstance(unmatched, list):
+        # It's a list, convert to dictionary keyed by participant ID
+        for item in unmatched:
+            if isinstance(item, dict) and 'participant_id' in item:
+                unmatched_by_id[item['participant_id']] = item
+            elif isinstance(item, dict) and 'Encoded ID' in item:
+                unmatched_by_id[item['Encoded ID']] = item
+        print(f"  Converted unmatched list to dictionary with {len(unmatched_by_id)} entries")
+    else:
+        # Unknown format, create an empty dictionary
+        print(f"  ⚠️ Unmatched is in an unexpected format: {type(unmatched)}")
+        unmatched_by_id = {}
     
     # Initialize outcome container
     outcome_info = {
@@ -201,7 +227,18 @@ def track_matching_outcomes(continuing_debug_info, results, unmatched,
         else:
             # Member was unmatched
             outcome_info['unmatched_members'] += 1
-            unmatched_reason = unmatched.get(p_id, {}).get('unmatched_reason', 'Unknown')
+            
+            # Get the unmatched reason with proper error handling
+            if p_id in unmatched_by_id:
+                # Try different possible structures for unmatched reason
+                unmatched_item = unmatched_by_id[p_id]
+                if isinstance(unmatched_item, dict):
+                    unmatched_reason = unmatched_item.get('unmatched_reason', 
+                                      unmatched_item.get('reason', 'Unknown'))
+                else:
+                    unmatched_reason = "Unknown (unmatched item not a dict)"
+            else:
+                unmatched_reason = "Unknown (participant not found in unmatched list)"
             
             member_outcome = {
                 'participant_id': p_id,
