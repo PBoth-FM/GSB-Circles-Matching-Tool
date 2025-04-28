@@ -398,19 +398,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         Tuple of (results list, circles list, unmatched list, debug_circles, circle_eligibility_logs)
     """
     # Initialize Seattle debug logs if we're processing Seattle region
-    seattle_debug_logs = []
     if region == "Seattle":
         # Set a flag to indicate we're in Seattle region
         is_seattle_region = True
-        seattle_debug_logs.append(f"Starting Seattle region matching analysis")
-        # Add participant counts
-        seattle_debug_logs.append(f"Total participants in Seattle region: {len(region_df)}")
         # Force debug mode for Seattle region
         debug_mode = True
         # Make sure logs are initialized in session state
         import streamlit as st
         if 'seattle_debug_logs' not in st.session_state:
             st.session_state.seattle_debug_logs = []
+        # Record start of Seattle region analysis
+        st.session_state.seattle_debug_logs.append(f"Starting Seattle region matching analysis")
+        # Add participant counts
+        st.session_state.seattle_debug_logs.append(f"Total participants in Seattle region: {len(region_df)}")
     # Define test participants for debugging purposes only (no special handling)
     test_participants = ['72549701782', '73177784103', '50625303450']
     test_circles = ['IP-HOU-02', 'IP-SIN-01', 'IP-LON-04']
@@ -2868,7 +2868,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # SEATTLE DIAGNOSTIC: Track constraint application for Seattle circles
                 if region == "Seattle" and c_id.startswith('IP-SEA-'):
                     # Log the incompatibility constraint being added
-                    seattle_debug_logs.append(f"\nINCOMPATIBILITY CONSTRAINT: {p_id} and {c_id}")
+                    st.session_state.seattle_debug_logs.append(f"\nINCOMPATIBILITY CONSTRAINT: {p_id} and {c_id}")
                     
                     # Find the participant data
                     if p_id in participants:
@@ -2890,17 +2890,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             time_match = any(time_matches)
                             
                             # Log the detailed compatibility check
-                            seattle_debug_logs.append(f"  Participant {p_id}:")
-                            seattle_debug_logs.append(f"    Status: {p_row.get('Status', 'Unknown')}")
-                            seattle_debug_logs.append(f"    Locations: {locations}")
-                            seattle_debug_logs.append(f"    Times: {times}")
-                            seattle_debug_logs.append(f"  Circle {c_id}:")
-                            seattle_debug_logs.append(f"    Location: {circle_loc}")
-                            seattle_debug_logs.append(f"    Time: {circle_time}")
-                            seattle_debug_logs.append(f"  Compatibility:")
-                            seattle_debug_logs.append(f"    Location match: {loc_match}")
-                            seattle_debug_logs.append(f"    Time matches: {time_matches}")
-                            seattle_debug_logs.append(f"    Overall: INCOMPATIBLE (constraint added)")
+                            st.session_state.seattle_debug_logs.append(f"  Participant {p_id}:")
+                            st.session_state.seattle_debug_logs.append(f"    Status: {p_row.get('Status', 'Unknown')}")
+                            st.session_state.seattle_debug_logs.append(f"    Locations: {locations}")
+                            st.session_state.seattle_debug_logs.append(f"    Times: {times}")
+                            st.session_state.seattle_debug_logs.append(f"  Circle {c_id}:")
+                            st.session_state.seattle_debug_logs.append(f"    Location: {circle_loc}")
+                            st.session_state.seattle_debug_logs.append(f"    Time: {circle_time}")
+                            st.session_state.seattle_debug_logs.append(f"  Compatibility:")
+                            st.session_state.seattle_debug_logs.append(f"    Location match: {loc_match}")
+                            st.session_state.seattle_debug_logs.append(f"    Time matches: {time_matches}")
+                            st.session_state.seattle_debug_logs.append(f"    Overall: INCOMPATIBLE (constraint added)")
                 
                 prob += x[(p_id, c_id)] == 0, f"incompatible_{p_id}_{c_id}"
     
