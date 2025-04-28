@@ -400,7 +400,7 @@ def standardize_time_preference(time_pref):
     # If no specific pattern is found, just capitalize and return
     return time_pref.capitalize()
 
-def is_time_compatible(time1, time2, is_important=False):
+def is_time_compatible(time1, time2, is_important=False, is_continuing_member=False, is_circle_time=False):
     """
     Check if two time preferences are compatible, including day ranges
     
@@ -408,6 +408,8 @@ def is_time_compatible(time1, time2, is_important=False):
         time1: First time preference string
         time2: Second time preference string
         is_important: Boolean indicating whether to print detailed debug logs
+        is_continuing_member: Boolean indicating if this is a continuing member's time preference
+        is_circle_time: Boolean indicating if time2 is the official circle meeting time
         
     Returns:
         Boolean indicating if the time preferences are compatible
@@ -429,7 +431,12 @@ def is_time_compatible(time1, time2, is_important=False):
         ("Varies (Evenings)", "Monday-thursday (Evenings)"),
         ("Monday-thursday (Evenings)", "Varies (Evenings)"),
         ("Tuesday (Evenings)", "Monday-thursday (Evenings)"),
-        ("Monday-thursday (Evenings)", "Tuesday (Evenings)")
+        ("Monday-thursday (Evenings)", "Tuesday (Evenings)"),
+        # Add Seattle-specific cases
+        ("Wednesday (Evenings)", "Monday-Thursday (Evenings)"),
+        ("Monday-Thursday (Evenings)", "Wednesday (Evenings)"),
+        ("Wednesday (Evenings)", "Monday-thursday (Evenings)"),
+        ("Monday-thursday (Evenings)", "Wednesday (Evenings)")
     ]
     
     # Check if this is a known problematic case to force debug
@@ -442,7 +449,9 @@ def is_time_compatible(time1, time2, is_important=False):
         if ("varies" in time1_lower and "evening" in time1_lower and "monday" in time2_lower and "thursday" in time2_lower) or \
            ("varies" in time2_lower and "evening" in time2_lower and "monday" in time1_lower and "thursday" in time1_lower) or \
            ("tuesday" in time1_lower and "evening" in time1_lower and "monday" in time2_lower and "thursday" in time2_lower) or \
-           ("tuesday" in time2_lower and "evening" in time2_lower and "monday" in time1_lower and "thursday" in time1_lower):
+           ("tuesday" in time2_lower and "evening" in time2_lower and "monday" in time1_lower and "thursday" in time1_lower) or \
+           ("wednesday" in time1_lower and "evening" in time1_lower and "monday" in time2_lower and "thursday" in time2_lower) or \
+           ("wednesday" in time2_lower and "evening" in time2_lower and "monday" in time1_lower and "thursday" in time1_lower):
             is_important = True
         else:
             # Check exact matches from the list
@@ -450,8 +459,19 @@ def is_time_compatible(time1, time2, is_important=False):
     
     if is_important:
         print(f"\n🔍 ENHANCED COMPATIBILITY CHECK between '{time1}' and '{time2}'")
+        if is_continuing_member:
+            print(f"  ℹ️ This is a continuing member's time preference")
+        if is_circle_time:
+            print(f"  ℹ️ The second time preference is the official circle meeting time")
     
-    # Handle None, NaN or empty strings
+    # SPECIAL CASE FOR CONTINUING CIRCLES: If this is a continuing member and time2 is the circle time,
+    # empty time value for the member should be considered compatible with their circle's time
+    if is_continuing_member and is_circle_time and (pd.isna(time1) or time1 == ''):
+        if is_important:
+            print(f"  ✅ COMPATIBLE - Continuing member with empty time preference matches their circle's time '{time2}'")
+        return True
+    
+    # Handle None, NaN or empty strings (normal case)
     if pd.isna(time1) or pd.isna(time2) or time1 == '' or time2 == '':
         if is_important:
             print(f"  ❌ INCOMPATIBLE - One or both inputs is empty or invalid")
