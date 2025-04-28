@@ -23,7 +23,15 @@ def deduplicate_circles(circles_list, debug_mode=False):
     merged = {}
     
     for i, circle in enumerate(circles_list):
-        # Defensive check for required keys
+        # Defensive check for required keys and valid types
+        if not isinstance(circle, dict):
+            if debug_mode:
+                print(f"⚠️ WARNING: Circle at index {i} is not a dictionary")
+                print(f"  Circle data: {circle}")
+                print(f"  Type: {type(circle)}")
+                print(f"  Skipping this circle")
+            continue  # Skip this invalid circle
+            
         if 'circle_id' not in circle:
             if debug_mode:
                 print(f"⚠️ WARNING: Circle at index {i} is missing 'circle_id' key")
@@ -31,7 +39,16 @@ def deduplicate_circles(circles_list, debug_mode=False):
                 print(f"  Skipping this circle")
             continue  # Skip this invalid circle
         
-        c_id = circle['circle_id']
+        # Ensure circle_id is a string
+        try:
+            c_id = str(circle['circle_id'])
+        except Exception as e:
+            if debug_mode:
+                print(f"⚠️ WARNING: Circle at index {i} has invalid 'circle_id'")
+                print(f"  Error: {str(e)}")
+                print(f"  Circle data: {circle}")
+                print(f"  Skipping this circle")
+            continue  # Skip this invalid circle
         if c_id not in merged:
             # Copy to avoid mutation and ensure all required fields exist
             merged[c_id] = {
