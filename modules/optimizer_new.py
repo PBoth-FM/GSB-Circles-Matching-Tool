@@ -1901,9 +1901,22 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         p_row = matching_rows.iloc[0]
         participant_compatible_circles[p_id] = []
         
-        # Special debug for CURRENT-CONTINUING participants
-        if p_row.get('Status') == 'CURRENT-CONTINUING':
+        # Check if this is a CURRENT-CONTINUING participant
+        is_continuing = p_row.get('Status') == 'CURRENT-CONTINUING'
+        
+        # Get current circle for CURRENT-CONTINUING participants
+        current_circle_id = None
+        if is_continuing:
             print(f"  Analyzing compatibility for CURRENT-CONTINUING participant {p_id}")
+            
+            # Find their current circle ID
+            for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
+                if circle_col in p_row and not pd.isna(p_row[circle_col]) and str(p_row[circle_col]).strip() != '':
+                    current_circle_id = str(p_row[circle_col]).strip()
+                    break
+                    
+            if current_circle_id:
+                print(f"  ✅ Found CURRENT-CONTINUING participant {p_id} with current circle {current_circle_id}")
         
         # Get participant preferences
         loc_prefs = [
