@@ -378,9 +378,9 @@ def process_uploaded_file(uploaded_file):
             # This gives flexibility to allow NEW participants to be matched with existing circles
             existing_circle_handling = st.radio(
                 "Existing Circle Handling", 
-                options=['preserve', 'dissolve', 'optimize'],
-                index=0,  # Default to 'preserve'
-                help="'preserve' keeps existing circles intact. 'dissolve' breaks up all circles. 'optimize' allows new participants to join existing circles."
+                options=['optimize', 'preserve', 'dissolve'],
+                index=0,  # Default to 'optimize'
+                help="'optimize' (RECOMMENDED) allows new participants to join existing circles while keeping CURRENT-CONTINUING members in place. 'preserve' keeps existing circles intact but prevents NEW members from joining them. 'dissolve' breaks up all circles and creates new ones."
             )
             st.session_state.config['existing_circle_handling'] = existing_circle_handling
             st.session_state.config['enable_host_requirement'] = True  # Fixed value

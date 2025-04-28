@@ -1977,6 +1977,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     participant_compatible_circles = {}
     for p_id in participants:
         participant_compatible_circles[p_id] = []
+        
+    # CRITICAL FIX: Apply compatibility fixes from preassigned circles from earlier steps
+    for p_id, circle_id in preassigned_circles.items():
+        # Force compatibility between this participant and their current circle
+        compatibility[(p_id, circle_id)] = 1
+        print(f"✅ Forced compatibility between {p_id} and {circle_id} for CURRENT-CONTINUING member")
     
     if debug_mode:
         print(f"\n🔢 Created {len(created_vars)} LP variables for {len(participants)} participants and {len(all_circle_ids)} circles")
