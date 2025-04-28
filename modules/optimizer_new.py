@@ -331,6 +331,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     Returns:
         Tuple of (results list, circles list, unmatched list, debug_circles, circle_eligibility_logs)
     """
+    # Initialize Seattle debug logs if we're processing Seattle region
+    seattle_debug_logs = []
+    if region == "Seattle":
+        seattle_debug_logs.append(f"Starting Seattle region matching analysis")
+        # Force debug mode for Seattle region
+        debug_mode = True
     # Define test participants for debugging purposes only (no special handling)
     test_participants = ['72549701782', '73177784103', '50625303450']
     test_circles = ['IP-HOU-02', 'IP-SIN-01', 'IP-LON-04']
