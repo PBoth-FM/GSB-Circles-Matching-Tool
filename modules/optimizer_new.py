@@ -602,6 +602,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"Found {continuing_count} CURRENT-CONTINUING participants, {circles_count} with circle IDs")
                 
             # Group participants by their current circle
+            current_continuing_with_problems = []
+            
             for _, row in region_df.iterrows():
                 # First, check if it's a CURRENT-CONTINUING participant
                 if row.get('Status') == 'CURRENT-CONTINUING':
@@ -612,16 +614,51 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             if circle_id not in current_circle_members:
                                 current_circle_members[circle_id] = []
                             current_circle_members[circle_id].append(row)
+                            
+                            # CRITICAL FIX: Log successful assignments of CURRENT-CONTINUING members
+                            if debug_mode:
+                                print(f"✅ CURRENT-CONTINUING participant {row['Encoded ID']} assigned to {circle_id}")
                         else:
                             # They're CURRENT-CONTINUING but have an empty circle ID
                             # This shouldn't happen per the spec, but log for debugging
                             if debug_mode:
-                                print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
+                                print(f"⚠️ WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
+                            current_continuing_with_problems.append(row)
                     else:
                         # They're CURRENT-CONTINUING but circle ID is null
                         # This shouldn't happen per the spec, but log for debugging
                         if debug_mode:
-                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
+                            print(f"⚠️ WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
+                        current_continuing_with_problems.append(row)
+                        
+            # CRITICAL FIX: Try harder to find circle IDs for problematic CURRENT-CONTINUING participants
+            if current_continuing_with_problems:
+                print(f"🚨 Found {len(current_continuing_with_problems)} CURRENT-CONTINUING participants with missing circle IDs")
+                print(f"🔍 Attempting alternative methods to find their circle IDs...")
+                
+                # Try checking other columns for circle IDs
+                for i, problem_row in enumerate(current_continuing_with_problems):
+                    p_id = problem_row['Encoded ID']
+                    found_circle = None
+                    
+                    # Check all columns for anything that looks like a circle ID
+                    for col in problem_row.index:
+                        if pd.notna(problem_row[col]) and isinstance(problem_row[col], str):
+                            col_value = str(problem_row[col]).strip()
+                            # Check if it matches circle ID pattern (e.g., IP-NYC-18)
+                            if '-' in col_value and any(c.isalpha() for c in col_value) and any(c.isdigit() for c in col_value):
+                                potential_circle = col_value
+                                print(f"  👉 Found potential circle ID '{potential_circle}' for {p_id} in column '{col}'")
+                                found_circle = potential_circle
+                                break
+                    
+                    if found_circle:
+                        print(f"  ✅ Recovered circle ID '{found_circle}' for CURRENT-CONTINUING participant {p_id}")
+                        if found_circle not in current_circle_members:
+                            current_circle_members[found_circle] = []
+                        current_circle_members[found_circle].append(problem_row)
+                    else:
+                        print(f"  ❌ Failed to recover circle ID for CURRENT-CONTINUING participant {p_id}")
         
         # Evaluate each existing circle in the region
         # Note: By this point, direct continuation has already been done in the main function
