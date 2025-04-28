@@ -48,7 +48,7 @@ if 'config' not in st.session_state:
     st.session_state.config = {
         'debug_mode': True,  # CRITICAL FIX: Force debug mode on to help diagnose compatibility issues
         'min_circle_size': 5,
-        'existing_circle_handling': 'optimize',
+        'existing_circle_handling': 'preserve',
         'optimization_weight_location': 3,
         'optimization_weight_time': 2,
         'enable_host_requirement': True
@@ -364,8 +364,8 @@ def process_uploaded_file(uploaded_file):
             # This gives flexibility to allow NEW participants to be matched with existing circles
             existing_circle_handling = st.radio(
                 "Existing Circle Handling", 
-                options=['optimize', 'preserve', 'dissolve'],
-                index=0,  # Default to 'optimize'
+                options=['preserve', 'dissolve', 'optimize'],
+                index=0,  # Default to 'preserve'
                 help="'preserve' keeps existing circles intact. 'dissolve' breaks up all circles. 'optimize' allows new participants to join existing circles."
             )
             st.session_state.config['existing_circle_handling'] = existing_circle_handling

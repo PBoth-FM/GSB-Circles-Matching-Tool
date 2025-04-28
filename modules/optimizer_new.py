@@ -1127,30 +1127,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             if len(subregions) > 0:
                                 subregion = str(subregions[0])
                         
-                        # Find meeting time if available - expanded search for meeting time columns
+                        # Find meeting time if available
                         meeting_time = "Unknown"
-                        time_columns = [
-                            'Current_Meeting_Time', 
-                            'Current_DayTime', 
-                            'Current Meeting Time', 
-                            'Current/ Continuing Meeting Time',
-                            'Current_Meeting_Day',
-                            'Current Meeting Day',
-                            'Meeting Day and Time',
-                            'Proposed_NEW_DayTime'
-                        ]
-                        for time_col in time_columns:
+                        for time_col in ['Current_Meeting_Time', 'Current_DayTime']:
                             if time_col in circle_members.columns:
                                 times = circle_members[time_col].dropna().unique()
                                 if len(times) > 0:
                                     meeting_time = str(times[0])
-                                    # Format the meeting time if it doesn't have the format "Day (Time)"
-                                    if "(" not in meeting_time and ")" not in meeting_time:
-                                        # Try to parse day and time components
-                                        if " " in meeting_time:
-                                            day_part, time_part = meeting_time.split(" ", 1)
-                                            meeting_time = f"{day_part} ({time_part})"
-                                    print(f"DEBUG: Using meeting time '{meeting_time}' from column '{time_col}' for circle {circle_id}")
                                     break
                         
                         # Process co-leader preference for max additions
@@ -1387,39 +1370,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     else:
         print(f"✅ All {len(existing_circles)} circles have eligibility logs")
     
-    # KEY FIX: Our approach to viable circles was wrong
-    # All existing circles are viable for the optimizer, because:
-    # 1. CURRENT-CONTINUING participants should stay in their current circles
-    # 2. NEW participants can only be added to circles with max_additions > 0
+    # Identify viable circles for optimization
+    viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
+                     if circle_data.get('max_additions', 0) > 0}
     
-    # Make all existing circles available to the optimizer
-    viable_circles = existing_circles.copy()
-    
-    # Count circles with capacity for new members
-    circles_with_capacity = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
-                            if circle_data.get('max_additions', 0) > 0}
-    
-    # Count circles with continuing members for diagnostic purposes
-    continuing_member_circles = set()
-    for _, row in region_df.iterrows():
-        if row.get('Status') == 'CURRENT-CONTINUING':
-            # Find their current circle ID
-            current_circle_id = None
-            for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
-                if circle_col in row and not pd.isna(row[circle_col]) and str(row[circle_col]).strip() != '':
-                    current_circle_id = str(row[circle_col]).strip()
-                    break
-            
-            if current_circle_id and current_circle_id in existing_circles:
-                continuing_member_circles.add(current_circle_id)
-                
-    # ENHANCED VIABLE CIRCLES DETECTION: List all circles
+    # ENHANCED VIABLE CIRCLE DETECTION: List all circles with capacity
     print(f"\n🔍 VIABLE CIRCLES DETECTION:")
-    print(f"  Found {len(circles_with_capacity)} circles with max_additions > 0")
-    print(f"  Found {len(continuing_member_circles)} circles with CURRENT-CONTINUING members")
-    print(f"  Total viable circles for optimization: {len(viable_circles)}")
-    print(f"  ⚠️ NOTE: ALL existing circles are now viable for the optimizer")
-    print(f"     This allows continuing participants to stay in their circles")
+    print(f"  Found {len(viable_circles)} viable circles with max_additions > 0")
     
     # Verify circle viability more thoroughly
     if viable_circles:
@@ -1766,15 +1723,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if 'seattle_debug_logs' not in st.session_state:
         st.session_state.seattle_debug_logs = []
     
-    # Use all participants in the region, regardless of whether they're in existing circles
-    participants = region_df['Encoded ID'].tolist()
+    # Just use the participants from the remaining dataframe without special cases
+    participants = remaining_df['Encoded ID'].tolist()
     
     # Log participants being processed in this region
     print(f"\n🔍 Processing {len(participants)} participants in region {region}")
-    
-    # Log CURRENT-CONTINUING participants status
-    continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
-    print(f"  Including {continuing_count} CURRENT-CONTINUING participants in optimization")
     
     # Define test participants for debug logging only (but no special handling)
     # Focusing only on Seattle test cases now
@@ -1801,8 +1754,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Create variables for all participant-circle pairs
     for p_id in participants:
-        # Get row data from the full region dataframe to include CURRENT-CONTINUING participants
-        matching_rows = region_df[region_df['Encoded ID'] == p_id]
+        # Get row data from dataframe (with defensive coding)
+        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
         if matching_rows.empty:
             print(f"⚠️ Warning: Participant {p_id} not found in region dataframe")
             # Skip this participant to avoid errors
@@ -1810,10 +1763,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
         # Get participant data
         p_row = matching_rows.iloc[0]
-        
-        # Special debug for CURRENT-CONTINUING participants
-        if p_row.get('Status') == 'CURRENT-CONTINUING':
-            print(f"  Processing CURRENT-CONTINUING participant {p_id}")
         
         # For debug logging only
         is_houston_participant = any('Houston' in str(loc) if isinstance(loc, str) else False for loc in [
@@ -1888,8 +1837,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Debug logs are still kept for tracking purposes
             
         # Normal processing for regular participants - with defensive coding
-        # First check if this participant exists in the full region dataframe
-        matching_rows = region_df[region_df['Encoded ID'] == p_id]
+        # First check if this participant exists in the dataframe
+        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
         
         if matching_rows.empty:
             # Participant not in dataframe - likely the test participant in a region
@@ -1901,23 +1850,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # For participants that exist in the dataframe, process normally
         p_row = matching_rows.iloc[0]
         participant_compatible_circles[p_id] = []
-        
-        # Check if this is a CURRENT-CONTINUING participant
-        is_continuing = p_row.get('Status') == 'CURRENT-CONTINUING'
-        
-        # Get current circle for CURRENT-CONTINUING participants
-        current_circle_id = None
-        if is_continuing:
-            print(f"  Analyzing compatibility for CURRENT-CONTINUING participant {p_id}")
-            
-            # Find their current circle ID
-            for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
-                if circle_col in p_row and not pd.isna(p_row[circle_col]) and str(p_row[circle_col]).strip() != '':
-                    current_circle_id = str(p_row[circle_col]).strip()
-                    break
-                    
-            if current_circle_id:
-                print(f"  ✅ Found CURRENT-CONTINUING participant {p_id} with current circle {current_circle_id}")
         
         # Get participant preferences
         loc_prefs = [
@@ -1980,24 +1912,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Determine if this is a continuing member looking at their current circle
             is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
             is_circle_time = True  # The time_slot is always the circle's meeting time
-            
-            # CRITICAL FIX: Check if CURRENT-CONTINUING participant is looking at their current circle
-            # If so, they should always be compatible regardless of preferences
-            current_circle_id = None
-            if is_continuing_member:
-                # Find the participant's current circle ID
-                for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
-                    if circle_col in p_row and not pd.isna(p_row[circle_col]) and str(p_row[circle_col]).strip() != '':
-                        current_circle_id = str(p_row[circle_col]).strip()
-                        break
-                
-                # If this is the participant's current circle, force compatibility
-                if current_circle_id and current_circle_id == c_id:
-                    # Force this to be compatible regardless of time and location preferences
-                    # This ensures CURRENT-CONTINUING participants stay in their current circles
-                    loc_match = True
-                    time_match = True
-                    print(f"  🔧 CURRENT-CONTINUING OVERRIDE: Forced compatibility for {p_id} with current circle {c_id}")
             
             # Special handling for NEW participants - add debug logging
             is_new_participant = p_row.get('Status') == 'NEW'
@@ -2717,95 +2631,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # STEP 4: ADD CONSTRAINTS
     # ***************************************************************
     
-    # Special constraint tracking for debug
-    constraints_by_type = {
-        "one_circle_per_participant": 0,
-        "current_continuing_stay": 0,
-        "new_only_in_circles_with_capacity": 0,
-        "compatibility": 0,
-        "min_circle_size": 0,
-        "min_hosts": 0
-    }
-    
     # Constraint 1: Each participant can be assigned to at most one circle
     for p_id in participants:
+        # [REMOVED] - Removed Houston-specific debugging
+        
         # DEFENSIVE FIX: Only use variables that exist in the model
         participant_vars = [x[(p_id, c_id)] for c_id in all_circle_ids if (p_id, c_id) in x]
         
         if participant_vars:  # Only add constraint if there are variables for this participant
             prob += pulp.lpSum(participant_vars) <= 1, f"one_circle_per_participant_{p_id}"
-            constraints_by_type["one_circle_per_participant"] += 1
         else:
             print(f"⚠️ WARNING: No valid variables created for participant {p_id}, skipping constraint")
-            
-    # SPECIALIZED CONSTRAINTS BASED ON PARTICIPANT STATUS:
-    # 1. CURRENT-CONTINUING participants must stay in their current circles
-    # 2. NEW participants can only be assigned to circles with max_additions > 0
-    
-    # First identify all CURRENT-CONTINUING participants and their circles
-    print(f"\n🔍 Adding constraints for CURRENT-CONTINUING participants")
-    
-    current_continuing_participants = {}
-    circles_with_capacity = []
-    
-    # Find all circles with capacity for new members
-    for c_id, circle_data in existing_circles.items():
-        if circle_data.get('max_additions', 0) > 0:
-            circles_with_capacity.append(c_id)
-    
-    print(f"  Found {len(circles_with_capacity)} circles with capacity for NEW members")
-    
-    # Find all CURRENT-CONTINUING participants and their current circle assignments
-    for _, row in region_df.iterrows():
-        if row.get('Status') == 'CURRENT-CONTINUING':
-            participant_id = row['Encoded ID']
-            
-            # Find their current circle ID
-            current_circle_id = None
-            for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
-                if circle_col in row and not pd.isna(row[circle_col]) and str(row[circle_col]).strip() != '':
-                    current_circle_id = str(row[circle_col]).strip()
-                    break
-            
-            if current_circle_id:
-                # Only process if this is a valid existing circle
-                if current_circle_id in existing_circle_ids:
-                    current_continuing_participants[participant_id] = current_circle_id
-                    print(f"  Found CURRENT-CONTINUING participant {participant_id} in circle {current_circle_id}")
-    
-    # Process each participant based on their status
-    for _, row in region_df.iterrows():
-        participant_id = row['Encoded ID']
-        status = row.get('Status')
-        
-        # Skip if we don't have this participant in our variables
-        if participant_id not in participants:
-            continue
-        
-        # For CURRENT-CONTINUING participants:
-        # They must stay in their current circle if it's a valid circle
-        if status == 'CURRENT-CONTINUING' and participant_id in current_continuing_participants:
-            circle_id = current_continuing_participants[participant_id]
-            if (participant_id, circle_id) in x:
-                # The participant must be assigned to their current circle
-                prob += x[(participant_id, circle_id)] == 1, f"keep_continuing_{participant_id}_{circle_id}"
-                constraints_by_type["current_continuing_stay"] += 1
-                print(f"  ✅ Added constraint: CURRENT-CONTINUING participant {participant_id} must stay in circle {circle_id}")
-        
-        # For NEW participants:
-        # They can only be assigned to circles with capacity (max_additions > 0)
-        elif status == 'NEW':
-            # For each circle without capacity, add constraint that this participant can't be assigned
-            for c_id in existing_circle_ids:
-                if c_id not in circles_with_capacity and (participant_id, c_id) in x:
-                    prob += x[(participant_id, c_id)] == 0, f"new_only_capacity_{participant_id}_{c_id}"
-                    constraints_by_type["new_only_in_circles_with_capacity"] += 1
-                    
-    # Print summary of constraints added
-    print(f"\n🔍 PARTICIPANT CONSTRAINTS SUMMARY:")
-    print(f"  Added {constraints_by_type['one_circle_per_participant']} one-circle-per-participant constraints")
-    print(f"  Added {constraints_by_type['current_continuing_stay']} constraints to keep CURRENT-CONTINUING participants in their circles")
-    print(f"  Added {constraints_by_type['new_only_in_circles_with_capacity']} constraints to prevent NEW participants in circles without capacity")
     
     # Constraint 2: Only assign participants to compatible circles
     for p_id in participants:
@@ -2818,7 +2654,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # SEATTLE DIAGNOSTIC: Add detailed diagnostics for Seattle participants with IP-SEA-01
                 if c_id == 'IP-SEA-01' and region == 'Seattle':
                     # Check if this is a NEW participant
-                    matching_rows = region_df[region_df['Encoded ID'] == p_id]
+                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
                     if not matching_rows.empty:
                         p_row = matching_rows.iloc[0]
                         if p_row.get('Status') == 'NEW':
@@ -2891,7 +2727,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     
                     # Find the participant data
                     if p_id in participants:
-                        matching_rows = region_df[region_df['Encoded ID'] == p_id]
+                        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
                         if not matching_rows.empty:
                             p_row = matching_rows.iloc[0]
                             # Get participant preferences
@@ -2988,11 +2824,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 always_hosts_list = []
                 for p_id in participants:
                     # Skip participants not in this region's dataframe 
-                    if p_id not in region_df['Encoded ID'].values:
+                    if p_id not in remaining_df['Encoded ID'].values:
                         continue
                         
                     # Check if participant is an "Always" host and add variable to sum if so
-                    if region_df.loc[region_df['Encoded ID'] == p_id, 'host'].values[0] == 'Always':
+                    if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Always':
                         always_hosts_list.append(x[(p_id, c_id)])
                 
                 always_hosts = pulp.lpSum(always_hosts_list)
@@ -3001,11 +2837,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 sometimes_hosts_list = []
                 for p_id in participants:
                     # Skip participants not in this region's dataframe
-                    if p_id not in region_df['Encoded ID'].values:
+                    if p_id not in remaining_df['Encoded ID'].values:
                         continue
                         
                     # Check if participant is a "Sometimes" host and add variable to sum if so
-                    if region_df.loc[region_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes':
+                    if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes':
                         sometimes_hosts_list.append(x[(p_id, c_id)])
                     
                 sometimes_hosts = pulp.lpSum(sometimes_hosts_list)
@@ -3036,8 +2872,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         host_status = "Unknown"
                         
                         # Instead of comparing objects directly, we'll check for the test participant's host status
-                        # in the region dataframe to avoid recursive PuLP variable comparisons
-                        test_participant_rows = region_df[region_df['Encoded ID'] == '99999000001']
+                        # in the original dataframe to avoid recursive PuLP variable comparisons
+                        test_participant_rows = remaining_df[remaining_df['Encoded ID'] == '99999000001']
                         
                         if not test_participant_rows.empty:
                             test_row = test_participant_rows.iloc[0]
@@ -3253,7 +3089,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"    Compatible participants:")
                         debug_entry += f"  Compatible participants:\n"
                         for p_id in compatible_participants[:5]:  # limit to 5 to avoid overwhelming logs
-                            p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0]
+                            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
                             assigned_circle = circle_assignments.get(p_id, "UNMATCHED")
                             print(f"      - {p_id} (Assigned to: {assigned_circle})")
                             debug_entry += f"    - Participant {p_id} (Assigned to: {assigned_circle})\n"
@@ -3362,11 +3198,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         if compatible_participants:
                             print(f"    There were {len(compatible_participants)} compatible participants:")
                             for p_id in compatible_participants[:5]:  # Show first 5 only to avoid clutter
-                                # Use region_df to determine participant status
-                                participant_status = "UNKNOWN"
-                                matching_rows = region_df[region_df['Encoded ID'] == p_id]
-                                if not matching_rows.empty and 'Status' in matching_rows.iloc[0]:
-                                    participant_status = "NEW" if matching_rows.iloc[0]['Status'] == 'NEW' else "CONTINUING"
+                                participant_status = "NEW" if p_id in remaining_df['Encoded ID'].values and \
+                                    remaining_df[remaining_df['Encoded ID'] == p_id]['Status'].iloc[0] == 'NEW' else "CONTINUING"
                                 print(f"      - Participant {p_id} ({participant_status})")
                                 
                                 # Special case for our Seattle test participant
@@ -3429,22 +3262,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             }
             
             # Count hosts
-            # Count Always and Sometimes hosts with defensive code to avoid index errors
-            always_hosts = 0
-            sometimes_hosts = 0
-            
-            for p_id in members:
-                # Find this participant in region_df
-                matching_rows = region_df[region_df['Encoded ID'] == p_id]
-                if not matching_rows.empty and 'host' in matching_rows.iloc[0]:
-                    host_val = matching_rows.iloc[0]['host']
-                    if host_val == 'Always':
-                        always_hosts += 1
-                    elif host_val == 'Sometimes':
-                        sometimes_hosts += 1
-            
-            new_circle['always_hosts'] = always_hosts
-            new_circle['sometimes_hosts'] = sometimes_hosts
+            new_circle['always_hosts'] = sum(1 for p_id in members 
+                                           if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Always')
+            new_circle['sometimes_hosts'] = sum(1 for p_id in members 
+                                              if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes')
             
             # Add to circles list (new circles should never be duplicates, but check anyway)
             if circle_id not in processed_circle_ids:
