@@ -2655,6 +2655,55 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # 4. Fourth goal: Maximize preference satisfaction
     # 5. Fifth goal: Only create new circles when necessary
     
+    # ***************************************************************
+    # CRITICAL FIX: ADD HARD CONSTRAINTS FOR CURRENT-CONTINUING MEMBERS
+    # ***************************************************************
+    print("\n🚨 CRITICAL FIX: Adding hard constraints to enforce CURRENT-CONTINUING member assignments")
+    
+    # Track how many constraints we added and processed members
+    continuing_constraints_added = 0
+    continuing_members_processed = 0
+    
+    # Process all participants with status CURRENT-CONTINUING
+    for p_id in participants:
+        # Skip if this participant is not in the dataframe
+        if p_id not in remaining_df['Encoded ID'].values:
+            continue
+            
+        # Get the participant's row
+        p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+        
+        # Check if this is a CURRENT-CONTINUING participant
+        if p_row.get('Status') in ['CURRENT-CONTINUING', 'Current-CONTINUING']:
+            continuing_members_processed += 1
+            
+            # Find their current circle ID
+            current_circle = find_current_circle_id(p_row)
+            
+            # Only proceed if we found a valid circle ID and it exists in our pool
+            if current_circle and current_circle in all_circle_ids and (p_id, current_circle) in x:
+                # Add a hard constraint to force this participant to be assigned to their current circle
+                prob += x[(p_id, current_circle)] == 1, f"force_{p_id}_{current_circle}"
+                
+                # Force compatibility for this pair
+                compatibility[(p_id, current_circle)] = 1
+                
+                continuing_constraints_added += 1
+                
+                # Special logging for Seattle region
+                if region == "Seattle":
+                    print(f"  ✅ Added hard constraint forcing {p_id} to remain in {current_circle}")
+            else:
+                if current_circle:
+                    if current_circle not in all_circle_ids:
+                        print(f"  ⚠️ Found circle {current_circle} for {p_id}, but it's not in our list of valid circles")
+                    elif (p_id, current_circle) not in x:
+                        print(f"  ⚠️ Found circle {current_circle} for {p_id}, but no variable exists for this pair")
+                else:
+                    print(f"  ⚠️ Could not find current circle ID for CURRENT-CONTINUING member {p_id}")
+    
+    print(f"  ✅ Added {continuing_constraints_added} hard constraints for {continuing_members_processed} CURRENT-CONTINUING members")
+    
     # CRITICAL FIX: Add defensive variable checking before objective function construction
     # Check for the specific problematic ID that caused the KeyError
     problematic_id = '72960135849'

@@ -1,15 +1,15 @@
 {
-  "total_continuing_members": 10,
+  "total_continuing_members": 4,
   "members": [
     {
-      "participant_id": "69764372756",
+      "participant_id": "66883222431",
       "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-HOU-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -19,19 +19,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-HOU-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "60322043139",
+      "participant_id": "64567903885",
       "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-HOU-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -41,19 +41,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-HOU-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "64544472948",
+      "participant_id": "67938698165",
       "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-02",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-HOU-02",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -63,19 +63,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-HOU-02",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "45661364510",
+      "participant_id": "58244483490",
       "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-HOU-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -85,139 +85,7 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "51348242793",
-      "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "65862281731",
-      "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "63326441982",
-      "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "62678437897",
-      "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-HOU-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-HOU-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "65096735262",
-      "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-HOU-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "64564016954",
-      "status": "CURRENT-CONTINUING",
-      "region": "Houston",
-      "circle_id": "IP-HOU-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-HOU-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-HOU-02",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     }
@@ -227,6 +95,6 @@
   "aggressive_method_success_rate": 1.0,
   "any_method_success_rate": 1.0,
   "column_frequency": {
-    "Current_Circle_ID": 10
+    "Current_Circle_ID": 4
   }
 }
