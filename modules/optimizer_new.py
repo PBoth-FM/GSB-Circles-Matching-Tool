@@ -1623,35 +1623,99 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             circle.get('circle_id', '').startswith('IP-')):
             optimization_context['circles_needing_hosts'].append(circle)
     
-    # Handle case where no preferences exist
+    # CRITICAL FIX: Manually extract CURRENT-CONTINUING members and their circle IDs
+    # before handling cases where no preferences exist
+    current_continuing_members = {}
+    # Track count of CURRENT-CONTINUING members
+    cc_member_count = 0
+    missing_circle_count = 0
+    
+    # Find and capture all CURRENT-CONTINUING members
+    for _, participant in region_df.iterrows():
+        # Check if this is a CURRENT-CONTINUING participant
+        if participant.get('Status') == 'CURRENT-CONTINUING':
+            cc_member_count += 1
+            
+            # Import utility to find circle ID
+            from modules.optimizer_fixes import find_current_circle_id
+            
+            # Get their current circle ID using all possible methods
+            current_circle = find_current_circle_id(participant)
+            
+            # If we found a valid circle ID, save it for special handling
+            if current_circle:
+                participant_id = participant.get('Encoded ID')
+                if participant_id:
+                    current_continuing_members[participant_id] = current_circle
+            else:
+                missing_circle_count += 1
+    
+    # Log what we found
+    print(f"\n🔍 FOUND {cc_member_count} CURRENT-CONTINUING MEMBERS IN REGION {region}")
+    print(f"  Of those, {len(current_continuing_members)} have valid circle IDs")
+    print(f"  {missing_circle_count} members have missing circle IDs")
+    
+    # Handle case where no preferences exist for NEW participants
+    # But still allow CURRENT-CONTINUING members to match with their circles
     if not subregions or not time_slots:
+        print(f"\n🚨 CRITICAL FIX: Region {region} has no valid preferences, but we'll still match CURRENT-CONTINUING members")
+        
         results = []
         unmatched = []
+        matched_circles = []
         
+        # Process each participant
         for _, participant in region_df.iterrows():
             participant_dict = participant.to_dict()
-            participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
+            participant_id = participant.get('Encoded ID')
+            is_continuing = participant.get('Status') == 'CURRENT-CONTINUING'
             
-            # Set scores to 0 for unmatched participants
-            participant_dict['location_score'] = 0
-            participant_dict['time_score'] = 0
-            participant_dict['total_score'] = 0
-            
-            # Use our enhanced determine_unmatched_reason function with appropriate reason
-            if not subregions and not time_slots:
-                reason_context = {"no_preferences": True}
-                participant_dict['unmatched_reason'] = "No valid preferences found (both location and time)"
-            elif not subregions:
-                reason_context = {"no_location_preferences": True} 
-                participant_dict['unmatched_reason'] = "No valid location preferences found"
-            elif not time_slots:
-                reason_context = {"no_time_preferences": True}
-                participant_dict['unmatched_reason'] = "No valid time preferences found"
+            # Check if this is a CURRENT-CONTINUING participant with a known circle
+            if is_continuing and participant_id in current_continuing_members:
+                # Get their assigned circle
+                assigned_circle = current_continuing_members[participant_id]
                 
-            results.append(participant_dict)
-            unmatched.append(participant_dict)
-            
-        return results, [], unmatched, {}, circle_eligibility_logs
+                # Mark as matched to their current circle
+                participant_dict['proposed_NEW_circles_id'] = assigned_circle
+                participant_dict['location_score'] = 100  # Max score
+                participant_dict['time_score'] = 100  # Max score  
+                participant_dict['total_score'] = 200  # Max total score
+                participant_dict['unmatched_reason'] = "FIXED: Manually assigned to continuing circle"
+                
+                # Record this assignment for return values
+                results.append(participant_dict)
+                matched_circles.append({
+                    'circle_id': assigned_circle,
+                    'member_count': 1,  # Just counting this member for now
+                    'members': [participant_dict]
+                })
+                
+                print(f"  ✅ CURRENT-CONTINUING member {participant_id} matched to circle {assigned_circle}")
+                
+            else:
+                # This is either a NEW participant or CURRENT-CONTINUING without a known circle
+                # Mark as unmatched with appropriate reason
+                participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
+                
+                # Set scores to 0 for unmatched participants
+                participant_dict['location_score'] = 0
+                participant_dict['time_score'] = 0
+                participant_dict['total_score'] = 0
+                
+                # Set the reason based on what's missing
+                if not subregions and not time_slots:
+                    participant_dict['unmatched_reason'] = "No valid preferences found (both location and time)"
+                elif not subregions:
+                    participant_dict['unmatched_reason'] = "No valid location preferences found"
+                elif not time_slots:
+                    participant_dict['unmatched_reason'] = "No valid time preferences found"
+                    
+                # Record as unmatched
+                results.append(participant_dict)
+                unmatched.append(participant_dict)
+        
+        # Return both matched and unmatched participants
+        return results, matched_circles, unmatched, {}, circle_eligibility_logs
 
     # ***************************************************************
     # STEP 1: STRUCTURE VARIABLES AROUND REAL AND HYPOTHETICAL CIRCLES
