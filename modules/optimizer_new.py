@@ -2955,8 +2955,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         host_status = "Unknown"
                         
                         # Instead of comparing objects directly, we'll check for the test participant's host status
-                        # in the original dataframe to avoid recursive PuLP variable comparisons
-                        test_participant_rows = remaining_df[remaining_df['Encoded ID'] == '99999000001']
+                        # in the region dataframe to avoid recursive PuLP variable comparisons
+                        test_participant_rows = region_df[region_df['Encoded ID'] == '99999000001']
                         
                         if not test_participant_rows.empty:
                             test_row = test_participant_rows.iloc[0]
@@ -3172,7 +3172,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"    Compatible participants:")
                         debug_entry += f"  Compatible participants:\n"
                         for p_id in compatible_participants[:5]:  # limit to 5 to avoid overwhelming logs
-                            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                            p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0]
                             assigned_circle = circle_assignments.get(p_id, "UNMATCHED")
                             print(f"      - {p_id} (Assigned to: {assigned_circle})")
                             debug_entry += f"    - Participant {p_id} (Assigned to: {assigned_circle})\n"
@@ -3281,8 +3281,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         if compatible_participants:
                             print(f"    There were {len(compatible_participants)} compatible participants:")
                             for p_id in compatible_participants[:5]:  # Show first 5 only to avoid clutter
-                                participant_status = "NEW" if p_id in remaining_df['Encoded ID'].values and \
-                                    remaining_df[remaining_df['Encoded ID'] == p_id]['Status'].iloc[0] == 'NEW' else "CONTINUING"
+                                # Use region_df to determine participant status
+                                participant_status = "UNKNOWN"
+                                matching_rows = region_df[region_df['Encoded ID'] == p_id]
+                                if not matching_rows.empty and 'Status' in matching_rows.iloc[0]:
+                                    participant_status = "NEW" if matching_rows.iloc[0]['Status'] == 'NEW' else "CONTINUING"
                                 print(f"      - Participant {p_id} ({participant_status})")
                                 
                                 # Special case for our Seattle test participant
@@ -3345,10 +3348,22 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             }
             
             # Count hosts
-            new_circle['always_hosts'] = sum(1 for p_id in members 
-                                           if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Always')
-            new_circle['sometimes_hosts'] = sum(1 for p_id in members 
-                                              if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes')
+            # Count Always and Sometimes hosts with defensive code to avoid index errors
+            always_hosts = 0
+            sometimes_hosts = 0
+            
+            for p_id in members:
+                # Find this participant in region_df
+                matching_rows = region_df[region_df['Encoded ID'] == p_id]
+                if not matching_rows.empty and 'host' in matching_rows.iloc[0]:
+                    host_val = matching_rows.iloc[0]['host']
+                    if host_val == 'Always':
+                        always_hosts += 1
+                    elif host_val == 'Sometimes':
+                        sometimes_hosts += 1
+            
+            new_circle['always_hosts'] = always_hosts
+            new_circle['sometimes_hosts'] = sometimes_hosts
             
             # Add to circles list (new circles should never be duplicates, but check anyway)
             if circle_id not in processed_circle_ids:
