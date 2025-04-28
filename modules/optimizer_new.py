@@ -2698,14 +2698,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     # Skip adding the incompatibility constraint
                     continue
                     
-                # SEATTLE FIX: Add special handling for Seattle participants with IP-SEA-01
+                # SEATTLE DIAGNOSTIC: Add detailed diagnostics for Seattle participants with IP-SEA-01
                 if c_id == 'IP-SEA-01' and region == 'Seattle':
                     # Check if this is a NEW participant
                     matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
                     if not matching_rows.empty:
                         p_row = matching_rows.iloc[0]
                         if p_row.get('Status') == 'NEW':
-                            print(f"\n🔴 SEATTLE CIRCLE IP-SEA-01 MATCH ATTEMPT: Checking compatibility for {p_id}")
+                            print(f"\n🔍 SEATTLE CIRCLE IP-SEA-01 MATCH DIAGNOSTICS: Checking for {p_id}")
                             
                             # Extract time and location preferences
                             time_prefs = [
@@ -2730,9 +2730,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             print(f"  Participant time preferences: {time_prefs}")
                             
                             # Check for Wednesday or Monday-Thursday pattern
-                            # This is the key fix - we're checking if either:
-                            # 1. Wednesday is in the time preference OR
-                            # 2. Monday-Thursday range is in the time preference
                             has_compatible_time = any(
                                 ('wednesday' in t and 'evening' in t) or 
                                 ('monday-thursday' in t and 'evening' in t) or
@@ -2748,23 +2745,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 for loc in loc_prefs if loc
                             )
                             
+                            # Now log the compatibility determination for debugging
                             print(f"  Compatible time: {has_compatible_time}")
                             print(f"  Compatible location: {has_compatible_loc}")
+                            print(f"  Current compatibility in matrix: {compatibility.get((p_id, c_id), 0)}")
+                            print(f"  Compatibility should be: {1 if (has_compatible_time and has_compatible_loc) else 0}")
                             
-                            # Override compatibility if both time and location match
-                            if has_compatible_time and has_compatible_loc:
-                                print(f"  🛠️ APPLYING SEATTLE FIX: Forcing compatibility to 1 for {p_id} with IP-SEA-01")
-                                compatibility[(p_id, c_id)] = 1
-                                
-                                # Add to participant's compatible circles
-                                if p_id in participant_compatible_circles and c_id not in participant_compatible_circles[p_id]:
-                                    participant_compatible_circles[p_id].append(c_id)
-                                    print(f"  ✅ Added IP-SEA-01 to compatible circles for participant {p_id}")
-                                
-                                # Skip adding the incompatibility constraint
-                                continue
-                            else:
-                                print(f"  ❌ No compatibility override needed - participant's preferences don't match")
+                            # This is purely diagnostic - no override
+                            if has_compatible_time and has_compatible_loc and compatibility.get((p_id, c_id), 0) == 0:
+                                print(f"  ⚠️ DIAGNOSTIC: This participant SHOULD be compatible but is marked as incompatible")
                 
                 # SEATTLE DIAGNOSTIC: Track constraint application for Seattle circles
                 if region == "Seattle" and c_id.startswith('IP-SEA-'):
