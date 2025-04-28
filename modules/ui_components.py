@@ -2694,6 +2694,121 @@ def render_debug_tab():
     else:
         st.error("❌ No results data available in session state")
     
+    with debug_tab5:
+        st.write("### Seattle Compatibility Analysis")
+        st.write("This section shows detailed analysis of Seattle circles, especially IP-SEA-01.")
+        
+        if 'seattle_debug_logs' in st.session_state and st.session_state.seattle_debug_logs:
+            logs = st.session_state.seattle_debug_logs
+            
+            # Create tabs for different views
+            seattle_tab1, seattle_tab2, seattle_tab3 = st.tabs(["Complete Logs", "IP-SEA-01 Analysis", "Compatibility Checks"])
+            
+            with seattle_tab1:
+                logs_text = "\n".join(logs)
+                st.text_area("Seattle Debug Logs", logs_text, height=400, key="seattle_logs_area")
+                
+                # Add JavaScript to handle copying to clipboard
+                st.markdown("""
+                <button onclick="navigator.clipboard.writeText(document.getElementById('seattle_logs_area').value)">
+                    📋 Copy Seattle Debug Logs to Clipboard
+                </button>
+                """, unsafe_allow_html=True)
+            
+            with seattle_tab2:
+                # Extract IP-SEA-01 specific logs
+                ipsea01_logs = [log for log in logs if "IP-SEA-01" in log]
+                if ipsea01_logs:
+                    ipsea01_text = "\n".join(ipsea01_logs)
+                    st.text_area("IP-SEA-01 Analysis", ipsea01_text, height=400, key="ipsea01_logs_area")
+                    st.write("#### Key Findings for IP-SEA-01")
+                    
+                    # Check for specific patterns
+                    has_capacity = any("max_additions" in log and "IP-SEA-01" in log for log in logs)
+                    is_eligible = any("Eligibility: Eligible" in log and "IP-SEA-01" in log for log in logs)
+                    compatible_participants = [log for log in logs if "COMPATIBLE" in log and "IP-SEA-01" in log and "Participant" in log]
+                    assigned_participants = [log for log in logs if "Participant IDs:" in log and "IP-SEA-01" in log]
+                    
+                    # Display key insights
+                    if has_capacity:
+                        st.write("✅ Circle has capacity for new members")
+                    else:
+                        st.write("❌ Circle does not have capacity for new members")
+                    
+                    if is_eligible:
+                        st.write("✅ Circle is eligible for new members")
+                    else:
+                        st.write("❌ Circle is not eligible for new members")
+                    
+                    st.write(f"- Compatible participants: {len(compatible_participants)}")
+                    st.write(f"- Assigned participants: {len(assigned_participants)}")
+                else:
+                    st.info("No IP-SEA-01 specific logs found. Run the optimization with Seattle participants to generate logs.")
+            
+            with seattle_tab3:
+                # Extract compatibility check logs
+                compatibility_logs = [log for log in logs if "COMPATIBILITY CHECK:" in log]
+                if compatibility_logs:
+                    # Count successful and failed checks
+                    successful = sum(1 for log in compatibility_logs if "COMPATIBLE" in log)
+                    failed = len(compatibility_logs) - successful
+                    
+                    st.write(f"#### Compatibility Check Summary")
+                    st.write(f"- Total compatibility checks: {len(compatibility_logs)}")
+                    st.write(f"- Successful matches: {successful}")
+                    st.write(f"- Failed matches: {failed}")
+                    
+                    # Create separate sections for compatible and incompatible pairs
+                    if successful > 0:
+                        with st.expander("View Compatible Participant-Circle Pairs"):
+                            compatible_logs = [log for log in compatibility_logs if "COMPATIBLE" in log]
+                            for log in compatible_logs:
+                                st.text(log)
+                    
+                    if failed > 0:
+                        with st.expander("View Incompatible Participant-Circle Pairs"):
+                            incompatible_logs = [log for log in compatibility_logs if "INCOMPATIBLE" in log]
+                            for log in incompatible_logs:
+                                st.text(log)
+                else:
+                    st.info("No compatibility check logs found. Run the optimization with Seattle participants to generate logs.")
+                
+                # Provide optimization results analysis
+                optimization_logs = [log for log in logs if "OPTIMIZATION RESULTS ANALYSIS" in log]
+                if optimization_logs:
+                    st.write("#### Optimization Results Analysis")
+                    
+                    # Extract and display objective function value
+                    objective_value = next((log for log in logs if "Objective function value:" in log), None)
+                    if objective_value:
+                        st.write(objective_value)
+                    
+                    # Extract assignment information
+                    assignments = {}
+                    current_circle = None
+                    for log in logs:
+                        if "Circle IP-SEA-" in log and "assignments:" in log:
+                            current_circle = log.split("Circle ")[1].split(" ")[0]
+                            assignments[current_circle] = []
+                        elif current_circle and "Assigned participants:" in log:
+                            count = log.split("Assigned participants: ")[1]
+                            assignments[current_circle].append(f"Assigned participants: {count}")
+                        elif current_circle and "Participant IDs:" in log:
+                            ids = log.split("Participant IDs: ")[1]
+                            assignments[current_circle].append(f"Participant IDs: {ids}")
+                    
+                    # Display assignment information
+                    if assignments:
+                        st.write("#### Circle Assignments")
+                        for circle, details in assignments.items():
+                            with st.expander(f"Circle {circle}"):
+                                for detail in details:
+                                    st.write(detail)
+                else:
+                    st.info("No optimization results analysis found. Run the optimization with Seattle participants to generate logs.")
+        else:
+            st.info("No Seattle debug logs available. Run the optimization with Seattle participants to generate logs.")
+    
     # Check for matched circles
     if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
         circles_df = st.session_state.matched_circles
