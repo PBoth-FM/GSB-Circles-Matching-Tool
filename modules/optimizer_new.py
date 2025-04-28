@@ -1127,13 +1127,30 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             if len(subregions) > 0:
                                 subregion = str(subregions[0])
                         
-                        # Find meeting time if available
+                        # Find meeting time if available - expanded search for meeting time columns
                         meeting_time = "Unknown"
-                        for time_col in ['Current_Meeting_Time', 'Current_DayTime']:
+                        time_columns = [
+                            'Current_Meeting_Time', 
+                            'Current_DayTime', 
+                            'Current Meeting Time', 
+                            'Current/ Continuing Meeting Time',
+                            'Current_Meeting_Day',
+                            'Current Meeting Day',
+                            'Meeting Day and Time',
+                            'Proposed_NEW_DayTime'
+                        ]
+                        for time_col in time_columns:
                             if time_col in circle_members.columns:
                                 times = circle_members[time_col].dropna().unique()
                                 if len(times) > 0:
                                     meeting_time = str(times[0])
+                                    # Format the meeting time if it doesn't have the format "Day (Time)"
+                                    if "(" not in meeting_time and ")" not in meeting_time:
+                                        # Try to parse day and time components
+                                        if " " in meeting_time:
+                                            day_part, time_part = meeting_time.split(" ", 1)
+                                            meeting_time = f"{day_part} ({time_part})"
+                                    print(f"DEBUG: Using meeting time '{meeting_time}' from column '{time_col}' for circle {circle_id}")
                                     break
                         
                         # Process co-leader preference for max additions
