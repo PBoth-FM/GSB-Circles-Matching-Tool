@@ -340,6 +340,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         post_process_continuing_members
     )
     
+    # Import our new circle reconstruction module
+    from modules.circle_reconstruction import reconstruct_circles_from_results
+    
     # Import diagnostic tools for troubleshooting
     from modules.diagnostic_tools import (
         track_current_continuing_status,
@@ -4484,12 +4487,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"\n🚨 COMPREHENSIVE POST-PROCESSING: Final check for all CURRENT-CONTINUING members")
     
     # Use the new post-process function for comprehensive verification
-    updated_results, updated_unmatched, updated_logs = post_process_continuing_members(
+    # CRITICAL FIX: Now also receives reconstructed circles dataframe
+    updated_results, updated_unmatched, updated_logs, reconstructed_circles = post_process_continuing_members(
         results, 
         unmatched, 
         region_df,
         final_logs
     )
+    
+    # CRITICAL FIX: Update the circles data with our reconstructed circles to ensure UI components
+    # can properly display all circles, including post-processed ones
+    circles = reconstructed_circles if not reconstructed_circles.empty else circles
     
     # Calculate improvement metrics
     original_matched = len(results)

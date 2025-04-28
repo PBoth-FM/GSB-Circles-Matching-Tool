@@ -250,7 +250,7 @@ def post_process_continuing_members(results, unmatched_participants, participant
         circle_eligibility_logs: Dictionary of circle eligibility logs
         
     Returns:
-        tuple: (updated_results, updated_unmatched, updated_logs)
+        tuple: (updated_results, updated_unmatched, updated_logs, updated_circles)
     """
     print("\n🚨 POST-PROCESSING: Final check for CURRENT-CONTINUING members")
     
@@ -361,7 +361,18 @@ def post_process_continuing_members(results, unmatched_participants, participant
     print(f"  - Final results count: {final_results_count}")
     print(f"  - Final unmatched count: {final_unmatched_count}")
     
-    return updated_results, updated_unmatched, updated_logs
+    # CRITICAL FIX: Reconstruct circles dataframe from updated results to ensure all circles appear in UI
+    print("\n🔄 RECONSTRUCTING CIRCLES DATAFRAME AFTER POST-PROCESSING")
+    
+    # Import our circle reconstruction function
+    from modules.circle_reconstruction import reconstruct_circles_from_results
+    
+    # Reconstruct the circles dataframe from the updated results
+    updated_circles = reconstruct_circles_from_results(updated_results)
+    print(f"  Reconstructed {len(updated_circles)} circles from {final_results_count} participants")
+    
+    # Return the updated results, unmatched, logs, and the reconstructed circles
+    return updated_results, updated_unmatched, updated_logs, updated_circles
 
 
 def ensure_current_continuing_matched(results, unmatched, participants_df, circle_ids):
