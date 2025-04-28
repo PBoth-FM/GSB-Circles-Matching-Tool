@@ -3187,10 +3187,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             print(f"  Assigned {new_assignments} participants to new circles")
             
-            # Special check: Houston circle allocations
-            print(f"\n🔍 CHECKING HOUSTON CIRCLE ASSIGNMENTS:")
-            houston_circles = [c_id for c_id in existing_circle_ids if 'HOU' in c_id]
-            for c_id in houston_circles:
+            # Special check: Seattle circle allocations - focus on our test case
+            print(f"\n🔍 CHECKING SEATTLE CIRCLE ASSIGNMENTS:")
+            seattle_circles = [c_id for c_id in existing_circle_ids if 'SEA' in c_id]
+            for c_id in seattle_circles:
                 meta = circle_metadata[c_id]
                 assigned_members = [p_id for p_id, assigned_c_id in circle_assignments.items() if assigned_c_id == c_id]
                 print(f"  Circle {c_id}:")
@@ -3228,19 +3228,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 debug_entry += f"      → Assigned to {assigned_circle} (Subregion: {other_meta['subregion']}, Time: {other_meta['meeting_time']})\n"
                                 
                                 # Calculate preference score for both circles
-                                houston_score = preference_scores.get((p_id, c_id), 0)
+                                circle_score = preference_scores.get((p_id, c_id), 0)
                                 assigned_score = preference_scores.get((p_id, assigned_circle), 0)
-                                print(f"        → Preference scores: {c_id}={houston_score}, {assigned_circle}={assigned_score}")
-                                debug_entry += f"      → Preference scores: {c_id}={houston_score}, {assigned_circle}={assigned_score}\n"
+                                print(f"        → Preference scores: {c_id}={circle_score}, {assigned_circle}={assigned_score}")
+                                debug_entry += f"      → Preference scores: {c_id}={circle_score}, {assigned_circle}={assigned_score}\n"
                                 
-                                decision_factor = 'Better preference match' if assigned_score > houston_score else 'Unknown (investigate constraints)'
+                                decision_factor = 'Better preference match' if assigned_score > circle_score else 'Unknown (investigate constraints)'
                                 print(f"        → Decision factor: {decision_factor}")
                                 debug_entry += f"      → Decision factor: {decision_factor}\n"
                                 
-                                # Special check for test participants and constraint issues
-                                if p_id == '72549701782' and c_id == 'IP-HOU-02':
+                                # Special check for test participants and constraint issues - focus on Seattle
+                                if p_id == '99999000001' and c_id == 'IP-SEA-01':
                                     debug_entry += "      → CRITICAL TEST CASE INVESTIGATION:\n"
-                                    debug_entry += f"        Test participant 72549701782 should match with IP-HOU-02 but didn't\n"
+                                    debug_entry += f"        Seattle test participant should match with IP-SEA-01 but didn't\n"
                                     
                                     # Check if the LP variable was properly created
                                     if (p_id, c_id) in x:
@@ -3251,7 +3251,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                         except:
                                             debug_entry += f"        LP variable exists but couldn't retrieve value\n"
                                     else:
-                                        debug_entry += f"        ERROR: LP variable for (72549701782, IP-HOU-02) doesn't exist!\n"
+                                        debug_entry += f"        ERROR: LP variable for (99999000001, IP-SEA-01) doesn't exist!\n"
                                     
                                     # Check if constraints prevented this match
                                     debug_entry += f"        Investigating constraint conflicts:\n"
@@ -3261,12 +3261,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                     is_host = p_row.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host']
                                     debug_entry += f"          Host status: {'Is a host' if is_host else 'Not a host'}\n"
                                     # Check if preference scores played a role
-                                    debug_entry += f"          Houston score ({houston_score}) vs Assigned circle score ({assigned_score})\n"
+                                    debug_entry += f"          Seattle score ({circle_score}) vs Assigned circle score ({assigned_score})\n"
+                                    # Add information about circle handling mode
+                                    debug_entry += f"          Circle handling mode: {existing_circle_handling}\n"
+                                    debug_entry += f"          NEW participants can match with existing circles: {existing_circle_handling == 'optimize'}\n"
                     else:
                         print(f"    ❌ No compatible participants found despite having capacity")
                         debug_entry += f"  ❌ No compatible participants found despite having capacity\n"
                     
-                    globals()['houston_debug_logs'].append(debug_entry)
+                    # Add to Seattle debug logs if this is a Seattle circle
+                    if 'SEA' in c_id and 'seattle_debug_logs' in st.session_state:
+                        st.session_state.seattle_debug_logs.append(debug_entry)
             
             # Check if any of our test participants were assigned to test circles
             for p_id in test_participants:
@@ -3306,12 +3311,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"  No new members added to existing circle {circle_id}")
                     print(f"    Total members: {updated_circle['member_count']}")
                     
-                    # Check if this circle had capacity but didn't get members (especially for Houston)
+                    # Check if test circles had capacity but didn't get members (focus on Seattle)
                     max_additions = circle_metadata[circle_id]['max_additions']
-                    if max_additions > 0 and 'HOU' in circle_id:
-                        print(f"  ⚠️ WARNING: Houston circle {circle_id} had capacity for {max_additions} members but got none!")
+                    if max_additions > 0 and ('SEA' in circle_id):
+                        print(f"  ⚠️ WARNING: Seattle circle {circle_id} had capacity for {max_additions} members but got none!")
                         print(f"    Meeting time: {circle_metadata[circle_id]['meeting_time']}")
                         print(f"    Subregion: {circle_metadata[circle_id]['subregion']}")
+                        print(f"    Circle handling mode: {existing_circle_handling}")
                         
                         # Check how many compatible participants existed
                         compatible_participants = [p_id for p_id in participants 
@@ -3319,7 +3325,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         if compatible_participants:
                             print(f"    There were {len(compatible_participants)} compatible participants:")
                             for p_id in compatible_participants[:5]:  # Show first 5 only to avoid clutter
-                                print(f"      - Participant {p_id}")
+                                participant_status = "NEW" if p_id in remaining_df['Encoded ID'].values and \
+                                    remaining_df[remaining_df['Encoded ID'] == p_id]['Status'].iloc[0] == 'NEW' else "CONTINUING"
+                                print(f"      - Participant {p_id} ({participant_status})")
+                                
+                                # Special case for our Seattle test participant
+                                if p_id == "99999000001":
+                                    print(f"      ✓ FOUND Seattle test participant! Compatible with {circle_id}")
+                                    if 'seattle_debug_logs' in st.session_state:
+                                        st.session_state.seattle_debug_logs.append(f"Seattle test participant {p_id} is compatible with {circle_id}")
                         else:
                             print(f"    ❌ NO compatible participants found for this circle")
             
