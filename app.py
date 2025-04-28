@@ -48,7 +48,7 @@ if 'config' not in st.session_state:
     st.session_state.config = {
         'debug_mode': True,  # CRITICAL FIX: Force debug mode on to help diagnose compatibility issues
         'min_circle_size': 5,
-        'existing_circle_handling': 'preserve',
+        'existing_circle_handling': 'optimize',  # Changed default from 'preserve' to 'optimize'
         'optimization_weight_location': 3,
         'optimization_weight_time': 2,
         'enable_host_requirement': True
