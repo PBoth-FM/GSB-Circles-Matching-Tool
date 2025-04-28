@@ -3583,6 +3583,117 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # SEATTLE DEBUG: Track optimization results for Seattle circles
     if region == "Seattle" and 'seattle_debug_logs' in locals():
+        # CRITICAL ROOT CAUSE DIAGNOSTIC - Add special pre-optimization diagnostics for Seattle
+        # This is added right before results analysis to check everything before final results
+        seattle_debug_logs.append(f"\n🚨 CRITICAL PRE-OPTIMIZATION DIAGNOSTICS 🚨")
+        
+        # Focus on IP-SEA-01 specifically
+        ip_sea_01_meta = None
+        if 'IP-SEA-01' in circle_metadata:
+            ip_sea_01_meta = circle_metadata['IP-SEA-01']
+            seattle_debug_logs.append(f"\n📊 IP-SEA-01 PROPERTIES:")
+            seattle_debug_logs.append(f"  Location: {ip_sea_01_meta.get('subregion', 'Unknown')}")
+            seattle_debug_logs.append(f"  Meeting time: {ip_sea_01_meta.get('meeting_time', 'Unknown')}")
+            seattle_debug_logs.append(f"  Current members: {len(ip_sea_01_meta.get('members', []))}")
+            seattle_debug_logs.append(f"  Max additions: {ip_sea_01_meta.get('max_additions', 0)}")
+            seattle_debug_logs.append(f"  Is viable: {'Yes' if 'IP-SEA-01' in viable_circles else 'No'}")
+            seattle_debug_logs.append(f"  Is in existing_circle_ids: {'Yes' if 'IP-SEA-01' in existing_circle_ids else 'No'}")
+        
+        # Check for NEW participants that should be compatible with IP-SEA-01
+        new_seattle_participants = []
+        for p_id in participants:
+            if p_id in remaining_df['Encoded ID'].values:
+                p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                if p_row.get('Status') == 'NEW' and p_row.get('Region') == 'Seattle':
+                    new_seattle_participants.append(p_id)
+        
+        if new_seattle_participants:
+            seattle_debug_logs.append(f"\n🔍 NEW SEATTLE PARTICIPANTS: {len(new_seattle_participants)}")
+            
+            # Check compatibility with IP-SEA-01 for all new Seattle participants
+            if 'IP-SEA-01' in existing_circle_ids and ip_sea_01_meta:
+                seattle_debug_logs.append(f"\n🔍 COMPATIBILITY WITH IP-SEA-01:")
+                
+                # Extract circle properties for comparison
+                circle_loc = ip_sea_01_meta.get('subregion', '')
+                circle_time = ip_sea_01_meta.get('meeting_time', '')
+                
+                for p_id in new_seattle_participants:
+                    p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                    
+                    # Get participant preferences
+                    loc1 = p_row.get('first_choice_location', '')
+                    loc2 = p_row.get('second_choice_location', '')
+                    loc3 = p_row.get('third_choice_location', '')
+                    
+                    time1 = p_row.get('first_choice_time', '')
+                    time2 = p_row.get('second_choice_time', '')
+                    time3 = p_row.get('third_choice_time', '')
+                    
+                    # Check both location and time compatibility
+                    loc_match = safe_string_match(loc1, circle_loc) or safe_string_match(loc2, circle_loc) or safe_string_match(loc3, circle_loc)
+                    
+                    # Use is_time_compatible function for each preference
+                    from modules.data_processor import is_time_compatible
+                    time1_match = is_time_compatible(time1, circle_time, is_important=True)
+                    time2_match = is_time_compatible(time2, circle_time, is_important=True)
+                    time3_match = is_time_compatible(time3, circle_time, is_important=True)
+                    
+                    time_match = time1_match or time2_match or time3_match
+                    is_compatible = loc_match and time_match
+                    
+                    # Check if compatibility matches what's in our compatibility matrix
+                    matrix_compat = compatibility.get((p_id, 'IP-SEA-01'), 0) == 1
+                    
+                    # Log the detailed analysis
+                    seattle_debug_logs.append(f"\n  Participant {p_id}:")
+                    seattle_debug_logs.append(f"    Locations: '{loc1}', '{loc2}', '{loc3}'")
+                    seattle_debug_logs.append(f"    Times: '{time1}', '{time2}', '{time3}'")
+                    seattle_debug_logs.append(f"    Location match: {loc_match}")
+                    seattle_debug_logs.append(f"    Time match components: {time1_match}, {time2_match}, {time3_match}")
+                    seattle_debug_logs.append(f"    Overall time match: {time_match}")
+                    seattle_debug_logs.append(f"    SHOULD be compatible: {is_compatible}")
+                    seattle_debug_logs.append(f"    IS marked compatible in matrix: {matrix_compat}")
+                    
+                    # Check if there's a contradiction
+                    if is_compatible != matrix_compat:
+                        seattle_debug_logs.append(f"    🚨 CRITICAL ERROR: Compatibility contradiction detected!")
+                        seattle_debug_logs.append(f"      Direct check says {is_compatible} but matrix has {matrix_compat}")
+                    
+                    # Look for exact location + time matches that should definitely work
+                    if (loc1 == circle_loc and time1 == circle_time) or \
+                       (loc2 == circle_loc and time2 == circle_time) or \
+                       (loc3 == circle_loc and time3 == circle_time):
+                        seattle_debug_logs.append(f"    ✅ EXACT MATCH: This participant has exact location+time match!")
+                        if not matrix_compat:
+                            seattle_debug_logs.append(f"    🚨 CRITICAL ERROR: Exact match participants not marked compatible!")
+        
+        # Check LP constraints and variables for IP-SEA-01
+        seattle_debug_logs.append(f"\n🔍 VARIABLES AND CONSTRAINTS FOR IP-SEA-01:")
+        
+        # Check if variables exist for all new Seattle participants with IP-SEA-01
+        for p_id in new_seattle_participants:
+            var_exists = (p_id, 'IP-SEA-01') in x
+            seattle_debug_logs.append(f"  Variable x[{p_id}, IP-SEA-01] exists: {var_exists}")
+        
+        # Check IP-SEA-01's capacity constraint
+        if 'IP-SEA-01' in circle_metadata:
+            max_additions = circle_metadata['IP-SEA-01'].get('max_additions', 0)
+            seattle_debug_logs.append(f"  Max additions constraint: <= {max_additions}")
+            if max_additions == 0:
+                seattle_debug_logs.append(f"  🚨 CRITICAL ERROR: IP-SEA-01 has max_additions=0! No new members can be added!")
+            
+            # Check if any Seattle participants are compatible
+            compatible_participants = [p_id for p_id in new_seattle_participants 
+                                    if compatibility.get((p_id, 'IP-SEA-01'), 0) == 1]
+            seattle_debug_logs.append(f"  Compatible participants count: {len(compatible_participants)}")
+            if compatible_participants:
+                seattle_debug_logs.append(f"  Compatible participants: {compatible_participants}")
+            else:
+                seattle_debug_logs.append(f"  🚨 CRITICAL ERROR: No compatible participants for IP-SEA-01!")
+                seattle_debug_logs.append(f"  This explains why no new members are being added")
+        
+        # Now continue with the regular results analysis
         seattle_debug_logs.append(f"\n=== OPTIMIZATION RESULTS ANALYSIS ===")
         seattle_debug_logs.append(f"Optimization status: {pulp.LpStatus[prob.status]}")
         
