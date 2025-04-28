@@ -1761,11 +1761,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Track which variables were created for verification
     created_vars = []
     
-    # Keep debug logs but remove special case handling
-    # Leave debug logs to help troubleshoot without forcing specific participants
-    # Track debug logs but without special case handling
-    if 'houston_debug_logs' not in globals():
-        globals()['houston_debug_logs'] = []
+    # Initialize Seattle debug logs in Streamlit session state if needed
+    import streamlit as st
+    if 'seattle_debug_logs' not in st.session_state:
+        st.session_state.seattle_debug_logs = []
     
     # Just use the participants from the remaining dataframe without special cases
     participants = remaining_df['Encoded ID'].tolist()
@@ -1790,12 +1789,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"DEBUG: Test participant {test_id} found in region {region}")
                 print(f"  Status: {first_row.get('Status', 'Unknown')}")
                 print(f"  Region: {first_row.get('Derived_Region', first_row.get('Current_Region', 'Unknown'))}")
-                houston_debug_logs.append(f"Test participant {test_id} found in region {region}")
+                # For Seattle test participant, add to debug logs
+                if region == "Seattle" and test_id == "99999000001":
+                    st.session_state.seattle_debug_logs.append(f"Found Seattle test participant {test_id} in region {region}")
             
-    # Special logging if this is Houston region
-    if "Houston" in region or "Texas" in region:
-        print(f"🔍 Processing region containing Houston: {region}")
-        houston_debug_logs.append(f"Processing region: {region}")
+    # Special logging if this is Seattle region
+    if region == "Seattle":
+        print(f"🔍 Processing Seattle region: {region}")
+        st.session_state.seattle_debug_logs.append(f"Processing Seattle region with '{existing_circle_handling}' mode")
     
     # Create variables for all participant-circle pairs
     for p_id in participants:
@@ -1828,8 +1829,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_houston_circle = 'HOU' in c_id if c_id is not None else False
             if (is_houston_participant or is_houston_circle or is_test_case):
                 print(f"✅ Created LP variable for {p_id} ↔ {c_id}")
-                if is_test_case:
-                    houston_debug_logs.append(f"VERIFIED CREATION of test variable x[{p_id}, {c_id}]")
+                # Focus on Seattle test cases
+                if is_test_case and region == "Seattle":
+                    st.session_state.seattle_debug_logs.append(f"VERIFIED CREATION of test variable x[{p_id}, {c_id}]")
     
     # Participants list already created above
     
@@ -1866,15 +1868,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     for c_id in new_circle_ids:
         y[c_id] = pulp.LpVariable(f"y_{c_id}", cat=pulp.LpBinary)
     
-    # Removed forced test case handling for Houston participants
-    # Let the algorithm work naturally based on compatibility
-    houston_debug_logs.append(f"Forced test case handling REMOVED per user request")
+    # Track test participants without special handling
+    # Use Seattle-specific test case
+    seattle_test_id = '99999000001'
     
-    # Keep variable for debug tracking only
-    houston_test_id = '72549701782'
-    
-    # Just for logging/debugging (no forced variables)
-    houston_debug_logs.append(f"Will track Houston test case participant {houston_test_id} without forcing match")
+    # For Seattle regions, add special diagnostic info
+    if region == "Seattle":
+        st.session_state.seattle_debug_logs.append(f"Processing Seattle with '{existing_circle_handling}' circle handling mode")
+        st.session_state.seattle_debug_logs.append(f"Will track Seattle test participant {seattle_test_id} in normal matching process")
     
     for p_id in participants:
         # Removed special case handling for test participants
@@ -2024,10 +2025,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 
             # For Seattle circles, add special debug logging to enhance visibility 
             is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
-            if region == "Seattle" and is_seattle_circle and 'seattle_debug_logs' in locals():
+            if region == "Seattle" and is_seattle_circle:
                 if is_continuing_member and (pd.isna(first_choice) or first_choice == ''):
-                    seattle_debug_logs.append(f"  ⚠️ CONTINUING MEMBER COMPATIBILITY: Member has empty time preference")
-                    seattle_debug_logs.append(f"  This member's time match = {time_match} for circle {c_id} with time '{time_slot}'")
+                    st.session_state.seattle_debug_logs.append(f"  ⚠️ CONTINUING MEMBER COMPATIBILITY: Member has empty time preference")
+                    st.session_state.seattle_debug_logs.append(f"  This member's time match = {time_match} for circle {c_id} with time '{time_slot}'")
             
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
@@ -2150,38 +2151,38 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
             
             # If this is Seattle region, track all compatibility checks for Seattle circles
-            if region == "Seattle" and is_seattle_circle and 'seattle_debug_logs' in locals():
+            if region == "Seattle" and is_seattle_circle:
                 # Check if compatibility was determined for this pair
                 compat_result = "COMPATIBLE" if is_compatible else "INCOMPATIBLE"
                 
                 # Add detailed compatibility check to logs
-                seattle_debug_logs.append(f"\nCOMPATIBILITY CHECK: Participant {p_id} with Circle {c_id} = {compat_result}")
-                seattle_debug_logs.append(f"  Location Match: {loc_match}")
-                seattle_debug_logs.append(f"  Time Match: {time_match}")
+                st.session_state.seattle_debug_logs.append(f"\nCOMPATIBILITY CHECK: Participant {p_id} with Circle {c_id} = {compat_result}")
+                st.session_state.seattle_debug_logs.append(f"  Location Match: {loc_match}")
+                st.session_state.seattle_debug_logs.append(f"  Time Match: {time_match}")
                 
                 # Log detailed time compatibility checks with enhanced parameters
-                seattle_debug_logs.append(f"  Detailed time compatibility:")
-                seattle_debug_logs.append(f"    Circle time: '{time_slot}'")
-                seattle_debug_logs.append(f"    Participant status: {p_row.get('Status', 'Unknown')}")
-                seattle_debug_logs.append(f"    Participant times:")
-                seattle_debug_logs.append(f"      1st choice: '{first_choice}' → {is_time_compatible(first_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
-                seattle_debug_logs.append(f"      2nd choice: '{second_choice}' → {is_time_compatible(second_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
-                seattle_debug_logs.append(f"      3rd choice: '{third_choice}' → {is_time_compatible(third_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
+                st.session_state.seattle_debug_logs.append(f"  Detailed time compatibility:")
+                st.session_state.seattle_debug_logs.append(f"    Circle time: '{time_slot}'")
+                st.session_state.seattle_debug_logs.append(f"    Participant status: {p_row.get('Status', 'Unknown')}")
+                st.session_state.seattle_debug_logs.append(f"    Participant times:")
+                st.session_state.seattle_debug_logs.append(f"      1st choice: '{first_choice}' → {is_time_compatible(first_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
+                st.session_state.seattle_debug_logs.append(f"      2nd choice: '{second_choice}' → {is_time_compatible(second_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
+                st.session_state.seattle_debug_logs.append(f"      3rd choice: '{third_choice}' → {is_time_compatible(third_choice, time_slot, is_continuing_member=is_continuing_member, is_circle_time=True)}")
                 
                 # Extra diagnostics for IP-SEA-01 specifically
                 if c_id == 'IP-SEA-01':
-                    seattle_debug_logs.append(f"  CRITICAL IP-SEA-01 CHECK:")
-                    seattle_debug_logs.append(f"    Participant status: {p_row.get('Status', 'Unknown')}")
+                    st.session_state.seattle_debug_logs.append(f"  CRITICAL IP-SEA-01 CHECK:")
+                    st.session_state.seattle_debug_logs.append(f"    Participant status: {p_row.get('Status', 'Unknown')}")
                     
                     if not is_compatible:
                         if not loc_match:
-                            seattle_debug_logs.append(f"    Incompatibility reason: Location mismatch")
-                            seattle_debug_logs.append(f"      Circle location: '{subregion}'")
-                            seattle_debug_logs.append(f"      Participant locations: {loc_prefs}")
+                            st.session_state.seattle_debug_logs.append(f"    Incompatibility reason: Location mismatch")
+                            st.session_state.seattle_debug_logs.append(f"      Circle location: '{subregion}'")
+                            st.session_state.seattle_debug_logs.append(f"      Participant locations: {loc_prefs}")
                         elif not time_match:
-                            seattle_debug_logs.append(f"    Incompatibility reason: Time mismatch")
-                            seattle_debug_logs.append(f"      Circle time: '{time_slot}'")
-                            seattle_debug_logs.append(f"      Participant times: {time_prefs}")
+                            st.session_state.seattle_debug_logs.append(f"    Incompatibility reason: Time mismatch")
+                            st.session_state.seattle_debug_logs.append(f"      Circle time: '{time_slot}'")
+                            st.session_state.seattle_debug_logs.append(f"      Participant times: {time_prefs}")
             
             # SPECIAL DEBUG FOR TEST CASE - 73177784103 and IP-SIN-01
             is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01')
@@ -3002,23 +3003,31 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 if c_id in new_circle_ids:
                     prob += always_hosts + two_sometimes >= y[c_id], f"host_requirement_{c_id}"
                 
-                # [CONSULTANT RECOMMENDATION] - Step 3: Temporarily relax host requirements for IP-HOU-02
-                # For existing circles, we normally wouldn't add this constraint, but we'll skip this check for Houston
-                # to see if that's the source of the conflict
-                if c_id == 'IP-HOU-02':
-                    # Log this special case
-                    houston_debug_logs.append(f"RELAXING CONSTRAINT: NOT enforcing host requirements for IP-HOU-02")
-                    print(f"🔧 RELAXING: Not enforcing host requirements for IP-HOU-02")
+                # [FOCUS ON SEATTLE] We should focus on Seattle test cases instead of Houston
+                # For Seattle test circle IP-SEA-01, we may need to check if constraints are preventing matching
+                if c_id == 'IP-SEA-01' and region == "Seattle":
+                    # Add diagnostic notes about this circle's constraints
+                    print(f"🔧 SEATTLE TEST: Checking host requirements for IP-SEA-01")
+                    st.session_state.seattle_debug_logs.append(f"Checking host requirements for IP-SEA-01")
                     
-                    # We don't add any constraint here, effectively relaxing it
+                    # We still apply normal constraint here - we're just logging the values
                     
-                    # CRITICAL FIX: Add the Houston test participant as a host for IP-HOU-02
-                    # This ensures host requirements will be satisfied
-                    if '72549701782' in participants:
-                        print(f"🔴 LAST RESORT: Considering test participant 72549701782 as an 'Always' host")
-                        houston_debug_logs.append(f"Considering test participant 72549701782 as an 'Always' host")
+                    # ENHANCED DIAGNOSTIC: Track if test participant has host attributes
+                    if '99999000001' in participants:
+                        host_status = "Unknown"
+                        for p in circle_participants:
+                            if p[0] == '99999000001':
+                                if p in always_hosts_list:
+                                    host_status = "Always Host"
+                                elif p in sometimes_hosts_list:
+                                    host_status = "Sometimes Host"
+                                else:
+                                    host_status = "Not a Host"
                         
-                        # This will be used in the objective function to guarantee assignment
+                        print(f"  Seattle test participant 99999000001 host status: {host_status}")
+                        st.session_state.seattle_debug_logs.append(f"Seattle test participant host status: {host_status}")
+                        
+                        # Don't modify objective function - this is just diagnostic
                         # We'll force the solver to place this participant in their designated circle
     
     if debug_mode:
