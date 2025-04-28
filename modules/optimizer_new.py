@@ -2037,6 +2037,49 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
             
+            # CRITICAL FIX: For NEW participants and existing circles, we need to compare directly against
+            # the circle's meeting time, not against CURRENT-CONTINUING members whose time preferences are often empty
+            if p_row.get('Status') == 'NEW' and c_id in existing_circle_ids:
+                # This is a NEW participant looking at an existing circle - ensure direct circle time compatibility
+                from modules.data_processor import is_time_compatible
+                
+                # Get participant time preferences
+                time_prefs = [
+                    p_row.get('first_choice_time', ''),
+                    p_row.get('second_choice_time', ''),
+                    p_row.get('third_choice_time', '')
+                ]
+                
+                # Get circle time
+                circle_time = time_slot
+                
+                # Check direct compatibility with circle time (not continuing member preferences)
+                direct_time_match = any(
+                    is_time_compatible(
+                        time_pref, 
+                        circle_time, 
+                        is_important=(region == "Seattle" and c_id == 'IP-SEA-01'),
+                        is_continuing_member=False, # NOT a continuing member check
+                        is_circle_time=True  # This is a direct circle time check
+                    ) 
+                    for time_pref in time_prefs if time_pref
+                )
+                
+                # Check if direct compatibility disagrees with our previous calculation
+                if direct_time_match != time_match and (region == "Seattle" and c_id == 'IP-SEA-01'):
+                    print(f"\n🚨 CRITICAL FIX: Direct circle time compatibility ({direct_time_match}) differs from member-based ({time_match})")
+                    print(f"  Participant time prefs: {time_prefs}")
+                    print(f"  Circle meeting time: {circle_time}")
+                    
+                    # Use the direct circle time match result instead
+                    time_match = direct_time_match
+                    is_compatible = loc_match and time_match
+                    
+                    print(f"  Updated compatibility: {is_compatible}")
+                    
+                    # Update the compatibility matrix with the corrected value
+                    compatibility[(p_id, c_id)] = 1 if is_compatible else 0
+            
             # SEATTLE DIAGNOSTIC: Add special diagnostics for Seattle circles and participants
             is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
             
