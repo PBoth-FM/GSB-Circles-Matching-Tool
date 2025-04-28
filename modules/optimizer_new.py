@@ -1930,6 +1930,24 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
             is_circle_time = True  # The time_slot is always the circle's meeting time
             
+            # CRITICAL FIX: Check if CURRENT-CONTINUING participant is looking at their current circle
+            # If so, they should always be compatible regardless of preferences
+            current_circle_id = None
+            if is_continuing_member:
+                # Find the participant's current circle ID
+                for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
+                    if circle_col in p_row and not pd.isna(p_row[circle_col]) and str(p_row[circle_col]).strip() != '':
+                        current_circle_id = str(p_row[circle_col]).strip()
+                        break
+                
+                # If this is the participant's current circle, force compatibility
+                if current_circle_id and current_circle_id == c_id:
+                    # Force this to be compatible regardless of time and location preferences
+                    # This ensures CURRENT-CONTINUING participants stay in their current circles
+                    loc_match = True
+                    time_match = True
+                    print(f"  🔧 CURRENT-CONTINUING OVERRIDE: Forced compatibility for {p_id} with current circle {c_id}")
+            
             # Special handling for NEW participants - add debug logging
             is_new_participant = p_row.get('Status') == 'NEW'
             
