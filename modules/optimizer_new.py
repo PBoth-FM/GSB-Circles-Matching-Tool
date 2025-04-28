@@ -1919,6 +1919,46 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_compatible = (loc_match and time_match)
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
             
+            # ADD TO PARTICIPANT'S COMPATIBLE CIRCLES LIST IF COMPATIBLE
+            if is_compatible and c_id not in participant_compatible_circles[p_id]:
+                participant_compatible_circles[p_id].append(c_id)
+            
+            # SEATTLE DIAGNOSTIC: Add special diagnostics for Seattle circles and participants
+            is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
+            
+            # If this is Seattle region, track all compatibility checks for Seattle circles
+            if region == "Seattle" and is_seattle_circle:
+                # Check if compatibility was determined for this pair
+                compat_result = "COMPATIBLE" if is_compatible else "INCOMPATIBLE"
+                
+                # Add detailed compatibility check to logs
+                seattle_debug_logs.append(f"\nCOMPATIBILITY CHECK: Participant {p_id} with Circle {c_id} = {compat_result}")
+                seattle_debug_logs.append(f"  Location Match: {loc_match}")
+                seattle_debug_logs.append(f"  Time Match: {time_match}")
+                
+                # Log detailed time compatibility checks
+                seattle_debug_logs.append(f"  Detailed time compatibility:")
+                seattle_debug_logs.append(f"    Circle time: '{time_slot}'")
+                seattle_debug_logs.append(f"    Participant times:")
+                seattle_debug_logs.append(f"      1st choice: '{first_choice}' → {is_time_compatible(first_choice, time_slot)}")
+                seattle_debug_logs.append(f"      2nd choice: '{second_choice}' → {is_time_compatible(second_choice, time_slot)}")
+                seattle_debug_logs.append(f"      3rd choice: '{third_choice}' → {is_time_compatible(third_choice, time_slot)}")
+                
+                # Extra diagnostics for IP-SEA-01 specifically
+                if c_id == 'IP-SEA-01':
+                    seattle_debug_logs.append(f"  CRITICAL IP-SEA-01 CHECK:")
+                    seattle_debug_logs.append(f"    Participant status: {p_row.get('Status', 'Unknown')}")
+                    
+                    if not is_compatible:
+                        if not loc_match:
+                            seattle_debug_logs.append(f"    Incompatibility reason: Location mismatch")
+                            seattle_debug_logs.append(f"      Circle location: '{subregion}'")
+                            seattle_debug_logs.append(f"      Participant locations: {loc_prefs}")
+                        elif not time_match:
+                            seattle_debug_logs.append(f"    Incompatibility reason: Time mismatch")
+                            seattle_debug_logs.append(f"      Circle time: '{time_slot}'")
+                            seattle_debug_logs.append(f"      Participant times: {time_prefs}")
+            
             # SPECIAL DEBUG FOR TEST CASE - 73177784103 and IP-SIN-01
             is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01')
             
@@ -1929,10 +1969,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             if is_east_bay_case:
                 print(f"\n🔍 CRITICAL EAST BAY COMPATIBILITY DIAGNOSTIC:")
                 print(f"  Participant: 76096461703, Circle: IP-EAB-07")
-                print(f"  Participant locations: {p_locs}")
-                print(f"  Circle location: {c_loc}")
+                print(f"  Participant locations: {loc_prefs}")
+                print(f"  Circle location: {subregion}")
                 print(f"  Location match: {loc_match}")
-                print(f"  Participant times: {p_times}")
+                print(f"  Participant times: {time_prefs}")
                 print(f"  Circle time: {time_slot}")
                 print(f"  Time match: {time_match}")
                 print(f"  Overall compatibility: {is_compatible}")
@@ -1942,7 +1982,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     # If it's a time mismatch, show detailed comparison
                     if not time_match and loc_match:
                         print(f"  Detailed time comparison:")
-                        for i, p_time in enumerate(p_times):
+                        for i, p_time in enumerate(time_prefs):
                             if p_time and isinstance(p_time, str):
                                 print(f"    Preference {i+1}: '{p_time}' vs '{time_slot}' → {is_time_compatible(p_time, time_slot)}")
                                 
@@ -2462,6 +2502,43 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         
                     # Skip adding the incompatibility constraint
                     continue
+                
+                # SEATTLE DIAGNOSTIC: Track constraint application for Seattle circles
+                if region == "Seattle" and c_id.startswith('IP-SEA-'):
+                    # Log the incompatibility constraint being added
+                    seattle_debug_logs.append(f"\nINCOMPATIBILITY CONSTRAINT: {p_id} and {c_id}")
+                    
+                    # Find the participant data
+                    if p_id in participants:
+                        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                        if not matching_rows.empty:
+                            p_row = matching_rows.iloc[0]
+                            # Get participant preferences
+                            locations = [p_row['first_choice_location'], p_row['second_choice_location'], p_row['third_choice_location']]
+                            times = [p_row['first_choice_time'], p_row['second_choice_time'], p_row['third_choice_time']]
+                            
+                            # Get circle data
+                            circle_loc = circle_metadata[c_id]['subregion'] if c_id in circle_metadata else "Unknown"
+                            circle_time = circle_metadata[c_id]['meeting_time'] if c_id in circle_metadata else "Unknown"
+                            
+                            # Check location and time compatibility explicitly
+                            from modules.data_processor import is_time_compatible
+                            loc_match = any(safe_string_match(loc, circle_loc) for loc in locations if loc)
+                            time_matches = [is_time_compatible(t, circle_time, is_important=True) for t in times if t]
+                            time_match = any(time_matches)
+                            
+                            # Log the detailed compatibility check
+                            seattle_debug_logs.append(f"  Participant {p_id}:")
+                            seattle_debug_logs.append(f"    Status: {p_row.get('Status', 'Unknown')}")
+                            seattle_debug_logs.append(f"    Locations: {locations}")
+                            seattle_debug_logs.append(f"    Times: {times}")
+                            seattle_debug_logs.append(f"  Circle {c_id}:")
+                            seattle_debug_logs.append(f"    Location: {circle_loc}")
+                            seattle_debug_logs.append(f"    Time: {circle_time}")
+                            seattle_debug_logs.append(f"  Compatibility:")
+                            seattle_debug_logs.append(f"    Location match: {loc_match}")
+                            seattle_debug_logs.append(f"    Time matches: {time_matches}")
+                            seattle_debug_logs.append(f"    Overall: INCOMPATIBLE (constraint added)")
                 
                 prob += x[(p_id, c_id)] == 0, f"incompatible_{p_id}_{c_id}"
     
