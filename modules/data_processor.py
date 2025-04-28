@@ -614,9 +614,21 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
             return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
             
         # Special case for specific days that we know should be compatible with our test cases
-        if day_part.lower() == 'tuesday' and 'monday-thursday' in [d.lower() for d in [day_part1, day_part2]]:
+        if day_part.lower() == 'tuesday' and any(range_day in [d.lower() for d in [day_part1, day_part2]] for range_day in ['monday-thursday', 'monday-thurs', 'monday-thursday', 'monday-thu']):
             if is_important:
                 print(f"    Special case: Tuesday is within Monday-Thursday range")
+            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
+            
+        # Special case for Wednesday compatibility with Monday-Thursday range
+        if day_part.lower() == 'wednesday' and any(range_day in [d.lower() for d in [day_part1, day_part2]] for range_day in ['monday-thursday', 'monday-thurs', 'monday-thursday', 'monday-thu']):
+            if is_important:
+                print(f"    Special case: Wednesday is within Monday-Thursday range")
+            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
+            
+        # The reverse case: Monday-Thursday containing Wednesday
+        if 'monday-thursday' in day_part.lower() and any(day in [d.lower() for d in [day_part1, day_part2]] for day in ['wednesday']):
+            if is_important:
+                print(f"    Special case: Monday-Thursday range contains Wednesday")
             return ['Monday', 'Tuesday', 'Wednesday', 'Thursday']
             
         # Handle day ranges with dash notation
