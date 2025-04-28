@@ -438,6 +438,37 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Note: We should only add the test participant when processing the Houston/Texas region
     houston_debug_logs.append(f"TEST PARTICIPANT CHECK: Processing {region} region")
     
+    # Add Seattle test participant to diagnose Seattle circle matching
+    if region == "Seattle":
+        print(f"\n🔍 SEATTLE REGION PROCESSING - Adding test participant")
+        seattle_test_id = "99999000001"  # Made-up ID for test purposes
+        
+        # Check if we already have this test ID
+        if seattle_test_id not in region_df['Encoded ID'].values:
+            # Create a test participant with proper fields
+            test_participant_data = {
+                'Encoded ID': seattle_test_id,
+                'Status': 'NEW',
+                'Current_Region': 'Seattle',
+                'Current_Subregion': 'Seattle',
+                'first_choice_location': 'Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)',  # Match IP-SEA-01 location
+                'second_choice_location': 'Bellevue/Mercer Island/Eastside',
+                'third_choice_location': 'South Seattle',
+                'first_choice_time': 'Wednesday (Evenings)',  # Direct match with IP-SEA-01
+                'second_choice_time': 'Monday-Thursday (Evenings)',  # Also should match
+                'third_choice_time': 'M-Th (Evenings)',  # Also should match
+                'Requested_Region': 'Seattle',
+                'Region': 'Seattle',
+                'Derived_Region': 'Seattle'  # Add derived region to ensure proper processing
+            }
+            
+            # Add this participant to the region dataframe
+            region_df = pd.concat([region_df, pd.DataFrame([test_participant_data])], ignore_index=True)
+            print(f"✅ DIAGNOSTIC: Test participant {seattle_test_id} added to Seattle region dataset")
+            print(f"  This participant should be compatible with IP-SEA-01 based on location and time")
+        else:
+            print(f"ℹ️ Seattle test participant {seattle_test_id} already exists in dataset")
+    
     # Only add the Houston test participant when processing Houston or Texas region
     if (region == "Houston" or region == "Texas") and houston_test_id not in region_df['Encoded ID'].values:
         houston_debug_logs.append(f"TEST PARTICIPANT MISSING: Adding {houston_test_id} to dataset")
@@ -1963,8 +1994,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # capacity, we need to directly compare with the circle meeting time
             # rather than relying on continuing members' times (which are often empty)
             if is_new_participant and c_id in existing_circle_ids:
-                # For debugging Seattle circles or test cases with detailed logging
-                enable_detailed_debugging = is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01')
+                # 🚨 CRITICAL FIX: ALWAYS force detailed debugging for Seattle IP-SEA-01
+                is_seattle_circle = region == "Seattle" and c_id == 'IP-SEA-01'
+                enable_detailed_debugging = is_test_case or is_seattle_circle
+                
+                # For debugging Seattle circles, add extra visibility
+                if is_seattle_circle:
+                    print(f"\n🚨 CRITICAL SEATTLE COMPATIBILITY CHECK")
+                    print(f"  NEW Participant: {p_id}")
+                    print(f"  Target Circle: {c_id}")
+                    print(f"  Circle subregion: {subregion}")
+                    print(f"  Circle meeting time: {time_slot}")
+                    print(f"  Participant location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
+                    print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
                 
                 if enable_detailed_debugging:
                     print(f"\n🔍 NEW PARTICIPANT-CIRCLE COMPATIBILITY CHECK:")
