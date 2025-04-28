@@ -339,6 +339,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         ensure_current_continuing_matched
     )
     
+    # Import diagnostic tools for troubleshooting
+    from modules.diagnostic_tools import (
+        track_current_continuing_status,
+        track_matching_outcomes,
+        add_debug_constraints_log
+    )
+    
     # CRITICAL DIAGNOSTIC: Always enable debug mode for Seattle region
     if region == 'Seattle':
         debug_mode = True
@@ -1750,6 +1757,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"  Example potential new circle: {circle_id}")
                 print(f"    Subregion: {meta['subregion']}")
                 print(f"    Meeting time: {meta['meeting_time']}") 
+    
+    # ***************************************************************
+    # DIAGNOSTIC STEP: TRACK CURRENT-CONTINUING MEMBERS
+    # ***************************************************************
+    
+    # Track CURRENT-CONTINUING members through our diagnostic tools
+    print("\n🔍 DIAGNOSTIC: Tracking CURRENT-CONTINUING members")
+    continuing_debug_info = track_current_continuing_status(region_df)
+    print(f"  Identified {continuing_debug_info['total_continuing_members']} CURRENT-CONTINUING members in {region} region")
+    print(f"  Success rates for column detection methods:")
+    print(f"    - Standard method: {continuing_debug_info['standard_method_success_rate']:.2%}")
+    print(f"    - Hybrid method: {continuing_debug_info['hybrid_method_success_rate']:.2%}")
+    print(f"    - Aggressive method: {continuing_debug_info['aggressive_method_success_rate']:.2%}")
+    print(f"    - Any method: {continuing_debug_info['any_method_success_rate']:.2%}")
     
     # ***************************************************************
     # STEP 1.5: CRITICAL FIXES FOR CURRENT-CONTINUING MEMBERS AND OPTIMIZE MODE
@@ -4307,6 +4328,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         existing_circle_ids
     )
     print(f"✅ Final check complete for CURRENT-CONTINUING members in {region} region")
+
+    # ***************************************************************
+    # DIAGNOSTIC STEP: TRACK FINAL MATCHING OUTCOMES FOR CONTINUING MEMBERS
+    # ***************************************************************
+    print("\n🔍 DIAGNOSTIC: Tracking final matching outcomes for CURRENT-CONTINUING members")
+    matching_outcomes = track_matching_outcomes(continuing_debug_info, results, unmatched)
+    print(f"  Match rate for CURRENT-CONTINUING members: {matching_outcomes['match_rate']:.2%}")
+    print(f"  Correct match rate: {matching_outcomes['correct_match_rate']:.2%}")
+    
+    if matching_outcomes['unmatched_members'] > 0:
+        print(f"  ⚠️ {matching_outcomes['unmatched_members']} CURRENT-CONTINUING members remained unmatched")
+        print(f"  Top unmatched reasons:")
+        for reason, count in sorted(matching_outcomes.get('unmatched_reason_frequency', {}).items(), key=lambda x: x[1], reverse=True)[:3]:
+            print(f"    - {reason}: {count} members")
 
     # Return the final logs copy
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
