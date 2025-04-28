@@ -1759,20 +1759,42 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Find the column containing current circle IDs
     current_col = None
-    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID', 'Current Circle', 'Current_Circle']
+    
+    # Print available columns for debugging
+    print(f"  Available columns: {region_df.columns.tolist()}")
     
     # First try direct matches
     for col in potential_columns:
         if col in region_df.columns:
             current_col = col
+            print(f"  ✅ Found exact column match: '{col}'")
             break
             
     # If not found, try case-insensitive matching
     if current_col is None:
         for col in region_df.columns:
-            if col.lower() in [c.lower() for c in potential_columns]:
+            if any(potential.lower() in col.lower() for potential in potential_columns):
                 current_col = col
+                print(f"  ✅ Found case-insensitive match: '{col}'")
                 break
+                
+    # If still not found, try to search for any column with 'circle' and 'id' or 'current'
+    if current_col is None:
+        for col in region_df.columns:
+            if 'circle' in col.lower() and ('id' in col.lower() or 'current' in col.lower()):
+                current_col = col
+                print(f"  ✅ Found fuzzy match: '{col}'")
+                break
+                
+    # Print the result of our search
+    if current_col:
+        print(f"  Using column '{current_col}' for current circle IDs")
+        # Show some sample values
+        non_null_values = region_df[region_df[current_col].notna()][current_col].unique()
+        print(f"  Sample values: {non_null_values[:5].tolist() if len(non_null_values) > 0 else 'No non-null values'}")
+    else:
+        print("  ⚠️ No column found for current circle IDs - this will affect CURRENT-CONTINUING assignments")
     
     # Initialize pre-assignment tracking
     pre_assigned_participants = {}  # Maps participant IDs to their assigned circle
@@ -3484,18 +3506,47 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         else:
             # CRITICAL FIX: If this is a CURRENT-CONTINUING participant, they should never be unmatched
             # This should not happen due to our pre-assignment, but we add an extra safety check
-            if p_row.get('Status') == 'CURRENT-CONTINUING' and current_col and not pd.isna(p_row.get(current_col)):
-                # This should never happen - log error and attempt recovery
-                print(f"🚨 CRITICAL ERROR: CURRENT-CONTINUING participant {p_id} with circle {p_row.get(current_col)} was not assigned!")
+            if p_row.get('Status') == 'CURRENT-CONTINUING':
+                print(f"🔍 CHECKING CURRENT-CONTINUING participant {p_id}")
                 
-                # Attempt recovery by manually assigning to their current circle
-                current_circle = str(p_row.get(current_col)).strip()
-                participant_dict['proposed_NEW_circles_id'] = current_circle
-                participant_dict['location_score'] = 3  # Maximum score for direct assignment
-                participant_dict['time_score'] = 3      # Maximum score for direct assignment
-                participant_dict['total_score'] = 6     # Sum of loc_score and time_score
+                # Look for ANY column that might contain the current circle ID
+                current_circle = None
                 
-                print(f"🚨 CRITICAL FIX: Manually assigned {p_id} to {current_circle}")
+                # Check all available columns for any that mention "circle" and "current"
+                for col in p_row.index:
+                    col_lower = str(col).lower()
+                    if ('circle' in col_lower) and ('current' in col_lower or 'id' in col_lower):
+                        if not pd.isna(p_row[col]) and p_row[col]:
+                            current_circle = str(p_row[col]).strip()
+                            print(f"  Found current circle '{current_circle}' in column '{col}'")
+                            break
+                
+                # If still not found, try a more aggressive approach looking for any circle-related data
+                if not current_circle:
+                    for col in p_row.index:
+                        col_lower = str(col).lower()
+                        if 'circle' in col_lower:
+                            if not pd.isna(p_row[col]) and p_row[col]:
+                                circle_value = str(p_row[col]).strip()
+                                # Check if this looks like a circle ID (contains letters, numbers, and dashes)
+                                if '-' in circle_value and any(c.isalpha() for c in circle_value) and any(c.isdigit() for c in circle_value):
+                                    current_circle = circle_value
+                                    print(f"  Found potential circle ID '{current_circle}' in column '{col}'")
+                                    break
+                
+                # If we found a current circle, manually assign the participant
+                if current_circle:
+                    print(f"🚨 CRITICAL ERROR: CURRENT-CONTINUING participant {p_id} with circle {current_circle} was not assigned!")
+                    
+                    # Attempt recovery by manually assigning to their current circle
+                    participant_dict['proposed_NEW_circles_id'] = current_circle
+                    participant_dict['location_score'] = 3  # Maximum score for direct assignment
+                    participant_dict['time_score'] = 3      # Maximum score for direct assignment
+                    participant_dict['total_score'] = 6     # Sum of loc_score and time_score
+                    
+                    print(f"🚨 CRITICAL FIX: Manually assigned {p_id} to {current_circle}")
+                else:
+                    print(f"  No current circle found for CURRENT-CONTINUING participant {p_id} - cannot auto-assign")
             else:
                 # This participant is unmatched
                 participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
