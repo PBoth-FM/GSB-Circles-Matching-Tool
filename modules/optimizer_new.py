@@ -3040,33 +3040,27 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     prob.solve(solver)
     solve_time = time.time() - start_time
     
-    # [CONSULTANT RECOMMENDATION] - Step 1: Check LP solve status
+    # Check LP solve status
     if pulp.LpStatus[prob.status] != 'Optimal':
         print(f"\n❌ LP Solver Status: {pulp.LpStatus[prob.status]}")
         print(f"  This indicates the problem may be infeasible!")
         
-        # Add to Houston debug logs
-        houston_debug_logs.append(f"CRITICAL ERROR: LP Solver returned non-optimal status: {pulp.LpStatus[prob.status]}")
-        houston_debug_logs.append("This likely means constraints are conflicting and no feasible solution exists.")
-        
-        # [CONSULTANT RECOMMENDATION] - Step 6: If infeasible, write LP file for inspection
+        # If infeasible, write LP file for inspection
         try:
             with open(f"diagnostics_{region}.lp", "w") as f:
                 prob.writeLP(f)
             print(f"  Wrote LP file to diagnostics_{region}.lp for inspection")
-            houston_debug_logs.append(f"LP file written to diagnostics_{region}.lp for detailed inspection")
         except Exception as e:
             print(f"  Error writing LP file: {str(e)}")
     
-    # [CONSULTANT RECOMMENDATION] - Step 2: Log the value of forced variables
-    target_pair = ('72549701782', 'IP-HOU-02')
-    if target_pair in x:
-        var_value = pulp.value(x[target_pair])
-        print(f"Post-solve value of x[{target_pair}] = {var_value}")
-        houston_debug_logs.append(f"Houston test case variable value: x[{target_pair}] = {var_value}")
-    else:
-        print(f"⚠️ LP variable for {target_pair} not found!")
-        houston_debug_logs.append(f"CRITICAL: Houston test case variable x[{target_pair}] was not created!")
+    # For Seattle focus - check if test participant is properly considered
+    if region == "Seattle":
+        target_pair = ('99999000001', 'IP-SEA-01')
+        if target_pair in x:
+            var_value = pulp.value(x[target_pair])
+            print(f"✓ Seattle test case: value of x[{target_pair}] = {var_value}")
+        else:
+            print(f"⚠️ Seattle test case: LP variable for {target_pair} not found!")
     
     if debug_mode:
         print(f"\n🧮 OPTIMIZATION RESULTS:")
@@ -3077,15 +3071,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     results = []
     circle_assignments = {}
     
-    # [CRITICAL FIX - LAST RESORT OVERRIDE]
-    # Force Houston test participant into results regardless of solver outcome
-    # This ensures the test case always passes
-    houston_test_id = '72549701782'
-    houston_test_circle = 'IP-HOU-02'
+    # [SEATTLE FOCUS] Check if Seattle test participant was matched to IP-SEA-01
+    # This is the key compatibility case we're testing
+    seattle_test_id = '99999000001'
+    seattle_test_circle = 'IP-SEA-01'
     
-    # Log this special case handling
-    print(f"🔴 CHECKING IF OVERRIDE NEEDED FOR HOUSTON TEST CASE")
-    houston_debug_logs.append("Checking if Houston test case override is needed")
+    # Log this for test case tracking
+    print(f"🔍 CHECKING IF SEATTLE TEST CASE MATCHED SUCCESSFULLY")
     
     # Process assignments to circles
     if prob.status == pulp.LpStatusOptimal:
@@ -3213,11 +3205,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     compatible_participants = [p_id for p_id in participants if compatibility.get((p_id, c_id), 0) == 1]
                     print(f"    ⚠️ WARNING: Found {len(compatible_participants)} compatible participants but none were assigned!")
                     
-                    # Store this warning in a global debug log for UI display
-                    if 'houston_debug_logs' not in globals():
-                        globals()['houston_debug_logs'] = []
-                    
-                    debug_entry = f"HOUSTON CIRCLE {c_id}:\n"
+                    # Add Seattle-focused debugging (replaced Houston logging)
+                    debug_entry = f"CIRCLE {c_id}:\n"
                     debug_entry += f"  Meeting time: {meta['meeting_time']}\n"
                     debug_entry += f"  Subregion: {meta['subregion']}\n"
                     debug_entry += f"  Maximum additions: {meta['max_additions']}\n"
@@ -3702,12 +3691,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Store debug logs in session state
     import streamlit as st
-    if 'houston_debug_logs' not in st.session_state:
-        st.session_state.houston_debug_logs = []
     
-    # Add the current debug logs to session state
-    if 'houston_debug_logs' in globals():
-        st.session_state.houston_debug_logs = globals()['houston_debug_logs']
+    # Create Seattle debug logs in session state
+    if 'seattle_debug_logs' not in st.session_state:
+        st.session_state.seattle_debug_logs = []
+        
+    # Add Seattle test case debugging info
+    if region == "Seattle":
+        seattle_debug_info = f"Seattle test participant matching check completed"
+        if seattle_debug_info not in st.session_state.seattle_debug_logs:
+            st.session_state.seattle_debug_logs.append(seattle_debug_info)
     
     # Store circle capacity info for debugging why circles aren't getting new members
     if 'circle_capacity_debug' not in st.session_state:
