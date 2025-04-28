@@ -364,6 +364,13 @@ def render_match_tab():
             
             # Create expandable section for advanced options
             with st.expander("Advanced Options"):
+                # Add Circle Handling Mode selector
+                st.selectbox("Existing Circle Handling Mode",
+                           options=["optimize", "preserve", "dissolve"],
+                           index=0, # Default to "optimize" to allow NEW participants to match with continuing circles
+                           key="existing_circle_handling",
+                           help="'optimize' allows NEW participants to join continuing circles while preserving CURRENT-CONTINUING members. 'preserve' prevents NEW participants from joining existing circles. 'dissolve' ignores current circles and creates all new ones.")
+                
                 st.selectbox("Circle Size Preference", 
                             options=["Balanced", "Larger Circles", "Smaller Circles"],
                             index=0,
