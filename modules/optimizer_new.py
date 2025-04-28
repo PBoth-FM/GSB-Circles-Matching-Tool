@@ -2902,9 +2902,21 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             print(f"  Current compatibility in matrix: {compatibility.get((p_id, c_id), 0)}")
                             print(f"  Compatibility should be: {1 if (has_compatible_time and has_compatible_loc) else 0}")
                             
-                            # This is purely diagnostic - no override
+                            # SEATTLE FIX: Override compatibility for Seattle NEW participants with IP-SEA-01
                             if has_compatible_time and has_compatible_loc and compatibility.get((p_id, c_id), 0) == 0:
-                                print(f"  ⚠️ DIAGNOSTIC: This participant SHOULD be compatible but is marked as incompatible")
+                                print(f"  ⚠️ SEATTLE COMPATIBILITY ISSUE: This participant SHOULD be compatible but is marked as incompatible")
+                                
+                                # Apply fix similar to East Bay fix
+                                print(f"  🛠️ APPLYING SEATTLE FIX: Forcing compatibility to be 1 for {p_id} with IP-SEA-01")
+                                compatibility[(p_id, c_id)] = 1  # Override compatibility to allow matching
+                                
+                                # Add to participant's compatible circles
+                                if p_id in participant_compatible_circles and c_id not in participant_compatible_circles[p_id]:
+                                    participant_compatible_circles[p_id].append(c_id)
+                                    print(f"  ✅ Added IP-SEA-01 to compatible circles for participant {p_id}")
+                                    
+                                # Skip adding the incompatibility constraint
+                                continue
                 
                 # SEATTLE DIAGNOSTIC: Track constraint application for Seattle circles
                 if region == "Seattle" and c_id.startswith('IP-SEA-'):
