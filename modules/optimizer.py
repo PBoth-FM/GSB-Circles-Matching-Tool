@@ -49,9 +49,34 @@ def deduplicate_circles(circles_list, debug_mode=False):
                 print(f"    new_members: {merged[c_id]['new_members']}")
         else:
             existing = merged[c_id]
-            # Merge members safely
-            merged_members = set(existing.get('members', [])) | set(circle.get('members', []))
-            existing['members'] = list(merged_members)
+            # Merge members safely - use lists instead of sets to handle non-hashable members
+            # First ensure we have lists
+            existing_members = existing.get('members', [])
+            circle_members = circle.get('members', [])
+            
+            # Convert to ID-based lookup if members are dictionaries
+            if existing_members and isinstance(existing_members[0], dict):
+                # Use IDs as identifiers
+                existing_ids = set()
+                for member in existing_members:
+                    member_id = member.get('Encoded ID', member.get('participant_id', None))
+                    if member_id:
+                        existing_ids.add(member_id)
+                
+                # Process circle members
+                for member in circle_members:
+                    member_id = member.get('Encoded ID', member.get('participant_id', None))
+                    if member_id and member_id not in existing_ids:
+                        existing_members.append(member)
+                        existing_ids.add(member_id)
+                
+                # Use the updated existing_members
+                merged_members = existing_members
+            else:
+                # Simple case: members are hashable (probably strings)
+                merged_members = list(set(existing_members) | set(circle_members))
+                
+            existing['members'] = merged_members
             
             # Update counts safely
             existing['member_count'] = len(merged_members)
