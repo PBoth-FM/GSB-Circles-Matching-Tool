@@ -3617,104 +3617,95 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             results.append(participant_dict)
             unmatched.append(participant_dict)
     
-    # [CRITICAL FINAL CHECK] Manual override for Houston test case
-    # This is the last line of defense - manually verifying the test participant is properly assigned
-    houston_test_id = '72549701782'
-    houston_test_circle = 'IP-HOU-02'
+    # [VERIFICATION CHECK] Validate Seattle test case - check if NEW participants match with existing circles
+    # This validation checks if our optimization mode works as expected to mix NEW participants into existing circles
     
-    # Check if our test participant was assigned to the correct circle
-    test_assigned = False
-    for result in results:
-        if result.get('Encoded ID') == houston_test_id and result.get('proposed_NEW_circles_id') == houston_test_circle:
-            test_assigned = True
-            print(f"✅ VERIFICATION: Houston test participant successfully assigned to IP-HOU-02")
-            houston_debug_logs.append(f"VERIFICATION: Houston test participant successfully assigned to IP-HOU-02")
-            break
-    
-    # If not assigned, manually inject the correct assignment as a last resort
-    if not test_assigned:
-        print(f"🔴 CRITICAL OVERRIDE: Forcing Houston test participant into IP-HOU-02")
-        houston_debug_logs.append(f"CRITICAL OVERRIDE: Forcing Houston test participant into IP-HOU-02")
+    # Only run this for Seattle region
+    if region == "Seattle":
+        seattle_test_id = '99999000001'
+        seattle_test_circle = 'IP-SEA-01'
         
-        # Find the test participant in the results or unmatched lists
-        test_participant_dict = None
+        # Import streamlit for session state access 
+        import streamlit as st
         
-        # First check results
-        for i, result in enumerate(results):
-            if result.get('Encoded ID') == houston_test_id:
-                test_participant_dict = results.pop(i)  # Remove from results
-                print(f"  Found test participant in results (assigned to {test_participant_dict.get('proposed_NEW_circles_id', 'None')})")
-                houston_debug_logs.append(f"Found test participant in results (assigned to {test_participant_dict.get('proposed_NEW_circles_id', 'None')})")
+        # Create Seattle debug logs if they don't exist
+        if 'seattle_debug_logs' not in st.session_state:
+            st.session_state.seattle_debug_logs = []
+            
+        # Add optimization mode info
+        st.session_state.seattle_debug_logs.append(f"Seattle region using '{existing_circle_handling}' mode for circle matching")
+        
+        # Check if our test participant was assigned to the correct circle
+        print(f"\n🔍 VERIFYING SEATTLE TEST CASE:")
+        print(f"  Expecting: NEW participant {seattle_test_id} to match with existing circle {seattle_test_circle}")
+        print(f"  Using circle handling mode: {existing_circle_handling}")
+        print(f"  Note: Only 'optimize' mode should allow matching NEW participants to existing circles")
+        
+        test_assigned = False
+        for result in results:
+            if result.get('Encoded ID') == seattle_test_id and result.get('proposed_NEW_circles_id') == seattle_test_circle:
+                test_assigned = True
+                print(f"✅ VERIFICATION SUCCESS: Seattle test participant successfully assigned to {seattle_test_circle}")
+                st.session_state.seattle_debug_logs.append(f"✅ SUCCESS: Seattle test participant assigned to {seattle_test_circle} in '{existing_circle_handling}' mode")
                 break
                 
-        # If not in results, check unmatched
-        if test_participant_dict is None:
-            for i, u in enumerate(unmatched):
-                if u.get('Encoded ID') == houston_test_id:
-                    test_participant_dict = unmatched.pop(i)  # Remove from unmatched
-                    print(f"  Found test participant in unmatched (reason: {test_participant_dict.get('unmatched_reason', 'None')})")
-                    houston_debug_logs.append(f"Found test participant in unmatched (reason: {test_participant_dict.get('unmatched_reason', 'None')})")
-                    break
-        
-        # If not found anywhere, try to create a dummy entry
-        if test_participant_dict is None:
-            print(f"  Test participant not found in results or unmatched - creating dummy entry")
-            houston_debug_logs.append(f"Test participant not found in results or unmatched - creating dummy entry")
+        # If not assigned as expected, report but don't override (diagnostic only)
+        if not test_assigned:
+            print(f"❌ VERIFICATION FAILED: Seattle test participant was NOT assigned to expected circle {seattle_test_circle}")
+            st.session_state.seattle_debug_logs.append(f"❌ FAILED: Seattle test participant not assigned to {seattle_test_circle} in '{existing_circle_handling}' mode")
             
-            # Create a minimal dictionary with the required fields that match the real test data 
-            test_participant_dict = {
-                'Encoded ID': houston_test_id,
-                'Status': 'NEW',
-                'Current_Region': 'Houston',
-                'Current_Subregion': 'Houston',
-                'first_choice_location': 'West University/Bellaire',
-                'second_choice_location': 'Montrose/River Oaks/Heights',
-                'third_choice_location': 'Galleria & West',
-                'first_choice_time': 'Monday-thursday (Evenings)',
-                'second_choice_time': 'M-Th (Evenings)',
-                'third_choice_time': 'Monday-Thursday (Evenings)',
-                'Requested_Region': 'Houston',
-                'Derived_Region': 'Houston'
-            }
-        
-        # Regardless of source, update the participant dict with correct assignment
-        test_participant_dict['proposed_NEW_circles_id'] = houston_test_circle
-        test_participant_dict['proposed_NEW_Subregion'] = 'Houston'
-        test_participant_dict['proposed_NEW_DayTime'] = 'M-Th (Evenings)'
-        test_participant_dict['unmatched_reason'] = ""  # Clear any unmatched reason
-        test_participant_dict['location_score'] = "3"  # Max score as string
-        test_participant_dict['time_score'] = "3"  # Max score as string
-        
-        # Add to results list
-        results.append(test_participant_dict)
-        
-        # Find the circle in our circles list and add the test participant
-        for circle in circles:
-            if circle.get('circle_id') == houston_test_circle:
-                if houston_test_id not in circle.get('members', []):
-                    # Update circle members
-                    circle['members'].append(houston_test_id)
-                    circle['member_count'] += 1
-                    circle['new_members'] += 1
-                    print(f"  Updated circle {houston_test_circle} to include test participant")
-                    houston_debug_logs.append(f"Updated circle {houston_test_circle} to include test participant")
+            # Find where the test participant ended up
+            participant_found = False
+            for result in results:
+                if result.get('Encoded ID') == seattle_test_id:
+                    participant_found = True
+                    assigned_to = result.get('proposed_NEW_circles_id', 'UNMATCHED')
+                    reason = f"Assigned to: {assigned_to}" if assigned_to != "UNMATCHED" else f"Unmatched reason: {result.get('unmatched_reason', 'Unknown')}"
+                    print(f"  Test participant status: {reason}")
+                    st.session_state.seattle_debug_logs.append(f"  Actual result: {reason}")
+                    
+                    if assigned_to != "UNMATCHED":
+                        # Find the circle's details
+                        circle_details = next((c for c in circles if c.get('circle_id') == assigned_to), None)
+                        if circle_details:
+                            print(f"  Assigned circle details: Subregion={circle_details.get('subregion')}, Time={circle_details.get('meeting_time')}")
+                            st.session_state.seattle_debug_logs.append(f"  Assigned circle details: Subregion={circle_details.get('subregion')}, Time={circle_details.get('meeting_time')}")
+                    
+                    # Check compatibility with the expected circle
+                    expected_compatible = False
+                    for c in viable_circles.values():
+                        if c.get('circle_id') == seattle_test_circle:
+                            print(f"  Expected circle details: Subregion={c.get('subregion')}, Time={c.get('meeting_time')}")
+                            st.session_state.seattle_debug_logs.append(f"  Expected circle details: Subregion={c.get('subregion')}, Time={c.get('meeting_time')}")
+                            expected_compatible = compatibility.get((seattle_test_id, seattle_test_circle), 0) == 1
+                            print(f"  Compatible with expected circle: {expected_compatible}")
+                            st.session_state.seattle_debug_logs.append(f"  Compatible with expected circle: {expected_compatible}")
+                            break
+                    break
+            
+            if not participant_found:
+                for u in unmatched:
+                    if u.get('Encoded ID') == seattle_test_id:
+                        reason = f"Unmatched reason: {u.get('unmatched_reason', 'Unknown')}"
+                        print(f"  Test participant status: {reason}")
+                        st.session_state.seattle_debug_logs.append(f"  Actual result: {reason}")
+                        break
                 else:
-                    print(f"  Test participant already in circle {houston_test_circle}")
-                    houston_debug_logs.append(f"Test participant already in circle {houston_test_circle}")
-                break
+                    print(f"  Test participant not found in results or unmatched lists")
+                    st.session_state.seattle_debug_logs.append(f"  CRITICAL ERROR: Test participant not found in any results")
+        
+        # Note: We deliberately do NOT add any manual overrides for Seattle test case!
+        # This is purely diagnostic to see if our algorithm is working correctly.
+        print(f"  Circle handling mode: {existing_circle_handling}")
+        print(f"  Verification complete - no manual overrides were applied.")
+        
+        # Add one final debug entry
+        circle_handling_note = f"Seattle test checked with {existing_circle_handling} mode - NEW participants " + \
+            ("CAN" if existing_circle_handling == "optimize" else "CANNOT") + " be assigned to existing circles in this mode."
+        st.session_state.seattle_debug_logs.append(circle_handling_note)
     
     # Store debug logs in session state
     import streamlit as st
-    
-    # Create Seattle debug logs in session state
-    if 'seattle_debug_logs' not in st.session_state:
-        st.session_state.seattle_debug_logs = []
-        
-    # Add Seattle test case debugging info
-    if region == "Seattle":
-        seattle_debug_info = f"Seattle test participant matching check completed"
-        if seattle_debug_info not in st.session_state.seattle_debug_logs:
-            st.session_state.seattle_debug_logs.append(seattle_debug_info)
     
     # Store circle capacity info for debugging why circles aren't getting new members
     if 'circle_capacity_debug' not in st.session_state:
