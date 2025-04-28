@@ -1387,11 +1387,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     else:
         print(f"✅ All {len(existing_circles)} circles have eligibility logs")
     
-    # First identify circles with capacity for new members
+    # KEY FIX: Our approach to viable circles was wrong
+    # All existing circles are viable for the optimizer, because:
+    # 1. CURRENT-CONTINUING participants should stay in their current circles
+    # 2. NEW participants can only be added to circles with max_additions > 0
+    
+    # Make all existing circles available to the optimizer
+    viable_circles = existing_circles.copy()
+    
+    # Count circles with capacity for new members
     circles_with_capacity = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
                             if circle_data.get('max_additions', 0) > 0}
     
-    # Now identify all circles that have CURRENT-CONTINUING members
+    # Count circles with continuing members for diagnostic purposes
     continuing_member_circles = set()
     for _, row in region_df.iterrows():
         if row.get('Status') == 'CURRENT-CONTINUING':
@@ -1404,21 +1412,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             if current_circle_id and current_circle_id in existing_circles:
                 continuing_member_circles.add(current_circle_id)
-    
-    # Merge both sets to create viable circles
-    viable_circles = circles_with_capacity.copy()
-    
-    # Add circles with continuing members, even if they don't have capacity
-    for circle_id in continuing_member_circles:
-        if circle_id not in viable_circles and circle_id in existing_circles:
-            viable_circles[circle_id] = existing_circles[circle_id]
-            print(f"  ✅ Adding circle {circle_id} to viable circles because it has CURRENT-CONTINUING members")
-    
-    # ENHANCED VIABLE CIRCLE DETECTION: List all circles
+                
+    # ENHANCED VIABLE CIRCLES DETECTION: List all circles
     print(f"\n🔍 VIABLE CIRCLES DETECTION:")
     print(f"  Found {len(circles_with_capacity)} circles with max_additions > 0")
     print(f"  Found {len(continuing_member_circles)} circles with CURRENT-CONTINUING members")
     print(f"  Total viable circles for optimization: {len(viable_circles)}")
+    print(f"  ⚠️ NOTE: ALL existing circles are now viable for the optimizer")
+    print(f"     This allows continuing participants to stay in their circles")
     
     # Verify circle viability more thoroughly
     if viable_circles:
@@ -2716,21 +2717,43 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # STEP 4: ADD CONSTRAINTS
     # ***************************************************************
     
+    # Special constraint tracking for debug
+    constraints_by_type = {
+        "one_circle_per_participant": 0,
+        "current_continuing_stay": 0,
+        "new_only_in_circles_with_capacity": 0,
+        "compatibility": 0,
+        "min_circle_size": 0,
+        "min_hosts": 0
+    }
+    
     # Constraint 1: Each participant can be assigned to at most one circle
     for p_id in participants:
-        # [REMOVED] - Removed Houston-specific debugging
-        
         # DEFENSIVE FIX: Only use variables that exist in the model
         participant_vars = [x[(p_id, c_id)] for c_id in all_circle_ids if (p_id, c_id) in x]
         
         if participant_vars:  # Only add constraint if there are variables for this participant
             prob += pulp.lpSum(participant_vars) <= 1, f"one_circle_per_participant_{p_id}"
+            constraints_by_type["one_circle_per_participant"] += 1
         else:
             print(f"⚠️ WARNING: No valid variables created for participant {p_id}, skipping constraint")
             
-    # New Constraint: CURRENT-CONTINUING participants must stay in their current circles
+    # SPECIALIZED CONSTRAINTS BASED ON PARTICIPANT STATUS:
+    # 1. CURRENT-CONTINUING participants must stay in their current circles
+    # 2. NEW participants can only be assigned to circles with max_additions > 0
+    
+    # First identify all CURRENT-CONTINUING participants and their circles
     print(f"\n🔍 Adding constraints for CURRENT-CONTINUING participants")
+    
     current_continuing_participants = {}
+    circles_with_capacity = []
+    
+    # Find all circles with capacity for new members
+    for c_id, circle_data in existing_circles.items():
+        if circle_data.get('max_additions', 0) > 0:
+            circles_with_capacity.append(c_id)
+    
+    print(f"  Found {len(circles_with_capacity)} circles with capacity for NEW members")
     
     # Find all CURRENT-CONTINUING participants and their current circle assignments
     for _, row in region_df.iterrows():
@@ -2750,19 +2773,39 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     current_continuing_participants[participant_id] = current_circle_id
                     print(f"  Found CURRENT-CONTINUING participant {participant_id} in circle {current_circle_id}")
     
-    # Add constraints to ensure CURRENT-CONTINUING participants stay in their current circles
-    continuing_count = 0
-    forced_continuing_count = 0
-    
-    for p_id, circle_id in current_continuing_participants.items():
-        if p_id in participants and (p_id, circle_id) in x:
-            # The participant must be assigned to their current circle
-            prob += x[(p_id, circle_id)] == 1, f"keep_continuing_{p_id}_{circle_id}"
-            forced_continuing_count += 1
-            print(f"  ✅ Added constraint to keep CURRENT-CONTINUING participant {p_id} in circle {circle_id}")
-            continuing_count += 1
-    
-    print(f"\n🔍 CONTINUING PARTICIPANTS STATUS: Enforced {forced_continuing_count} CURRENT-CONTINUING constraints out of {continuing_count} total")
+    # Process each participant based on their status
+    for _, row in region_df.iterrows():
+        participant_id = row['Encoded ID']
+        status = row.get('Status')
+        
+        # Skip if we don't have this participant in our variables
+        if participant_id not in participants:
+            continue
+        
+        # For CURRENT-CONTINUING participants:
+        # They must stay in their current circle if it's a valid circle
+        if status == 'CURRENT-CONTINUING' and participant_id in current_continuing_participants:
+            circle_id = current_continuing_participants[participant_id]
+            if (participant_id, circle_id) in x:
+                # The participant must be assigned to their current circle
+                prob += x[(participant_id, circle_id)] == 1, f"keep_continuing_{participant_id}_{circle_id}"
+                constraints_by_type["current_continuing_stay"] += 1
+                print(f"  ✅ Added constraint: CURRENT-CONTINUING participant {participant_id} must stay in circle {circle_id}")
+        
+        # For NEW participants:
+        # They can only be assigned to circles with capacity (max_additions > 0)
+        elif status == 'NEW':
+            # For each circle without capacity, add constraint that this participant can't be assigned
+            for c_id in existing_circle_ids:
+                if c_id not in circles_with_capacity and (participant_id, c_id) in x:
+                    prob += x[(participant_id, c_id)] == 0, f"new_only_capacity_{participant_id}_{c_id}"
+                    constraints_by_type["new_only_in_circles_with_capacity"] += 1
+                    
+    # Print summary of constraints added
+    print(f"\n🔍 PARTICIPANT CONSTRAINTS SUMMARY:")
+    print(f"  Added {constraints_by_type['one_circle_per_participant']} one-circle-per-participant constraints")
+    print(f"  Added {constraints_by_type['current_continuing_stay']} constraints to keep CURRENT-CONTINUING participants in their circles")
+    print(f"  Added {constraints_by_type['new_only_in_circles_with_capacity']} constraints to prevent NEW participants in circles without capacity")
     
     # Constraint 2: Only assign participants to compatible circles
     for p_id in participants:
