@@ -1923,7 +1923,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
             
             # If this is Seattle region, track all compatibility checks for Seattle circles
-            if region == "Seattle" and is_seattle_circle:
+            if region == "Seattle" and is_seattle_circle and 'seattle_debug_logs' in locals():
                 # Check if compatibility was determined for this pair
                 compat_result = "COMPATIBLE" if is_compatible else "INCOMPATIBLE"
                 
@@ -3510,7 +3510,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             final_logs[key] = value  # Direct copy for non-dict values
     
     # SEATTLE DEBUG: Track optimization results for Seattle circles
-    if region == "Seattle":
+    if region == "Seattle" and 'seattle_debug_logs' in locals():
         seattle_debug_logs.append(f"\n=== OPTIMIZATION RESULTS ANALYSIS ===")
         seattle_debug_logs.append(f"Optimization status: {pulp.LpStatus[prob.status]}")
         
