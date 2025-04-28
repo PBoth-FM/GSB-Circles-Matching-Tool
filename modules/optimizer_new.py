@@ -2871,18 +2871,22 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     if '99999000001' in participants:
                         host_status = "Unknown"
                         
-                        # Define circle_participants list using participant IDs and circle IDs
-                        # This list should contain tuples of (participant_id, circle_id) that we're considering
-                        circle_participants = [(p_id, c_id) for p_id in participants for c_id in all_circle_ids if (p_id, c_id) in x]
+                        # Instead of comparing objects directly, we'll check for the test participant's host status
+                        # in the original dataframe to avoid recursive PuLP variable comparisons
+                        test_participant_rows = remaining_df[remaining_df['Encoded ID'] == '99999000001']
                         
-                        for p in circle_participants:
-                            if p[0] == '99999000001':
-                                if p in always_hosts_list:
+                        if not test_participant_rows.empty:
+                            test_row = test_participant_rows.iloc[0]
+                            if 'host' in test_row:
+                                host_value = test_row['host']
+                                if host_value == 'Always':
                                     host_status = "Always Host"
-                                elif p in sometimes_hosts_list:
+                                elif host_value == 'Sometimes':
                                     host_status = "Sometimes Host"
                                 else:
                                     host_status = "Not a Host"
+                            else:
+                                host_status = "No host information available"
                         
                         print(f"  Seattle test participant 99999000001 host status: {host_status}")
                         st.session_state.seattle_debug_logs.append(f"Seattle test participant host status: {host_status}")
