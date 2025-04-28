@@ -2138,70 +2138,28 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             st.session_state.seattle_debug_logs.append(f"      Circle time: '{time_slot}'")
                             st.session_state.seattle_debug_logs.append(f"      Participant times: {time_prefs}")
             
-            # SPECIAL DEBUG FOR TEST CASE - 73177784103 and IP-SIN-01
-            is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01')
+            # SPECIAL DEBUG FOR SEATTLE TEST CASE
+            is_test_case = (p_id == '99999000001' and c_id == 'IP-SEA-01')
             
-            # EAST BAY DEBUG: Add special debug for East Bay case
-            is_east_bay_case = (p_id == '76096461703' and c_id == 'IP-EAB-07')
-            
-            # 🔍 CRITICAL DIAGNOSTIC: Detailed logging for East Bay pair
-            if is_east_bay_case:
-                print(f"\n🔍 CRITICAL EAST BAY COMPATIBILITY DIAGNOSTIC:")
-                print(f"  Participant: 76096461703, Circle: IP-EAB-07")
-                print(f"  Participant locations: {loc_prefs}")
-                print(f"  Circle location: {subregion}")
-                print(f"  Location match: {loc_match}")
-                print(f"  Participant times: {time_prefs}")
-                print(f"  Circle time: {time_slot}")
-                print(f"  Time match: {time_match}")
-                print(f"  Overall compatibility: {is_compatible}")
-                if not is_compatible:
-                    print(f"  ⚠️ COMPATIBILITY FAILURE REASON: {'Location mismatch' if not loc_match else 'Time mismatch'}")
-                    
-                    # If it's a time mismatch, show detailed comparison
-                    if not time_match and loc_match:
-                        print(f"  Detailed time comparison:")
-                        for i, p_time in enumerate(time_prefs):
-                            if p_time and isinstance(p_time, str):
-                                print(f"    Preference {i+1}: '{p_time}' vs '{time_slot}' → {is_time_compatible(p_time, time_slot)}")
-                                
-                                # Test each component of time matching
-                                components1 = p_time.lower().replace('(', '').replace(')', '').split()
-                                components2 = time_slot.lower().replace('(', '').replace(')', '').split()
-                                print(f"      Components: {components1} vs {components2}")
-                                
-                                # Check for day matches
-                                day_patterns = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday", 
-                                               "m-th", "m-f", "weekend", "weekday", "varies"]
-                                day1 = next((c for c in components1 if any(pattern in c.lower() for pattern in day_patterns)), None)
-                                day2 = next((c for c in components2 if any(pattern in c.lower() for pattern in day_patterns)), None)
-                                print(f"      Day components: {day1} vs {day2}")
-                                
-                                # Check for time matches
-                                time_patterns = ["morning", "afternoon", "evening", "night", "daytime"]
-                                time1 = next((c for c in components1 if any(pattern in c.lower() for pattern in time_patterns)), None)
-                                time2 = next((c for c in components2 if any(pattern in c.lower() for pattern in time_patterns)), None)
-                                print(f"      Time components: {time1} vs {time2}")
-                
-                # 🔴 POTENTIAL FIX: Diagnose and potentially force compatibility if it seems like a bug
-                if not is_compatible and loc_match:
-                    # Check if time strings contain compatible parts
-                    for p_time in time_prefs:
-                        if p_time and isinstance(p_time, str):
-                            p_lower = p_time.lower()
-                            c_lower = time_slot.lower()
+            # 🔴 POTENTIAL FIX: Diagnose and potentially force compatibility if it seems like a bug
+            if not is_compatible and loc_match:
+                # Check if time strings contain compatible parts
+                for p_time in time_prefs:
+                    if p_time and isinstance(p_time, str):
+                        p_lower = p_time.lower()
+                        c_lower = time_slot.lower()
+                        
+                        # Check for special cases like Wednesday matching Monday-Thursday
+                        if ("wednesday" in c_lower and "monday-thursday" in p_lower) or \
+                           ("wednesday" in c_lower and "monday-friday" in p_lower) or \
+                           ("wednesday" in c_lower and "weekday" in p_lower) or \
+                           ("evening" in c_lower and "evening" in p_lower):
+                            print(f"  🔍 POTENTIAL BUG: Found logical time match that wasn't detected:")
+                            print(f"    Circle time '{time_slot}' should match participant preference '{p_time}'")
+                            print(f"    DIAGNOSTIC: This looks like a legitimate match that wasn't detected")
                             
-                            # Check for special cases like Wednesday matching Monday-Thursday
-                            if ("wednesday" in c_lower and "monday-thursday" in p_lower) or \
-                               ("wednesday" in c_lower and "monday-friday" in p_lower) or \
-                               ("wednesday" in c_lower and "weekday" in p_lower) or \
-                               ("evening" in c_lower and "evening" in p_lower):
-                                print(f"  🔍 POTENTIAL BUG: Found logical time match that wasn't detected:")
-                                print(f"    Circle time '{time_slot}' should match participant preference '{p_time}'")
-                                print(f"    DIAGNOSTIC: This looks like a legitimate match that wasn't detected")
-                                
-                                # Note: We're NOT overriding compatibility here, just diagnosing
-            if is_test_case or is_east_bay_case:
+                            # Note: We're NOT overriding compatibility here, just diagnosing
+            if is_test_case:
                 print("\n🔍🔍🔍 SPECIAL TEST CASE COMPATIBILITY CHECK 🔍🔍🔍")
                 print(f"Checking compatibility between participant {p_id} and circle {c_id}")
                 print(f"  Circle subregion: '{subregion}'")
