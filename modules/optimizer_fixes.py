@@ -232,7 +232,136 @@ def force_compatibility(participant_id, circle_id, compatibility_matrix):
     # Set compatibility for this participant with this circle to 1 (compatible)
     updated_matrix[(participant_id, circle_id)] = 1
     
+    print(f"🔴 CRITICAL FIX: Forced compatibility between participant {participant_id} and circle {circle_id}")
+    print(f"  Matrix entry: {updated_matrix[(participant_id, circle_id)]}")
+    
     return updated_matrix
+
+
+def post_process_continuing_members(results, unmatched_participants, participant_df, circle_eligibility_logs):
+    """
+    Critical post-processing to ensure all CURRENT-CONTINUING members are correctly matched to their circles.
+    This is a final fallback mechanism to catch any that weren't properly assigned in the main algorithm.
+    
+    Args:
+        results: List of optimization results (dicts)
+        unmatched_participants: List of unmatched participants (dicts)
+        participant_df: DataFrame with all participants
+        circle_eligibility_logs: Dictionary of circle eligibility logs
+        
+    Returns:
+        tuple: (updated_results, updated_unmatched, updated_logs)
+    """
+    print("\n🚨 POST-PROCESSING: Final check for CURRENT-CONTINUING members")
+    
+    # Create copies to avoid modifying originals
+    updated_results = results.copy() if results else []
+    updated_unmatched = unmatched_participants.copy() if unmatched_participants else []
+    updated_logs = circle_eligibility_logs.copy() if circle_eligibility_logs else {}
+    
+    # Extract ID mapping for easier lookup
+    result_by_id = {r.get('Encoded ID'): r for r in updated_results if 'Encoded ID' in r}
+    unmatched_by_id = {u.get('Encoded ID'): u for u in updated_unmatched if 'Encoded ID' in u}
+    
+    # Filter for CURRENT-CONTINUING participants
+    cc_participants = participant_df[participant_df['Status'] == 'CURRENT-CONTINUING']
+    
+    # Extract all existing circle IDs from eligibility logs
+    existing_circle_ids = set()
+    for circle_id, circle_data in updated_logs.items():
+        if circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-'):
+            existing_circle_ids.add(circle_id)
+    
+    print(f"  Processing {len(cc_participants)} CURRENT-CONTINUING members")
+    print(f"  Found {len(existing_circle_ids)} existing circle IDs in eligibility logs")
+    
+    # Track statistics
+    total_processed = 0
+    already_matched_correct = 0
+    moved_to_correct = 0
+    added_to_results = 0
+    removed_from_unmatched = 0
+    problem_cases = 0
+    
+    # Process each CURRENT-CONTINUING participant
+    for idx, row in cc_participants.iterrows():
+        p_id = row['Encoded ID']
+        total_processed += 1
+        
+        # Find current circle ID
+        current_circle = find_current_circle_id(row)
+        
+        if not current_circle:
+            print(f"  ⚠️ Cannot find current circle for CURRENT-CONTINUING member {p_id}")
+            problem_cases += 1
+            continue
+            
+        # Check if circle exists in eligibility logs
+        if current_circle not in existing_circle_ids:
+            print(f"  ⚠️ Circle {current_circle} for member {p_id} not found in eligibility logs")
+            problem_cases += 1
+            continue
+            
+        # Check current assignment status
+        if p_id in result_by_id:
+            result = result_by_id[p_id]
+            current_assignment = result.get('proposed_NEW_circles_id')
+            
+            if current_assignment == current_circle:
+                # Already correctly assigned
+                already_matched_correct += 1
+            else:
+                # Need to update assignment
+                print(f"  🔄 Moving participant {p_id} from {current_assignment} to correct circle {current_circle}")
+                result['proposed_NEW_circles_id'] = current_circle
+                result['unmatched_reason'] = "FIXED: Post-processed to continuing circle"
+                result['location_score'] = 100  # Max score
+                result['time_score'] = 100  # Max score
+                result['total_score'] = 200  # Max total score
+                moved_to_correct += 1
+                
+        elif p_id in unmatched_by_id:
+            # Currently unmatched - add to results and remove from unmatched
+            unmatched_entry = unmatched_by_id[p_id]
+            
+            # Create a new result entry
+            new_result = unmatched_entry.copy()
+            new_result['proposed_NEW_circles_id'] = current_circle
+            new_result['unmatched_reason'] = "FIXED: Post-processed to continuing circle"
+            new_result['location_score'] = 100  # Max score
+            new_result['time_score'] = 100  # Max score
+            new_result['total_score'] = 200  # Max total score
+            
+            # Add to results
+            updated_results.append(new_result)
+            added_to_results += 1
+            
+            # Remove from unmatched
+            updated_unmatched = [u for u in updated_unmatched if u.get('Encoded ID') != p_id]
+            removed_from_unmatched += 1
+            
+            print(f"  ✅ Added {p_id} to results with circle {current_circle} (was unmatched)")
+        else:
+            # Not in results or unmatched - strange case
+            print(f"  ⚠️ Participant {p_id} not found in results or unmatched list")
+            problem_cases += 1
+    
+    # Print summary statistics
+    print(f"\n📊 POST-PROCESSING SUMMARY:")
+    print(f"  - Total CURRENT-CONTINUING participants: {total_processed}")
+    print(f"  - Already correctly matched: {already_matched_correct}")
+    print(f"  - Moved to correct circle: {moved_to_correct}")
+    print(f"  - Added to results (from unmatched): {added_to_results}")
+    print(f"  - Removed from unmatched: {removed_from_unmatched}")
+    print(f"  - Problem cases: {problem_cases}")
+    
+    # Final counts
+    final_results_count = len(updated_results)
+    final_unmatched_count = len(updated_unmatched)
+    print(f"  - Final results count: {final_results_count}")
+    print(f"  - Final unmatched count: {final_unmatched_count}")
+    
+    return updated_results, updated_unmatched, updated_logs
 
 
 def ensure_current_continuing_matched(results, unmatched, participants_df, circle_ids):
