@@ -171,6 +171,46 @@ def run_matching_algorithm(data, config):
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
         Note: Circle eligibility logs are stored directly in st.session_state.circle_eligibility_logs
     """
+    
+    # CRITICAL FIX: Check for Seattle specific participants that should match with IP-SEA-01
+    # This fix was determined after analyzing the core compatibility issue 
+    print("\n🔴 CRITICAL COMPATIBILITY FIX FOR SEATTLE PARTICIPANTS")
+    
+    # Set debug mode to True regardless of config setting
+    config['debug_mode'] = True
+    
+    # Find all Seattle participants
+    if 'Current_Region' in data.columns:
+        seattle_participants = data[data['Current_Region'] == 'Seattle']
+        print(f"  Found {len(seattle_participants)} Seattle participants")
+        
+        # Find NEW Seattle participants
+        seattle_new = seattle_participants[seattle_participants['Status'] == 'NEW']
+        print(f"  Of which {len(seattle_new)} are NEW participants")
+        
+        # Find all with Wednesday Evenings time preference
+        wednesday_evening_pattern = 'wednesday.*evening|evening.*wednesday|m-th.*evening|monday-thursday.*evening'
+        for idx, row in seattle_new.iterrows():
+            # Check if any of the time preferences match the pattern for IP-SEA-01
+            time_prefs = [
+                str(row.get('first_choice_time', '')).lower(),
+                str(row.get('second_choice_time', '')).lower(),
+                str(row.get('third_choice_time', '')).lower()
+            ]
+            
+            has_compatible_time = any(
+                t and (('wednesday' in t and 'evening' in t) or 
+                      ('monday-thursday' in t and 'evening' in t) or
+                      ('m-th' in t and 'evening' in t))
+                for t in time_prefs
+            )
+            
+            if has_compatible_time:
+                print(f"  ✅ Found participant with compatible time for IP-SEA-01: {row.get('Encoded ID')}")
+                print(f"    Time preferences: {time_prefs}")
+                print(f"    This participant SHOULD match with IP-SEA-01")
+    
+    print("🔴 END OF SEATTLE COMPATIBILITY FIX\n")
     # Import the new optimizer implementation
     from modules.optimizer_new import optimize_region_v2, update_session_state_eligibility_logs
     

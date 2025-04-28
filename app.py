@@ -47,7 +47,7 @@ if 'circle_eligibility_logs' not in st.session_state:
     st.session_state.circle_eligibility_logs = {}
 if 'config' not in st.session_state:
     st.session_state.config = {
-        'debug_mode': False,
+        'debug_mode': True,  # CRITICAL FIX: Force debug mode on to help diagnose compatibility issues
         'min_circle_size': 5,
         'existing_circle_handling': 'preserve',
         'optimization_weight_location': 3,
