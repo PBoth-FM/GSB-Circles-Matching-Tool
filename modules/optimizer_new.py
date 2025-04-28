@@ -1740,11 +1740,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if 'seattle_debug_logs' not in st.session_state:
         st.session_state.seattle_debug_logs = []
     
-    # Just use the participants from the remaining dataframe without special cases
-    participants = remaining_df['Encoded ID'].tolist()
+    # Use all participants in the region, regardless of whether they're in existing circles
+    participants = region_df['Encoded ID'].tolist()
     
     # Log participants being processed in this region
     print(f"\n🔍 Processing {len(participants)} participants in region {region}")
+    
+    # Log CURRENT-CONTINUING participants status
+    continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
+    print(f"  Including {continuing_count} CURRENT-CONTINUING participants in optimization")
     
     # Define test participants for debug logging only (but no special handling)
     # Focusing only on Seattle test cases now
@@ -1771,8 +1775,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Create variables for all participant-circle pairs
     for p_id in participants:
-        # Get row data from dataframe (with defensive coding)
-        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        # Get row data from the full region dataframe to include CURRENT-CONTINUING participants
+        matching_rows = region_df[region_df['Encoded ID'] == p_id]
         if matching_rows.empty:
             print(f"⚠️ Warning: Participant {p_id} not found in region dataframe")
             # Skip this participant to avoid errors
@@ -1780,6 +1784,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
         # Get participant data
         p_row = matching_rows.iloc[0]
+        
+        # Special debug for CURRENT-CONTINUING participants
+        if p_row.get('Status') == 'CURRENT-CONTINUING':
+            print(f"  Processing CURRENT-CONTINUING participant {p_id}")
         
         # For debug logging only
         is_houston_participant = any('Houston' in str(loc) if isinstance(loc, str) else False for loc in [
@@ -1854,8 +1862,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Debug logs are still kept for tracking purposes
             
         # Normal processing for regular participants - with defensive coding
-        # First check if this participant exists in the dataframe
-        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        # First check if this participant exists in the full region dataframe
+        matching_rows = region_df[region_df['Encoded ID'] == p_id]
         
         if matching_rows.empty:
             # Participant not in dataframe - likely the test participant in a region
@@ -1867,6 +1875,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # For participants that exist in the dataframe, process normally
         p_row = matching_rows.iloc[0]
         participant_compatible_circles[p_id] = []
+        
+        # Special debug for CURRENT-CONTINUING participants
+        if p_row.get('Status') == 'CURRENT-CONTINUING':
+            print(f"  Analyzing compatibility for CURRENT-CONTINUING participant {p_id}")
         
         # Get participant preferences
         loc_prefs = [
@@ -2708,11 +2720,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         if p_id in participants and (p_id, circle_id) in x:
             # The participant must be assigned to their current circle
             prob += x[(p_id, circle_id)] == 1, f"keep_continuing_{p_id}_{circle_id}"
-            continuing_count += 1
             forced_continuing_count += 1
-            print(f"  ✅ Added constraint to keep participant {p_id} in their current circle {circle_id}")
+            print(f"  ✅ Added constraint to keep CURRENT-CONTINUING participant {p_id} in circle {circle_id}")
+            continuing_count += 1
     
-    print(f"  Added {forced_continuing_count} constraints for CURRENT-CONTINUING participants (out of {continuing_count} total)")
+    print(f"\n🔍 CONTINUING PARTICIPANTS STATUS: Enforced {forced_continuing_count} CURRENT-CONTINUING constraints out of {continuing_count} total")
     
     # Constraint 2: Only assign participants to compatible circles
     for p_id in participants:
@@ -2725,7 +2737,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # SEATTLE DIAGNOSTIC: Add detailed diagnostics for Seattle participants with IP-SEA-01
                 if c_id == 'IP-SEA-01' and region == 'Seattle':
                     # Check if this is a NEW participant
-                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                    matching_rows = region_df[region_df['Encoded ID'] == p_id]
                     if not matching_rows.empty:
                         p_row = matching_rows.iloc[0]
                         if p_row.get('Status') == 'NEW':
@@ -2798,7 +2810,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     
                     # Find the participant data
                     if p_id in participants:
-                        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                        matching_rows = region_df[region_df['Encoded ID'] == p_id]
                         if not matching_rows.empty:
                             p_row = matching_rows.iloc[0]
                             # Get participant preferences
@@ -2895,11 +2907,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 always_hosts_list = []
                 for p_id in participants:
                     # Skip participants not in this region's dataframe 
-                    if p_id not in remaining_df['Encoded ID'].values:
+                    if p_id not in region_df['Encoded ID'].values:
                         continue
                         
                     # Check if participant is an "Always" host and add variable to sum if so
-                    if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Always':
+                    if region_df.loc[region_df['Encoded ID'] == p_id, 'host'].values[0] == 'Always':
                         always_hosts_list.append(x[(p_id, c_id)])
                 
                 always_hosts = pulp.lpSum(always_hosts_list)
@@ -2908,11 +2920,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 sometimes_hosts_list = []
                 for p_id in participants:
                     # Skip participants not in this region's dataframe
-                    if p_id not in remaining_df['Encoded ID'].values:
+                    if p_id not in region_df['Encoded ID'].values:
                         continue
                         
                     # Check if participant is a "Sometimes" host and add variable to sum if so
-                    if remaining_df.loc[remaining_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes':
+                    if region_df.loc[region_df['Encoded ID'] == p_id, 'host'].values[0] == 'Sometimes':
                         sometimes_hosts_list.append(x[(p_id, c_id)])
                     
                 sometimes_hosts = pulp.lpSum(sometimes_hosts_list)
