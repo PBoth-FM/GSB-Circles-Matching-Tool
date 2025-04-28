@@ -2606,7 +2606,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             houston_debug_logs.append(f"SOFT CONSTRAINT APPROACH: Adding huge bonus for participant 72549701782 with IP-HOU-02")
             
             # Log detailed information about the compatibility
-            houston_circle_meta = circle_metadata['IP-HOU-02']
+            # Initialize houston_circle_meta to default empty dict if not found
+            houston_circle_meta = circle_metadata.get('IP-HOU-02', {
+                'subregion': 'Unknown',
+                'meeting_time': 'Unknown',
+                'max_additions': 'Unknown'
+            })
             
         # Special case 3: Our Seattle test participant should match with circle IP-SEA-01
         elif p_id == '99999000001' and 'IP-SEA-01' in existing_circle_ids:
