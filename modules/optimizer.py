@@ -54,9 +54,20 @@ def deduplicate_circles(circles_list, debug_mode=False):
             existing_members = existing.get('members', [])
             circle_members = circle.get('members', [])
             
-            # Convert to ID-based lookup if members are dictionaries
-            if existing_members and isinstance(existing_members[0], dict):
-                # Use IDs as identifiers
+            # Check if members are dictionaries or simple values (strings/integers)
+            members_are_dicts = False
+            
+            # Safely check the member type without assuming list indexing will work
+            if existing_members and len(existing_members) > 0:
+                first_member = existing_members[0]
+                members_are_dicts = isinstance(first_member, dict)
+            elif circle_members and len(circle_members) > 0:
+                first_member = circle_members[0]
+                members_are_dicts = isinstance(first_member, dict)
+                
+            # Based on the type, use appropriate merging strategy
+            if members_are_dicts:
+                # Dictionary case - Use IDs as identifiers
                 existing_ids = set()
                 for member in existing_members:
                     member_id = member.get('Encoded ID', member.get('participant_id', None))
@@ -74,7 +85,8 @@ def deduplicate_circles(circles_list, debug_mode=False):
                 merged_members = existing_members
             else:
                 # Simple case: members are hashable (probably strings)
-                merged_members = list(set(existing_members) | set(circle_members))
+                # Convert to strings to ensure compatibility
+                merged_members = list(set(str(m) for m in existing_members) | set(str(m) for m in circle_members))
                 
             existing['members'] = merged_members
             
