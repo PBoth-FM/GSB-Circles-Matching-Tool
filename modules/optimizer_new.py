@@ -330,6 +330,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # This fixes the "cannot access local variable" error in optimize mode
     from modules.data_processor import is_time_compatible
     
+    # Import our new fixes module for CURRENT-CONTINUING members and optimize mode
+    from modules.optimizer_fixes import (
+        preprocess_continuing_members,
+        optimize_circle_capacity,
+        find_current_circle_id,
+        force_compatibility,
+        ensure_current_continuing_matched
+    )
+    
     # CRITICAL DIAGNOSTIC: Always enable debug mode for Seattle region
     if region == 'Seattle':
         debug_mode = True
@@ -1741,6 +1750,40 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"  Example potential new circle: {circle_id}")
                 print(f"    Subregion: {meta['subregion']}")
                 print(f"    Meeting time: {meta['meeting_time']}") 
+    
+    # ***************************************************************
+    # STEP 1.5: CRITICAL FIXES FOR CURRENT-CONTINUING MEMBERS AND OPTIMIZE MODE
+    # ***************************************************************
+    
+    # CRITICAL FIX 1: Apply capacity optimization for continuing circles in "optimize" mode
+    print("\n🚨 APPLYING CRITICAL FIXES FOR CIRCLE CAPACITY IN OPTIMIZE MODE")
+    # Update viable_circles with optimized capacity values
+    viable_circles = optimize_circle_capacity(viable_circles, existing_circle_handling, min_circle_size)
+    
+    # CRITICAL FIX 2: Pre-process all CURRENT-CONTINUING members
+    print("\n🚨 PRE-PROCESSING CURRENT-CONTINUING MEMBERS")
+    
+    # Get IDs of all participants in this region
+    all_participant_ids = region_df['Encoded ID'].tolist()
+    
+    # Pre-assign CURRENT-CONTINUING members to their existing circles
+    preassigned_circles, problem_participants = preprocess_continuing_members(
+        region_df, 
+        existing_circle_ids
+    )
+    
+    if preassigned_circles:
+        print(f"✅ Successfully pre-assigned {len(preassigned_circles)} CURRENT-CONTINUING members to their circles")
+    else:
+        print("⚠️ No CURRENT-CONTINUING members were pre-assigned")
+        
+    if problem_participants:
+        print(f"⚠️ Found {len(problem_participants)} CURRENT-CONTINUING members with problems:")
+        for p in problem_participants[:5]:  # Show first 5 for brevity
+            print(f"  - Participant {p['participant_id']}: {p['reason']}")
+            
+        if len(problem_participants) > 5:
+            print(f"  ... and {len(problem_participants) - 5} more problematic participants")
     
     # ***************************************************************
     # STEP 2: DEFINE DECISION VARIABLES
@@ -4249,6 +4292,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Also print to console for debugging
         print("\n".join(st.session_state.seattle_debug_logs[:10]) + "\n... (more logs available in UI)")
     
+    # CRITICAL FINAL FIX: Make sure all CURRENT-CONTINUING members are matched to their circles
+    print(f"\n🚨 CRITICAL FINAL FIX: Ensuring all CURRENT-CONTINUING members are properly matched")
+    results, unmatched = ensure_current_continuing_matched(
+        results, 
+        unmatched, 
+        region_df,
+        existing_circle_ids
+    )
+    print(f"✅ Final check complete for CURRENT-CONTINUING members in {region} region")
+
     # Return the final logs copy
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
     return results, circles, unmatched, circle_capacity_debug, final_logs
