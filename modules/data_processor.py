@@ -471,6 +471,23 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
             print(f"  ✅ COMPATIBLE - Continuing member with empty time preference matches their circle's time '{time2}'")
         return True
     
+    # CRITICAL FIX: Special handling for Wednesday in Monday-Thursday ranges
+    # This ensures compatibility between specific days and day ranges that include them
+    if is_circle_time and not pd.isna(time1) and not pd.isna(time2):
+        time1_lower = str(time1).lower()
+        time2_lower = str(time2).lower()
+        
+        # Check if one preference is Wednesday and the other is Monday-Thursday
+        if ('wednesday' in time1_lower and ('monday-thursday' in time2_lower or 'm-th' in time2_lower)) or \
+           ('wednesday' in time2_lower and ('monday-thursday' in time1_lower or 'm-th' in time1_lower)):
+            # Check if both have same time of day (morning, evening, etc.)
+            if ('evening' in time1_lower and 'evening' in time2_lower) or \
+               ('morning' in time1_lower and 'morning' in time2_lower) or \
+               ('day' in time1_lower and 'day' in time2_lower):
+                if is_important:
+                    print(f"  ✅ COMPATIBLE - Wednesday is within Monday-Thursday range with matching time of day")
+                return True
+    
     # Handle None, NaN or empty strings (normal case)
     if pd.isna(time1) or pd.isna(time2) or time1 == '' or time2 == '':
         if is_important:
@@ -508,6 +525,19 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
     if any("any" in s.lower() for s in [time1, time2, std_time1, std_time2]):
         if is_important:
             print(f"  ✅ COMPATIBLE - One preference includes 'Any' which matches anything")
+        return True
+        
+    # CRITICAL FIX: Explicit check for Wednesday vs Monday-Thursday compatibility
+    # This is a common case that's causing problems with Seattle circles
+    time1_lower = str(time1).lower()
+    time2_lower = str(time2).lower()
+    
+    if ('wednesday' in time1_lower and 'evening' in time1_lower and 
+        ('monday-thursday' in time2_lower or 'm-th' in time2_lower) and 'evening' in time2_lower) or \
+       ('wednesday' in time2_lower and 'evening' in time2_lower and 
+        ('monday-thursday' in time1_lower or 'm-th' in time1_lower) and 'evening' in time1_lower):
+        if is_important:
+            print(f"  ✅ COMPATIBLE - Direct match on Wednesday(Evenings) with Monday-Thursday(Evenings)")
         return True
     
     # Define helper functions for extracting time components

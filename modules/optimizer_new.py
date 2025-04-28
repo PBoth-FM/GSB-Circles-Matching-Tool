@@ -1902,30 +1902,49 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
             is_circle_time = True  # The time_slot is always the circle's meeting time
             
+            # Special handling for NEW participants - add debug logging
+            is_new_participant = p_row.get('Status') == 'NEW'
+            
+            # For NEW participants specifically matching with existing circles with 
+            # capacity, we need to directly compare with the circle meeting time
+            # rather than relying on continuing members' times (which are often empty)
+            if is_new_participant and c_id in existing_circle_ids:
+                # For debugging Seattle circles or test cases with detailed logging
+                enable_detailed_debugging = is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01')
+                
+                if enable_detailed_debugging:
+                    print(f"\n🔍 NEW PARTICIPANT-CIRCLE COMPATIBILITY CHECK:")
+                    print(f"  NEW Participant {p_id} checking compatibility with existing circle {c_id}")
+                    print(f"  Circle meeting time: '{time_slot}'")
+                    print(f"  Participant time preferences:")
+                    print(f"    1️⃣ '{first_choice}'")
+                    print(f"    2️⃣ '{second_choice}'")
+                    print(f"    3️⃣ '{third_choice}'")
+            
             # Check each time preference using enhanced is_time_compatible with continuing member handling
             if is_time_compatible(first_choice, time_slot, 
-                                is_important=is_test_case, 
+                                is_important=is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'), 
                                 is_continuing_member=is_continuing_member,
                                 is_circle_time=is_circle_time):
                 time_match = True
-                if is_test_case:
-                    print(f"  Time compatibility SUCCESS: '{first_choice}' is compatible with '{time_slot}'")
+                if is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'):
+                    print(f"  ✅ Time compatibility SUCCESS: '{first_choice}' is compatible with '{time_slot}'")
             elif is_time_compatible(second_choice, time_slot, 
-                                  is_important=is_test_case,
+                                  is_important=is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'),
                                   is_continuing_member=is_continuing_member,
                                   is_circle_time=is_circle_time):
                 time_match = True
-                if is_test_case:
-                    print(f"  Time compatibility SUCCESS: '{second_choice}' is compatible with '{time_slot}'")
+                if is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'):
+                    print(f"  ✅ Time compatibility SUCCESS: '{second_choice}' is compatible with '{time_slot}'")
             elif is_time_compatible(third_choice, time_slot, 
-                                  is_important=is_test_case,
+                                  is_important=is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'),
                                   is_continuing_member=is_continuing_member,
                                   is_circle_time=is_circle_time):
                 time_match = True
-                if is_test_case:
-                    print(f"  Time compatibility SUCCESS: '{third_choice}' is compatible with '{time_slot}'")
-            elif is_test_case:
-                print(f"  Time compatibility FAILED: None of:")
+                if is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'):
+                    print(f"  ✅ Time compatibility SUCCESS: '{third_choice}' is compatible with '{time_slot}'")
+            elif is_test_case or (region == "Seattle" and c_id == 'IP-SEA-01'):
+                print(f"  ❌ Time compatibility FAILED: None of:")
                 print(f"    - '{first_choice}'")
                 print(f"    - '{second_choice}'")
                 print(f"    - '{third_choice}'")
