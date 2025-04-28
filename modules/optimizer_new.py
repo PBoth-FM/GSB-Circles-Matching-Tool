@@ -2697,6 +2697,74 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         
                     # Skip adding the incompatibility constraint
                     continue
+                    
+                # SEATTLE FIX: Add special handling for Seattle participants with IP-SEA-01
+                if c_id == 'IP-SEA-01' and region == 'Seattle':
+                    # Check if this is a NEW participant
+                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                    if not matching_rows.empty:
+                        p_row = matching_rows.iloc[0]
+                        if p_row.get('Status') == 'NEW':
+                            print(f"\n🔴 SEATTLE CIRCLE IP-SEA-01 MATCH ATTEMPT: Checking compatibility for {p_id}")
+                            
+                            # Extract time and location preferences
+                            time_prefs = [
+                                str(p_row.get('first_choice_time', '')).lower(),
+                                str(p_row.get('second_choice_time', '')).lower(), 
+                                str(p_row.get('third_choice_time', '')).lower()
+                            ]
+                            
+                            loc_prefs = [
+                                str(p_row.get('first_choice_location', '')).lower(),
+                                str(p_row.get('second_choice_location', '')).lower(),
+                                str(p_row.get('third_choice_location', '')).lower()
+                            ]
+                            
+                            # Get circle properties
+                            circle_loc = circle_metadata[c_id]['subregion'].lower() if c_id in circle_metadata else ""
+                            circle_time = circle_metadata[c_id]['meeting_time'].lower() if c_id in circle_metadata else ""
+                            
+                            print(f"  Circle location: {circle_loc}")
+                            print(f"  Circle time: {circle_time}")
+                            print(f"  Participant location preferences: {loc_prefs}")
+                            print(f"  Participant time preferences: {time_prefs}")
+                            
+                            # Check for Wednesday or Monday-Thursday pattern
+                            # This is the key fix - we're checking if either:
+                            # 1. Wednesday is in the time preference OR
+                            # 2. Monday-Thursday range is in the time preference
+                            has_compatible_time = any(
+                                ('wednesday' in t and 'evening' in t) or 
+                                ('monday-thursday' in t and 'evening' in t) or
+                                ('m-th' in t and 'evening' in t)
+                                for t in time_prefs
+                            )
+                            
+                            # Check if any location preference matches the circle's subregion
+                            has_compatible_loc = any(
+                                circle_loc in loc or 
+                                'seattle' in loc or 
+                                'downtown' in loc
+                                for loc in loc_prefs if loc
+                            )
+                            
+                            print(f"  Compatible time: {has_compatible_time}")
+                            print(f"  Compatible location: {has_compatible_loc}")
+                            
+                            # Override compatibility if both time and location match
+                            if has_compatible_time and has_compatible_loc:
+                                print(f"  🛠️ APPLYING SEATTLE FIX: Forcing compatibility to 1 for {p_id} with IP-SEA-01")
+                                compatibility[(p_id, c_id)] = 1
+                                
+                                # Add to participant's compatible circles
+                                if p_id in participant_compatible_circles and c_id not in participant_compatible_circles[p_id]:
+                                    participant_compatible_circles[p_id].append(c_id)
+                                    print(f"  ✅ Added IP-SEA-01 to compatible circles for participant {p_id}")
+                                
+                                # Skip adding the incompatibility constraint
+                                continue
+                            else:
+                                print(f"  ❌ No compatibility override needed - participant's preferences don't match")
                 
                 # SEATTLE DIAGNOSTIC: Track constraint application for Seattle circles
                 if region == "Seattle" and c_id.startswith('IP-SEA-'):
