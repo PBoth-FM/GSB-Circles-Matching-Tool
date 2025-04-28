@@ -1387,13 +1387,38 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     else:
         print(f"✅ All {len(existing_circles)} circles have eligibility logs")
     
-    # Identify viable circles for optimization
-    viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
-                     if circle_data.get('max_additions', 0) > 0}
+    # First identify circles with capacity for new members
+    circles_with_capacity = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
+                            if circle_data.get('max_additions', 0) > 0}
     
-    # ENHANCED VIABLE CIRCLE DETECTION: List all circles with capacity
+    # Now identify all circles that have CURRENT-CONTINUING members
+    continuing_member_circles = set()
+    for _, row in region_df.iterrows():
+        if row.get('Status') == 'CURRENT-CONTINUING':
+            # Find their current circle ID
+            current_circle_id = None
+            for circle_col in ['Current_Circle_ID', 'Current Circle ID', 'CIRCLES_ID']:
+                if circle_col in row and not pd.isna(row[circle_col]) and str(row[circle_col]).strip() != '':
+                    current_circle_id = str(row[circle_col]).strip()
+                    break
+            
+            if current_circle_id and current_circle_id in existing_circles:
+                continuing_member_circles.add(current_circle_id)
+    
+    # Merge both sets to create viable circles
+    viable_circles = circles_with_capacity.copy()
+    
+    # Add circles with continuing members, even if they don't have capacity
+    for circle_id in continuing_member_circles:
+        if circle_id not in viable_circles and circle_id in existing_circles:
+            viable_circles[circle_id] = existing_circles[circle_id]
+            print(f"  ✅ Adding circle {circle_id} to viable circles because it has CURRENT-CONTINUING members")
+    
+    # ENHANCED VIABLE CIRCLE DETECTION: List all circles
     print(f"\n🔍 VIABLE CIRCLES DETECTION:")
-    print(f"  Found {len(viable_circles)} viable circles with max_additions > 0")
+    print(f"  Found {len(circles_with_capacity)} circles with max_additions > 0")
+    print(f"  Found {len(continuing_member_circles)} circles with CURRENT-CONTINUING members")
+    print(f"  Total viable circles for optimization: {len(viable_circles)}")
     
     # Verify circle viability more thoroughly
     if viable_circles:
