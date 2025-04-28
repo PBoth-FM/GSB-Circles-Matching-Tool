@@ -1598,7 +1598,13 @@ def render_debug_tab():
     st.write("## Optimization Debug Logs")
     
     # Create tabs for different sections of debug info
-    debug_tab1, debug_tab2, debug_tab3, debug_tab4 = st.tabs(["Circle Capacity Analysis", "Houston Debug Logs", "Circle Eligibility Debug", "All Circles Debug"])
+    debug_tab1, debug_tab2, debug_tab3, debug_tab4, debug_tab5 = st.tabs([
+        "Circle Capacity Analysis", 
+        "Houston Debug Logs", 
+        "Circle Eligibility Debug", 
+        "All Circles Debug",
+        "Seattle Compatibility Analysis"
+    ])
     
     with debug_tab1:
         st.write("### Circle Capacity Analysis")

@@ -1919,10 +1919,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             is_compatible = (loc_match and time_match)
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
             
-            # ADD TO PARTICIPANT'S COMPATIBLE CIRCLES LIST IF COMPATIBLE
-            if is_compatible and c_id not in participant_compatible_circles[p_id]:
-                participant_compatible_circles[p_id].append(c_id)
-            
             # SEATTLE DIAGNOSTIC: Add special diagnostics for Seattle circles and participants
             is_seattle_circle = c_id.startswith('IP-SEA-') if c_id else False
             
@@ -2007,7 +2003,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # 🔴 POTENTIAL FIX: Diagnose and potentially force compatibility if it seems like a bug
                 if not is_compatible and loc_match:
                     # Check if time strings contain compatible parts
-                    for p_time in p_times:
+                    for p_time in time_prefs:
                         if p_time and isinstance(p_time, str):
                             p_lower = p_time.lower()
                             c_lower = time_slot.lower()
@@ -3512,6 +3508,95 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             final_logs[key] = value.copy()  # Deep copy dictionaries
         else:
             final_logs[key] = value  # Direct copy for non-dict values
+    
+    # SEATTLE DEBUG: Track optimization results for Seattle circles
+    if region == "Seattle":
+        seattle_debug_logs.append(f"\n=== OPTIMIZATION RESULTS ANALYSIS ===")
+        seattle_debug_logs.append(f"Optimization status: {pulp.LpStatus[prob.status]}")
+        
+        # Log the objective function value
+        seattle_debug_logs.append(f"Objective function value: {pulp.value(prob.objective)}")
+        
+        # Check which participants were assigned to Seattle circles
+        seattle_circles = [c_id for c_id in all_circle_ids if c_id.startswith('IP-SEA-')]
+        for c_id in seattle_circles:
+            # Check which participants were assigned to this circle
+            assigned_participants = []
+            for p_id in participants:
+                if (p_id, c_id) in x and pulp.value(x[(p_id, c_id)]) > 0.5:
+                    assigned_participants.append(p_id)
+            
+            # Log the assignment results
+            participants_count = len(assigned_participants)
+            seattle_debug_logs.append(f"\nCircle {c_id} assignments:")
+            seattle_debug_logs.append(f"  Assigned participants: {participants_count}")
+            
+            if participants_count > 0:
+                seattle_debug_logs.append(f"  Participant IDs: {assigned_participants}")
+                
+                # Log details for each assigned participant
+                for p_id in assigned_participants:
+                    if p_id in remaining_df['Encoded ID'].values:
+                        p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+                        seattle_debug_logs.append(f"  Participant {p_id}:")
+                        seattle_debug_logs.append(f"    Status: {p_row.get('Status', 'Unknown')}")
+            else:
+                seattle_debug_logs.append(f"  No new participants assigned to this circle")
+            
+            # Check compatible participants who weren't assigned to this circle
+            compatible_unassigned = []
+            for p_id in participants:
+                if compatibility.get((p_id, c_id), 0) == 1 and p_id not in assigned_participants:
+                    # Check status and where they went instead
+                    assigned_elsewhere = False
+                    assigned_circle = None
+                    for other_c_id in all_circle_ids:
+                        if (p_id, other_c_id) in x and pulp.value(x[(p_id, other_c_id)]) > 0.5:
+                            assigned_elsewhere = True
+                            assigned_circle = other_c_id
+                            break
+                    
+                    status = "Assigned to " + assigned_circle if assigned_elsewhere else "Unmatched"
+                    compatible_unassigned.append((p_id, status))
+            
+            if compatible_unassigned:
+                seattle_debug_logs.append(f"  Compatible participants NOT assigned to {c_id}:")
+                for p_id, status in compatible_unassigned:
+                    seattle_debug_logs.append(f"    {p_id}: {status}")
+        
+        # Focus on IP-SEA-01 specifically
+        if 'IP-SEA-01' in circle_metadata:
+            seattle_debug_logs.append(f"\nDETAILED ANALYSIS FOR IP-SEA-01:")
+            meta = circle_metadata['IP-SEA-01']
+            seattle_debug_logs.append(f"  Location: {meta.get('subregion', 'Unknown')}")
+            seattle_debug_logs.append(f"  Meeting time: {meta.get('meeting_time', 'Unknown')}")
+            seattle_debug_logs.append(f"  Current members: {len(meta.get('members', []))}")
+            seattle_debug_logs.append(f"  Max additions: {meta.get('max_additions', 0)}")
+            
+            # Check eligibility info
+            if 'IP-SEA-01' in circle_eligibility_logs:
+                elig_info = circle_eligibility_logs['IP-SEA-01']
+                seattle_debug_logs.append(f"  Eligibility: {'Eligible' if elig_info.get('is_eligible', False) else 'Not eligible'}")
+                if 'reason' in elig_info:
+                    seattle_debug_logs.append(f"  Reason: {elig_info['reason']}")
+            else:
+                seattle_debug_logs.append(f"  No eligibility information available")
+        
+        # Add to session state for UI access
+        import streamlit as st
+        if 'seattle_debug_logs' not in st.session_state:
+            st.session_state.seattle_debug_logs = []
+        
+        # Add timestamp
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        seattle_debug_logs.insert(0, f"=== Seattle Debug Log {timestamp} ===")
+        
+        # Add to session state
+        st.session_state.seattle_debug_logs = seattle_debug_logs
+        
+        # Also print to console for debugging
+        print("\n".join(seattle_debug_logs[:10]) + "\n... (more logs available in UI)")
     
     # Return the final logs copy
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
