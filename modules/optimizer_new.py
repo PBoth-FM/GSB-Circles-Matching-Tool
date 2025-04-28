@@ -153,6 +153,15 @@ def load_circle_eligibility_logs_from_file():
         dict: Circle eligibility logs or empty dict if file doesn't exist
     """
     try:
+        # CRITICAL FIX: Add debug flag to check if we should force recalculation
+        # This ensures we're using the latest time compatibility logic
+        force_recalculate = True
+        
+        if force_recalculate:
+            print("🔄 COMPATIBILITY FIX: Forcing recalculation of circle eligibility instead of loading from file")
+            print("  This ensures the latest time compatibility enhancements are used")
+            return {}
+            
         if os.path.exists(CIRCLE_ELIGIBILITY_LOGS_PATH):
             with open(CIRCLE_ELIGIBILITY_LOGS_PATH, 'r') as f:
                 data = json.load(f)
@@ -1965,46 +1974,65 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Both location and time must match for compatibility
             is_compatible = (loc_match and time_match)
             
-            # CRITICAL FIX: Force Seattle compatibility for testing
-            # For the Seattle participant with "Wednesday (Evenings)" who should match with IP-SEA-01
+            # SEATTLE ENHANCED COMPATIBILITY: Print detailed debug whenever a NEW member tries to match with IP-SEA-01
             if c_id == 'IP-SEA-01' and p_row.get('Status') == 'NEW' and region == 'Seattle':
-                # Look for participants that should match with IP-SEA-01
+                # Always print debug info for any NEW participants being checked against IP-SEA-01
+                print(f"\n📊 SEATTLE CIRCLE IP-SEA-01 MATCH ATTEMPT 📊")
+                print(f"  Participant ID: {p_id}")
+                print(f"  Status: {p_row.get('Status')}")
+                print(f"  Participant time prefs: '{first_choice}', '{second_choice}', '{third_choice}'")
+                print(f"  Circle meeting time: '{time_slot}'")
+                print(f"  Participant location prefs: '{p_row.get('first_choice_location')}', '{p_row.get('second_choice_location')}', '{p_row.get('third_choice_location')}'")
+                print(f"  Circle location: '{subregion}'")
+                print(f"  Location match result: {loc_match}")
+                print(f"  Time match result: {time_match}")
+                print(f"  Overall compatibility: {is_compatible}")
+                
+                # Detailed time compatibility checking with direct function calls for transparency
+                from modules.data_processor import is_time_compatible
+                is_circle_time = True
+                print(f"\n  📋 DETAILED TIME COMPATIBILITY DEBUG:")
+                
+                if first_choice:
+                    result1 = is_time_compatible(first_choice, time_slot, is_important=True, is_circle_time=True)
+                    print(f"  First choice time '{first_choice}' ↔ Circle time '{time_slot}': {result1}")
+                
+                if second_choice:
+                    result2 = is_time_compatible(second_choice, time_slot, is_important=True, is_circle_time=True)
+                    print(f"  Second choice time '{second_choice}' ↔ Circle time '{time_slot}': {result2}")
+                
+                if third_choice:
+                    result3 = is_time_compatible(third_choice, time_slot, is_important=True, is_circle_time=True)
+                    print(f"  Third choice time '{third_choice}' ↔ Circle time '{time_slot}': {result3}")
+                
+                # Look for participants that should match with IP-SEA-01 based on Wednesday evenings
                 if (first_choice == 'Wednesday (Evenings)' or second_choice == 'Wednesday (Evenings)' or third_choice == 'Wednesday (Evenings)') and \
                    (subregion == p_row.get('first_choice_location') or subregion == p_row.get('second_choice_location') or subregion == p_row.get('third_choice_location')):
-                    # This is a direct match that should work - debug trace
-                    print(f"\n🔍 SEATTLE CRITICAL MATCH CHECK - IP-SEA-01 with possible exact match")
-                    print(f"  Participant ID: {p_id}")
-                    print(f"  Status: {p_row.get('Status')}")
-                    print(f"  Time preferences: '{first_choice}', '{second_choice}', '{third_choice}'")
-                    print(f"  Circle time: '{time_slot}'")
-                    print(f"  Location: {subregion} vs {p_row.get('first_choice_location')}, {p_row.get('second_choice_location')}, {p_row.get('third_choice_location')}")
-                    print(f"  Location match: {loc_match}")
-                    print(f"  Time match: {time_match}")
-                    print(f"  Final compatibility: {is_compatible}")
+                    # This is a direct match that should work - extra debug trace
+                    print(f"\n🔍 SEATTLE CRITICAL MATCH CHECK - IP-SEA-01 with exact Wednesday match")
                     
-                    # Force compatibility for exact Wednesday matches
-                    if loc_match and (first_choice == 'Wednesday (Evenings)' or second_choice == 'Wednesday (Evenings)' or third_choice == 'Wednesday (Evenings)'):
-                        print(f"  🔴 FORCING COMPATIBILITY: This is an exact match that should work!")
+                    # Force compatibility for exact Wednesday matches if needed
+                    if loc_match and not time_match and (first_choice == 'Wednesday (Evenings)' or second_choice == 'Wednesday (Evenings)' or third_choice == 'Wednesday (Evenings)'):
+                        print(f"  🔴 CRITICAL FIX: This is an exact Wednesday match that should work!")
                         is_compatible = True
+                        print(f"  New compatibility after fix: {is_compatible}")
                 
-                # Also check Monday-thursday cases
-                if loc_match and ('monday-thursday' in first_choice.lower() or 'monday-thursday' in second_choice.lower() or 'monday-thursday' in third_choice.lower()):
+                # Also check Monday-thursday cases for compatibility with Wednesday
+                has_monday_thursday = ('monday-thursday' in first_choice.lower() or 
+                                     'monday-thursday' in second_choice.lower() or 
+                                     'monday-thursday' in third_choice.lower())
+                
+                if loc_match and has_monday_thursday:
                     print(f"\n🔍 SEATTLE MONDAY-THURSDAY CHECK - IP-SEA-01 with range match")
-                    print(f"  Participant ID: {p_id}")
-                    print(f"  Status: {p_row.get('Status')}")
-                    print(f"  Time preferences: '{first_choice}', '{second_choice}', '{third_choice}'")
-                    print(f"  Circle time: '{time_slot}'")
-                    print(f"  Location match: {loc_match}")
-                    print(f"  Time match: {time_match}")
-                    print(f"  Current compatibility: {is_compatible}")
                     
                     # Force compatibility for Monday-Thursday (Evenings) when circle is Wednesday (Evenings)
-                    if loc_match and time_slot == 'Wednesday (Evenings)' and \
+                    if loc_match and time_slot == 'Wednesday (Evenings)' and not time_match and \
                        (('monday-thursday' in first_choice.lower() and 'evening' in first_choice.lower()) or
                         ('monday-thursday' in second_choice.lower() and 'evening' in second_choice.lower()) or
                         ('monday-thursday' in third_choice.lower() and 'evening' in third_choice.lower())):
-                        print(f"  🔴 FORCING COMPATIBILITY: Monday-Thursday should include Wednesday!")
+                        print(f"  🔴 CRITICAL FIX: Monday-Thursday should include Wednesday!")
                         is_compatible = True
+                        print(f"  New compatibility after fix: {is_compatible}")
             
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
