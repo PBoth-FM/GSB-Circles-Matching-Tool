@@ -326,6 +326,10 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
+    # Import or define is_time_compatible here to ensure it's available in this scope
+    # This fixes the "cannot access local variable" error in optimize mode
+    from modules.data_processor import is_time_compatible
+    
     # CRITICAL DIAGNOSTIC: Always enable debug mode for Seattle region
     if region == 'Seattle':
         debug_mode = True
