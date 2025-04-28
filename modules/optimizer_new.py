@@ -326,6 +326,51 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
+    # CRITICAL DIAGNOSTIC: Always enable debug mode for Seattle region
+    if region == 'Seattle':
+        debug_mode = True
+        print(f"\n🔍 SEATTLE REGION DEEP DIAGNOSTICS:")
+        print(f"  - Total participants in region_df: {len(region_df)}")
+        
+        # Count participants by status
+        if 'Status' in region_df.columns:
+            status_counts = region_df['Status'].value_counts().to_dict()
+            print(f"  - Status counts: {status_counts}")
+        else:
+            print(f"  ⚠️ No 'Status' column found in region_df")
+            
+        # Analyze circle IDs
+        if 'Current_Circle_ID' in region_df.columns:
+            circle_ids = region_df['Current_Circle_ID'].dropna().unique()
+            print(f"  - Existing circles: {list(circle_ids)}")
+            
+            # Check specifically for IP-SEA-01
+            if 'IP-SEA-01' in circle_ids:
+                circle_members = region_df[region_df['Current_Circle_ID'] == 'IP-SEA-01']
+                print(f"  - IP-SEA-01 has {len(circle_members)} members")
+                
+                # Show member details
+                for i, row in circle_members.iterrows():
+                    print(f"    Member {row.get('Encoded ID')}:")
+                    print(f"      Status: {row.get('Status')}")
+                    print(f"      Time preferences: {row.get('first_choice_time')}, {row.get('second_choice_time')}, {row.get('third_choice_time')}")
+            else:
+                print(f"  ⚠️ IP-SEA-01 not found in circle_ids")
+        else:
+            print(f"  ⚠️ No 'Current_Circle_ID' column found in region_df")
+            
+        # Specifically check for NEW participants
+        if 'Status' in region_df.columns:
+            new_participants = region_df[region_df['Status'] == 'NEW']
+            print(f"  - Found {len(new_participants)} NEW participants in Seattle")
+            
+            if len(new_participants) > 0:
+                for i, row in new_participants.iterrows():
+                    print(f"    NEW Participant {row.get('Encoded ID')}:")
+                    print(f"      Location preferences: {row.get('first_choice_location')}, {row.get('second_choice_location')}, {row.get('third_choice_location')}")
+                    print(f"      Time preferences: {row.get('first_choice_time')}, {row.get('second_choice_time')}, {row.get('third_choice_time')}")
+            else:
+                print(f"  🚨 CRITICAL ISSUE: No NEW participants found in Seattle region!")
     """
     Optimize matching within a single region using the refactored circle ID-based model
     
