@@ -17,8 +17,8 @@ from utils.region_mapper import (
 # Global debug flag to trace region mapping issues
 TRACE_REGION_MAPPING = True
 
-# Initialize global tracking for Houston circles debug
-houston_debug_logs = []
+# REMOVED: Houston debug logs - focusing only on Seattle region for the matching optimization
+# houston_debug_logs = []
 
 # Initialize debug counter for tracking
 DEBUG_ELIGIBILITY_COUNTER = 0
@@ -2600,18 +2600,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             if debug_mode:
                 print(f"⭐ Adding SUPER weight (5000) to encourage test participant 73177784103 to match with IP-SIN-01")
         
-        # Special case 2: Participant 72549701782 should match with circle IP-HOU-02
-        elif p_id == '72549701782' and 'IP-HOU-02' in existing_circle_ids:
-            # This is our critical problem test case - add a super high bonus instead of a hard constraint
-            houston_debug_logs.append(f"SOFT CONSTRAINT APPROACH: Adding huge bonus for participant 72549701782 with IP-HOU-02")
-            
-            # Log detailed information about the compatibility
-            # Initialize houston_circle_meta to default empty dict if not found
-            houston_circle_meta = circle_metadata.get('IP-HOU-02', {
-                'subregion': 'Unknown',
-                'meeting_time': 'Unknown',
-                'max_additions': 'Unknown'
-            })
+        # REMOVED: Houston test case - focusing only on Seattle test cases
+        # Special case 2: Seattle test participant should match with circle IP-SEA-01
             
         # Special case 3: Our Seattle test participant should match with circle IP-SEA-01
         elif p_id == '99999000001' and 'IP-SEA-01' in existing_circle_ids:
@@ -2630,30 +2620,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # (regular compatibility check, no special handling)
             participant_in_data = p_id in remaining_df['Encoded ID'].values
             
-            houston_debug_entry = "HOUSTON TEST CASE DEBUG INFORMATION (WITHOUT SPECIAL HANDLING):\n"
+            print(f"Checking Seattle test participant status: {participant_in_data}")
+            
+            # REMOVED HOUSTON-SPECIFIC DEBUG CODE
+            # Focusing only on Seattle test participant
             
             if participant_in_data:
                 # If participant exists in data, get actual preferences
                 p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
-                houston_debug_entry += f"Participant 72549701782 location preferences:\n"
-                houston_debug_entry += f"  First: {p_row['first_choice_location']}\n"
-                houston_debug_entry += f"  Second: {p_row['second_choice_location']}\n" 
-                houston_debug_entry += f"  Third: {p_row['third_choice_location']}\n"
-                houston_debug_entry += f"Participant 72549701782 time preferences:\n"
-                houston_debug_entry += f"  First: {p_row['first_choice_time']}\n"
-                houston_debug_entry += f"  Second: {p_row['second_choice_time']}\n"
-                houston_debug_entry += f"  Third: {p_row['third_choice_time']}\n"
+                print(f"Seattle participant preferences:")
+                print(f"  First location: {p_row['first_choice_location']}")
+                print(f"  First time: {p_row['first_choice_time']}")
             else:
-                # Participant isn't in this region's data - will use normal compatibility
-                houston_debug_entry += "Participant 72549701782 not found in this region's data\n"
-                houston_debug_entry += "Will be processed normally through regular region matching\n"
-            
-            # Add circle information
-            houston_debug_entry += f"IP-HOU-02 information:\n"
-            houston_debug_entry += f"  Subregion: {houston_circle_meta['subregion']}\n"
-            houston_debug_entry += f"  Meeting time: {houston_circle_meta['meeting_time']}\n"
-            houston_debug_entry += f"  Max additions: {houston_circle_meta['max_additions']}\n"
-            houston_debug_logs.append(houston_debug_entry)
+                # Participant isn't in this region's data
+                print(f"Seattle test participant not found in this region's data")
             
             # [CONSULTANT RECOMMENDATION] - Step 5: Add huge bonus to the objective instead of a hard constraint
             # Using 100,000 as recommended by the consultant, rather than forcing the constraint
