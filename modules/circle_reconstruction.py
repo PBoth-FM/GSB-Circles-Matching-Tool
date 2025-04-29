@@ -104,6 +104,17 @@ def reconstruct_circles_from_results(results, original_circles=None):
             if 'circle_id' in row:
                 c_id = row['circle_id']
                 original_circle_info[c_id] = row.to_dict()
+        print(f"  Loaded information for {len(original_circle_info)} circles from original data")
+        
+        # Debug sample of original circle data
+        if len(original_circle_info) > 0:
+            sample_circle_id = list(original_circle_info.keys())[0]
+            sample_data = original_circle_info[sample_circle_id]
+            print(f"  Sample original circle {sample_circle_id}:")
+            if 'member_count' in sample_data:
+                print(f"    member_count: {sample_data['member_count']}")
+            if 'members' in sample_data and isinstance(sample_data['members'], list):
+                print(f"    members list length: {len(sample_data['members'])}")
     
     # Group participants by circle
     for circle_id in unique_circles:
@@ -125,10 +136,22 @@ def reconstruct_circles_from_results(results, original_circles=None):
         # Store members list
         circle_members[circle_id] = member_ids
         
-        # Initialize circle metadata
+        # Initialize circle metadata, prioritizing data from original_circles if available
+        member_count = len(member_ids)
+        has_original_data = circle_id in original_circle_info
+        
+        # CRITICAL FIX: For continuing circles, prioritize member counts from original data
+        # This fixes the issue with continuing circles showing member_count = 1
+        if has_original_data and 'member_count' in original_circle_info[circle_id]:
+            original_count = original_circle_info[circle_id]['member_count']
+            if not pd.isna(original_count) and original_count > member_count:
+                print(f"  ✓ Using original member_count={original_count} for circle {circle_id} (instead of {member_count})")
+                member_count = original_count
+            
+        # Initialize circle metadata 
         circle_metadata[circle_id] = {
             'circle_id': circle_id,
-            'member_count': len(member_ids),  # Now uses deduplicated count
+            'member_count': member_count,
             'members': member_ids
         }
         
@@ -368,6 +391,35 @@ def reconstruct_circles_from_results(results, original_circles=None):
     
     print(f"  Successfully created circles DataFrame with {len(circles_df)} circles")
     
+    # Critical debug for member counts - we need to make a direct fix
+    print("\n🔍 CRITICAL DEBUG: MEMBER COUNT VERIFICATION - Final Fix")
+    count_fixed = 0
+
+    # Check if we have continuing/existing circles that should have multiple members but show just 1
+    for i, row in circles_df.iterrows():
+        circle_id = row['circle_id']
+        is_continuing = row.get('is_existing', False)
+        is_new = row.get('is_new_circle', False) 
+        member_count = row.get('member_count', 0)
+        continuing_count = row.get('continuing_members', 0)
+        
+        # Debug output for identified test circles
+        if circle_id in test_circle_ids or is_continuing:
+            print(f"  🔍 DIRECT CHECK circle {circle_id}:")
+            print(f"    member_count = {member_count}, continuing_members = {continuing_count}")
+            print(f"    is_existing = {is_continuing}, is_new_circle = {is_new}")
+            
+            # Check if we have a mismatch - existing circle with only 1 member
+            if is_continuing and continuing_count > 0 and member_count == 1:
+                # CRITICAL FIX: Based on continuing_members, force update the member_count
+                old_count = member_count
+                circles_df.at[i, 'member_count'] = max(member_count, continuing_count)
+                count_fixed += 1
+                print(f"  🔧 DIRECT FIX: Circle {circle_id} member_count forced from {old_count} to {circles_df.at[i, 'member_count']}")
+    
+    if count_fixed > 0:
+        print(f"  ✅ Direct-fixed member counts for {count_fixed} continuing circles with incorrect counts")
+
     # Note: We leave meeting times blank if not available, per user instruction
     missing_time_count = 0
     for i, row in circles_df.iterrows():
