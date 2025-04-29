@@ -11,14 +11,31 @@ def deduplicate_circles(circles_list, debug_mode=False):
     Deduplicates circles by circle_id, merging member lists and updating counts.
     
     Args:
-        circles_list: List of dictionaries (circles)
+        circles_list: List of dictionaries (circles) or pandas DataFrame
         debug_mode: Whether to print debug information
         
     Returns:
         Deduplicated list of circles
     """
-    if debug_mode:
+    # CRITICAL FIX: Handle the case where circles_list is a pandas DataFrame
+    if isinstance(circles_list, pd.DataFrame):
+        if debug_mode:
+            print(f"\n🔄 DEDUPLICATING DATAFRAME WITH {len(circles_list)} CIRCLES")
+            print(f"  Converting DataFrame to list of dictionaries for deduplication")
+        
+        # Convert DataFrame to list of dictionaries
+        circles_list = circles_list.to_dict('records')
+        
+        if debug_mode:
+            print(f"  Converted to list with {len(circles_list)} items")
+    elif debug_mode:
         print(f"\n🔄 DEDUPLICATING {len(circles_list)} CIRCLES")
+    
+    # Handle empty input
+    if not circles_list:
+        if debug_mode:
+            print("  No circles to deduplicate, returning empty list")
+        return []
     
     merged = {}
     
@@ -756,6 +773,26 @@ def run_matching_algorithm(data, config):
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
+        
+        # CRITICAL FIX: Add extra debug info about the circles returned for this region
+        print(f"\n🔍 REGION {region} CIRCLES INSPECTION:")
+        print(f"  Region returned {len(region_circles) if region_circles else 0} circles")
+        
+        # Add extra diagnostics to check for potential issues
+        if isinstance(region_circles, pd.DataFrame):
+            print(f"  Region circles is a DataFrame with {len(region_circles)} rows")
+            if not region_circles.empty:
+                print("  Sample circles from region:")
+                for i, (_, row) in enumerate(region_circles.head(3).iterrows()):
+                    print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members")
+        else:
+            print(f"  Region circles is a {type(region_circles).__name__} with {len(region_circles)} items")
+            if len(region_circles) > 0:
+                print("  Sample circles from region:")
+                for i, circle in enumerate(region_circles[:3]):
+                    circle_id = circle.get('circle_id', 'Unknown')
+                    member_count = circle.get('member_count', 0)
+                    print(f"    {i+1}. {circle_id}: {member_count} members")
         
         # CRITICAL FIX: Add region logs to our aggregated collection dictionary
         # This is the core fix - we collect logs from all regions, then update session state once at the end
