@@ -4829,9 +4829,33 @@ def render_circles_detail():
         st.warning("No results data available to analyze circle diversity.")
         return
     
-    # Get the circle data and results data
+    # Debug - Print session state keys
+    print("DEBUG SESSION STATE KEYS:")
+    for key in st.session_state:
+        print(f"  - {key}")
+    
+    # Debug - Look for diversity scores in session state
+    if 'diversity_scores' in st.session_state:
+        print("DEBUG - Found diversity_scores in session state")
+        for key, value in st.session_state.diversity_scores.items():
+            print(f"  {key}: {value}")
+    
+    # Get the circle data and results data 
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
+    
+    # Debug - Check what's in circles_df
+    print(f"DEBUG CIRCLES_DF - Shape: {circles_df.shape}")
+    print(f"DEBUG CIRCLES_DF - Columns: {circles_df.columns.tolist()}")
+    print(f"DEBUG CIRCLES_DF - First few circle IDs: {circles_df['circle_id'].head(5).tolist()}")
+    
+    # Debug - Special check for IP-ATL-1 and IP-BOS-01
+    for test_id in ['IP-ATL-1', 'IP-BOS-01']:
+        test_circle = circles_df[circles_df['circle_id'] == test_id]
+        if not test_circle.empty:
+            print(f"DEBUG - Found test circle {test_id}")
+            print(f"  Member count: {test_circle['member_count'].iloc[0]}")
+            print(f"  Members: {test_circle['members'].iloc[0]}")
     
     # Filter out circles with no members
     if 'member_count' not in circles_df.columns:
