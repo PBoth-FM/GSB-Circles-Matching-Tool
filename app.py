@@ -411,11 +411,26 @@ def process_uploaded_file(uploaded_file):
                 if 'results' in st.session_state and st.session_state.results is not None:
                     results_df = st.session_state.results
                     total_participants = len(results_df)
-                    matched_count = len(results_df[results_df['proposed_NEW_circles_id'] != 'UNMATCHED']) if 'proposed_NEW_circles_id' in results_df.columns else 0
-                    unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED']) if 'proposed_NEW_circles_id' in results_df.columns else 0
                     
-                    # Create columns for the metrics
-                    col1, col2, col3, col4 = st.columns(4)
+                    # FIXED: More accurate calculation of matched participants
+                    # Only count non-empty circle IDs to avoid counting filtered records
+                    matched_count = 0
+                    unmatched_count = 0
+                    
+                    if 'proposed_NEW_circles_id' in results_df.columns:
+                        # Filter out any null or empty values
+                        matched_count = results_df['proposed_NEW_circles_id'].notna()
+                        matched_count = len(results_df[matched_count & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')])
+                        unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+                    
+                    # Log debug information
+                    print(f"DEBUG - Participant count calculation:")
+                    print(f"  Total participants: {total_participants}")
+                    print(f"  Matched count: {matched_count}")
+                    print(f"  Unmatched count: {unmatched_count}")
+                    
+                    # Create columns for the metrics (now 3 columns instead of 4)
+                    col1, col2, col3 = st.columns(3)
                     
                     with col1:
                         if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
@@ -423,25 +438,8 @@ def process_uploaded_file(uploaded_file):
                     
                     with col2:
                         st.metric("Participants Matched", matched_count)
-                    
+                        
                     with col3:
-                        # Use pre-calculated diversity score if available, otherwise calculate it
-                        if 'total_diversity_score' in st.session_state and st.session_state.total_diversity_score is not None:
-                            total_diversity_score = st.session_state.total_diversity_score
-                            print(f"DEBUG - Using pre-calculated diversity score: {total_diversity_score}")
-                        else:
-                            # Fall back to calculation if needed
-                            from modules.ui_components import calculate_total_diversity_score
-                            matched_circles_df = st.session_state.matched_circles
-                            results_df = st.session_state.results
-                            total_diversity_score = calculate_total_diversity_score(matched_circles_df, results_df)
-                            st.session_state.total_diversity_score = total_diversity_score
-                            print(f"DEBUG - Calculated diversity score on demand: {total_diversity_score}")
-                        
-                        # Display Diversity Score metric
-                        st.metric("Diversity Score", total_diversity_score)
-                        
-                    with col4:
                         if total_participants > 0:
                             match_rate = (matched_count / total_participants) * 100
                             st.metric("Match Success Rate", f"{match_rate:.1f}%")
