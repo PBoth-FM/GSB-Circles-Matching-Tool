@@ -129,15 +129,37 @@ def reconstruct_circles_from_results(results, original_circles=None):
         member_ids_set = set(members_df[id_column].tolist())
         member_ids = list(member_ids_set)
         
+        # Count unique members by status for accurate member counts
+        new_members = 0
+        continuing_members = 0
+        if 'Status' in members_df.columns:
+            for _, row in members_df.iterrows():
+                member_id = row[id_column]
+                status = row.get('Status', '').upper()
+                if status == 'NEW' or status == 'NEW TO CIRCLES':
+                    new_members += 1
+                elif status == 'CURRENT-CONTINUING':
+                    continuing_members += 1
+        
         print(f"  Circle {circle_id}: Found {len(members_df)} member records, {len(member_ids)} unique members")
+        print(f"  Status breakdown: {new_members} new, {continuing_members} continuing members")
+        
         if len(members_df) > len(member_ids):
             print(f"  ⚠️ WARNING: Circle {circle_id} had {len(members_df) - len(member_ids)} duplicate member entries - removed")
         
         # Store members list
         circle_members[circle_id] = member_ids
         
-        # Initialize circle metadata, prioritizing data from original_circles if available
+        # Initialize circle metadata with the correct member counts
         member_count = len(member_ids)
+        
+        # CRITICAL FIX: For new circles, make sure we use the actual membership count
+        # This ensures new circles show the correct member count
+        if circle_id.startswith('IP-NEW'):
+            # We should set member_count to the actual number of unique members
+            if member_count < len(member_ids):
+                member_count = len(member_ids)
+                print(f"  🔧 NEW CIRCLE FIX: Set member_count for {circle_id} to {member_count} based on members list")
         has_original_data = circle_id in original_circle_info
         
         # CRITICAL FIX: For continuing circles, prioritize member counts from original data
@@ -394,31 +416,83 @@ def reconstruct_circles_from_results(results, original_circles=None):
     # Critical debug for member counts - we need to make a direct fix
     print("\n🔍 CRITICAL DEBUG: MEMBER COUNT VERIFICATION - Final Fix")
     count_fixed = 0
+    new_count_fixed = 0
 
-    # Check if we have continuing/existing circles that should have multiple members but show just 1
+    # First, create a members count dictionary based on the actual "members" list for each circle
+    print("\n💡 MEMBER COUNT RECALCULATION BASED ON MEMBERS LIST")
+    member_count_from_list = {}
+    for i, row in circles_df.iterrows():
+        circle_id = row['circle_id']
+        if 'members' in row and isinstance(row['members'], list):
+            actual_count = len(row['members'])
+            member_count_from_list[circle_id] = actual_count
+            
+            # Compare with existing count
+            current_count = row.get('member_count', 0)
+            if current_count != actual_count:
+                print(f"  ⚠️ Circle {circle_id} has member_count={current_count} but members list has {actual_count} items")
+
+    # Check all circles for member count issues
     for i, row in circles_df.iterrows():
         circle_id = row['circle_id']
         is_continuing = row.get('is_existing', False)
         is_new = row.get('is_new_circle', False) 
         member_count = row.get('member_count', 0)
         continuing_count = row.get('continuing_members', 0)
+        new_count = row.get('new_members', 0)
         
-        # Debug output for identified test circles
-        if circle_id in test_circle_ids or is_continuing:
-            print(f"  🔍 DIRECT CHECK circle {circle_id}:")
-            print(f"    member_count = {member_count}, continuing_members = {continuing_count}")
+        # CRITICAL FIX FOR ALL CIRCLES: Calculate proper member count from members list
+        if circle_id in member_count_from_list:
+            actual_count = member_count_from_list[circle_id]
+            
+            # For new circles, always use the members list count if it's greater
+            if circle_id.startswith('IP-NEW'):
+                if actual_count > member_count:
+                    old_count = member_count
+                    circles_df.at[i, 'member_count'] = actual_count
+                    new_count_fixed += 1
+                    print(f"  🔧 DIRECT FIX FOR NEW CIRCLE: {circle_id} member_count updated from {old_count} to {actual_count}")
+        
+        # Debug output for identified test circles or any circles with issues
+        if circle_id in test_circle_ids or is_continuing or member_count == 1:
+            print(f"  🔍 CIRCLE CHECK: {circle_id}:")
+            print(f"    member_count = {member_count}, continuing_members = {continuing_count}, new_members = {new_count}")
             print(f"    is_existing = {is_continuing}, is_new_circle = {is_new}")
+            if circle_id in member_count_from_list:
+                print(f"    members list length = {member_count_from_list[circle_id]}")
             
             # Check if we have a mismatch - existing circle with only 1 member
             if is_continuing and continuing_count > 0 and member_count == 1:
                 # CRITICAL FIX: Based on continuing_members, force update the member_count
                 old_count = member_count
-                circles_df.at[i, 'member_count'] = max(member_count, continuing_count)
+                
+                # Use the higher of continuing_count or the actual members list length
+                correct_count = continuing_count
+                if circle_id in member_count_from_list and member_count_from_list[circle_id] > correct_count:
+                    correct_count = member_count_from_list[circle_id]
+                    
+                circles_df.at[i, 'member_count'] = correct_count
                 count_fixed += 1
-                print(f"  🔧 DIRECT FIX: Circle {circle_id} member_count forced from {old_count} to {circles_df.at[i, 'member_count']}")
+                print(f"  🔧 DIRECT FIX: Circle {circle_id} member_count forced from {old_count} to {correct_count}")
+            
+            # For continuing circles with incorrect counts, make sure they show the right number
+            elif is_continuing and member_count != (continuing_count + new_count) and (continuing_count + new_count) > 0:
+                old_count = member_count
+                correct_count = continuing_count + new_count
+                
+                # Verify against members list if available
+                if circle_id in member_count_from_list and member_count_from_list[circle_id] > correct_count:
+                    correct_count = member_count_from_list[circle_id]
+                
+                circles_df.at[i, 'member_count'] = correct_count
+                count_fixed += 1
+                print(f"  🔧 DIRECT FIX: Circle {circle_id} member_count corrected from {old_count} to {correct_count}")
     
     if count_fixed > 0:
         print(f"  ✅ Direct-fixed member counts for {count_fixed} continuing circles with incorrect counts")
+    
+    if new_count_fixed > 0:
+        print(f"  ✅ Direct-fixed member counts for {new_count_fixed} new circles with incorrect counts")
 
     # Note: We leave meeting times blank if not available, per user instruction
     missing_time_count = 0
