@@ -62,6 +62,20 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
     circles_with_no_data = 0
     circles_with_data = 0
     
+    # Debug: Print available columns in results_df
+    print(f"DEBUG - Results DataFrame columns: {results_df.columns.tolist()}")
+    print(f"DEBUG - 'Encoded ID' exists in results_df: {'Encoded ID' in results_df.columns}")
+    print(f"DEBUG - 'Class_Vintage' exists in results_df: {'Class_Vintage' in results_df.columns}")
+    
+    # Debug: Print a few sample values from results_df
+    if 'Encoded ID' in results_df.columns and len(results_df) > 0:
+        print(f"DEBUG - Sample 'Encoded ID' values: {results_df['Encoded ID'].head(3).tolist()}")
+        print(f"DEBUG - Data types: {results_df['Encoded ID'].dtype}")
+    
+    # Store debugging for specific circles of interest
+    selected_circles = ['IP-ATL-1', 'IP-BOS-01']
+    circle_debug_info = {}
+    
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
         circles_processed += 1
@@ -72,35 +86,95 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
         
         circle_id = circle_row['circle_id']
         
+        # Initialize debug info for specific circles
+        is_selected_circle = circle_id in selected_circles
+        if is_selected_circle:
+            circle_debug_info[circle_id] = {
+                "members_raw": str(circle_row['members'])[:100] if 'members' in circle_row else "None",
+                "member_count": circle_row['member_count'] if 'member_count' in circle_row else 0,
+                "members_processed": [],
+                "found_members": 0,
+                "members_with_vintage": 0,
+                "vintage_values": []
+            }
+        
         # Get the list of members for this circle
         members = []
         if 'members' in circle_row and circle_row['members']:
             # For list representation
             if isinstance(circle_row['members'], list):
                 members = circle_row['members']
+                if is_selected_circle:
+                    circle_debug_info[circle_id]["members_format"] = "list"
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
                         members = eval(circle_row['members'])
+                        if is_selected_circle:
+                            circle_debug_info[circle_id]["members_format"] = "string_eval"
                     else:
                         members = [circle_row['members']]
-                except Exception:
+                        if is_selected_circle:
+                            circle_debug_info[circle_id]["members_format"] = "string_single"
+                except Exception as e:
                     members = []
+                    if is_selected_circle:
+                        circle_debug_info[circle_id]["members_format"] = f"error: {str(e)}"
+            else:
+                if is_selected_circle:
+                    circle_debug_info[circle_id]["members_format"] = f"unknown: {type(circle_row['members'])}"
+        
+        if is_selected_circle:
+            circle_debug_info[circle_id]["members_processed"] = members[:10]  # First 10 members for debugging
         
         # Initialize set to track unique categories
         unique_vintages = set()
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Debug for specific circles
+            member_debug = {"id": str(member_id), "found": False, "has_vintage": False, "vintage_value": None}
+            
+            # Try exact match first
             member_data = results_df[results_df['Encoded ID'] == member_id]
             
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format but might be int vs float
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
+            
             if not member_data.empty:
+                member_debug["found"] = True
+                
                 # Vintage diversity
                 if 'Class_Vintage' in member_data.columns:
                     vintage = member_data['Class_Vintage'].iloc[0]
                     if pd.notna(vintage):
                         unique_vintages.add(vintage)
+                        member_debug["has_vintage"] = True
+                        member_debug["vintage_value"] = vintage
+            
+            # Add debug info for selected circles
+            if is_selected_circle:
+                circle_debug_info[circle_id]["found_members"] += 1 if member_debug["found"] else 0
+                circle_debug_info[circle_id]["members_with_vintage"] += 1 if member_debug["has_vintage"] else 0
+                if member_debug["has_vintage"]:
+                    circle_debug_info[circle_id]["vintage_values"].append(member_debug["vintage_value"])
         
         # Calculate diversity score for this circle - include ALL circles, even those with no data
         if unique_vintages:
@@ -111,6 +185,18 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
             # Still include the circle but with a score of 0
             circle_vintage_diversity_scores[circle_id] = 0
             circles_with_no_data += 1
+    
+    # Print detailed debug info for selected circles
+    for circle_id, debug_info in circle_debug_info.items():
+        print(f"\nDETAILED DEBUG FOR {circle_id}:")
+        print(f"  Raw members data: {debug_info['members_raw']}")
+        print(f"  Member count: {debug_info['member_count']}")
+        print(f"  Members format: {debug_info.get('members_format', 'unknown')}")
+        print(f"  Processed members (sample): {debug_info['members_processed']}")
+        print(f"  Found {debug_info['found_members']} members in results_df")
+        print(f"  {debug_info['members_with_vintage']} members have vintage data")
+        print(f"  Vintage values found: {debug_info['vintage_values']}")
+        print(f"  Final score: {circle_vintage_diversity_scores.get(circle_id, 0)}")
     
     # Calculate total score across all circles
     total_score = sum(circle_vintage_diversity_scores.values())
