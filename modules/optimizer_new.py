@@ -4497,7 +4497,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # CRITICAL FIX: Update the circles data with our reconstructed circles to ensure UI components
     # can properly display all circles, including post-processed ones
-    circles = reconstructed_circles if not reconstructed_circles.empty else circles
+    if not reconstructed_circles.empty:
+        print(f"  ✅ Using reconstructed circles with {len(reconstructed_circles)} circles")
+        # Print a sample of the circles for debugging
+        if len(reconstructed_circles) > 0:
+            print("  Sample circles from reconstructed dataframe:")
+            for _, row in reconstructed_circles.head(3).iterrows():
+                print(f"    - {row['circle_id']}: {row['member_count']} members")
+        circles = reconstructed_circles
+    else:
+        print(f"  ⚠️ Reconstructed circles dataframe is empty, using original circles with {len(circles)} circles")
     
     # Calculate improvement metrics
     original_matched = len(results)
