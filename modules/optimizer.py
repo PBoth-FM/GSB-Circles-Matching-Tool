@@ -776,7 +776,14 @@ def run_matching_algorithm(data, config):
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
         print(f"\n🔍 REGION {region} CIRCLES INSPECTION:")
-        print(f"  Region returned {len(region_circles) if region_circles else 0} circles")
+        
+        # Safely check region_circles length based on its type
+        if isinstance(region_circles, pd.DataFrame):
+            circles_count = len(region_circles) if not region_circles.empty else 0
+        else:
+            circles_count = len(region_circles) if region_circles else 0
+        
+        print(f"  Region returned {circles_count} circles")
         
         # Add extra diagnostics to check for potential issues
         if isinstance(region_circles, pd.DataFrame):
@@ -786,13 +793,16 @@ def run_matching_algorithm(data, config):
                 for i, (_, row) in enumerate(region_circles.head(3).iterrows()):
                     print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members")
         else:
-            print(f"  Region circles is a {type(region_circles).__name__} with {len(region_circles)} items")
-            if len(region_circles) > 0:
-                print("  Sample circles from region:")
-                for i, circle in enumerate(region_circles[:3]):
-                    circle_id = circle.get('circle_id', 'Unknown')
-                    member_count = circle.get('member_count', 0)
-                    print(f"    {i+1}. {circle_id}: {member_count} members")
+            if region_circles:
+                print(f"  Region circles is a {type(region_circles).__name__} with {len(region_circles)} items")
+                if len(region_circles) > 0:
+                    print("  Sample circles from region:")
+                    for i, circle in enumerate(region_circles[:3]):
+                        circle_id = circle.get('circle_id', 'Unknown')
+                        member_count = circle.get('member_count', 0)
+                        print(f"    {i+1}. {circle_id}: {member_count} members")
+            else:
+                print(f"  Region circles is empty or None")
         
         # CRITICAL FIX: Add region logs to our aggregated collection dictionary
         # This is the core fix - we collect logs from all regions, then update session state once at the end
@@ -878,18 +888,20 @@ def run_matching_algorithm(data, config):
     # Reconstruct circles from the final results
     reconstructed_circles = reconstruct_circles_from_results(results_df, circles_df)
     
-    if not reconstructed_circles.empty:
+    # Check if reconstructed_circles is a DataFrame and not empty
+    if isinstance(reconstructed_circles, pd.DataFrame) and not reconstructed_circles.empty:
         print(f"  ✅ CRITICAL FIX: Using reconstructed circles with {len(reconstructed_circles)} circles")
         # Print a sample of the circles for debugging
-        if len(reconstructed_circles) > 0:
-            print("  Sample circles from reconstructed dataframe:")
-            for i, (_, row) in enumerate(reconstructed_circles.head(5).iterrows()):
-                print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members")
+        print("  Sample circles from reconstructed dataframe:")
+        for i, (_, row) in enumerate(reconstructed_circles.head(5).iterrows()):
+            print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members")
         
         # Use the reconstructed circles instead of the original circles_df
         circles_df = reconstructed_circles
     else:
-        print(f"  ⚠️ Reconstructed circles dataframe is empty, using original circles with {len(circles_df)} circles")
+        # Safely get the length of circles_df
+        circles_df_count = len(circles_df) if not circles_df.empty else 0
+        print(f"  ⚠️ Reconstructed circles dataframe is empty, using original circles with {circles_df_count} circles")
     
     # Ensure Class_Vintage is properly preserved in results
     if not results_df.empty and 'Class_Vintage' not in results_df.columns and 'Class_Vintage' in data.columns:
@@ -931,7 +943,8 @@ def run_matching_algorithm(data, config):
         st.session_state.optimization_logs = logs
     
     # CRITICAL FIX: If we still have very few eligibility logs, check circle data directly and add any real circles
-    if len(all_eligibility_logs) < 5:  # Changed from 0 to 5 to be more proactive
+    # Ensure all_eligibility_logs exists and has a usable length
+    if isinstance(all_eligibility_logs, dict) and len(all_eligibility_logs) < 5:  # Changed from 0 to 5 to be more proactive
         print(f"\n🚨 CRITICAL ROOT CAUSE FIX: Only {len(all_eligibility_logs)} circle eligibility logs found across all regions")
         print(f"🔧 Checking circles_df for actual circles that should be included in debug logs")
         
