@@ -551,7 +551,23 @@ def process_uploaded_file(uploaded_file):
                         circles_participant_count = 0
                         if 'matched_circles' in st.session_state:
                             circles = st.session_state.matched_circles
-                            circles_participant_count = sum(circle.get('member_count', 0) for circle in circles)
+                            
+                            # Handle different types properly
+                            for circle in circles:
+                                if isinstance(circle, dict):
+                                    # Dictionary circle
+                                    circles_participant_count += circle.get('member_count', 0)
+                                elif isinstance(circle, pd.DataFrame):
+                                    # DataFrame circle
+                                    if 'member_count' in circle.columns:
+                                        circles_participant_count += circle['member_count'].sum()
+                                elif isinstance(circle, str):
+                                    # String entries (circle IDs) - can't get member count directly
+                                    print(f"⚠️ Found string circle entry: {circle}")
+                                else:
+                                    # Other types - log for debugging
+                                    print(f"⚠️ Unknown circle type: {type(circle)}")
+                                    
                             print(f"Total participants in matched_circles: {circles_participant_count}")
                     
                     # Check if we have test participants
@@ -595,14 +611,30 @@ def process_uploaded_file(uploaded_file):
                     (isinstance(st.session_state.matched_circles, list) or 
                      not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty))):
                     
-                    # Get the data
-                    circles_df = st.session_state.matched_circles.copy()
+                    # Get the data - handle the case where matched_circles might be a list of dictionaries
+                    if isinstance(st.session_state.matched_circles, pd.DataFrame):
+                        circles_df = st.session_state.matched_circles.copy()
+                    elif isinstance(st.session_state.matched_circles, list):
+                        # Convert list of dictionaries to DataFrame
+                        try:
+                            circles_df = pd.DataFrame(st.session_state.matched_circles)
+                        except Exception as e:
+                            st.warning(f"Could not convert circles to DataFrame: {str(e)}")
+                            print(f"Error converting matched_circles to DataFrame: {str(e)}")
+                            circles_df = pd.DataFrame()  # Empty DataFrame as fallback
+                    else:
+                        # Unknown type
+                        st.warning(f"Unexpected matched_circles type: {type(st.session_state.matched_circles)}")
+                        circles_df = pd.DataFrame()  # Empty DataFrame as fallback
                     
                     # Extract key columns as specified
                     display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 'new_members', 'max_additions', 'always_hosts', 'sometimes_hosts']
                     
                     # Filter to only include columns that exist in the dataframe
-                    existing_cols = [col for col in display_cols if col in circles_df.columns]
+                    if hasattr(circles_df, 'columns'):
+                        existing_cols = [col for col in display_cols if col in circles_df.columns]
+                    else:
+                        existing_cols = []
                     
                     if existing_cols:
                         display_df = circles_df[existing_cols].copy()
