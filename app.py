@@ -166,6 +166,20 @@ def run_optimization():
                 print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS in results")
                 print(f"  First test participant: {test_participants[0].get('Encoded ID', 'Unknown')}")
             
+            # Check for duplicate Encoded IDs
+            if 'Encoded ID' in results.columns:
+                total_ids = len(results['Encoded ID'])
+                unique_ids = len(results['Encoded ID'].unique())
+                print(f"Total IDs: {total_ids}, Unique IDs: {unique_ids}")
+                
+                if total_ids > unique_ids:
+                    print(f"⚠️ FOUND {total_ids - unique_ids} DUPLICATE IDs in results")
+                    print("🛠️ Fixing duplicates in results DataFrame")
+                    
+                    # De-duplicate the results DataFrame
+                    results = results.drop_duplicates(subset=['Encoded ID'], keep='first')
+                    print(f"✅ After de-duplication: {results.shape[0]} participants (was {total_ids})")
+            
             # Count matched vs unmatched
             if 'proposed_NEW_circles_id' in results.columns:
                 matched_in_results = len(results[results['proposed_NEW_circles_id'] != 'UNMATCHED'])
@@ -469,6 +483,17 @@ def process_uploaded_file(uploaded_file):
                                             circle_id = row.get('proposed_NEW_circles_id', 'N/A')
                                             status = row.get('Status', 'N/A')
                                             print(f"    Instance {i+1}: Circle={circle_id}, Status={status}")
+                            
+                            # CRITICAL FIX: De-duplicate the results dataframe to fix inflated participant count
+                            print("🛠️ APPLYING FIX: Removing duplicate Encoded IDs from results dataframe")
+                            # Keep the first occurrence of each Encoded ID
+                            results_df = results_df.drop_duplicates(subset=['Encoded ID'], keep='first')
+                            print(f"✅ After de-duplication: {results_df.shape[0]} participants (was {total_ids})")
+                            
+                            # Update the session state with the de-duplicated dataframe
+                            st.session_state.results = results_df
+                            # Recalculate total participants
+                            total_participants = len(results_df)
                     
                     # FIXED: More accurate calculation of matched participants
                     # Only count non-empty circle IDs to avoid counting filtered records
