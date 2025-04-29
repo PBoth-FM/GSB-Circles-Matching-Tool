@@ -115,8 +115,18 @@ def reconstruct_circles_from_results(results, original_circles=None):
         if circle_id in original_circle_info:
             # Copy properties not already set
             for prop, value in original_circle_info[circle_id].items():
-                if prop not in circle_metadata[circle_id] or pd.isna(circle_metadata[circle_id][prop]):
+                # Safe handling for DataFrame/Series truth value ambiguity
+                prop_exists = prop in circle_metadata[circle_id]
+                if not prop_exists:
                     circle_metadata[circle_id][prop] = value
+                else:
+                    # Handle both scalar and Series/array values
+                    val = circle_metadata[circle_id][prop]
+                    if isinstance(val, pd.Series) or isinstance(val, pd.DataFrame):
+                        if val.isna().all():  # All values are NA
+                            circle_metadata[circle_id][prop] = value
+                    elif pd.isna(val):  # Single scalar NA value
+                        circle_metadata[circle_id][prop] = value
                     
         # Count hosts if host column exists
         if 'host' in results_df.columns:

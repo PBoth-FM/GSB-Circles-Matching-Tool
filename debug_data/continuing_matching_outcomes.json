@@ -1,19 +1,19 @@
 {
-  "total_continuing_members": 23,
-  "matched_members": 23,
+  "total_continuing_members": 4,
+  "matched_members": 4,
   "unmatched_members": 0,
-  "matched_to_correct_circle": 23,
+  "matched_to_correct_circle": 4,
   "matched_to_wrong_circle": 0,
   "members": [
     {
-      "participant_id": "58785532356",
+      "participant_id": "66883222431",
       "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-02",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-MAR-02",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -23,25 +23,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-MAR-02",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-MAR-02",
-      "assigned_circle": "IP-MAR-02",
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "64528726404",
+      "participant_id": "64567903885",
       "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-MAR-03",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -51,25 +51,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-MAR-03",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "72544055294",
+      "participant_id": "67938698165",
       "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-MAR-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -79,25 +79,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-MAR-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-MAR-01",
-      "assigned_circle": "IP-MAR-01",
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "41769015665",
+      "participant_id": "58244483490",
       "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-MAR-03",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -107,543 +107,11 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-MAR-03",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "51611003305",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-04",
-      "assigned_circle": "IP-MAR-04",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "57950478415",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-04",
-      "assigned_circle": "IP-MAR-04",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "68525515395",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-02",
-      "assigned_circle": "IP-MAR-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "59605336803",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-01",
-      "assigned_circle": "IP-MAR-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "66889525025",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "29686903203",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-01",
-      "assigned_circle": "IP-MAR-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "66086819098",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-04",
-      "assigned_circle": "IP-MAR-04",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "69103047731",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-04",
-      "assigned_circle": "IP-MAR-04",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "57909133796",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "58169707288",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-02",
-      "assigned_circle": "IP-MAR-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "45875732234",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "71471759388A",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "48873082908",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-03",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-03",
-      "assigned_circle": "IP-MAR-03",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "43190310258",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-04",
-      "assigned_circle": "IP-MAR-04",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "64912896349",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-02",
-      "assigned_circle": "IP-MAR-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "53925109049",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-04",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-04",
-      "assigned_circle": "IP-MAR-04",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "59114002878",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-01",
-      "assigned_circle": "IP-MAR-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "62739276817",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-02",
-      "assigned_circle": "IP-MAR-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "43075064245",
-      "status": "MATCHED",
-      "region": "Marin County",
-      "circle_id": "IP-MAR-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-MAR-01",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-MAR-01",
-      "assigned_circle": "IP-MAR-01",
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
