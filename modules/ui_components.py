@@ -66,6 +66,7 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
     print(f"DEBUG - Results DataFrame columns: {results_df.columns.tolist()}")
     print(f"DEBUG - 'Encoded ID' exists in results_df: {'Encoded ID' in results_df.columns}")
     print(f"DEBUG - 'Class_Vintage' exists in results_df: {'Class_Vintage' in results_df.columns}")
+    print(f"DEBUG - 'proposed_NEW_circles_id' exists in results_df: {'proposed_NEW_circles_id' in results_df.columns}")
     
     # Debug: Print a few sample values from results_df
     if 'Encoded ID' in results_df.columns and len(results_df) > 0:
@@ -98,41 +99,66 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
                 "vintage_values": []
             }
         
-        # Get the list of members for this circle
-        members = []
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                members = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
                 if is_selected_circle:
                     circle_debug_info[circle_id]["members_format"] = "list"
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        members = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                         if is_selected_circle:
                             circle_debug_info[circle_id]["members_format"] = "string_eval"
                     else:
-                        members = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                         if is_selected_circle:
                             circle_debug_info[circle_id]["members_format"] = "string_single"
                 except Exception as e:
-                    members = []
                     if is_selected_circle:
                         circle_debug_info[circle_id]["members_format"] = f"error: {str(e)}"
             else:
                 if is_selected_circle:
                     circle_debug_info[circle_id]["members_format"] = f"unknown: {type(circle_row['members'])}"
         
+        # Method 2: Get members by looking up the circle_id in the results dataframe's proposed_NEW_circles_id column
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        if members_from_lookup:
+            members = members_from_lookup
+            if is_selected_circle:
+                circle_debug_info[circle_id]["members_source"] = "lookup_in_results"
+        else:
+            members = members_from_row
+            if is_selected_circle:
+                circle_debug_info[circle_id]["members_source"] = "from_circle_row"
+        
         if is_selected_circle:
             circle_debug_info[circle_id]["members_processed"] = members[:10]  # First 10 members for debugging
+            circle_debug_info[circle_id]["members_count_method1"] = len(members_from_row)
+            circle_debug_info[circle_id]["members_count_method2"] = len(members_from_lookup)
+            circle_debug_info[circle_id]["final_members_count"] = len(members)
         
         # Initialize set to track unique categories
         unique_vintages = set()
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
+                
             # Debug for specific circles
             member_debug = {"id": str(member_id), "found": False, "has_vintage": False, "vintage_value": None}
             
@@ -192,6 +218,10 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
         print(f"  Raw members data: {debug_info['members_raw']}")
         print(f"  Member count: {debug_info['member_count']}")
         print(f"  Members format: {debug_info.get('members_format', 'unknown')}")
+        print(f"  Members source: {debug_info.get('members_source', 'unknown')}")
+        print(f"  Members count (method1): {debug_info.get('members_count_method1', 0)}")
+        print(f"  Members count (method2): {debug_info.get('members_count_method2', 0)}")
+        print(f"  Final members count: {debug_info.get('final_members_count', 0)}")
         print(f"  Processed members (sample): {debug_info['members_processed']}")
         print(f"  Found {debug_info['found_members']} members in results_df")
         print(f"  {debug_info['members_with_vintage']} members have vintage data")
@@ -228,28 +258,64 @@ def calculate_employment_diversity_score(matched_circles_df, results_df):
         
         circle_id = circle_row['circle_id']
         
-        # Get the list of members for this circle
-        members = []
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                members = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        members = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        members = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception:
-                    members = []
+                    pass
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe's proposed_NEW_circles_id column
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        members = members_from_lookup if members_from_lookup else members_from_row
         
         # Initialize set to track unique categories
         unique_employment_categories = set()
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
+                
+            # Try exact match first
             member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format but might be int vs float
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
             
             if not member_data.empty:
                 # Employment diversity
@@ -298,28 +364,64 @@ def calculate_industry_diversity_score(matched_circles_df, results_df):
         
         circle_id = circle_row['circle_id']
         
-        # Get the list of members for this circle
-        members = []
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                members = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        members = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        members = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception:
-                    members = []
+                    pass
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe's proposed_NEW_circles_id column
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        members = members_from_lookup if members_from_lookup else members_from_row
         
         # Initialize set to track unique categories
         unique_industry_categories = set()
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
+                
+            # Try exact match first
             member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format but might be int vs float
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
             
             if not member_data.empty:
                 # Industry diversity
@@ -368,28 +470,64 @@ def calculate_racial_identity_diversity_score(matched_circles_df, results_df):
         
         circle_id = circle_row['circle_id']
         
-        # Get the list of members for this circle
-        members = []
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                members = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        members = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        members = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception:
-                    members = []
+                    pass
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe's proposed_NEW_circles_id column
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        members = members_from_lookup if members_from_lookup else members_from_row
         
         # Initialize set to track unique categories
         unique_ri_categories = set()
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
+                
+            # Try exact match first
             member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format but might be int vs float
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
             
             if not member_data.empty:
                 # Racial Identity diversity
@@ -438,28 +576,64 @@ def calculate_children_diversity_score(matched_circles_df, results_df):
         
         circle_id = circle_row['circle_id']
         
-        # Get the list of members for this circle
-        members = []
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                members = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        members = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        members = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception:
-                    members = []
+                    pass
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe's proposed_NEW_circles_id column
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        members = members_from_lookup if members_from_lookup else members_from_row
         
         # Initialize set to track unique categories
         unique_children_categories = set()
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
+                
+            # Try exact match first
             member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format but might be int vs float
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
             
             if not member_data.empty:
                 # Children diversity
