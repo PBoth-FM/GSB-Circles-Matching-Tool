@@ -119,9 +119,15 @@ def reconstruct_circles_from_results(results, original_circles=None):
         # Try to extract region, subregion, meeting time from results
         sample_member = members_df.iloc[0]
         
+        # CRITICAL FIX: For new circles (starting with "IP-NEW"), use Derived_Region or Current_Region
+        # This fixes the "None" region issue in Circle Composition
+        is_new_circle = circle_id.startswith('IP-NEW')
+        
         # Extract circle properties from results
         for prop, column_options in [
-            ('region', ['proposed_NEW_Region', 'Current_Region', 'region']),
+            # Use different region column priorities for new circles vs continuing circles
+            ('region', ['Derived_Region', 'Current_Region', 'proposed_NEW_Region', 'region'] if is_new_circle else 
+                      ['proposed_NEW_Region', 'Current_Region', 'Derived_Region', 'region']),
             ('subregion', ['proposed_NEW_Subregion', 'Current_Subregion', 'subregion']),
             ('meeting_time', ['proposed_NEW_DayTime', 'Current_Meeting_Time', 'meeting_time'])
         ]:
@@ -132,6 +138,7 @@ def reconstruct_circles_from_results(results, original_circles=None):
                     # Use safe_isna to handle potential array-like values
                     if not safe_isna(sample_member[col]):
                         circle_metadata[circle_id][prop] = sample_member[col]
+                        print(f"  ✅ Set {prop}='{sample_member[col]}' for circle {circle_id} from column {col}")
                         break
                     
         # Check if the circle was in the original circles dataframe
@@ -220,15 +227,19 @@ def reconstruct_circles_from_results(results, original_circles=None):
             else:
                 # New circle - different max size (10)
                 total_members = len(member_ids)
-                if total_members >= 10:
-                    # Already at maximum size for new circles
-                    max_additions = 0
-                else:
-                    # Allow additions up to 10
-                    max_additions = 10 - total_members
+                # CRITICAL FIX: For new circles, set consistent max additions
+                # Always set max_additions to 10 for new circles as requested
+                max_additions = 10
+                
+                # CRITICAL FIX: For new circles, member_count should match new_members
+                # These circles often show 1 (likely due to member counting issues)
+                new_members_count = circle_metadata[circle_id].get('new_members', total_members)
+                if new_members_count > 0:
+                    circle_metadata[circle_id]['member_count'] = new_members_count
+                    print(f"  ✅ FIXED: Set member_count to match new_members ({new_members_count}) for circle {circle_id}")
                 
                 circle_metadata[circle_id]['max_additions'] = max_additions
-                print(f"  New circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
+                print(f"  New circle {circle_id}: {new_members_count} members, max_additions set to {max_additions}")
             
     # Convert circle metadata to DataFrame
     circles_df = pd.DataFrame(list(circle_metadata.values()))
