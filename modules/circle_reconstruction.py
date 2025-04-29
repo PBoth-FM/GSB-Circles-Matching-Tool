@@ -49,12 +49,22 @@ def reconstruct_circles_from_results(results, original_circles=None):
         # Create a dataframe from the results list
         results_df = pd.DataFrame(results)
         print(f"  Created DataFrame with {len(results_df)} participants")
+        
+        # ENHANCED DIAGNOSTICS: Print column names for debugging
+        print(f"  Results DataFrame columns: {results_df.columns.tolist()}")
+        
+        # Look for meeting time related columns
+        meeting_columns = [col for col in results_df.columns if 'meeting' in col.lower() or 'time' in col.lower() or 'day' in col.lower()]
+        print(f"  Meeting-related columns found: {meeting_columns}")
     else:
         # Already a DataFrame
         results_df = results.copy()
         print(f"  Using existing DataFrame with {len(results_df)} participants")
         # Try to determine ID column
         id_column = 'participant_id' if 'participant_id' in results_df.columns else 'Encoded ID'
+        
+        # ENHANCED DIAGNOSTICS: Print column names for debugging
+        print(f"  Results DataFrame columns: {results_df.columns.tolist()}")
     
     # Check for the circle assignment column
     circle_column = None
@@ -129,7 +139,11 @@ def reconstruct_circles_from_results(results, original_circles=None):
             ('region', ['Derived_Region', 'Current_Region', 'proposed_NEW_Region', 'region'] if is_new_circle else 
                       ['proposed_NEW_Region', 'Current_Region', 'Derived_Region', 'region']),
             ('subregion', ['proposed_NEW_Subregion', 'Current_Subregion', 'subregion']),
-            ('meeting_time', ['proposed_NEW_DayTime', 'Current_Meeting_Time', 'meeting_time'])
+            # CRITICAL FIX: Expand meeting time column options to catch all possible sources
+            ('meeting_time', ['proposed_NEW_DayTime', 'Current_Meeting_Time', 'Current_Meeting_Day', 
+                             'Current Meeting Day', 'Current/ Continuing Meeting Day',
+                             'Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time',
+                             'Current/ Continuing DayTime', 'meeting_time', 'Current_DayTime'])
         ]:
             # Check each possible column name
             for col in column_options:
@@ -137,9 +151,55 @@ def reconstruct_circles_from_results(results, original_circles=None):
                 if col in sample_member:
                     # Use safe_isna to handle potential array-like values
                     if not safe_isna(sample_member[col]):
+                        # For meeting time, try to standardize format
+                        if prop == 'meeting_time':
+                            # If this is just a day without time, append standard format
+                            if any(day in str(sample_member[col]).lower() for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']):
+                                if '(' not in str(sample_member[col]):
+                                    # Try to extract the time from other columns
+                                    time_value = None
+                                    for time_col in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
+                                        if time_col in sample_member and not safe_isna(sample_member[time_col]):
+                                            time_value = sample_member[time_col]
+                                            break
+                                    
+                                    if time_value:
+                                        # Format as "Day (Time)"
+                                        formatted_value = f"{sample_member[col]} ({time_value})"
+                                        circle_metadata[circle_id][prop] = formatted_value
+                                        print(f"  ✅ Set combined {prop}='{formatted_value}' for circle {circle_id} from columns {col} and time")
+                                        break
+                        
                         circle_metadata[circle_id][prop] = sample_member[col]
                         print(f"  ✅ Set {prop}='{sample_member[col]}' for circle {circle_id} from column {col}")
                         break
+                        
+            # If meeting_time is still not set, try additional strategies
+            if prop == 'meeting_time' and ('meeting_time' not in circle_metadata[circle_id] or safe_isna(circle_metadata[circle_id].get('meeting_time'))):
+                # Look for day and time in separate columns and combine them
+                day_cols = ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']
+                time_cols = ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time'] 
+                
+                day_value = None
+                time_value = None
+                
+                # Try to find day value
+                for day_col in day_cols:
+                    if day_col in sample_member and not safe_isna(sample_member[day_col]):
+                        day_value = sample_member[day_col]
+                        break
+                
+                # Try to find time value
+                for time_col in time_cols:
+                    if time_col in sample_member and not safe_isna(sample_member[time_col]):
+                        time_value = sample_member[time_col]
+                        break
+                
+                # If we found both, combine them
+                if day_value and time_value:
+                    combined_value = f"{day_value} ({time_value})"
+                    circle_metadata[circle_id][prop] = combined_value
+                    print(f"  ✅ COMBINED {prop}='{combined_value}' for circle {circle_id} from separate day and time columns")
                     
         # Check if the circle was in the original circles dataframe
         if circle_id in original_circle_info:
@@ -182,8 +242,15 @@ def reconstruct_circles_from_results(results, original_circles=None):
                 
                 print(f"  Circle {circle_id}: {unique_continuing} unique continuing members, {unique_new} unique new members")
                 
-                # CRITICAL CHECK: Enforce 8-member limit for continuing circles
+                # CRITICAL FIX: Update member_count for continuing circles
+                # This fixes the issue where continuing circles show 1 member in Circle Composition
                 total_members = len(member_ids)
+                
+                # Set member_count to the actual total of unique members
+                circle_metadata[circle_id]['member_count'] = total_members
+                print(f"  ✅ FIXED: Set member_count to match total unique members ({total_members}) for circle {circle_id}")
+                
+                # CRITICAL CHECK: Enforce 8-member limit for continuing circles
                 if total_members > 8:
                     print(f"  ⚠️ WARNING: Circle {circle_id} exceeds maximum size with {total_members} members!")
                     print(f"    This includes {unique_continuing} continuing members and {unique_new} new members")
