@@ -4903,21 +4903,33 @@ def render_circles_detail():
         # Get member count
         member_count = circle_row.get('member_count', 0)
         
-        # Get the list of members for this circle
-        members = []
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                members = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        members = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        members = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception:
-                    members = []
+                    pass
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe's proposed_NEW_circles_id column
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        members = members_from_lookup if members_from_lookup else members_from_row
         
         # Initialize sets to track unique categories for each diversity type
         unique_vintages = set()
@@ -4935,7 +4947,31 @@ def render_circles_detail():
         
         # For each member, look up their demographic data
         for member_id in members:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
+                
+            # Try exact match first
             member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format but might be int vs float
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
             
             if not member_data.empty:
                 # Vintage diversity
