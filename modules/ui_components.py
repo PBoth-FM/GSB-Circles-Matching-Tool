@@ -30,6 +30,10 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
     if matched_circles_df is None or results_df is None:
         return 0
     
+    # Debug information
+    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
+    print(f"DEBUG - Match page diversity scores starting with {original_circle_count} circles")
+    
     # Calculate the individual category scores using the same methods as in the detailed tabs
     vintage_score = calculate_vintage_diversity_score(matched_circles_df, results_df)
     employment_score = calculate_employment_diversity_score(matched_circles_df, results_df)
@@ -41,7 +45,7 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
     total_score = vintage_score + employment_score + industry_score + ri_score + children_score
     
     # Print debug information to console
-    print(f"DEBUG - Diversity Scores: Vintage({vintage_score}) + Employment({employment_score}) + " +
+    print(f"DEBUG - Match page diversity scores: Vintage({vintage_score}) + Employment({employment_score}) + " +
           f"Industry({industry_score}) + RI({ri_score}) + Children({children_score}) = Total({total_score})")
     
     return total_score
@@ -53,9 +57,15 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
     
     # Dictionary to track diversity scores
     circle_vintage_diversity_scores = {}
+    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
+    circles_processed = 0
+    circles_with_no_data = 0
+    circles_with_data = 0
     
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
+        circles_processed += 1
+        
         # Skip circles with no members
         if 'member_count' not in circle_row or circle_row['member_count'] == 0:
             continue
@@ -92,13 +102,22 @@ def calculate_vintage_diversity_score(matched_circles_df, results_df):
                     if pd.notna(vintage):
                         unique_vintages.add(vintage)
         
-        # Calculate diversity score for this circle
+        # Calculate diversity score for this circle - include ALL circles, even those with no data
         if unique_vintages:
             score = len(unique_vintages)
             circle_vintage_diversity_scores[circle_id] = score
+            circles_with_data += 1
+        else:
+            # Still include the circle but with a score of 0
+            circle_vintage_diversity_scores[circle_id] = 0
+            circles_with_no_data += 1
     
     # Calculate total score across all circles
-    total_score = sum(circle_vintage_diversity_scores.values()) if circle_vintage_diversity_scores else 0
+    total_score = sum(circle_vintage_diversity_scores.values())
+    
+    # Debug information
+    print(f"DIVERSITY DEBUG - Vintage: {circles_processed} circles processed, {circles_with_data} with data, {circles_with_no_data} without data, total score: {total_score}")
+    
     return total_score
 
 def calculate_employment_diversity_score(matched_circles_df, results_df):
@@ -560,20 +579,61 @@ def render_vintage_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
-    # Filter out circles with no members
-    if 'member_count' not in circles_df.columns:
-        st.warning("Circles data does not have member_count column")
-        return
+    # DEBUG: Show total circles at the start
+    total_initial_circles = len(circles_df)
+    st.caption(f"🔍 **Demographics DEBUG:** Starting with {total_initial_circles} total circles")
     
+    # Check for member_count column
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column - will use members list length instead")
+        # Add member_count derived from members list
+        circles_df['member_count'] = circles_df.apply(
+            lambda row: len(eval(row['members'])) if isinstance(row['members'], str) and row['members'].startswith('[') 
+            else (len(row['members']) if isinstance(row['members'], list) else 1), 
+            axis=1
+        )
+    
+    # Capture circles with zero member_count but with actual members
+    zero_count_with_members = 0
+    if 'members' in circles_df.columns:
+        for idx, row in circles_df.iterrows():
+            if row['member_count'] == 0 and row['members']:
+                # For list representation
+                if isinstance(row['members'], list) and len(row['members']) > 0:
+                    circles_df.at[idx, 'member_count'] = len(row['members'])
+                    zero_count_with_members += 1
+                # For string representation
+                elif isinstance(row['members'], str):
+                    try:
+                        if row['members'].startswith('['):
+                            member_list = eval(row['members'])
+                            if len(member_list) > 0:
+                                circles_df.at[idx, 'member_count'] = len(member_list)
+                                zero_count_with_members += 1
+                    except:
+                        pass
+    
+    if zero_count_with_members > 0:
+        st.caption(f"🔧 Fixed {zero_count_with_members} circles that had zero member_count but had actual members")
+    
+    # FILTER STEP 1: Circles with no members (KEEP this filter)
+    previous_count = len(circles_df)
     circles_df = circles_df[circles_df['member_count'] > 0]
+    filtered_no_members = previous_count - len(circles_df)
+    
+    if filtered_no_members > 0:
+        st.caption(f"⚠️ Excluded {filtered_no_members} circles with no members (member_count=0)")
     
     if len(circles_df) == 0:
         st.warning("No circles with members available for analysis.")
         return
     
-    # Dictionary to track unique vintages per circle
+    # Dictionary to track unique vintages per circle and debugging info
     circle_vintage_counts = {}
     circle_vintage_diversity_scores = {}
+    circles_with_no_vintage_data = []
+    circles_with_parsing_errors = []
+    circles_included = []
     
     # Get vintage data for each member of each circle
     for _, circle_row in circles_df.iterrows():
@@ -581,6 +641,7 @@ def render_vintage_diversity_histogram():
         
         # Initialize empty set to track unique vintages
         unique_vintages = set()
+        has_parsing_error = False
         
         # Get the list of members for this circle
         if 'members' in circle_row and circle_row['members']:
@@ -595,11 +656,17 @@ def render_vintage_diversity_histogram():
                     else:
                         member_ids = [circle_row['members']]
                 except Exception as e:
-                    # Skip if parsing fails
-                    continue
+                    # Record parsing errors
+                    has_parsing_error = True
+                    circles_with_parsing_errors.append(circle_id)
+                    # Give it a default value instead of skipping
+                    member_ids = []
+                    
             else:
                 # Skip if members data is not in expected format
-                continue
+                has_parsing_error = True
+                circles_with_parsing_errors.append(circle_id)
+                member_ids = []
                 
             # For each member, look up their vintage in results_df
             for member_id in member_ids:
@@ -610,19 +677,33 @@ def render_vintage_diversity_histogram():
                     if pd.notna(vintage):
                         unique_vintages.add(vintage)
         
-        # Store the count of unique vintages for this circle
-        if unique_vintages:  # Only include if there's at least one valid vintage
+        # INCLUDE ALL CIRCLES in the analysis, even if they have no vintage data
+        # Those without vintage data get a count of 0
+        if unique_vintages:  
+            # Circle has vintage data
             count = len(unique_vintages)
             circle_vintage_counts[circle_id] = count
-            # The diversity score is the number of unique vintages
             circle_vintage_diversity_scores[circle_id] = count
+            circles_included.append(circle_id)
+        else:
+            # Circle has no vintage data - still include with 0 count
+            circle_vintage_counts[circle_id] = 0
+            circle_vintage_diversity_scores[circle_id] = 0
+            if not has_parsing_error:
+                circles_with_no_vintage_data.append(circle_id)
     
-    # Create histogram data from the vintage counts
-    if not circle_vintage_counts:
-        st.warning("No vintage data available for circles.")
-        return
-        
-    # Count circles by number of unique vintages
+    # Show debug information
+    if circles_with_parsing_errors:
+        st.caption(f"⚠️ {len(circles_with_parsing_errors)} circles had parsing errors but are still included with 0 diversity score")
+    
+    if circles_with_no_vintage_data:
+        st.caption(f"ℹ️ {len(circles_with_no_vintage_data)} circles had no vintage data but are still included with 0 diversity score")
+    
+    # Process histogram data from the vintage counts
+    total_included = len(circle_vintage_counts)
+    st.caption(f"✅ Including {total_included} total circles in the analysis (out of {total_initial_circles} initial circles)")
+    
+    # Count circles by number of unique vintages - INCLUDING zeros this time
     diversity_counts = pd.Series(circle_vintage_counts).value_counts().sort_index()
     
     # Create a DataFrame for plotting
@@ -638,7 +719,7 @@ def render_vintage_diversity_histogram():
         plot_df,
         x='Number of Vintages',
         y='Number of Circles',
-        title='Distribution of Circles by Number of Class Vintages',
+        title=f'Distribution of Circles by Number of Class Vintages (Total: {total_included} circles)',
         text='Number of Circles',  # Display count values on bars
         color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
     )
@@ -665,14 +746,15 @@ def render_vintage_diversity_histogram():
     st.subheader("Vintage Diversity Score")
     st.write("""
     For each circle, the vintage diversity score is calculated as follows:
+    - 0 points: No vintage data available
     - 1 point: All members in the same class vintage
     - 2 points: Members from two different class vintages
     - 3 points: Members from three different class vintages
     - And so on, with more points for more diverse circles
     """)
     
-    # Calculate average and total diversity scores
-    total_diversity_score = sum(circle_vintage_diversity_scores.values()) if circle_vintage_diversity_scores else 0
+    # Calculate average and total diversity scores - now including circles with 0 score
+    total_diversity_score = sum(circle_vintage_diversity_scores.values())
     avg_diversity_score = total_diversity_score / len(circle_vintage_diversity_scores) if circle_vintage_diversity_scores else 0
     
     # Store the total score in session state for use in the Match tab
@@ -689,10 +771,24 @@ def render_vintage_diversity_histogram():
     
     # Add a brief explanation
     total_circles = sum(diversity_counts.values)
+    circles_with_data = sum(diversity_counts[diversity_counts.index > 0].values)
     diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
-    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
     
-    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple class vintages.")
+    no_data_circles = 0
+    if 0 in diversity_counts.index:
+        no_data_circles = diversity_counts[0]
+    
+    # Calculate percentages
+    data_pct = (circles_with_data / total_circles * 100) if total_circles > 0 else 0
+    diverse_pct = (diverse_circles / circles_with_data * 100) if circles_with_data > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles:")
+    
+    if no_data_circles > 0:
+        st.write(f"- {no_data_circles} circles ({100-data_pct:.1f}%) have no vintage data and received a score of 0")
+    
+    st.write(f"- {circles_with_data} circles ({data_pct:.1f}%) have vintage data")
+    st.write(f"- Among circles with vintage data, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple vintages")
 
 
 def render_employment_diversity_histogram():
@@ -718,20 +814,61 @@ def render_employment_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
-    # Filter out circles with no members
-    if 'member_count' not in circles_df.columns:
-        st.warning("Circles data does not have member_count column")
-        return
+    # DEBUG: Show total circles at the start
+    total_initial_circles = len(circles_df)
+    st.caption(f"🔍 **Demographics DEBUG:** Starting with {total_initial_circles} total circles")
     
+    # Check for member_count column
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column - will use members list length instead")
+        # Add member_count derived from members list
+        circles_df['member_count'] = circles_df.apply(
+            lambda row: len(eval(row['members'])) if isinstance(row['members'], str) and row['members'].startswith('[') 
+            else (len(row['members']) if isinstance(row['members'], list) else 1), 
+            axis=1
+        )
+    
+    # Capture circles with zero member_count but with actual members
+    zero_count_with_members = 0
+    if 'members' in circles_df.columns:
+        for idx, row in circles_df.iterrows():
+            if row['member_count'] == 0 and row['members']:
+                # For list representation
+                if isinstance(row['members'], list) and len(row['members']) > 0:
+                    circles_df.at[idx, 'member_count'] = len(row['members'])
+                    zero_count_with_members += 1
+                # For string representation
+                elif isinstance(row['members'], str):
+                    try:
+                        if row['members'].startswith('['):
+                            member_list = eval(row['members'])
+                            if len(member_list) > 0:
+                                circles_df.at[idx, 'member_count'] = len(member_list)
+                                zero_count_with_members += 1
+                    except:
+                        pass
+    
+    if zero_count_with_members > 0:
+        st.caption(f"🔧 Fixed {zero_count_with_members} circles that had zero member_count but had actual members")
+    
+    # FILTER STEP 1: Circles with no members (KEEP this filter)
+    previous_count = len(circles_df)
     circles_df = circles_df[circles_df['member_count'] > 0]
+    filtered_no_members = previous_count - len(circles_df)
+    
+    if filtered_no_members > 0:
+        st.caption(f"⚠️ Excluded {filtered_no_members} circles with no members (member_count=0)")
     
     if len(circles_df) == 0:
         st.warning("No circles with members available for analysis.")
         return
     
-    # Dictionary to track unique employment categories per circle
+    # Dictionary to track unique employment categories per circle and debugging info
     circle_employment_counts = {}
     circle_employment_diversity_scores = {}
+    circles_with_no_employment_data = []
+    circles_with_parsing_errors = []
+    circles_included = []
     
     # Get employment data for each member of each circle
     for _, circle_row in circles_df.iterrows():
@@ -739,6 +876,7 @@ def render_employment_diversity_histogram():
         
         # Initialize empty set to track unique employment categories
         unique_employment_categories = set()
+        has_parsing_error = False
         
         # Get the list of members for this circle
         if 'members' in circle_row and circle_row['members']:
@@ -753,11 +891,16 @@ def render_employment_diversity_histogram():
                     else:
                         member_ids = [circle_row['members']]
                 except Exception as e:
-                    # Skip if parsing fails
-                    continue
+                    # Record parsing errors
+                    has_parsing_error = True
+                    circles_with_parsing_errors.append(circle_id)
+                    # Give it a default value instead of skipping
+                    member_ids = []
             else:
-                # Skip if members data is not in expected format
-                continue
+                # Record format errors
+                has_parsing_error = True
+                circles_with_parsing_errors.append(circle_id)
+                member_ids = []
                 
             # For each member, look up their employment category in results_df
             for member_id in member_ids:
@@ -768,20 +911,33 @@ def render_employment_diversity_histogram():
                     if pd.notna(employment_category):
                         unique_employment_categories.add(employment_category)
         
-        # Store the count of unique employment categories for this circle
-        if unique_employment_categories:  # Only include if there's at least one valid category
+        # INCLUDE ALL CIRCLES in the analysis, even if they have no employment data
+        # Those without employment data get a count of 0
+        if unique_employment_categories:
+            # Circle has employment data
             count = len(unique_employment_categories)
             circle_employment_counts[circle_id] = count
-            # Calculate diversity score: 1 point if everyone is in the same category,
-            # 2 points if two categories, 3 points if three categories
             circle_employment_diversity_scores[circle_id] = count
+            circles_included.append(circle_id)
+        else:
+            # Circle has no employment data - still include with 0 count
+            circle_employment_counts[circle_id] = 0
+            circle_employment_diversity_scores[circle_id] = 0
+            if not has_parsing_error:
+                circles_with_no_employment_data.append(circle_id)
     
-    # Create histogram data from the employment counts
-    if not circle_employment_counts:
-        st.warning("No employment data available for circles.")
-        return
-        
-    # Count circles by number of unique employment categories
+    # Show debug information
+    if circles_with_parsing_errors:
+        st.caption(f"⚠️ {len(circles_with_parsing_errors)} circles had parsing errors but are still included with 0 diversity score")
+    
+    if circles_with_no_employment_data:
+        st.caption(f"ℹ️ {len(circles_with_no_employment_data)} circles had no employment data but are still included with 0 diversity score")
+    
+    # Process histogram data from the employment counts
+    total_included = len(circle_employment_counts)
+    st.caption(f"✅ Including {total_included} total circles in the analysis (out of {total_initial_circles} initial circles)")
+    
+    # Count circles by number of unique employment categories - INCLUDING zeros this time
     diversity_counts = pd.Series(circle_employment_counts).value_counts().sort_index()
     
     # Create a DataFrame for plotting
@@ -797,7 +953,7 @@ def render_employment_diversity_histogram():
         plot_df,
         x='Number of Employment Categories',
         y='Number of Circles',
-        title='Distribution of Circles by Number of Employment Categories',
+        title=f'Distribution of Circles by Number of Employment Categories (Total: {total_included} circles)',
         text='Number of Circles',  # Display count values on bars
         color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
     )
@@ -808,8 +964,7 @@ def render_employment_diversity_histogram():
         xaxis=dict(
             title="Number of Different Employment Categories",
             tickmode='linear',
-            dtick=1,  # Force integer labels
-            range=[0.5, 3.5]  # Since we have 3 categories max
+            dtick=1  # Force integer labels
         ),
         yaxis_title="Number of Circles"
     )
@@ -825,13 +980,14 @@ def render_employment_diversity_histogram():
     st.subheader("Employment Diversity Score")
     st.write("""
     For each circle, the employment diversity score is calculated as follows:
+    - 0 points: No employment data available
     - 1 point: All members in the same employment category
     - 2 points: Members from two different employment categories
-    - 3 points: Members from all three employment categories
+    - 3 points: Members from three or more employment categories
     """)
     
-    # Calculate average and total diversity scores
-    total_diversity_score = sum(circle_employment_diversity_scores.values()) if circle_employment_diversity_scores else 0
+    # Calculate average and total diversity scores - now including circles with 0 score
+    total_diversity_score = sum(circle_employment_diversity_scores.values())
     avg_diversity_score = total_diversity_score / len(circle_employment_diversity_scores) if circle_employment_diversity_scores else 0
     
     # Store the total score in session state for use in the Match tab
@@ -848,10 +1004,24 @@ def render_employment_diversity_histogram():
     
     # Add a brief explanation
     total_circles = sum(diversity_counts.values)
+    circles_with_data = sum(diversity_counts[diversity_counts.index > 0].values)
     diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
-    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
     
-    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple employment categories.")
+    no_data_circles = 0
+    if 0 in diversity_counts.index:
+        no_data_circles = diversity_counts[0]
+    
+    # Calculate percentages
+    data_pct = (circles_with_data / total_circles * 100) if total_circles > 0 else 0
+    diverse_pct = (diverse_circles / circles_with_data * 100) if circles_with_data > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles:")
+    
+    if no_data_circles > 0:
+        st.write(f"- {no_data_circles} circles ({100-data_pct:.1f}%) have no employment data and received a score of 0")
+    
+    st.write(f"- {circles_with_data} circles ({data_pct:.1f}%) have employment data")
+    st.write(f"- Among circles with employment data, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple employment categories")
 
 def render_industry_diversity_histogram():
     """
@@ -876,20 +1046,61 @@ def render_industry_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
-    # Filter out circles with no members
-    if 'member_count' not in circles_df.columns:
-        st.warning("Circles data does not have member_count column")
-        return
+    # DEBUG: Show total circles at the start
+    total_initial_circles = len(circles_df)
+    st.caption(f"🔍 **Demographics DEBUG:** Starting with {total_initial_circles} total circles")
     
+    # Check for member_count column
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column - will use members list length instead")
+        # Add member_count derived from members list
+        circles_df['member_count'] = circles_df.apply(
+            lambda row: len(eval(row['members'])) if isinstance(row['members'], str) and row['members'].startswith('[') 
+            else (len(row['members']) if isinstance(row['members'], list) else 1), 
+            axis=1
+        )
+    
+    # Capture circles with zero member_count but with actual members
+    zero_count_with_members = 0
+    if 'members' in circles_df.columns:
+        for idx, row in circles_df.iterrows():
+            if row['member_count'] == 0 and row['members']:
+                # For list representation
+                if isinstance(row['members'], list) and len(row['members']) > 0:
+                    circles_df.at[idx, 'member_count'] = len(row['members'])
+                    zero_count_with_members += 1
+                # For string representation
+                elif isinstance(row['members'], str):
+                    try:
+                        if row['members'].startswith('['):
+                            member_list = eval(row['members'])
+                            if len(member_list) > 0:
+                                circles_df.at[idx, 'member_count'] = len(member_list)
+                                zero_count_with_members += 1
+                    except:
+                        pass
+    
+    if zero_count_with_members > 0:
+        st.caption(f"🔧 Fixed {zero_count_with_members} circles that had zero member_count but had actual members")
+    
+    # FILTER STEP 1: Circles with no members (KEEP this filter)
+    previous_count = len(circles_df)
     circles_df = circles_df[circles_df['member_count'] > 0]
+    filtered_no_members = previous_count - len(circles_df)
+    
+    if filtered_no_members > 0:
+        st.caption(f"⚠️ Excluded {filtered_no_members} circles with no members (member_count=0)")
     
     if len(circles_df) == 0:
         st.warning("No circles with members available for analysis.")
         return
     
-    # Dictionary to track unique industry categories per circle
+    # Dictionary to track unique industry categories per circle and debugging info
     circle_industry_counts = {}
     circle_industry_diversity_scores = {}
+    circles_with_no_industry_data = []
+    circles_with_parsing_errors = []
+    circles_included = []
     
     # Get industry data for each member of each circle
     for _, circle_row in circles_df.iterrows():
@@ -897,6 +1108,7 @@ def render_industry_diversity_histogram():
         
         # Initialize empty set to track unique industry categories
         unique_industry_categories = set()
+        has_parsing_error = False
         
         # Get the list of members for this circle
         if 'members' in circle_row and circle_row['members']:
@@ -911,11 +1123,16 @@ def render_industry_diversity_histogram():
                     else:
                         member_ids = [circle_row['members']]
                 except Exception as e:
-                    # Skip if parsing fails
-                    continue
+                    # Record parsing errors
+                    has_parsing_error = True
+                    circles_with_parsing_errors.append(circle_id)
+                    # Give it a default value instead of skipping
+                    member_ids = []
             else:
-                # Skip if members data is not in expected format
-                continue
+                # Record format errors
+                has_parsing_error = True
+                circles_with_parsing_errors.append(circle_id)
+                member_ids = []
                 
             # For each member, look up their industry category in results_df
             for member_id in member_ids:
@@ -926,20 +1143,33 @@ def render_industry_diversity_histogram():
                     if pd.notna(industry_category):
                         unique_industry_categories.add(industry_category)
         
-        # Store the count of unique industry categories for this circle
-        if unique_industry_categories:  # Only include if there's at least one valid category
+        # INCLUDE ALL CIRCLES in the analysis, even if they have no industry data
+        # Those without industry data get a count of 0
+        if unique_industry_categories:
+            # Circle has industry data
             count = len(unique_industry_categories)
             circle_industry_counts[circle_id] = count
-            # Calculate diversity score: 1 point if everyone is in the same category,
-            # 2 points if two categories, etc.
             circle_industry_diversity_scores[circle_id] = count
+            circles_included.append(circle_id)
+        else:
+            # Circle has no industry data - still include with 0 count
+            circle_industry_counts[circle_id] = 0
+            circle_industry_diversity_scores[circle_id] = 0
+            if not has_parsing_error:
+                circles_with_no_industry_data.append(circle_id)
     
-    # Create histogram data from the industry counts
-    if not circle_industry_counts:
-        st.warning("No industry data available for circles.")
-        return
-        
-    # Count circles by number of unique industry categories
+    # Show debug information
+    if circles_with_parsing_errors:
+        st.caption(f"⚠️ {len(circles_with_parsing_errors)} circles had parsing errors but are still included with 0 diversity score")
+    
+    if circles_with_no_industry_data:
+        st.caption(f"ℹ️ {len(circles_with_no_industry_data)} circles had no industry data but are still included with 0 diversity score")
+    
+    # Process histogram data from the industry counts
+    total_included = len(circle_industry_counts)
+    st.caption(f"✅ Including {total_included} total circles in the analysis (out of {total_initial_circles} initial circles)")
+    
+    # Count circles by number of unique industry categories - INCLUDING zeros this time
     diversity_counts = pd.Series(circle_industry_counts).value_counts().sort_index()
     
     # Create a DataFrame for plotting
@@ -955,7 +1185,7 @@ def render_industry_diversity_histogram():
         plot_df,
         x='Number of Industry Categories',
         y='Number of Circles',
-        title='Distribution of Circles by Number of Industry Categories',
+        title=f'Distribution of Circles by Number of Industry Categories (Total: {total_included} circles)',
         text='Number of Circles',  # Display count values on bars
         color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
     )
@@ -966,8 +1196,7 @@ def render_industry_diversity_histogram():
         xaxis=dict(
             title="Number of Different Industry Categories",
             tickmode='linear',
-            dtick=1,  # Force integer labels
-            range=[0.5, 4.5]  # Since we have 4 categories max
+            dtick=1  # Force integer labels
         ),
         yaxis_title="Number of Circles"
     )
@@ -983,14 +1212,15 @@ def render_industry_diversity_histogram():
     st.subheader("Industry Diversity Score")
     st.write("""
     For each circle, the industry diversity score is calculated as follows:
+    - 0 points: No industry data available
     - 1 point: All members in the same industry category
     - 2 points: Members from two different industry categories
     - 3 points: Members from three different industry categories
     - 4 points: Members from all four industry categories
     """)
     
-    # Calculate average and total diversity scores
-    total_diversity_score = sum(circle_industry_diversity_scores.values()) if circle_industry_diversity_scores else 0
+    # Calculate average and total diversity scores - now including circles with 0 score
+    total_diversity_score = sum(circle_industry_diversity_scores.values())
     avg_diversity_score = total_diversity_score / len(circle_industry_diversity_scores) if circle_industry_diversity_scores else 0
     
     # Store the total score in session state for use in the Match tab
@@ -1007,10 +1237,24 @@ def render_industry_diversity_histogram():
     
     # Add a brief explanation
     total_circles = sum(diversity_counts.values)
+    circles_with_data = sum(diversity_counts[diversity_counts.index > 0].values)
     diverse_circles = sum(diversity_counts[diversity_counts.index > 1].values)
-    diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
     
-    st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple industry categories.")
+    no_data_circles = 0
+    if 0 in diversity_counts.index:
+        no_data_circles = diversity_counts[0]
+    
+    # Calculate percentages
+    data_pct = (circles_with_data / total_circles * 100) if total_circles > 0 else 0
+    diverse_pct = (diverse_circles / circles_with_data * 100) if circles_with_data > 0 else 0
+    
+    st.write(f"Out of {total_circles} total circles:")
+    
+    if no_data_circles > 0:
+        st.write(f"- {no_data_circles} circles ({100-data_pct:.1f}%) have no industry data and received a score of 0")
+    
+    st.write(f"- {circles_with_data} circles ({data_pct:.1f}%) have industry data")
+    st.write(f"- Among circles with industry data, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple industry categories")
 
 def render_employment_analysis(data):
     """Render the Employment analysis visualizations"""
