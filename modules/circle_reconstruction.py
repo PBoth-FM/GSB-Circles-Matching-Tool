@@ -135,7 +135,15 @@ def reconstruct_circles_from_results(results, original_circles=None):
         if 'Status' in members_df.columns:
             for _, row in members_df.iterrows():
                 member_id = row[id_column]
-                status = row.get('Status', '').upper()
+                # CRITICAL FIX: Handle case where Status might be a float instead of a string
+                status_value = row.get('Status', '')
+                if isinstance(status_value, (int, float)):
+                    # If it's numeric, we can't call upper() - just convert to string
+                    status = str(status_value)
+                else:
+                    # If it's a string, we can safely call upper()
+                    status = str(status_value).upper()
+                    
                 if status == 'NEW' or status == 'NEW TO CIRCLES':
                     new_members += 1
                 elif status == 'CURRENT-CONTINUING':
@@ -287,8 +295,17 @@ def reconstruct_circles_from_results(results, original_circles=None):
                     
         # Add is_existing flag and new_members count
         if 'Status' in results_df.columns:
-            new_members = sum(1 for _, row in members_df.iterrows() if row.get('Status') == 'NEW')
-            continuing_members = sum(1 for _, row in members_df.iterrows() if row.get('Status') == 'CURRENT-CONTINUING')
+            # CRITICAL FIX: Safely process Status values that might be floats
+            def safe_check_status(status_value, target_status):
+                if isinstance(status_value, (int, float)):
+                    # Numeric values can't be compared to strings directly
+                    return False
+                return str(status_value).upper() == target_status
+            
+            new_members = sum(1 for _, row in members_df.iterrows() 
+                             if safe_check_status(row.get('Status', ''), 'NEW'))
+            continuing_members = sum(1 for _, row in members_df.iterrows() 
+                                    if safe_check_status(row.get('Status', ''), 'CURRENT-CONTINUING'))
             
             circle_metadata[circle_id]['new_members'] = new_members
             circle_metadata[circle_id]['continuing_members'] = continuing_members
@@ -297,11 +314,21 @@ def reconstruct_circles_from_results(results, original_circles=None):
             
             # Calculate max_additions for continuing circles
             if continuing_members > 0:  # This is an existing circle
+                # CRITICAL FIX: Handle status values that might be floats
+                # Create a safe function to check status values
+                def safe_status_match(row_status, target_status):
+                    if isinstance(row_status, (int, float)):
+                        return False  # Numeric values never match string statuses
+                    return str(row_status).upper() == target_status
+                
                 # Count unique continuing members and new members for accurate sizing
                 unique_continuing = sum(1 for p_id in member_ids_set if any(
-                    members_df[members_df[id_column] == p_id]['Status'] == 'CURRENT-CONTINUING'))
+                    safe_status_match(status, 'CURRENT-CONTINUING')
+                    for status in members_df[members_df[id_column] == p_id]['Status']))
+                
                 unique_new = sum(1 for p_id in member_ids_set if any(
-                    members_df[members_df[id_column] == p_id]['Status'] == 'NEW'))
+                    safe_status_match(status, 'NEW')
+                    for status in members_df[members_df[id_column] == p_id]['Status']))
                 
                 print(f"  Circle {circle_id}: {unique_continuing} unique continuing members, {unique_new} unique new members")
                 
