@@ -43,6 +43,16 @@ def generate_download_link(df):
     filtered_columns = [col for col in output_df.columns if not col.startswith('Unnamed:')]
     output_df = output_df[filtered_columns]
     
+    # CRITICAL FIX: Remove blank rows (rows with no Encoded ID)
+    if 'Encoded ID' in output_df.columns:
+        # Count blank rows before filtering
+        blank_count = output_df['Encoded ID'].isna().sum()
+        if blank_count > 0:
+            print(f"  🔍 CRITICAL FIX: Found {blank_count} blank rows in results")
+            # Keep only rows with a non-null Encoded ID
+            output_df = output_df.dropna(subset=['Encoded ID'])
+            print(f"  ✅ Removed {blank_count} blank rows from results CSV")
+    
     # Define the column order according to specifications
     ordered_columns = []
     
