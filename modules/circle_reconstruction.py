@@ -32,6 +32,12 @@ def reconstruct_circles_from_results(results, original_circles=None):
         DataFrame: Updated circles dataframe with all assigned circles
     """
     print("\n🔄 RECONSTRUCTING CIRCLES FROM PARTICIPANT RESULTS")
+    print("🔍 ENHANCED DIAGNOSTICS: Starting comprehensive circle reconstruction")
+    
+    # Debug any specific test circle IDs to watch
+    test_circle_ids = ['IP-WDC-01', 'IP-WDC-02', 'IP-SFO-25', 'IP-SFO-26']
+    for circle_id in test_circle_ids:
+        print(f"  🔎 TRACKING circle {circle_id} through reconstruction")
     
     # Convert results to DataFrame if it's a list
     if isinstance(results, list):
@@ -143,7 +149,9 @@ def reconstruct_circles_from_results(results, original_circles=None):
             ('meeting_time', ['proposed_NEW_DayTime', 'Current_Meeting_Time', 'Current_Meeting_Day', 
                              'Current Meeting Day', 'Current/ Continuing Meeting Day',
                              'Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time',
-                             'Current/ Continuing DayTime', 'meeting_time', 'Current_DayTime'])
+                             'Current/ Continuing DayTime', 'meeting_time', 'Current_DayTime', 
+                             'Current DayTime', 'Meeting Time', 'Meeting Day',
+                             'Preferred Meeting Day', 'Preferred Meeting Time'])
         ]:
             # Check each possible column name
             for col in column_options:
@@ -177,8 +185,16 @@ def reconstruct_circles_from_results(results, original_circles=None):
             # If meeting_time is still not set, try additional strategies
             if prop == 'meeting_time' and ('meeting_time' not in circle_metadata[circle_id] or safe_isna(circle_metadata[circle_id].get('meeting_time'))):
                 # Look for day and time in separate columns and combine them
-                day_cols = ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']
-                time_cols = ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time'] 
+                day_cols = [
+                    'Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day',
+                    'Meeting Day', 'Preferred Meeting Day', 'Preferred Day', 'Day',
+                    'Current Day', 'Current/ Continuing Day'
+                ]
+                time_cols = [
+                    'Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time',
+                    'Meeting Time', 'Preferred Meeting Time', 'Preferred Time', 'Time',
+                    'Current Time', 'Current/ Continuing Time'
+                ]
                 
                 day_value = None
                 time_value = None
@@ -187,12 +203,14 @@ def reconstruct_circles_from_results(results, original_circles=None):
                 for day_col in day_cols:
                     if day_col in sample_member and not safe_isna(sample_member[day_col]):
                         day_value = sample_member[day_col]
+                        print(f"  Found day value '{day_value}' from column '{day_col}'")
                         break
                 
                 # Try to find time value
                 for time_col in time_cols:
                     if time_col in sample_member and not safe_isna(sample_member[time_col]):
                         time_value = sample_member[time_col]
+                        print(f"  Found time value '{time_value}' from column '{time_col}'")
                         break
                 
                 # If we found both, combine them
@@ -311,8 +329,34 @@ def reconstruct_circles_from_results(results, original_circles=None):
     # Convert circle metadata to DataFrame
     circles_df = pd.DataFrame(list(circle_metadata.values()))
     
+    # If we have results, do final verification and fix of member counts based on actual members list
+    print("\n🔍 CRITICAL VERIFICATION: Double-checking member counts against actual members list")
+    
     # Post-process the dataframe
     if not circles_df.empty:
+        # CRITICAL FIX: Verify each circle's member count matches its actual members list length
+        count_fixed = 0
+        for i, row in circles_df.iterrows():
+            circle_id = row['circle_id']
+            members_list = row['members'] if 'members' in row else []
+            
+            # Get the actual member count from the members list
+            actual_count = len(members_list) if isinstance(members_list, list) else 0
+            
+            # If member_count doesn't match the actual number of members, fix it
+            if 'member_count' in row and row['member_count'] != actual_count and actual_count > 0:
+                old_count = row['member_count']
+                circles_df.at[i, 'member_count'] = actual_count
+                count_fixed += 1
+                print(f"  ✅ FIXED: Circle {circle_id} member_count corrected from {old_count} to {actual_count}")
+                
+                # Special tracking for test circles
+                if circle_id in test_circle_ids:
+                    print(f"  🔎 TEST CIRCLE {circle_id}: member_count updated to {actual_count}")
+                    print(f"    Members: {members_list}")
+        
+        print(f"  Fixed member counts for {count_fixed} circles")
+        
         # Ensure numeric columns are integers
         for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts', 'max_additions']:
             if col in circles_df.columns:
@@ -324,10 +368,43 @@ def reconstruct_circles_from_results(results, original_circles=None):
     
     print(f"  Successfully created circles DataFrame with {len(circles_df)} circles")
     
+    # Final fix: Check for any circles with missing meeting times
+    missing_time_count = 0
+    for i, row in circles_df.iterrows():
+        circle_id = row['circle_id']
+        
+        # If meeting_time is missing or None, add a fallback value
+        if 'meeting_time' not in row or safe_isna(row['meeting_time']):
+            # Get the region data if available
+            region_info = f"{row.get('region', 'Unknown')} / {row.get('subregion', 'Unknown')}"
+            
+            # Set a generic "TBD" message that includes the region for context
+            fallback_time = f"TBD - Contact your circle leader ({region_info})"
+            circles_df.at[i, 'meeting_time'] = fallback_time
+            missing_time_count += 1
+            print(f"  ⚠️ Added fallback meeting time for circle {circle_id}: '{fallback_time}'")
+            
+    if missing_time_count > 0:
+        print(f"  Added fallback meeting times for {missing_time_count} circles with missing values")
+    
+    # Enhanced debugging - show all tracked test circles
+    for circle_id in test_circle_ids:
+        test_circle = circles_df[circles_df['circle_id'] == circle_id]
+        if not test_circle.empty:
+            row = test_circle.iloc[0]
+            print(f"  🔍 FINAL TEST CIRCLE: {circle_id}: {row['member_count']} members "
+                 f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
+                 f"max_additions={row.get('max_additions', 0)})")
+            print(f"     Meeting time: '{row.get('meeting_time', 'None')}'")
+        else:
+            print(f"  ⚠️ TEST CIRCLE {circle_id} not found in final circles DataFrame")
+    
     # Debug - show a few sample circles
     if not circles_df.empty and len(circles_df) > 0:
         print("  Sample circles:")
-        for i, (_, row) in enumerate(circles_df.head(3).iterrows()):
-            print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members ({row.get('new_members', 0)} new, max_additions={row.get('max_additions', 0)})")
+        for i, (_, row) in enumerate(circles_df.head(5).iterrows()):
+            print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members "
+                 f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
+                 f"max_additions={row.get('max_additions', 0)})")
     
     return circles_df
