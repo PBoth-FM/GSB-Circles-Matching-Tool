@@ -448,12 +448,17 @@ def process_uploaded_file(uploaded_file):
                         st.session_state.racial_identity_diversity_score = ri_score
                         st.session_state.children_diversity_score = children_score
                         
-                        # Display Diversity Score metric
-                        st.metric("Diversity Score", total_diversity_score)
+                        # Display Diversity Score metric - ensuring we use the sum of all five scores
+                        # Calculate the sum again to ensure we're not using any cached value
+                        all_scores_sum = vintage_score + employment_score + industry_score + ri_score + children_score
+                        st.metric("Diversity Score", all_scores_sum)
+                        
+                        # Also store the total in session state for use elsewhere
+                        st.session_state.total_diversity_score = all_scores_sum
                         
                         # Log for debugging
                         print(f"DEBUG - Match page diversity scores: Vintage({vintage_score}) + Employment({employment_score}) + " +
-                              f"Industry({industry_score}) + RI({ri_score}) + Children({children_score}) = Total({total_diversity_score})")
+                              f"Industry({industry_score}) + RI({ri_score}) + Children({children_score}) = Total({all_scores_sum})")
                         
                     with col4:
                         if total_participants > 0:
