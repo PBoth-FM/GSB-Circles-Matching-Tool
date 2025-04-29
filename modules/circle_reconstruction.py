@@ -4,6 +4,19 @@ appear correctly in UI components.
 """
 
 import pandas as pd
+import numpy as np
+
+def safe_isna(val):
+    """Safely check if a value is NA, handling both scalar and array-like objects."""
+    if isinstance(val, (pd.Series, pd.DataFrame)):
+        # For pandas objects, check if all values are NA
+        return val.isna().all()
+    elif isinstance(val, (np.ndarray, list)):
+        # For numpy arrays or lists
+        return all(pd.isna(x) for x in val)
+    else:
+        # For scalar values
+        return pd.isna(val)
 
 def reconstruct_circles_from_results(results, original_circles=None):
     """
@@ -79,7 +92,7 @@ def reconstruct_circles_from_results(results, original_circles=None):
     # Group participants by circle
     for circle_id in unique_circles:
         # Skip invalid circle IDs
-        if pd.isna(circle_id) or circle_id == 'UNMATCHED':
+        if safe_isna(circle_id) or circle_id == 'UNMATCHED':
             continue
             
         # Get participants in this circle
@@ -107,9 +120,12 @@ def reconstruct_circles_from_results(results, original_circles=None):
         ]:
             # Check each possible column name
             for col in column_options:
-                if col in sample_member and not pd.isna(sample_member[col]):
-                    circle_metadata[circle_id][prop] = sample_member[col]
-                    break
+                # Safe check for column existence and non-NA values
+                if col in sample_member:
+                    # Use safe_isna to handle potential array-like values
+                    if not safe_isna(sample_member[col]):
+                        circle_metadata[circle_id][prop] = sample_member[col]
+                        break
                     
         # Check if the circle was in the original circles dataframe
         if circle_id in original_circle_info:
@@ -120,12 +136,9 @@ def reconstruct_circles_from_results(results, original_circles=None):
                 if not prop_exists:
                     circle_metadata[circle_id][prop] = value
                 else:
-                    # Handle both scalar and Series/array values
+                    # Use our safe_isna helper function to handle all types
                     val = circle_metadata[circle_id][prop]
-                    if isinstance(val, pd.Series) or isinstance(val, pd.DataFrame):
-                        if val.isna().all():  # All values are NA
-                            circle_metadata[circle_id][prop] = value
-                    elif pd.isna(val):  # Single scalar NA value
+                    if safe_isna(val):  # This handles both scalar and array-like values safely
                         circle_metadata[circle_id][prop] = value
                     
         # Count hosts if host column exists
