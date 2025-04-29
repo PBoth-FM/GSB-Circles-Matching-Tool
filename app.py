@@ -162,6 +162,12 @@ def run_optimization():
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
             
+            # Calculate and store diversity score immediately after optimization
+            from modules.ui_components import calculate_total_diversity_score
+            total_diversity_score = calculate_total_diversity_score(matched_circles, results)
+            st.session_state.total_diversity_score = total_diversity_score
+            print(f"DEBUG - Calculated diversity score immediately after optimization: {total_diversity_score}")
+            
             # DEBUGGING: Check if we actually have eligibility logs in session state
             print(f"After optimization, circle_eligibility_logs contains {len(st.session_state.circle_eligibility_logs)} entries")
             if len(st.session_state.circle_eligibility_logs) == 0:
@@ -419,24 +425,21 @@ def process_uploaded_file(uploaded_file):
                         st.metric("Participants Matched", matched_count)
                     
                     with col3:
-                        # Use the same function that the Details/Overview tab uses for consistency
-                        from modules.ui_components import calculate_total_diversity_score
-                        
-                        # Get the matched circles and results data
-                        matched_circles_df = st.session_state.matched_circles
-                        results_df = st.session_state.results
-                        
-                        # Calculate the total diversity score using the central function
-                        total_diversity_score = calculate_total_diversity_score(matched_circles_df, results_df)
+                        # Use pre-calculated diversity score if available, otherwise calculate it
+                        if 'total_diversity_score' in st.session_state and st.session_state.total_diversity_score is not None:
+                            total_diversity_score = st.session_state.total_diversity_score
+                            print(f"DEBUG - Using pre-calculated diversity score: {total_diversity_score}")
+                        else:
+                            # Fall back to calculation if needed
+                            from modules.ui_components import calculate_total_diversity_score
+                            matched_circles_df = st.session_state.matched_circles
+                            results_df = st.session_state.results
+                            total_diversity_score = calculate_total_diversity_score(matched_circles_df, results_df)
+                            st.session_state.total_diversity_score = total_diversity_score
+                            print(f"DEBUG - Calculated diversity score on demand: {total_diversity_score}")
                         
                         # Display Diversity Score metric
                         st.metric("Diversity Score", total_diversity_score)
-                        
-                        # Store the total in session state for use elsewhere
-                        st.session_state.total_diversity_score = total_diversity_score
-                        
-                        # Log for debugging
-                        print(f"DEBUG - Match page diversity score (using central calculation function): {total_diversity_score}")
                         
                     with col4:
                         if total_participants > 0:
