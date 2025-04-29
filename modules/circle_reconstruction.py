@@ -391,9 +391,17 @@ def reconstruct_circles_from_results(results, original_circles=None):
                 # CRITICAL FIX: For new circles, member_count should match new_members
                 # These circles often show 1 (likely due to member counting issues)
                 new_members_count = circle_metadata[circle_id].get('new_members', total_members)
+                
+                # ALWAYS set member_count to match new_members for new circles
                 if new_members_count > 0:
-                    circle_metadata[circle_id]['member_count'] = new_members_count
-                    print(f"  ✅ FIXED: Set member_count to match new_members ({new_members_count}) for circle {circle_id}")
+                    # For new circles, we ALWAYS want to set the member count to at least the new members count
+                    circle_metadata[circle_id]['member_count'] = max(circle_metadata[circle_id].get('member_count', 0), new_members_count)
+                    print(f"  ✅ CRITICAL NEW CIRCLE FIX: Set member_count to {circle_metadata[circle_id]['member_count']} for {circle_id}")
+                elif total_members > 1:
+                    # If new_members_count is 0 but we have actual members, use that count
+                    circle_metadata[circle_id]['member_count'] = total_members
+                    circle_metadata[circle_id]['new_members'] = total_members  # Also update new_members to match
+                    print(f"  ✅ CRITICAL NEW CIRCLE FIX: Set member_count and new_members to total_members ({total_members}) for {circle_id}")
                 
                 circle_metadata[circle_id]['max_additions'] = max_additions
                 print(f"  New circle {circle_id}: {new_members_count} members, max_additions set to {max_additions}")
@@ -472,13 +480,28 @@ def reconstruct_circles_from_results(results, original_circles=None):
         if circle_id in member_count_from_list:
             actual_count = member_count_from_list[circle_id]
             
-            # For new circles, always use the members list count if it's greater
+            # CRITICAL FIX: For new circles, always use the higher of:
+            # 1. Members list count, 2. New members count, or 3. Current member count
             if circle_id.startswith('IP-NEW'):
-                if actual_count > member_count:
+                # Get the new members count
+                new_members_count = row.get('new_members', 0)
+                
+                # Find the highest count for this new circle
+                best_count = max(actual_count, member_count, new_members_count)
+                
+                # Only update if we have a better count
+                if best_count > member_count:
                     old_count = member_count
-                    circles_df.at[i, 'member_count'] = actual_count
+                    circles_df.at[i, 'member_count'] = best_count
                     new_count_fixed += 1
-                    print(f"  🔧 DIRECT FIX FOR NEW CIRCLE: {circle_id} member_count updated from {old_count} to {actual_count}")
+                    print(f"  🔧 CRITICAL FIX FOR NEW CIRCLE: {circle_id} member_count updated from {old_count} to {best_count}")
+                    print(f"    Source counts: members_list={actual_count}, current={member_count}, new_members={new_members_count}")
+                # Even if the counts match, always set member_count to new_members for new circles
+                elif best_count <= 1 and new_members_count > 1:
+                    old_count = member_count
+                    circles_df.at[i, 'member_count'] = new_members_count
+                    new_count_fixed += 1
+                    print(f"  🔧 DIRECT OVERRIDE FOR NEW CIRCLE: {circle_id} member_count forced from {old_count} to {new_members_count}")
         
         # Debug output for identified test circles or any circles with issues
         if circle_id in test_circle_ids or is_continuing or member_count == 1:
@@ -521,6 +544,34 @@ def reconstruct_circles_from_results(results, original_circles=None):
     if new_count_fixed > 0:
         print(f"  ✅ Direct-fixed member counts for {new_count_fixed} new circles with incorrect counts")
 
+    # FINAL FORCED CHECK FOR NEW CIRCLES: This is our last check to ensure all new circles
+    # have the correct member count
+    print("\n🔍 FINAL CHECK: Verifying all NEW circles have member count matching new member count")
+    final_fixed = 0
+    for i, row in circles_df.iterrows():
+        circle_id = row['circle_id']
+        
+        if circle_id.startswith('IP-NEW'):
+            member_count = row.get('member_count', 0)
+            new_members_count = row.get('new_members', 0)
+            
+            # For new circles, member_count should match new_members if new_members > 0
+            if new_members_count > 0 and member_count != new_members_count:
+                old_count = member_count
+                circles_df.at[i, 'member_count'] = new_members_count
+                final_fixed += 1
+                print(f"  🚨 FINAL FIX: NEW circle {circle_id} member_count forced from {old_count} to {new_members_count}")
+            elif member_count == 1 and 'members' in row and isinstance(row['members'], list) and len(row['members']) > 1:
+                # If we still have member_count=1 but actual members list is larger, use that
+                actual_count = len(row['members'])
+                old_count = member_count
+                circles_df.at[i, 'member_count'] = actual_count
+                final_fixed += 1
+                print(f"  🚨 FINAL MEMBERS LIST FIX: NEW circle {circle_id} member_count forced from {old_count} to {actual_count}")
+    
+    if final_fixed > 0:
+        print(f"  ✅ Final-fixed member counts for {final_fixed} new circles with forced correction")
+    
     # Note: We leave meeting times blank if not available, per user instruction
     missing_time_count = 0
     for i, row in circles_df.iterrows():
