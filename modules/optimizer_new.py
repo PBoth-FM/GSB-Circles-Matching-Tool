@@ -941,7 +941,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'current_members': len(members),
                             'is_eligible': final_max_additions > 0,
                             'original_preference': 'Default',
-                            'preference_value': 'Default max total of 8',
+                            'preference_value': 8,  # CRITICAL FIX: Use integer instead of string to fix PyArrow error
                             'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
                             'is_small_circle': len(members) < 5,
                             'has_none_preference': False,
