@@ -97,7 +97,14 @@ def reconstruct_circles_from_results(results, original_circles=None):
             
         # Get participants in this circle
         members_df = matched_df[matched_df[circle_column] == circle_id]
-        member_ids = members_df[id_column].tolist()
+        
+        # CRITICAL FIX: Remove duplicate member IDs by using a set to ensure uniqueness
+        member_ids_set = set(members_df[id_column].tolist())
+        member_ids = list(member_ids_set)
+        
+        print(f"  Circle {circle_id}: Found {len(members_df)} member records, {len(member_ids)} unique members")
+        if len(members_df) > len(member_ids):
+            print(f"  ⚠️ WARNING: Circle {circle_id} had {len(members_df) - len(member_ids)} duplicate member entries - removed")
         
         # Store members list
         circle_members[circle_id] = member_ids
@@ -105,7 +112,7 @@ def reconstruct_circles_from_results(results, original_circles=None):
         # Initialize circle metadata
         circle_metadata[circle_id] = {
             'circle_id': circle_id,
-            'member_count': len(member_ids),
+            'member_count': len(member_ids),  # Now uses deduplicated count
             'members': member_ids
         }
         
@@ -160,17 +167,45 @@ def reconstruct_circles_from_results(results, original_circles=None):
             
             # Calculate max_additions for continuing circles
             if continuing_members > 0:  # This is an existing circle
+                # Count unique continuing members and new members for accurate sizing
+                unique_continuing = sum(1 for p_id in member_ids_set if any(
+                    members_df[members_df[id_column] == p_id]['Status'] == 'CURRENT-CONTINUING'))
+                unique_new = sum(1 for p_id in member_ids_set if any(
+                    members_df[members_df[id_column] == p_id]['Status'] == 'NEW'))
+                
+                print(f"  Circle {circle_id}: {unique_continuing} unique continuing members, {unique_new} unique new members")
+                
+                # CRITICAL CHECK: Enforce 8-member limit for continuing circles
+                total_members = len(member_ids)
+                if total_members > 8:
+                    print(f"  ⚠️ WARNING: Circle {circle_id} exceeds maximum size with {total_members} members!")
+                    print(f"    This includes {unique_continuing} continuing members and {unique_new} new members")
+                    if unique_new > 0:
+                        print(f"    This circle should not have accepted new members as it already has {unique_continuing} continuing members")
+                
                 # First, check if max_additions exists in original data
                 if circle_id in original_circle_info and 'max_additions' in original_circle_info[circle_id]:
                     # Use the existing max_additions value from optimization
                     max_additions = original_circle_info[circle_id]['max_additions']
+                    
+                    # CRITICAL FIX: Enforce the 8-member limit
+                    # Even if optimizer allowed more, we need to correct it here
+                    if total_members >= 8:
+                        # Already at or over capacity, force max_additions to 0
+                        print(f"  ⚠️ FIXING: Circle {circle_id} is at/over capacity. Setting max_additions to 0 (was {max_additions})")
+                        max_additions = 0
+                    elif total_members + max_additions > 8:
+                        # Would exceed capacity, adjust max_additions
+                        corrected_max = 8 - total_members
+                        print(f"  ⚠️ FIXING: Circle {circle_id} would exceed capacity. Adjusting max_additions from {max_additions} to {corrected_max}")
+                        max_additions = corrected_max
+                    
                     circle_metadata[circle_id]['max_additions'] = max_additions
                     print(f"  Preserved max_additions={max_additions} for circle {circle_id}")
                 else:
                     # Calculate max_additions based on continuing circle rules
                     # 1. For continuing circles, never exceed a total of 8 members
                     # 2. For small circles (<5 members), add enough to reach 5 regardless of preferences
-                    total_members = len(member_ids)
                     
                     if total_members < 5:
                         # Small circle - can add members to reach 5
@@ -183,8 +218,17 @@ def reconstruct_circles_from_results(results, original_circles=None):
                     
                     circle_metadata[circle_id]['max_additions'] = max_additions
             else:
-                # New circle - set max_additions to 0 since it's already formed
-                circle_metadata[circle_id]['max_additions'] = 0
+                # New circle - different max size (10)
+                total_members = len(member_ids)
+                if total_members >= 10:
+                    # Already at maximum size for new circles
+                    max_additions = 0
+                else:
+                    # Allow additions up to 10
+                    max_additions = 10 - total_members
+                
+                circle_metadata[circle_id]['max_additions'] = max_additions
+                print(f"  New circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
             
     # Convert circle metadata to DataFrame
     circles_df = pd.DataFrame(list(circle_metadata.values()))
