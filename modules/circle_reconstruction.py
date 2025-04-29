@@ -368,24 +368,18 @@ def reconstruct_circles_from_results(results, original_circles=None):
     
     print(f"  Successfully created circles DataFrame with {len(circles_df)} circles")
     
-    # Final fix: Check for any circles with missing meeting times
+    # Note: We leave meeting times blank if not available, per user instruction
     missing_time_count = 0
     for i, row in circles_df.iterrows():
         circle_id = row['circle_id']
         
-        # If meeting_time is missing or None, add a fallback value
+        # Count how many meeting times are missing but don't add fallbacks
         if 'meeting_time' not in row or safe_isna(row['meeting_time']):
-            # Get the region data if available
-            region_info = f"{row.get('region', 'Unknown')} / {row.get('subregion', 'Unknown')}"
-            
-            # Set a generic "TBD" message that includes the region for context
-            fallback_time = f"TBD - Contact your circle leader ({region_info})"
-            circles_df.at[i, 'meeting_time'] = fallback_time
             missing_time_count += 1
-            print(f"  ⚠️ Added fallback meeting time for circle {circle_id}: '{fallback_time}'")
+            print(f"  ⚠️ Circle {circle_id} has missing meeting time - leaving blank")
             
     if missing_time_count > 0:
-        print(f"  Added fallback meeting times for {missing_time_count} circles with missing values")
+        print(f"  Found {missing_time_count} circles with missing meeting times - leaving blank as instructed")
     
     # Enhanced debugging - show all tracked test circles
     for circle_id in test_circle_ids:
