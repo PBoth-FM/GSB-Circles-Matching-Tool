@@ -127,9 +127,15 @@ def calculate_employment_diversity_score(matched_circles_df, results_df):
     
     # Dictionary to track diversity scores
     circle_employment_diversity_scores = {}
+    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
+    circles_processed = 0
+    circles_with_no_data = 0
+    circles_with_data = 0
     
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
+        circles_processed += 1
+        
         # Skip circles with no members
         if 'member_count' not in circle_row or circle_row['member_count'] == 0:
             continue
@@ -166,13 +172,22 @@ def calculate_employment_diversity_score(matched_circles_df, results_df):
                     if pd.notna(employment):
                         unique_employment_categories.add(employment)
         
-        # Calculate diversity score for this circle
+        # Calculate diversity score for this circle - include ALL circles, even those with no data
         if unique_employment_categories:
             score = len(unique_employment_categories)
             circle_employment_diversity_scores[circle_id] = score
+            circles_with_data += 1
+        else:
+            # Still include the circle but with a score of 0
+            circle_employment_diversity_scores[circle_id] = 0
+            circles_with_no_data += 1
     
     # Calculate total score across all circles
-    total_score = sum(circle_employment_diversity_scores.values()) if circle_employment_diversity_scores else 0
+    total_score = sum(circle_employment_diversity_scores.values())
+    
+    # Debug information
+    print(f"DIVERSITY DEBUG - Employment: {circles_processed} circles processed, {circles_with_data} with data, {circles_with_no_data} without data, total score: {total_score}")
+    
     return total_score
 
 def calculate_industry_diversity_score(matched_circles_df, results_df):
@@ -182,9 +197,15 @@ def calculate_industry_diversity_score(matched_circles_df, results_df):
     
     # Dictionary to track diversity scores
     circle_industry_diversity_scores = {}
+    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
+    circles_processed = 0
+    circles_with_no_data = 0
+    circles_with_data = 0
     
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
+        circles_processed += 1
+        
         # Skip circles with no members
         if 'member_count' not in circle_row or circle_row['member_count'] == 0:
             continue
@@ -221,13 +242,22 @@ def calculate_industry_diversity_score(matched_circles_df, results_df):
                     if pd.notna(industry):
                         unique_industry_categories.add(industry)
         
-        # Calculate diversity score for this circle
+        # Calculate diversity score for this circle - include ALL circles, even those with no data
         if unique_industry_categories:
             score = len(unique_industry_categories)
             circle_industry_diversity_scores[circle_id] = score
+            circles_with_data += 1
+        else:
+            # Still include the circle but with a score of 0
+            circle_industry_diversity_scores[circle_id] = 0
+            circles_with_no_data += 1
     
     # Calculate total score across all circles
-    total_score = sum(circle_industry_diversity_scores.values()) if circle_industry_diversity_scores else 0
+    total_score = sum(circle_industry_diversity_scores.values())
+    
+    # Debug information
+    print(f"DIVERSITY DEBUG - Industry: {circles_processed} circles processed, {circles_with_data} with data, {circles_with_no_data} without data, total score: {total_score}")
+    
     return total_score
 
 def calculate_racial_identity_diversity_score(matched_circles_df, results_df):
@@ -237,9 +267,15 @@ def calculate_racial_identity_diversity_score(matched_circles_df, results_df):
     
     # Dictionary to track diversity scores
     circle_ri_diversity_scores = {}
+    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
+    circles_processed = 0
+    circles_with_no_data = 0
+    circles_with_data = 0
     
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
+        circles_processed += 1
+        
         # Skip circles with no members
         if 'member_count' not in circle_row or circle_row['member_count'] == 0:
             continue
@@ -276,13 +312,22 @@ def calculate_racial_identity_diversity_score(matched_circles_df, results_df):
                     if pd.notna(ri):
                         unique_ri_categories.add(ri)
         
-        # Calculate diversity score for this circle
+        # Calculate diversity score for this circle - include ALL circles, even those with no data
         if unique_ri_categories:
             score = len(unique_ri_categories)
             circle_ri_diversity_scores[circle_id] = score
+            circles_with_data += 1
+        else:
+            # Still include the circle but with a score of 0
+            circle_ri_diversity_scores[circle_id] = 0
+            circles_with_no_data += 1
     
     # Calculate total score across all circles
-    total_score = sum(circle_ri_diversity_scores.values()) if circle_ri_diversity_scores else 0
+    total_score = sum(circle_ri_diversity_scores.values())
+    
+    # Debug information
+    print(f"DIVERSITY DEBUG - Racial Identity: {circles_processed} circles processed, {circles_with_data} with data, {circles_with_no_data} without data, total score: {total_score}")
+    
     return total_score
 
 def calculate_children_diversity_score(matched_circles_df, results_df):
@@ -292,9 +337,15 @@ def calculate_children_diversity_score(matched_circles_df, results_df):
     
     # Dictionary to track diversity scores
     circle_children_diversity_scores = {}
+    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
+    circles_processed = 0
+    circles_with_no_data = 0
+    circles_with_data = 0
     
     # Process each circle to calculate diversity scores
     for _, circle_row in matched_circles_df.iterrows():
+        circles_processed += 1
+        
         # Skip circles with no members
         if 'member_count' not in circle_row or circle_row['member_count'] == 0:
             continue
@@ -331,13 +382,22 @@ def calculate_children_diversity_score(matched_circles_df, results_df):
                     if pd.notna(children):
                         unique_children_categories.add(children)
         
-        # Calculate diversity score for this circle
+        # Calculate diversity score for this circle - include ALL circles, even those with no data
         if unique_children_categories:
             score = len(unique_children_categories)
             circle_children_diversity_scores[circle_id] = score
+            circles_with_data += 1
+        else:
+            # Still include the circle but with a score of 0
+            circle_children_diversity_scores[circle_id] = 0
+            circles_with_no_data += 1
     
     # Calculate total score across all circles
-    total_score = sum(circle_children_diversity_scores.values()) if circle_children_diversity_scores else 0
+    total_score = sum(circle_children_diversity_scores.values())
+    
+    # Debug information
+    print(f"DIVERSITY DEBUG - Children: {circles_processed} circles processed, {circles_with_data} with data, {circles_with_no_data} without data, total score: {total_score}")
+    
     return total_score
 
 # Function to render different tabs in the UI
