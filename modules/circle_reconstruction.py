@@ -158,13 +158,41 @@ def reconstruct_circles_from_results(results, original_circles=None):
             circle_metadata[circle_id]['is_existing'] = continuing_members > 0
             circle_metadata[circle_id]['is_new_circle'] = continuing_members == 0
             
+            # Calculate max_additions for continuing circles
+            if continuing_members > 0:  # This is an existing circle
+                # First, check if max_additions exists in original data
+                if circle_id in original_circle_info and 'max_additions' in original_circle_info[circle_id]:
+                    # Use the existing max_additions value from optimization
+                    max_additions = original_circle_info[circle_id]['max_additions']
+                    circle_metadata[circle_id]['max_additions'] = max_additions
+                    print(f"  Preserved max_additions={max_additions} for circle {circle_id}")
+                else:
+                    # Calculate max_additions based on continuing circle rules
+                    # 1. For continuing circles, never exceed a total of 8 members
+                    # 2. For small circles (<5 members), add enough to reach 5 regardless of preferences
+                    total_members = len(member_ids)
+                    
+                    if total_members < 5:
+                        # Small circle - can add members to reach 5
+                        max_additions = 5 - total_members
+                        print(f"  Small circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
+                    else:
+                        # Regular continuing circle - never exceed 8 total
+                        max_additions = max(0, 8 - total_members)
+                        print(f"  Continuing circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
+                    
+                    circle_metadata[circle_id]['max_additions'] = max_additions
+            else:
+                # New circle - set max_additions to 0 since it's already formed
+                circle_metadata[circle_id]['max_additions'] = 0
+            
     # Convert circle metadata to DataFrame
     circles_df = pd.DataFrame(list(circle_metadata.values()))
     
     # Post-process the dataframe
     if not circles_df.empty:
         # Ensure numeric columns are integers
-        for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts']:
+        for col in ['member_count', 'new_members', 'always_hosts', 'sometimes_hosts', 'max_additions']:
             if col in circles_df.columns:
                 circles_df[col] = pd.to_numeric(circles_df[col], errors='coerce').fillna(0).astype(int)
                 
@@ -178,6 +206,6 @@ def reconstruct_circles_from_results(results, original_circles=None):
     if not circles_df.empty and len(circles_df) > 0:
         print("  Sample circles:")
         for i, (_, row) in enumerate(circles_df.head(3).iterrows()):
-            print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members ({row.get('new_members', 0)} new)")
+            print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members ({row.get('new_members', 0)} new, max_additions={row.get('max_additions', 0)})")
     
     return circles_df
