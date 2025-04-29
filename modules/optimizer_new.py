@@ -721,13 +721,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             time_column = col_name
                             break
                     
-                    # Get meeting day and time, defaulting to 'Varies' if not found
-                    meeting_day = members[0].get(day_column, 'Varies') if day_column else 'Varies'
-                    meeting_time = members[0].get(time_column, 'Varies') if time_column else 'Varies'
+                    # Get meeting day and time, but leave them blank if not found (per user request)
+                    meeting_day = members[0].get(day_column, '') if day_column else ''
+                    meeting_time = members[0].get(time_column, '') if time_column else ''
                     
-                    # Ensure non-empty strings for day and time
-                    meeting_day = meeting_day if pd.notna(meeting_day) and meeting_day else 'Varies'
-                    meeting_time = meeting_time if pd.notna(meeting_time) and meeting_time else 'Varies'
+                    # Ensure we don't use None values (convert to empty string)
+                    meeting_day = meeting_day if pd.notna(meeting_day) and meeting_day else ''
+                    meeting_time = meeting_time if pd.notna(meeting_time) and meeting_time else ''
                     
                     # Standardize time format to plural form (e.g., "Evening" -> "Evenings", "Day" -> "Days")
                     # This ensures consistency between existing circles and new participant preferences
@@ -736,8 +736,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     elif meeting_time.lower() == 'day':
                         meeting_time = 'Days'
                     
-                    # Format the day/time combination for proposed_NEW_DayTime using the standard format
-                    formatted_meeting_time = f"{meeting_day} ({meeting_time})"
+                    # Format the day/time combination, but only if we have day and time information
+                    # Per user request, leave meeting_time blank if there's no data
+                    if meeting_day and meeting_time:
+                        formatted_meeting_time = f"{meeting_day} ({meeting_time})"
+                    elif meeting_day:
+                        formatted_meeting_time = meeting_day
+                    elif meeting_time:
+                        formatted_meeting_time = meeting_time
+                    else:
+                        formatted_meeting_time = ""
                     
                     if debug_mode:
                         print(f"For existing circle_id {circle_id}, using day '{meeting_day}' and time '{meeting_time}'")
