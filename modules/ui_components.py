@@ -899,6 +899,10 @@ def render_vintage_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
+    # Create score columns if they don't exist
+    if 'vintage_score' not in circles_df.columns:
+        circles_df['vintage_score'] = 0
+    
     # DEBUG: Show total circles at the start
     total_initial_circles = len(circles_df)
     st.caption(f"🔍 **Demographics DEBUG:** Starting with {total_initial_circles} total circles")
@@ -955,47 +959,90 @@ def render_vintage_diversity_histogram():
     circles_with_parsing_errors = []
     circles_included = []
     
+    # Track special debug circles
+    debug_circles = ['IP-ATL-1', 'IP-BOS-01']
+    
     # Get vintage data for each member of each circle
-    for _, circle_row in circles_df.iterrows():
+    for idx, circle_row in circles_df.iterrows():
         circle_id = circle_row['circle_id']
+        is_debug_circle = circle_id in debug_circles
         
         # Initialize empty set to track unique vintages
         unique_vintages = set()
         has_parsing_error = False
         
-        # Get the list of members for this circle
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                member_ids = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        member_ids = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        member_ids = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception as e:
                     # Record parsing errors
                     has_parsing_error = True
                     circles_with_parsing_errors.append(circle_id)
-                    # Give it a default value instead of skipping
-                    member_ids = []
-                    
             else:
-                # Skip if members data is not in expected format
                 has_parsing_error = True
                 circles_with_parsing_errors.append(circle_id)
-                member_ids = []
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        member_ids = []
+        if members_from_lookup:
+            member_ids = members_from_lookup
+        else:
+            member_ids = members_from_row
+        
+        if is_debug_circle:
+            print(f"VINTAGE DEBUG - {circle_id}: Found {len(member_ids)} members using improved extraction")
                 
-            # For each member, look up their vintage in results_df
-            for member_id in member_ids:
-                member_data = results_df[results_df['Encoded ID'] == member_id]
+        # For each member, look up their vintage in results_df
+        for member_id in member_ids:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
                 
-                if not member_data.empty and 'Class_Vintage' in member_data.columns:
-                    vintage = member_data['Class_Vintage'].iloc[0]
-                    if pd.notna(vintage):
-                        unique_vintages.add(vintage)
+            # Try exact match first
+            member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
+            
+            if not member_data.empty and 'Class_Vintage' in member_data.columns:
+                vintage = member_data['Class_Vintage'].iloc[0]
+                if pd.notna(vintage):
+                    unique_vintages.add(vintage)
         
         # INCLUDE ALL CIRCLES in the analysis, even if they have no vintage data
         # Those without vintage data get a count of 0
@@ -1005,10 +1052,21 @@ def render_vintage_diversity_histogram():
             circle_vintage_counts[circle_id] = count
             circle_vintage_diversity_scores[circle_id] = count
             circles_included.append(circle_id)
+            
+            # CRITICAL FIX: Update the dataframe with the vintage score for this circle
+            circles_df.at[idx, 'vintage_score'] = count
+            
+            if is_debug_circle:
+                print(f"VINTAGE DEBUG - {circle_id}: Updated score to {count} (found {len(unique_vintages)} unique vintages)")
         else:
             # Circle has no vintage data - still include with 0 count
             circle_vintage_counts[circle_id] = 0
             circle_vintage_diversity_scores[circle_id] = 0
+            circles_df.at[idx, 'vintage_score'] = 0
+            
+            if is_debug_circle:
+                print(f"VINTAGE DEBUG - {circle_id}: No vintage data found, set score to 0")
+                
             if not has_parsing_error:
                 circles_with_no_vintage_data.append(circle_id)
     
@@ -1109,6 +1167,10 @@ def render_vintage_diversity_histogram():
     
     st.write(f"- {circles_with_data} circles ({data_pct:.1f}%) have vintage data")
     st.write(f"- Among circles with vintage data, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple vintages")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"VINTAGE HISTOGRAM UPDATE - Updated session state matched_circles with calculated vintage scores for {len(circles_df)} circles")
 
 
 def render_employment_diversity_histogram():
@@ -1183,6 +1245,10 @@ def render_employment_diversity_histogram():
         st.warning("No circles with members available for analysis.")
         return
     
+    # Create score column if it doesn't exist
+    if 'employment_score' not in circles_df.columns:
+        circles_df['employment_score'] = 0
+    
     # Dictionary to track unique employment categories per circle and debugging info
     circle_employment_counts = {}
     circle_employment_diversity_scores = {}
@@ -1190,46 +1256,90 @@ def render_employment_diversity_histogram():
     circles_with_parsing_errors = []
     circles_included = []
     
+    # Track special debug circles
+    debug_circles = ['IP-ATL-1', 'IP-BOS-01']
+    
     # Get employment data for each member of each circle
-    for _, circle_row in circles_df.iterrows():
+    for idx, circle_row in circles_df.iterrows():
         circle_id = circle_row['circle_id']
+        is_debug_circle = circle_id in debug_circles
         
         # Initialize empty set to track unique employment categories
         unique_employment_categories = set()
         has_parsing_error = False
         
-        # Get the list of members for this circle
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                member_ids = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        member_ids = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        member_ids = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception as e:
                     # Record parsing errors
                     has_parsing_error = True
                     circles_with_parsing_errors.append(circle_id)
-                    # Give it a default value instead of skipping
-                    member_ids = []
             else:
-                # Record format errors
                 has_parsing_error = True
                 circles_with_parsing_errors.append(circle_id)
-                member_ids = []
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        member_ids = []
+        if members_from_lookup:
+            member_ids = members_from_lookup
+        else:
+            member_ids = members_from_row
+        
+        if is_debug_circle:
+            print(f"EMPLOYMENT DEBUG - {circle_id}: Found {len(member_ids)} members using improved extraction")
                 
-            # For each member, look up their employment category in results_df
-            for member_id in member_ids:
-                member_data = results_df[results_df['Encoded ID'] == member_id]
+        # For each member, look up their employment category in results_df
+        for member_id in member_ids:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
+                continue
                 
-                if not member_data.empty and 'Employment_Category' in member_data.columns:
-                    employment_category = member_data['Employment_Category'].iloc[0]
-                    if pd.notna(employment_category):
-                        unique_employment_categories.add(employment_category)
+            # Try exact match first
+            member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
+                
+                # If still no match and member_id has numeric format
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
+            
+            if not member_data.empty and 'Employment_Category' in member_data.columns:
+                employment_category = member_data['Employment_Category'].iloc[0]
+                if pd.notna(employment_category):
+                    unique_employment_categories.add(employment_category)
         
         # INCLUDE ALL CIRCLES in the analysis, even if they have no employment data
         # Those without employment data get a count of 0
@@ -1239,10 +1349,21 @@ def render_employment_diversity_histogram():
             circle_employment_counts[circle_id] = count
             circle_employment_diversity_scores[circle_id] = count
             circles_included.append(circle_id)
+            
+            # CRITICAL FIX: Update the dataframe with the employment score for this circle
+            circles_df.at[idx, 'employment_score'] = count
+            
+            if is_debug_circle:
+                print(f"EMPLOYMENT DEBUG - {circle_id}: Updated score to {count} (found {len(unique_employment_categories)} unique categories)")
         else:
             # Circle has no employment data - still include with 0 count
             circle_employment_counts[circle_id] = 0
             circle_employment_diversity_scores[circle_id] = 0
+            circles_df.at[idx, 'employment_score'] = 0
+            
+            if is_debug_circle:
+                print(f"EMPLOYMENT DEBUG - {circle_id}: No employment data found, set score to 0")
+                
             if not has_parsing_error:
                 circles_with_no_employment_data.append(circle_id)
     
@@ -1342,6 +1463,10 @@ def render_employment_diversity_histogram():
     
     st.write(f"- {circles_with_data} circles ({data_pct:.1f}%) have employment data")
     st.write(f"- Among circles with employment data, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple employment categories")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"EMPLOYMENT HISTOGRAM UPDATE - Updated session state matched_circles with calculated employment scores for {len(circles_df)} circles")
 
 def render_industry_diversity_histogram():
     """
