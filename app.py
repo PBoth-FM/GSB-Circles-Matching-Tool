@@ -419,46 +419,24 @@ def process_uploaded_file(uploaded_file):
                         st.metric("Participants Matched", matched_count)
                     
                     with col3:
-                        # Directly calculate all diversity scores instead of using the central function
-                        # Import all necessary functions
-                        from modules.ui_components import calculate_vintage_diversity_score
-                        from modules.ui_components import calculate_employment_diversity_score
-                        from modules.ui_components import calculate_industry_diversity_score
-                        from modules.ui_components import calculate_racial_identity_diversity_score
-                        from modules.ui_components import calculate_children_diversity_score
+                        # Use the same function that the Details/Overview tab uses for consistency
+                        from modules.ui_components import calculate_total_diversity_score
                         
                         # Get the matched circles and results data
                         matched_circles_df = st.session_state.matched_circles
                         results_df = st.session_state.results
                         
-                        # Calculate each diversity score individually
-                        vintage_score = calculate_vintage_diversity_score(matched_circles_df, results_df)
-                        employment_score = calculate_employment_diversity_score(matched_circles_df, results_df)
-                        industry_score = calculate_industry_diversity_score(matched_circles_df, results_df)
-                        ri_score = calculate_racial_identity_diversity_score(matched_circles_df, results_df)
-                        children_score = calculate_children_diversity_score(matched_circles_df, results_df)
+                        # Calculate the total diversity score using the central function
+                        total_diversity_score = calculate_total_diversity_score(matched_circles_df, results_df)
                         
-                        # Calculate total score as the sum
-                        total_diversity_score = vintage_score + employment_score + industry_score + ri_score + children_score
+                        # Display Diversity Score metric
+                        st.metric("Diversity Score", total_diversity_score)
                         
-                        # Store the scores in session state for use in other parts of the app
-                        st.session_state.vintage_diversity_score = vintage_score
-                        st.session_state.employment_diversity_score = employment_score
-                        st.session_state.industry_diversity_score = industry_score
-                        st.session_state.racial_identity_diversity_score = ri_score
-                        st.session_state.children_diversity_score = children_score
-                        
-                        # Display Diversity Score metric - ensuring we use the sum of all five scores
-                        # Calculate the sum again to ensure we're not using any cached value
-                        all_scores_sum = vintage_score + employment_score + industry_score + ri_score + children_score
-                        st.metric("Diversity Score", all_scores_sum)
-                        
-                        # Also store the total in session state for use elsewhere
-                        st.session_state.total_diversity_score = all_scores_sum
+                        # Store the total in session state for use elsewhere
+                        st.session_state.total_diversity_score = total_diversity_score
                         
                         # Log for debugging
-                        print(f"DEBUG - Match page diversity scores: Vintage({vintage_score}) + Employment({employment_score}) + " +
-                              f"Industry({industry_score}) + RI({ri_score}) + Children({children_score}) = Total({all_scores_sum})")
+                        print(f"DEBUG - Match page diversity score (using central calculation function): {total_diversity_score}")
                         
                     with col4:
                         if total_participants > 0:
