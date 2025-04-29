@@ -217,7 +217,16 @@ def run_optimization():
             # Compare with original data
             original_participant_count = len(test_data)
             print(f"Original data participant count: {original_participant_count}")
-            print(f"Test participant adjustment: -{len(test_participants) if test_participants else 0}")
+            
+            # Properly handle test_participants which could be a DataFrame or a list
+            test_count = 0
+            if isinstance(test_participants, pd.DataFrame):
+                test_count = len(test_participants) if not test_participants.empty else 0
+            elif isinstance(test_participants, list):
+                test_count = len(test_participants)
+            elif hasattr(test_participants, '__len__'):  # Handle any other iterable
+                test_count = len(test_participants)
+            print(f"Test participant adjustment: -{test_count}")
             
             # Store results in session state
             st.session_state.results = results
@@ -549,9 +558,9 @@ def process_uploaded_file(uploaded_file):
                     if 'Encoded ID' in results_df.columns:
                         try:
                             mask = results_df['Encoded ID'].astype(str).str.startswith('99999')
-                            test_participants = results_df[mask]
-                            if len(test_participants) > 0:
-                                print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS that might be inflating counts")
+                            test_participants_df = results_df[mask]
+                            if len(test_participants_df) > 0:
+                                print(f"⚠️ FOUND {len(test_participants_df)} TEST PARTICIPANTS that might be inflating counts")
                         except Exception as e:
                             print(f"⚠️ Error checking for test participants: {str(e)}")
                             print(f"Type of Encoded ID column: {results_df['Encoded ID'].dtype}")
@@ -583,7 +592,8 @@ def process_uploaded_file(uploaded_file):
                 # Display circle table with specified columns
                 if ('matched_circles' in st.session_state and 
                     st.session_state.matched_circles is not None and 
-                    not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+                    (isinstance(st.session_state.matched_circles, list) or 
+                     not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty))):
                     
                     # Get the data
                     circles_df = st.session_state.matched_circles.copy()
