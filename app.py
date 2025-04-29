@@ -156,6 +156,38 @@ def run_optimization():
                 st.session_state.config
             )
             
+            # Add extensive diagnostic logging to understand data structure
+            print("\n🔬🔬🔬 DETAILED RESULT ANALYSIS 🔬🔬🔬")
+            print(f"Raw results length: {len(results)}")
+            
+            # Check for test participants that might be inflating counts
+            test_participants = [r for r in results if r.get('Encoded ID', '').startswith('99999')]
+            if test_participants:
+                print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS in results")
+                print(f"  First test participant: {test_participants[0].get('Encoded ID', 'Unknown')}")
+            
+            # Count matched vs unmatched
+            if 'proposed_NEW_circles_id' in results.columns:
+                matched_in_results = len(results[results['proposed_NEW_circles_id'] != 'UNMATCHED'])
+                unmatched_in_results = len(results[results['proposed_NEW_circles_id'] == 'UNMATCHED'])
+                print(f"From results DataFrame - Matched: {matched_in_results}, Unmatched: {unmatched_in_results}")
+            
+            # Check the unmatched_participants parameter
+            print(f"Unmatched participants parameter length: {len(unmatched_participants)}")
+            
+            # Check matched circles
+            print(f"Matched circles length: {len(matched_circles)}")
+            
+            # Calculate total expected participants
+            total_in_circles = sum(circle.get('member_count', 0) if isinstance(circle, dict) else 0 
+                                  for circle in matched_circles)
+            print(f"Total participants in all circles (member_count): {total_in_circles}")
+            
+            # Compare with original data
+            original_participant_count = len(test_data)
+            print(f"Original data participant count: {original_participant_count}")
+            print(f"Test participant adjustment: -{len(test_participants) if test_participants else 0}")
+            
             # Store results in session state
             st.session_state.results = results
             st.session_state.matched_circles = matched_circles
@@ -412,20 +444,76 @@ def process_uploaded_file(uploaded_file):
                     results_df = st.session_state.results
                     total_participants = len(results_df)
                     
+                    # EXTENSIVE DIAGNOSTIC LOGGING FOR PARTICIPANT COUNT ISSUE
+                    print("\n🔍🔍🔍 MATCH COUNT DIAGNOSTICS 🔍🔍🔍")
+                    print(f"Raw results_df shape: {results_df.shape}")
+                    
+                    # Check for duplicate IDs which could be inflating the count
+                    if 'Encoded ID' in results_df.columns:
+                        total_ids = len(results_df['Encoded ID'])
+                        unique_ids = len(results_df['Encoded ID'].unique())
+                        print(f"Total IDs: {total_ids}, Unique IDs: {unique_ids}")
+                        if total_ids > unique_ids:
+                            print(f"⚠️ FOUND {total_ids - unique_ids} DUPLICATE IDs!")
+                            # Show examples of duplicates
+                            duplicate_mask = results_df.duplicated(subset=['Encoded ID'], keep=False)
+                            duplicates = results_df[duplicate_mask]
+                            if len(duplicates) > 0:
+                                print(f"Examples of duplicated IDs:")
+                                dup_examples = duplicates['Encoded ID'].unique()[:5]
+                                for dup_id in dup_examples:
+                                    dup_rows = results_df[results_df['Encoded ID'] == dup_id]
+                                    print(f"  ID {dup_id} appears {len(dup_rows)} times")
+                                    if len(dup_rows) > 1:
+                                        for i, (_, row) in enumerate(dup_rows.iterrows()):
+                                            circle_id = row.get('proposed_NEW_circles_id', 'N/A')
+                                            status = row.get('Status', 'N/A')
+                                            print(f"    Instance {i+1}: Circle={circle_id}, Status={status}")
+                    
                     # FIXED: More accurate calculation of matched participants
                     # Only count non-empty circle IDs to avoid counting filtered records
                     matched_count = 0
                     unmatched_count = 0
                     
                     if 'proposed_NEW_circles_id' in results_df.columns:
+                        # Check all values for diagnostics
+                        circle_values = results_df['proposed_NEW_circles_id'].value_counts().to_dict()
+                        print(f"Circle ID values count:")
+                        
+                        # Group by UNMATCHED, nan/null, and actual circles
+                        unmatched_count = circle_values.get('UNMATCHED', 0)
+                        null_count = results_df['proposed_NEW_circles_id'].isna().sum()
+                        circle_count = sum(v for k, v in circle_values.items() 
+                                           if k != 'UNMATCHED' and not pd.isna(k))
+                        
+                        print(f"  Assigned to circles: {circle_count}")
+                        print(f"  UNMATCHED: {unmatched_count}")
+                        print(f"  Null/NaN: {null_count}")
+                        
                         # Filter out any null or empty values
-                        matched_count = results_df['proposed_NEW_circles_id'].notna()
-                        matched_count = len(results_df[matched_count & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')])
+                        notna_mask = results_df['proposed_NEW_circles_id'].notna()
+                        valid_circle_mask = notna_mask & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+                        matched_count = len(results_df[valid_circle_mask])
                         unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+                        
+                        # Compare with actual circle data
+                        circles_participant_count = 0
+                        if 'matched_circles' in st.session_state:
+                            circles = st.session_state.matched_circles
+                            circles_participant_count = sum(circle.get('member_count', 0) for circle in circles)
+                            print(f"Total participants in matched_circles: {circles_participant_count}")
                     
-                    # Log debug information
-                    print(f"DEBUG - Participant count calculation:")
-                    print(f"  Total participants: {total_participants}")
+                    # Check if we have test participants
+                    if 'Encoded ID' in results_df.columns:
+                        test_participants = [r for _, r in results_df.iterrows() 
+                                            if str(r.get('Encoded ID', '')).startswith('99999')]
+                        if test_participants:
+                            print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS that might be inflating counts")
+                    
+                    # Log final counts 
+                    print(f"FINAL COUNTS: Total={total_participants}, Matched={matched_count}, Unmatched={unmatched_count}")
+                    print(f"Match rate: {(matched_count / total_participants) * 100:.1f}%")
+                    print("🔍🔍🔍 END MATCH COUNT DIAGNOSTICS 🔍🔍🔍\n")
                     print(f"  Matched count: {matched_count}")
                     print(f"  Unmatched count: {unmatched_count}")
                     
