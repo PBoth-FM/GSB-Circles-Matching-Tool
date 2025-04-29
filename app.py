@@ -161,10 +161,27 @@ def run_optimization():
             print(f"Raw results length: {len(results)}")
             
             # Check for test participants that might be inflating counts
-            test_participants = [r for r in results if r.get('Encoded ID', '').startswith('99999')]
-            if test_participants:
-                print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS in results")
-                print(f"  First test participant: {test_participants[0].get('Encoded ID', 'Unknown')}")
+            # First, check if results is a DataFrame or a list of dictionaries
+            test_participants = []
+            if isinstance(results, pd.DataFrame):
+                # If it's a DataFrame, use proper DataFrame filtering
+                if 'Encoded ID' in results.columns:
+                    mask = results['Encoded ID'].astype(str).str.startswith('99999')
+                    test_participants = results[mask]
+                    print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS in results (DataFrame)")
+                    if not test_participants.empty:
+                        print(f"  First test participant ID: {test_participants.iloc[0]['Encoded ID']}")
+            else:
+                # If it's a list of dictionaries, use the original approach
+                try:
+                    test_participants = [r for r in results if isinstance(r, dict) and str(r.get('Encoded ID', '')).startswith('99999')]
+                    if test_participants:
+                        print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS in results (List)")
+                        print(f"  First test participant: {test_participants[0].get('Encoded ID', 'Unknown')}")
+                except Exception as e:
+                    print(f"⚠️ Error when checking for test participants: {str(e)}")
+                    print(f"  Type of results: {type(results)}")
+                    print(f"  Sample item type: {type(results[0]) if results and len(results) > 0 else 'No items'}")
             
             # Check for duplicate Encoded IDs
             if 'Encoded ID' in results.columns:
@@ -530,10 +547,14 @@ def process_uploaded_file(uploaded_file):
                     
                     # Check if we have test participants
                     if 'Encoded ID' in results_df.columns:
-                        test_participants = [r for _, r in results_df.iterrows() 
-                                            if str(r.get('Encoded ID', '')).startswith('99999')]
-                        if test_participants:
-                            print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS that might be inflating counts")
+                        try:
+                            mask = results_df['Encoded ID'].astype(str).str.startswith('99999')
+                            test_participants = results_df[mask]
+                            if len(test_participants) > 0:
+                                print(f"⚠️ FOUND {len(test_participants)} TEST PARTICIPANTS that might be inflating counts")
+                        except Exception as e:
+                            print(f"⚠️ Error checking for test participants: {str(e)}")
+                            print(f"Type of Encoded ID column: {results_df['Encoded ID'].dtype}")
                     
                     # Log final counts 
                     print(f"FINAL COUNTS: Total={total_participants}, Matched={matched_count}, Unmatched={unmatched_count}")
