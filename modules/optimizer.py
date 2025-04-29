@@ -868,6 +868,29 @@ def run_matching_algorithm(data, config):
     circles_df = pd.DataFrame(deduped_circles) if deduped_circles else pd.DataFrame()
     unmatched_df = pd.DataFrame(all_unmatched) if all_unmatched else pd.DataFrame()
     
+    # CRITICAL FIX: Reconstruct circles from results to ensure all circles appear in the UI
+    # This ensures circles with post-processed participants are properly represented
+    print("\n🔄 FINAL CIRCLE RECONSTRUCTION FROM RESULTS")
+    
+    # Import our circle reconstruction function
+    from modules.circle_reconstruction import reconstruct_circles_from_results
+    
+    # Reconstruct circles from the final results
+    reconstructed_circles = reconstruct_circles_from_results(results_df, circles_df)
+    
+    if not reconstructed_circles.empty:
+        print(f"  ✅ CRITICAL FIX: Using reconstructed circles with {len(reconstructed_circles)} circles")
+        # Print a sample of the circles for debugging
+        if len(reconstructed_circles) > 0:
+            print("  Sample circles from reconstructed dataframe:")
+            for i, (_, row) in enumerate(reconstructed_circles.head(5).iterrows()):
+                print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members")
+        
+        # Use the reconstructed circles instead of the original circles_df
+        circles_df = reconstructed_circles
+    else:
+        print(f"  ⚠️ Reconstructed circles dataframe is empty, using original circles with {len(circles_df)} circles")
+    
     # Ensure Class_Vintage is properly preserved in results
     if not results_df.empty and 'Class_Vintage' not in results_df.columns and 'Class_Vintage' in data.columns:
         print(f"Adding Class_Vintage from original data to results")
