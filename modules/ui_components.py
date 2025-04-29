@@ -4656,6 +4656,10 @@ def render_children_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
+    # Create score column if it doesn't exist
+    if 'children_score' not in circles_df.columns:
+        circles_df['children_score'] = 0
+    
     # Check if Children_Category doesn't exist, add it from the Children column
     if 'Children_Category' not in results_df.columns:
         # Find the Children column in the results dataframe
@@ -4708,41 +4712,94 @@ def render_children_diversity_histogram():
     # Dictionary to track unique children categories per circle
     circle_children_counts = {}
     circle_children_diversity_scores = {}
+    circles_with_no_children_data = []
+    circles_with_parsing_errors = []
+    circles_included = []
+    
+    # Track special debug circles
+    debug_circles = ['IP-ATL-1', 'IP-BOS-01']
     
     # Get children data for each member of each circle
-    for _, circle_row in circles_df.iterrows():
+    for idx, circle_row in circles_df.iterrows():
         circle_id = circle_row['circle_id']
+        is_debug_circle = circle_id in debug_circles
         
         # Initialize empty set to track unique children categories
         unique_children_categories = set()
+        has_parsing_error = False
         
-        # Get the list of members for this circle
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                member_ids = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        member_ids = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        member_ids = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception as e:
-                    # Skip if parsing fails
-                    continue
+                    # Record parsing errors
+                    has_parsing_error = True
+                    circles_with_parsing_errors.append(circle_id)
             else:
-                # Skip if members data is not in expected format
+                has_parsing_error = True
+                circles_with_parsing_errors.append(circle_id)
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        member_ids = []
+        if members_from_lookup:
+            member_ids = members_from_lookup
+        else:
+            member_ids = members_from_row
+        
+        if is_debug_circle:
+            print(f"CHILDREN DEBUG - {circle_id}: Found {len(member_ids)} members using improved extraction")
+                
+        # For each member, look up their children category in results_df
+        for member_id in member_ids:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
                 continue
                 
-            # For each member, look up their children category in results_df
-            for member_id in member_ids:
-                member_data = results_df[results_df['Encoded ID'] == member_id]
+            # Try exact match first
+            member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
                 
-                if not member_data.empty and 'Children_Category' in member_data.columns:
-                    children_category = member_data['Children_Category'].iloc[0]
-                    if pd.notna(children_category):
-                        unique_children_categories.add(children_category)
+                # If still no match and member_id has numeric format
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
+            
+            if not member_data.empty and 'Children_Category' in member_data.columns:
+                children_category = member_data['Children_Category'].iloc[0]
+                if pd.notna(children_category):
+                    unique_children_categories.add(children_category)
         
         # Store the count of unique children categories for this circle
         if unique_children_categories:  # Only include if there's at least one valid category
@@ -4751,6 +4808,23 @@ def render_children_diversity_histogram():
             # Calculate diversity score: 1 point if everyone is in the same category,
             # 2 points if two categories, 3 points if three categories, etc.
             circle_children_diversity_scores[circle_id] = count
+            
+            # CRITICAL FIX: Update the dataframe with the children score for this circle
+            circles_df.at[idx, 'children_score'] = count
+            
+            if is_debug_circle:
+                print(f"CHILDREN DEBUG - {circle_id}: Updated score to {count} (found {len(unique_children_categories)} unique categories)")
+        else:
+            # Circle has no valid children data - include with 0 count
+            circle_children_counts[circle_id] = 0
+            circle_children_diversity_scores[circle_id] = 0
+            circles_df.at[idx, 'children_score'] = 0
+            
+            if is_debug_circle:
+                print(f"CHILDREN DEBUG - {circle_id}: No children data found, set score to 0")
+            
+            if not has_parsing_error:
+                circles_with_no_children_data.append(circle_id)
     
     # Create histogram data from the children counts
     if not circle_children_counts:
@@ -4829,6 +4903,10 @@ def render_children_diversity_histogram():
     diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
     
     st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple children categories.")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"CHILDREN HISTOGRAM UPDATE - Updated session state matched_circles with calculated children scores for {len(circles_df)} circles")
 
 def render_racial_identity_diversity_histogram():
     """
@@ -4853,6 +4931,10 @@ def render_racial_identity_diversity_histogram():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
     
+    # Create score column if it doesn't exist
+    if 'racial_identity_score' not in circles_df.columns:
+        circles_df['racial_identity_score'] = 0
+    
     # Filter out circles with no members
     if 'member_count' not in circles_df.columns:
         st.warning("Circles data does not have member_count column")
@@ -4867,41 +4949,94 @@ def render_racial_identity_diversity_histogram():
     # Dictionary to track unique racial identities per circle
     circle_racial_identity_counts = {}
     circle_racial_identity_diversity_scores = {}
+    circles_with_no_racial_data = []
+    circles_with_parsing_errors = []
+    circles_included = []
+    
+    # Track special debug circles
+    debug_circles = ['IP-ATL-1', 'IP-BOS-01']
     
     # Get racial identity data for each member of each circle
-    for _, circle_row in circles_df.iterrows():
+    for idx, circle_row in circles_df.iterrows():
         circle_id = circle_row['circle_id']
+        is_debug_circle = circle_id in debug_circles
         
         # Initialize empty set to track unique racial identities
         unique_racial_identities = set()
+        has_parsing_error = False
         
-        # Get the list of members for this circle
-        if 'members' in circle_row and circle_row['members']:
+        # IMPROVED APPROACH: Get the list of members for this circle
+        # Method 1: Try to get members from the circle_row['members']
+        members_from_row = []
+        if 'members' in circle_row and circle_row['members'] and not pd.isna(circle_row['members']).all():
             # For list representation
             if isinstance(circle_row['members'], list):
-                member_ids = circle_row['members']
+                members_from_row = [m for m in circle_row['members'] if not pd.isna(m)]
             # For string representation - convert to list
             elif isinstance(circle_row['members'], str):
                 try:
                     if circle_row['members'].startswith('['):
-                        member_ids = eval(circle_row['members'])
+                        members_from_row = [m for m in eval(circle_row['members']) if not pd.isna(m)]
                     else:
-                        member_ids = [circle_row['members']]
+                        members_from_row = [circle_row['members']]
                 except Exception as e:
-                    # Skip if parsing fails
-                    continue
+                    # Record parsing errors
+                    has_parsing_error = True
+                    circles_with_parsing_errors.append(circle_id)
             else:
-                # Skip if members data is not in expected format
+                has_parsing_error = True
+                circles_with_parsing_errors.append(circle_id)
+        
+        # Method 2: Get members by looking up the circle_id in the results dataframe
+        members_from_lookup = []
+        if 'proposed_NEW_circles_id' in results_df.columns:
+            # Find all participants assigned to this circle
+            circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+            if not circle_members.empty and 'Encoded ID' in circle_members.columns:
+                members_from_lookup = circle_members['Encoded ID'].dropna().tolist()
+        
+        # Combine both methods, prioritizing non-empty results
+        member_ids = []
+        if members_from_lookup:
+            member_ids = members_from_lookup
+        else:
+            member_ids = members_from_row
+        
+        if is_debug_circle:
+            print(f"RACIAL IDENTITY DEBUG - {circle_id}: Found {len(member_ids)} members using improved extraction")
+                
+        # For each member, look up their racial identity category in results_df
+        for member_id in member_ids:
+            # Skip NaN or invalid member IDs
+            if pd.isna(member_id):
                 continue
                 
-            # For each member, look up their racial identity category in results_df
-            for member_id in member_ids:
-                member_data = results_df[results_df['Encoded ID'] == member_id]
+            # Try exact match first
+            member_data = results_df[results_df['Encoded ID'] == member_id]
+            
+            # If no match, try converting both to strings for comparison
+            if member_data.empty:
+                # Convert to string and try again
+                member_data = results_df[results_df['Encoded ID'].astype(str) == str(member_id)]
                 
-                if not member_data.empty and 'Racial_Identity_Category' in member_data.columns:
-                    racial_identity = member_data['Racial_Identity_Category'].iloc[0]
-                    if pd.notna(racial_identity):
-                        unique_racial_identities.add(racial_identity)
+                # If still no match and member_id has numeric format
+                if member_data.empty and str(member_id).replace('.', '', 1).isdigit():
+                    try:
+                        # Try as float
+                        float_id = float(member_id)
+                        member_data = results_df[results_df['Encoded ID'].astype(float) == float_id]
+                        
+                        # Try as int if it's a whole number
+                        if member_data.empty and float_id.is_integer():
+                            int_id = int(float_id)
+                            member_data = results_df[results_df['Encoded ID'].astype(int) == int_id]
+                    except:
+                        pass
+            
+            if not member_data.empty and 'Racial_Identity_Category' in member_data.columns:
+                racial_identity = member_data['Racial_Identity_Category'].iloc[0]
+                if pd.notna(racial_identity):
+                    unique_racial_identities.add(racial_identity)
         
         # Store the count of unique racial identities for this circle
         if unique_racial_identities:  # Only include if there's at least one valid category
@@ -4910,6 +5045,23 @@ def render_racial_identity_diversity_histogram():
             # Calculate diversity score: 1 point if everyone is in the same category,
             # 2 points if two categories, 3 points if three categories
             circle_racial_identity_diversity_scores[circle_id] = count
+            
+            # CRITICAL FIX: Update the dataframe with the racial identity score for this circle
+            circles_df.at[idx, 'racial_identity_score'] = count
+            
+            if is_debug_circle:
+                print(f"RACIAL IDENTITY DEBUG - {circle_id}: Updated score to {count} (found {len(unique_racial_identities)} unique categories)")
+        else:
+            # Circle has no valid racial identity data - include with 0 count
+            circle_racial_identity_counts[circle_id] = 0
+            circle_racial_identity_diversity_scores[circle_id] = 0
+            circles_df.at[idx, 'racial_identity_score'] = 0
+            
+            if is_debug_circle:
+                print(f"RACIAL IDENTITY DEBUG - {circle_id}: No racial identity data found, set score to 0")
+            
+            if not has_parsing_error:
+                circles_with_no_racial_data.append(circle_id)
     
     # Create histogram data from the racial identity counts
     if not circle_racial_identity_counts:
@@ -4987,6 +5139,10 @@ def render_racial_identity_diversity_histogram():
     diverse_pct = (diverse_circles / total_circles * 100) if total_circles > 0 else 0
     
     st.write(f"Out of {total_circles} total circles, {diverse_circles} ({diverse_pct:.1f}%) contain members from multiple racial identity categories.")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"RACIAL IDENTITY HISTOGRAM UPDATE - Updated session state matched_circles with calculated racial identity scores for {len(circles_df)} circles")
     
 def render_circles_detail():
     """Render the Circles Detail tab with comprehensive diversity metrics for each circle"""
