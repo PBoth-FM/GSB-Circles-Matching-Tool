@@ -5093,6 +5093,22 @@ def render_circles_detail():
             'Children Score': children_score,
             'Children Top Category': children_top
         })
+        
+        # CRITICAL FIX: Update the original circles_df with diversity scores
+        # Find the row index in the original dataframe
+        idx = circles_df.index[circles_df['circle_id'] == circle_id].tolist()
+        if idx:
+            # Add or update the scores directly in the dataframe
+            circles_df.loc[idx[0], 'vintage_score'] = vintage_score
+            circles_df.loc[idx[0], 'employment_score'] = employment_score
+            circles_df.loc[idx[0], 'industry_score'] = industry_score
+            circles_df.loc[idx[0], 'ri_score'] = ri_score
+            circles_df.loc[idx[0], 'children_score'] = children_score
+            circles_df.loc[idx[0], 'total_diversity_score'] = total_score
+            
+            # Log successful update
+            if circle_id in ['IP-ATL-1', 'IP-BOS-01']:
+                print(f"DEBUG - Updated {circle_id} in circles_df with diversity scores: V({vintage_score}), E({employment_score}), I({industry_score}), RI({ri_score}), C({children_score}), Total({total_score})")
     
     # Create DataFrame from diversity data
     if diversity_data:
@@ -5146,6 +5162,10 @@ def render_circles_detail():
             st.metric("Avg Participants", f"{avg_participants:.1f}")
     else:
         st.warning("No diversity data could be calculated for the selected circles.")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"DIVERSITY UPDATE - Updated session state matched_circles with diversity scores for {len(circles_df)} circles")
 
 def render_racial_identity_analysis(data):
     """Render the Racial Identity analysis visualizations"""
