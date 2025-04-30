@@ -556,19 +556,41 @@ def process_uploaded_file(uploaded_file):
                     null_id_matched = results_df[valid_circle_mask & results_df['Encoded ID'].isna()]
                     if len(null_id_matched) > 0:
                         print(f"⚠️ Found {len(null_id_matched)} matched participants with NULL Encoded ID")
-                        for _, row in null_id_matched.iterrows():
+                        for idx, row in null_id_matched.iterrows():
                             circle_id = row['proposed_NEW_circles_id']
                             status = row.get('Status', 'Unknown')
                             participant_id = row.get('participant_id', 'Unknown')
                             
-                            print(f"  NULL ENCODED ID ENTRY DETAILS:")
+                            print(f"  NULL ENCODED ID ENTRY DETAILS (THIS IS WHAT YOU'RE LOOKING FOR):")
+                            print(f"  Record index: {idx}")
                             print(f"  Circle: {circle_id}, Status: {status}, participant_id: {participant_id}")
+                            
+                            # Show key information about this phantom participant
+                            location_score = row.get('location_score', 'Unknown')
+                            time_score = row.get('time_score', 'Unknown')
+                            total_score = row.get('total_score', 'Unknown')
+                            region = row.get('region', 'Unknown')
+                            
+                            print(f"  Key scores: location={location_score}, time={time_score}, total={total_score}")
+                            print(f"  Region: {region}")
                             
                             # Let's dump the entire row to help identify this record
                             print(f"  FULL RECORD DUMP:")
+                            non_null_attrs = {}
                             for col, val in row.items():
                                 if pd.notna(val) and not col.startswith('Unnamed'):
-                                    print(f"  - {col}: {val}")
+                                    non_null_attrs[col] = val
+                                    
+                            # Print the attribute keys first
+                            print(f"  All non-null attribute keys: {list(non_null_attrs.keys())}")
+                            
+                            # Then print each value
+                            for col, val in non_null_attrs.items():
+                                print(f"  - {col}: {val}")
+                                
+                            # Update user about the phantom participant
+                            st.session_state['phantom_participant_id'] = participant_id
+                            st.session_state['phantom_circle'] = circle_id
                             
                     # Add diagnostic mode to print all matched IDs for comparison
                     if st.session_state.get('config', {}).get('debug_mode', False):
