@@ -253,68 +253,16 @@ def run_optimization():
                         print(f"✅ Loaded {len(file_logs)} logs from file")
                         st.session_state.circle_eligibility_logs = file_logs
                     else:
-                        print("ℹ️ No logs found in file, generating test data")
-                        # Create and save test data for debugging
-                        from modules.optimizer_new import save_circle_eligibility_logs_to_file
+                        print("ℹ️ No logs found in file backup")
+                        # Initialize with empty logs - no test data generation
+                        st.session_state.circle_eligibility_logs = {}
                         
-                        # Create test circle eligibility logs
-                        test_logs = {
-                            'IP-TEST-01': {
-                                'circle_id': 'IP-TEST-01',
-                                'region': 'Test Region',
-                                'subregion': 'Test Subregion',
-                                'is_eligible': True,
-                                'current_members': 7,
-                                'max_additions': 3,
-                                'is_small_circle': False,
-                                'is_test_circle': True,
-                                'has_none_preference': False,
-                                'preference_overridden': False,
-                                'meeting_time': 'Monday (Evening)',
-                                'reason': 'Has capacity'
-                            },
-                            'IP-TEST-02': {
-                                'circle_id': 'IP-TEST-02',
-                                'region': 'Test Region',
-                                'subregion': 'Test Subregion',
-                                'is_eligible': False,
-                                'current_members': 10,
-                                'max_additions': 0,
-                                'is_small_circle': False,
-                                'is_test_circle': True,
-                                'has_none_preference': True,
-                                'preference_overridden': False,
-                                'reason': 'Circle is at maximum capacity (10 members)',
-                                'meeting_time': 'Wednesday (Evening)'
-                            },
-                            'IP-TEST-03': {
-                                'circle_id': 'IP-TEST-03',
-                                'region': 'Test Region',
-                                'subregion': 'Test Subregion',
-                                'is_eligible': True,
-                                'current_members': 4,
-                                'max_additions': 6,
-                                'is_small_circle': True,
-                                'is_test_circle': True,
-                                'has_none_preference': True,
-                                'preference_overridden': True,
-                                'override_reason': 'Small circle override applied',
-                                'meeting_time': 'Friday (Evening)',
-                                'reason': 'Small circle needs to reach viable size'
-                            }
-                        }
-                        
-                        # Save to file for testing
-                        saved = save_circle_eligibility_logs_to_file(test_logs, "Test Region")
-                        if saved:
-                            print(f"✅ Successfully saved {len(test_logs)} test logs to file")
-                            # Update session state with the test logs
-                            st.session_state.circle_eligibility_logs = test_logs
-                        else:
-                            print("❌ Failed to save test logs to file")
+                        # Show a warning message to the user
+                        st.warning("No circle eligibility data available. This usually means the optimization process didn't generate circle data properly. Please try running the optimization again.")
                 except Exception as e:
                     print(f"❌ Error during file operations: {str(e)}")
-                    print("Please check if optimizer_new.py's update_session_state_eligibility_logs function was called properly")
+                    st.session_state.circle_eligibility_logs = {}
+                    st.warning("Unable to load circle data. Please try running the optimization again.")
             
             st.success(f"Matching completed in {st.session_state.exec_time:.2f} seconds!")
             st.session_state.active_tab = "Results"
@@ -383,20 +331,14 @@ def process_uploaded_file(uploaded_file):
                         for circle, count in circle_counts.head(10).items():
                             print(f"   {circle}: {count} members")
                             
-                        # Check if we have the special test circles in the data
-                        test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
-                        for test_circle in test_circles:
-                            if test_circle in unique_circles:
-                                print(f"🔬 FOUND TEST CIRCLE {test_circle} in input data!")
-                                members = with_circles[with_circles[found_col] == test_circle]
-                                print(f"   Members: {len(members)}")
-                                
-                                # Check if these members have region information
-                                if 'Current_Region' in members.columns:
-                                    regions = members['Current_Region'].unique()
-                                    print(f"   Regions: {list(regions)}")
-                            else:
-                                print(f"🔬 Test circle {test_circle} NOT found in input data")
+                        # Check for any problematic circle patterns
+                        problematic_patterns = ['IP-TEST', 'IP-NEW-TES']
+                        for pattern in problematic_patterns:
+                            problem_circles = [c for c in unique_circles if pattern in c]
+                            if problem_circles:
+                                print(f"🚨 WARNING: Found {len(problem_circles)} circles with test pattern '{pattern}'")
+                                print(f"   Circle IDs: {problem_circles}")
+                                print(f"   These may be test circles and should be removed from production data!")
             else:
                 print("🔬 No valid circle ID column found")
                 
@@ -570,15 +512,28 @@ def process_uploaded_file(uploaded_file):
                                     
                             print(f"Total participants in matched_circles: {circles_participant_count}")
                     
-                    # Check if we have test participants
+                    # Check if we have test participants and remove them
                     if 'Encoded ID' in results_df.columns:
                         try:
+                            # Identify test participants (IDs starting with 99999)
                             mask = results_df['Encoded ID'].astype(str).str.startswith('99999')
                             test_participants_df = results_df[mask]
+                            
                             if len(test_participants_df) > 0:
                                 print(f"⚠️ FOUND {len(test_participants_df)} TEST PARTICIPANTS that might be inflating counts")
+                                print(f"   Test participant IDs: {test_participants_df['Encoded ID'].tolist()}")
+                                
+                                # Remove test participants from results
+                                results_df = results_df[~mask]
+                                print(f"✅ FILTERED OUT {len(test_participants_df)} test participants from results")
+                                print(f"   New result count: {len(results_df)} (was {len(results_df) + len(test_participants_df)})")
+                                
+                                # Update the session state with filtered results
+                                st.session_state.results = results_df
+                                # Recalculate total participants
+                                total_participants = len(results_df)
                         except Exception as e:
-                            print(f"⚠️ Error checking for test participants: {str(e)}")
+                            print(f"⚠️ Error filtering test participants: {str(e)}")
                             print(f"Type of Encoded ID column: {results_df['Encoded ID'].dtype}")
                     
                     # Log final counts 
