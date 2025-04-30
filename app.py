@@ -501,27 +501,60 @@ def process_uploaded_file(uploaded_file):
                             print(f"⚠️ Error filtering test participants: {str(e)}")
                             print(f"Type of Encoded ID column: {results_df['Encoded ID'].dtype}")
                     
-                    # Log final counts 
-                    print(f"FINAL COUNTS: Total={total_participants}, Matched={matched_count}, Unmatched={unmatched_count}")
-                    print(f"Match rate: {(matched_count / total_participants) * 100:.1f}%")
-                    print("🔍🔍🔍 END MATCH COUNT DIAGNOSTICS 🔍🔍🔍\n")
-                    print(f"  Matched count: {matched_count}")
-                    print(f"  Unmatched count: {unmatched_count}")
+                    # Call the standardized statistics calculation function
+                    from utils.helpers import calculate_matching_statistics
+                    
+                    # Calculate standardized statistics
+                    circles_df = st.session_state.matched_circles
+                    match_stats = calculate_matching_statistics(results_df, circles_df)
+                    
+                    # Store the statistics in session state for use throughout the app
+                    st.session_state.match_statistics = match_stats
+                    
+                    # Log the calculated statistics
+                    print("\n🔍🔍🔍 STANDARDIZED STATISTICS CALCULATION 🔍🔍🔍")
+                    print(f"Total participants: {match_stats['total_participants']}")
+                    print(f"Matched participants: {match_stats['matched_participants']}")
+                    print(f"Unmatched participants: {match_stats['unmatched_participants']}")
+                    print(f"Match rate: {match_stats['match_rate']:.1f}%")
+                    print(f"Total circles: {match_stats['total_circles']}")
+                    
+                    # Log comparison between calculation methods
+                    if 'details_matched_count' in match_stats:
+                        print(f"\nComparison between calculation methods:")
+                        print(f"Match page method (results DataFrame): {match_stats['matched_participants']}")
+                        print(f"Details page method (circle member counts): {match_stats['details_matched_count']}")
+                        print(f"Discrepancy: {match_stats['match_discrepancy']}")
+                    
+                    # Log details about test circles if they exist
+                    if 'test_circles' in match_stats:
+                        print(f"\nTest circles found: {match_stats['test_circles']}")
+                        print(f"Adjusted statistics (excluding test circles):")
+                        for key, value in match_stats['adjusted_statistics'].items():
+                            print(f"  {key}: {value}")
+                    
+                    print("🔍🔍🔍 END STANDARDIZED STATISTICS 🔍🔍🔍\n")
+                    
+                    # IMPORTANT: For backward compatibility, set these variables that are used later in the code
+                    # In the future, these should be refactored to use st.session_state.match_statistics directly
+                    matched_count = match_stats['matched_participants']
+                    unmatched_count = match_stats['unmatched_participants']
+                    total_participants = match_stats['total_participants']
                     
                     # Create columns for the metrics (now 3 columns instead of 4)
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
                         if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                            st.metric("Circles Created", len(st.session_state.matched_circles))
+                            st.metric("Circles Created", match_stats['total_circles'])
                     
                     with col2:
-                        st.metric("Participants Matched", matched_count)
+                        # Use the standardized matched count
+                        st.metric("Participants Matched", match_stats['matched_participants'])
                         
                     with col3:
-                        if total_participants > 0:
-                            match_rate = (matched_count / total_participants) * 100
-                            st.metric("Match Success Rate", f"{match_rate:.1f}%")
+                        # Use the standardized match rate
+                        st.metric("Match Success Rate", f"{match_stats['match_rate']:.1f}%")
                 
                 st.subheader("Circle Composition")
                 

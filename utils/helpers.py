@@ -54,6 +54,19 @@ def generate_download_link(df):
         circle_counts = output_df['proposed_NEW_circles_id'].value_counts().to_dict()
         print(f"  Top circles (first 5): {dict(list(circle_counts.items())[:5])}")
         
+        # Look for test circle IDs in the assigned circles
+        test_circles = [c_id for c_id in output_df['proposed_NEW_circles_id'].unique() 
+                        if isinstance(c_id, str) and any(pattern in c_id for pattern in ['IP-TEST', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'])]
+        if test_circles:
+            print(f"  ⚠️ CSV contains {len(test_circles)} TEST CIRCLE IDs: {test_circles}")
+            # Count participants in test circles
+            test_participants = len(output_df[output_df['proposed_NEW_circles_id'].isin(test_circles)])
+            print(f"  ⚠️ {test_participants} participants assigned to test circles in CSV")
+            
+            # Calculate adjusted totals without test circles
+            adjusted_matched = matched_count - test_participants
+            print(f"  Adjusted matched count (removing test participants): {adjusted_matched}")
+        
     # Only keep columns that don't start with "Unnamed:"
     filtered_columns = [col for col in output_df.columns if not col.startswith('Unnamed:')]
     output_df = output_df[filtered_columns]
@@ -265,6 +278,109 @@ def estimate_compatibility(participant, subregion, time_slot):
         score += 1
     
     return score
+
+def calculate_matching_statistics(results_df, circles_df=None):
+    """
+    Calculate standardized statistics for the matching process to ensure consistency
+    across all parts of the application
+    
+    Args:
+        results_df: DataFrame with participant results including circle assignments
+        circles_df: Optional DataFrame with circle data including member counts
+        
+    Returns:
+        Dictionary with standardized statistics:
+            - total_participants: Total number of participants
+            - matched_participants: Number of participants successfully matched
+            - unmatched_participants: Number of participants not matched
+            - match_rate: Percentage of participants matched
+            - total_circles: Total number of circles created
+            - continuing_circles: Number of existing/continuing circles
+            - new_circles: Number of newly created circles
+            - avg_circle_size: Average circle size
+            - adjusted_statistics: Statistics after excluding test circles
+    """
+    stats = {}
+    
+    # Initialize with default values
+    stats['total_participants'] = 0
+    stats['matched_participants'] = 0 
+    stats['unmatched_participants'] = 0
+    stats['match_rate'] = 0.0
+    stats['total_circles'] = 0
+    stats['continuing_circles'] = 0
+    stats['new_circles'] = 0
+    stats['avg_circle_size'] = 0.0
+    
+    # Handle case where results_df is None or empty
+    if results_df is None or len(results_df) == 0:
+        return stats
+        
+    # Calculate participant statistics from results DataFrame
+    stats['total_participants'] = len(results_df)
+    
+    if 'proposed_NEW_circles_id' in results_df.columns:
+        # Count matched participants (using the Match page method)
+        valid_circle_mask = (results_df['proposed_NEW_circles_id'].notna()) & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+        stats['matched_participants'] = len(results_df[valid_circle_mask])
+        
+        # Count unmatched participants
+        stats['unmatched_participants'] = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+        
+        # Calculate match rate
+        if stats['total_participants'] > 0:
+            stats['match_rate'] = (stats['matched_participants'] / stats['total_participants']) * 100
+    
+    # Calculate circle statistics if circle data is provided
+    if circles_df is not None and len(circles_df) > 0:
+        # Total circles
+        stats['total_circles'] = len(circles_df)
+        
+        # Count continuing circles (not starting with IP-NEW)
+        if 'circle_id' in circles_df.columns:
+            new_circle_mask = circles_df['circle_id'].str.contains('IP-NEW-', na=False)
+            stats['new_circles'] = new_circle_mask.sum()
+            stats['continuing_circles'] = len(circles_df) - stats['new_circles']
+        
+        # Calculate average circle size
+        if 'member_count' in circles_df.columns:
+            stats['avg_circle_size'] = circles_df['member_count'].mean()
+            
+            # Calculate alternative matched count (using Details page method)
+            details_matched_count = circles_df['member_count'].sum()
+            stats['details_matched_count'] = details_matched_count
+            
+            # Record the discrepancy between methods
+            stats['match_discrepancy'] = details_matched_count - stats['matched_participants']
+            
+            # Check for test circles
+            test_circles = []
+            test_patterns = ['IP-TEST', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
+            
+            if 'circle_id' in circles_df.columns:
+                for pattern in test_patterns:
+                    test_mask = circles_df['circle_id'].str.contains(pattern, na=False)
+                    test_circles.extend(circles_df[test_mask]['circle_id'].tolist())
+                
+                # If test circles exist, calculate adjusted statistics
+                if test_circles:
+                    stats['test_circles'] = test_circles
+                    
+                    # Calculate participants in test circles
+                    test_circle_participants = 0
+                    if 'member_count' in circles_df.columns:
+                        test_circle_participants = circles_df[circles_df['circle_id'].isin(test_circles)]['member_count'].sum()
+                    
+                    # Create adjusted statistics
+                    stats['adjusted_statistics'] = {
+                        'test_circle_participants': test_circle_participants,
+                        'adjusted_matched_participants': stats['matched_participants'] - test_circle_participants,
+                        'adjusted_match_rate': ((stats['matched_participants'] - test_circle_participants) / 
+                                              stats['total_participants']) * 100 if stats['total_participants'] > 0 else 0.0,
+                        'adjusted_total_circles': stats['total_circles'] - len(test_circles),
+                    }
+    
+    return stats
 
 def determine_unmatched_reason(participant, context=None):
     """
