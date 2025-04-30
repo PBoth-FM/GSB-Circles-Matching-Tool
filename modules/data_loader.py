@@ -284,8 +284,11 @@ def normalize_status_values(df):
         lambda x: binary_status_mapping.get(x.strip() if isinstance(x, str) else x, x)
     )
     
-    # Special handling for "Current-MOVING OUT of Region" - filter these out
-    normalized_df = normalized_df[normalized_df['Status'] != 'Current-MOVING OUT of Region']
+    # Filter out MOVING OUT and NOT Continuing participants
+    normalized_df = normalized_df[
+        ~(normalized_df['Status'].str.contains('MOVING OUT', case=False, na=False) |
+          normalized_df['Status'].str.contains('NOT Continuing', case=False, na=False))
+    ]
     
     # Handle region for 'Current-MOVING within Region'
     # For these participants, we should use their Current_Region instead of Requested_Region
