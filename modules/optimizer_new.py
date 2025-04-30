@@ -1106,21 +1106,60 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     if member_count >= 2:
                         circles_created += 1
                         
-                        # Find subregion if available
+                        # Find subregion if available - checking all possible column names
                         subregion = "Unknown"
-                        if 'Current_Subregion' in circle_members.columns:
-                            subregions = circle_members['Current_Subregion'].dropna().unique()
-                            if len(subregions) > 0:
-                                subregion = str(subregions[0])
+                        for subregion_col in ['Current_Subregion', 'Current Subregion', 'Current/ Continuing Subregion']:
+                            if subregion_col in circle_members.columns:
+                                subregions = circle_members[subregion_col].dropna().unique()
+                                if len(subregions) > 0:
+                                    subregion = str(subregions[0])
+                                    break
                         
-                        # Find meeting time if available
-                        meeting_time = "Unknown"
-                        for time_col in ['Current_Meeting_Time', 'Current_DayTime']:
+                        # Find meeting day and time components separately
+                        meeting_day = ""
+                        meeting_time_value = ""
+                        
+                        # Look for meeting day
+                        for day_col in ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']:
+                            if day_col in circle_members.columns:
+                                days = circle_members[day_col].dropna().unique()
+                                if len(days) > 0:
+                                    meeting_day = str(days[0])
+                                    break
+                        
+                        # Look for meeting time
+                        for time_col in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
                             if time_col in circle_members.columns:
                                 times = circle_members[time_col].dropna().unique()
                                 if len(times) > 0:
-                                    meeting_time = str(times[0])
+                                    meeting_time_value = str(times[0])
                                     break
+                        
+                        # Also check directly for combined day/time columns
+                        combined_meeting_time = ""
+                        for combined_col in ['Current_DayTime', 'Current/ Continuing DayTime', 'proposed_NEW_DayTime']:
+                            if combined_col in circle_members.columns:
+                                combined_times = circle_members[combined_col].dropna().unique()
+                                if len(combined_times) > 0:
+                                    combined_meeting_time = str(combined_times[0])
+                                    break
+                        
+                        # Now determine the final meeting_time to use
+                        if combined_meeting_time:
+                            # Use directly combined value if available
+                            meeting_time = combined_meeting_time
+                        elif meeting_day and meeting_time_value:
+                            # Combine day and time components
+                            meeting_time = f"{meeting_day} ({meeting_time_value})"
+                        elif meeting_day:
+                            # Just use day
+                            meeting_time = meeting_day
+                        elif meeting_time_value:
+                            # Just use time
+                            meeting_time = meeting_time_value
+                        else:
+                            # Default fallback
+                            meeting_time = "Unknown"
                         
                         # Process co-leader preference for max additions
                         max_additions = None
