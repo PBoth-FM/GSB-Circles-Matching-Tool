@@ -320,6 +320,46 @@ def estimate_compatibility(participant, subregion, time_slot):
     
     return score
 
+def get_valid_participants(participants_df):
+    """
+    Filter DataFrame to only include valid participants with non-null Encoded IDs.
+    
+    Args:
+        participants_df (DataFrame): DataFrame containing participant information
+        
+    Returns:
+        DataFrame: Filtered DataFrame with only valid participants
+    """
+    # Handle both column name formats (for flexibility)
+    id_col = 'Encoded ID' if 'Encoded ID' in participants_df.columns else 'Encoded_ID'
+    
+    # Filter out null IDs and convert to string to handle numeric IDs properly
+    valid_df = participants_df[participants_df[id_col].notna() & 
+                           (participants_df[id_col].astype(str) != 'None') &
+                           (participants_df[id_col].astype(str) != '')]
+    
+    # Log the filtering process for debugging
+    removed_count = len(participants_df) - len(valid_df)
+    if removed_count > 0:
+        print(f"⚠️ Filtered {removed_count} participants with null or empty Encoded IDs")
+        
+        # Detailed information on removed participants with circle assignments
+        if 'proposed_NEW_circles_id' in participants_df.columns:
+            null_id_mask = participants_df[id_col].isna() | (participants_df[id_col].astype(str) == 'None') | (participants_df[id_col].astype(str) == '')
+            null_id_with_circle = participants_df[null_id_mask & 
+                                              (participants_df['proposed_NEW_circles_id'].notna()) & 
+                                              (participants_df['proposed_NEW_circles_id'] != 'UNMATCHED')]
+            
+            if len(null_id_with_circle) > 0:
+                print(f"  ⚠️ {len(null_id_with_circle)} participants with null IDs were assigned to circles:")
+                for _, row in null_id_with_circle.iterrows():
+                    circle_id = row['proposed_NEW_circles_id']
+                    participant_id = row.get('participant_id', 'Unknown')
+                    region = row.get('region', 'Unknown')
+                    print(f"  - Circle: {circle_id}, participant_id: {participant_id}, region: {region}")
+    
+    return valid_df
+
 def calculate_matching_statistics(results_df, circles_df=None):
     """
     Calculate standardized statistics for the matching process to ensure consistency
@@ -356,17 +396,25 @@ def calculate_matching_statistics(results_df, circles_df=None):
     # Handle case where results_df is None or empty
     if results_df is None or len(results_df) == 0:
         return stats
-        
-    # Calculate participant statistics from results DataFrame
-    stats['total_participants'] = len(results_df)
     
-    if 'proposed_NEW_circles_id' in results_df.columns:
+    # Filter out participants with null Encoded IDs using our new helper function
+    # This ensures consistent counting across all statistics
+    valid_results_df = get_valid_participants(results_df)
+    
+    # Store original count for debugging
+    original_count = len(results_df)
+    
+    # Calculate participant statistics from filtered results DataFrame
+    stats['total_participants'] = len(valid_results_df)
+    stats['filtered_participants'] = original_count - len(valid_results_df)
+    
+    if 'proposed_NEW_circles_id' in valid_results_df.columns:
         # Count matched participants (using the Match page method)
-        valid_circle_mask = (results_df['proposed_NEW_circles_id'].notna()) & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
-        stats['matched_participants'] = len(results_df[valid_circle_mask])
+        valid_circle_mask = (valid_results_df['proposed_NEW_circles_id'].notna()) & (valid_results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+        stats['matched_participants'] = len(valid_results_df[valid_circle_mask])
         
         # Count unmatched participants
-        stats['unmatched_participants'] = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+        stats['unmatched_participants'] = len(valid_results_df[valid_results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
         
         # Calculate match rate
         if stats['total_participants'] > 0:
