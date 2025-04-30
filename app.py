@@ -48,7 +48,7 @@ if 'config' not in st.session_state:
     st.session_state.config = {
         'debug_mode': True,  # CRITICAL FIX: Force debug mode on to help diagnose compatibility issues
         'min_circle_size': 5,
-        'existing_circle_handling': 'optimize',  # Changed default from 'preserve' to 'optimize'
+        'existing_circle_handling': 'optimize',  # Always use optimize mode (no UI option to change this)
         'optimization_weight_location': 3,
         'optimization_weight_time': 2,
         'enable_host_requirement': True
@@ -98,13 +98,11 @@ def run_optimization():
     # Log the reset for debugging
     print("🔄 CRITICAL DEBUG: Reset circle eligibility logs before optimization run")
     
-    # Update configuration with UI selections
-    # Get circle handling mode from UI (or use default if not set)
-    selected_mode = st.session_state.get('existing_circle_handling', 'optimize')
-    print(f"🔄 Using selected circle handling mode: {selected_mode}")
+    # Always use 'optimize' mode for handling existing circles as requested
+    print(f"🔄 Using 'optimize' circle handling mode (fixed setting)")
     
-    # Update the config with the selected mode
-    st.session_state.config['existing_circle_handling'] = selected_mode
+    # Force the config to use optimize mode regardless of what's in session state
+    st.session_state.config['existing_circle_handling'] = 'optimize'
     
     # Update other config parameters from UI
     st.session_state.config['optimization_weight_location'] = st.session_state.get('location_weight', 5.0)
