@@ -557,7 +557,18 @@ def process_uploaded_file(uploaded_file):
                     if len(null_id_matched) > 0:
                         print(f"⚠️ Found {len(null_id_matched)} matched participants with NULL Encoded ID")
                         for _, row in null_id_matched.iterrows():
-                            print(f"  Circle: {row['proposed_NEW_circles_id']}, Status: {row.get('Status', 'Unknown')}")
+                            circle_id = row['proposed_NEW_circles_id']
+                            status = row.get('Status', 'Unknown')
+                            participant_id = row.get('participant_id', 'Unknown')
+                            
+                            print(f"  NULL ENCODED ID ENTRY DETAILS:")
+                            print(f"  Circle: {circle_id}, Status: {status}, participant_id: {participant_id}")
+                            
+                            # Let's dump the entire row to help identify this record
+                            print(f"  FULL RECORD DUMP:")
+                            for col, val in row.items():
+                                if pd.notna(val) and not col.startswith('Unnamed'):
+                                    print(f"  - {col}: {val}")
                             
                     # Add diagnostic mode to print all matched IDs for comparison
                     if st.session_state.get('config', {}).get('debug_mode', False):
