@@ -374,15 +374,8 @@ def process_uploaded_file(uploaded_file):
             st.subheader("Configuration")
             # Keep only Debug Mode and set other options to fixed values
             st.session_state.config['min_circle_size'] = 5  # Fixed value
-            # CRITICAL FIX: Allow existing_circle_handling to be set by the user
-            # This gives flexibility to allow NEW participants to be matched with existing circles
-            existing_circle_handling = st.radio(
-                "Existing Circle Handling", 
-                options=['optimize', 'preserve', 'dissolve'],
-                index=0,  # Default to 'optimize'
-                help="'optimize' (RECOMMENDED) allows new participants to join existing circles while keeping CURRENT-CONTINUING members in place. 'preserve' keeps existing circles intact but prevents NEW members from joining them. 'dissolve' breaks up all circles and creates new ones."
-            )
-            st.session_state.config['existing_circle_handling'] = existing_circle_handling
+            # Always use 'optimize' mode (no UI option to change this)
+            st.session_state.config['existing_circle_handling'] = 'optimize'
             st.session_state.config['enable_host_requirement'] = True  # Fixed value
             
             # Only show Debug Mode as a configurable option
