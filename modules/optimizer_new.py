@@ -1282,7 +1282,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         
         # Print detailed log for first few circles
         circles_processed += 1
-        if circles_processed <= 3 or circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']:
+        if circles_processed <= 3:
             print(f"🔍 Added eligibility log for circle {circle_id}:")
             print(f"   Region: {circle_data.get('region', 'Unknown')}")
             print(f"   Max Additions: {max_additions}, Is Viable: {is_viable}")
@@ -1354,53 +1354,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 else:
                     print(f"    {small_id} already has max_additions={small_data.get('max_additions', 0)}")
     
-    # REGION MAPPING VERIFICATION: Check if critical test circles are properly available
-    print("\n🔍 REGION AND CIRCLE MAPPING VERIFICATION:")
+    # REGION MAPPING VERIFICATION
+    print("\n🔍 REGION MAPPING VERIFICATION:")
     print(f"  Current region being processed: {region}")
     print(f"  Normalized region name: {normalize_region_name(region)}")
-    print(f"  Region matches 'Singapore': {region == 'Singapore' or normalize_region_name(region) == 'Singapore'}")
-    
-    # Special check for our test circles
-    test_circle_ids = ['IP-SIN-01', 'IP-LON-04']
-    
-    for test_id in test_circle_ids:
-        # Only check relevant test circle for this region
-        if (test_id == 'IP-SIN-01' and (region != 'Singapore' and normalize_region_name(region) != 'Singapore')) or \
-           (test_id == 'IP-LON-04' and (region != 'London' and normalize_region_name(region) != 'London')):
-            continue
-            
-        print(f"\n🔍 TEST CIRCLE {test_id} AVAILABILITY CHECK:")
-        
-        # Check if it's in our circle registry
-        if test_id in existing_circles:
-            test_circle = existing_circles[test_id]
-            max_adds = test_circle.get('max_additions', 0)
-            is_viable = max_adds > 0
-            
-            print(f"  Found in existing circles: ✅ Yes")
-            print(f"  Region: {test_circle.get('region', 'unknown')}")
-            print(f"  Max additions: {max_adds}")
-            print(f"  Is viable for optimization: {'✅ Yes' if is_viable else '❌ No'}")
-            
-            if not is_viable:
-                print(f"  ⚠️ ISSUE: Test circle {test_id} has max_additions={max_adds}")
-                print(f"  This means NO new members can be assigned to this circle")
-                print(f"  New participants cannot be matched to this circle due to co-leader preferences")
-                
-            # Check if it's in viable circles (which determines if it's used in optimization)
-            in_viable = test_id in viable_circles
-            print(f"  Included in viable_circles dictionary: {'✅ Yes' if in_viable else '❌ No'}")
-            
-            if not in_viable and is_viable:
-                print(f"  🔴 CRITICAL ERROR: Circle {test_id} should be in viable_circles but isn't!")
-                print(f"  FIXING: Adding circle to viable_circles dictionary")
-                viable_circles[test_id] = test_circle
-        else:
-            print(f"  Found in existing circles: ❌ No")
-            print(f"  ⚠️ CRITICAL ERROR: Test circle {test_id} not found in {region} region!")
-            
-            # No synthetic test circles are created anymore
-            pass
     
     # Add extensive debug for region matching
     if debug_mode:

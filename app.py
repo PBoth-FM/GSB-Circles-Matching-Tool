@@ -114,45 +114,10 @@ def run_optimization():
         with st.spinner("Running matching algorithm..."):
             start_time = time.time()
             
-            # 🚨 CRITICAL TEST: Add a special Seattle test participant to force a match with IP-SEA-01
-            import pandas as pd
-            test_data = st.session_state.processed_data.copy()
-            
-            # Create a test participant for Seattle
-            test_participant = {
-                'Encoded ID': '99999000001',  # Made-up ID for test purposes
-                'Status': 'NEW',
-                'Current_Region': 'Seattle',
-                'Current_Subregion': 'Seattle',
-                'Derived_Region': 'Seattle',
-                'first_choice_location': 'Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)',  # Exact match with IP-SEA-01
-                'second_choice_location': 'Bellevue/Mercer Island/Eastside',
-                'third_choice_location': 'South Seattle',
-                'first_choice_time': 'Wednesday (Evenings)',  # Exact match with IP-SEA-01
-                'second_choice_time': 'Monday-Thursday (Evenings)', 
-                'third_choice_time': 'M-Th (Evenings)'
-            }
-            
-            # Add additional required columns to match the dataframe structure
-            for col in test_data.columns:
-                if col not in test_participant:
-                    test_participant[col] = None
-            
-            # Add the test participant to the data
-            test_data = pd.concat([test_data, pd.DataFrame([test_participant])], ignore_index=True)
-            
-            print(f"\n🔍 ADDED SEATTLE TEST PARTICIPANT:")
-            print(f"  ID: {test_participant['Encoded ID']}")
-            print(f"  Status: {test_participant['Status']}")
-            print(f"  Region: {test_participant['Current_Region']}")
-            print(f"  Location: {test_participant['first_choice_location']}")
-            print(f"  Time: {test_participant['first_choice_time']}")
-            print(f"  This participant should match with IP-SEA-01 due to exact location and time match.")
-            print(f"  Circle handling mode: {st.session_state.config['existing_circle_handling']}")
-            
+            # Use the original data without any test participants
             # Run the matching algorithm with enhanced return values for debugging
             results, matched_circles, unmatched_participants = run_matching_algorithm(
-                test_data,  # Use our modified data with the test participant
+                st.session_state.processed_data,
                 st.session_state.config
             )
             
@@ -215,7 +180,7 @@ def run_optimization():
             print(f"Total participants in all circles (member_count): {total_in_circles}")
             
             # Compare with original data
-            original_participant_count = len(test_data)
+            original_participant_count = len(st.session_state.processed_data)
             print(f"Original data participant count: {original_participant_count}")
             
             # Properly handle test_participants which could be a DataFrame or a list
