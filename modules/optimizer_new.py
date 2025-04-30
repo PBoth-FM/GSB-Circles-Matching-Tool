@@ -651,32 +651,53 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     host_requirement_met = has_host
                 
                 if host_requirement_met:
-                    # Get subregion and time if available
-                    subregion = members[0].get('Current_Subregion', '')
+                    # IMPROVED: Get subregion and time by checking all members of the circle, not just the first one
+                    # Initialize with fallback values
+                    subregion = "Unknown"
+                    meeting_day = ""
+                    meeting_time = ""
                     
-                    # Check for column names that might contain the meeting day/time information
-                    day_column = None
-                    time_column = None
+                    # Possible column names for subregion
+                    subregion_columns = ['Current_Subregion', 'Current Subregion', 'Current/ Continuing Subregion', 'Current_Region']
                     
-                    # Try different potential column names for meeting day
-                    for col_name in ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']:
-                        if col_name in members[0]:
-                            day_column = col_name
+                    # Possible column names for meeting day
+                    day_columns = ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day']
+                    
+                    # Possible column names for meeting time
+                    time_columns = ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']
+                    
+                    # Iterate through all members to find valid subregion and meeting time info
+                    for member in members:
+                        # Try to find subregion
+                        if not subregion or subregion == "Unknown":
+                            for col in subregion_columns:
+                                if col in member and pd.notna(member.get(col)) and member.get(col):
+                                    subregion = str(member.get(col))
+                                    if debug_mode:
+                                        print(f"  Found subregion '{subregion}' for circle {circle_id} from column {col}")
+                                    break
+                        
+                        # Try to find meeting day
+                        if not meeting_day:
+                            for col in day_columns:
+                                if col in member and pd.notna(member.get(col)) and member.get(col):
+                                    meeting_day = str(member.get(col))
+                                    if debug_mode:
+                                        print(f"  Found meeting day '{meeting_day}' for circle {circle_id} from column {col}")
+                                    break
+                        
+                        # Try to find meeting time
+                        if not meeting_time:
+                            for col in time_columns:
+                                if col in member and pd.notna(member.get(col)) and member.get(col):
+                                    meeting_time = str(member.get(col))
+                                    if debug_mode:
+                                        print(f"  Found meeting time '{meeting_time}' for circle {circle_id} from column {col}")
+                                    break
+                        
+                        # If we have all the information we need, we can break out of the loop
+                        if subregion != "Unknown" and meeting_day and meeting_time:
                             break
-                    
-                    # Try different potential column names for meeting time
-                    for col_name in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
-                        if col_name in members[0]:
-                            time_column = col_name
-                            break
-                    
-                    # Get meeting day and time, but leave them blank if not found (per user request)
-                    meeting_day = members[0].get(day_column, '') if day_column else ''
-                    meeting_time = members[0].get(time_column, '') if time_column else ''
-                    
-                    # Ensure we don't use None values (convert to empty string)
-                    meeting_day = meeting_day if pd.notna(meeting_day) and meeting_day else ''
-                    meeting_time = meeting_time if pd.notna(meeting_time) and meeting_time else ''
                     
                     # Standardize time format to plural form (e.g., "Evening" -> "Evenings", "Day" -> "Days")
                     # This ensures consistency between existing circles and new participant preferences
@@ -685,8 +706,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     elif meeting_time.lower() == 'day':
                         meeting_time = 'Days'
                     
-                    # Format the day/time combination, but only if we have day and time information
-                    # Per user request, leave meeting_time blank if there's no data
+                    # Format the day/time combination
                     if meeting_day and meeting_time:
                         formatted_meeting_time = f"{meeting_day} ({meeting_time})"
                     elif meeting_day:
@@ -694,7 +714,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     elif meeting_time:
                         formatted_meeting_time = meeting_time
                     else:
-                        formatted_meeting_time = ""
+                        formatted_meeting_time = "Unknown"  # Use "Unknown" as fallback for the optimizer
                     
                     if debug_mode:
                         print(f"For existing circle_id {circle_id}, using day '{meeting_day}' and time '{meeting_time}'")
