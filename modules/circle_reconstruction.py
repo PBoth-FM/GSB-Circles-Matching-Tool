@@ -186,105 +186,166 @@ def reconstruct_circles_from_results(results, original_circles=None):
         }
         
         # Try to extract region, subregion, meeting time from results
-        sample_member = members_df.iloc[0]
+        # IMPROVED: Instead of just using the first member, we'll check all members for metadata
+        # This ensures we use the most complete data available for continuing circles
         
         # CRITICAL FIX: For new circles (starting with "IP-NEW"), use Derived_Region or Current_Region
         # This fixes the "None" region issue in Circle Composition
         is_new_circle = circle_id.startswith('IP-NEW')
+        is_continuing_circle = not is_new_circle and any('CURRENT-CONTINUING' == str(row.get('Status', '')).upper() for _, row in members_df.iterrows())
         
-        # Extract circle properties from results
-        for prop, column_options in [
-            # Use different region column priorities for new circles vs continuing circles
-            ('region', ['Derived_Region', 'Current_Region', 'proposed_NEW_Region', 'region'] if is_new_circle else 
-                      ['proposed_NEW_Region', 'Current_Region', 'Derived_Region', 'region']),
-            ('subregion', ['proposed_NEW_Subregion', 'Current_Subregion', 'subregion']),
-            # CRITICAL FIX: Expand meeting time column options to catch all possible sources
-            ('meeting_time', ['proposed_NEW_DayTime', 'Current_Meeting_Time', 'Current_Meeting_Day', 
-                             'Current Meeting Day', 'Current/ Continuing Meeting Day',
-                             'Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time',
-                             'Current/ Continuing DayTime', 'meeting_time', 'Current_DayTime', 
-                             'Current DayTime', 'Meeting Time', 'Meeting Day',
-                             'Preferred Meeting Day', 'Preferred Meeting Time'])
-        ]:
-            # Check each possible column name
-            for col in column_options:
-                # Safe check for column existence and non-NA values
-                if col in sample_member:
-                    # Use safe_isna to handle potential array-like values
-                    if not safe_isna(sample_member[col]):
-                        # For meeting time, try to standardize format
-                        if prop == 'meeting_time':
-                            # If this is just a day without time, append standard format
-                            if any(day in str(sample_member[col]).lower() for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']):
-                                if '(' not in str(sample_member[col]):
-                                    # Try to extract the time from other columns
-                                    time_value = None
-                                    for time_col in ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time']:
-                                        if time_col in sample_member and not safe_isna(sample_member[time_col]):
-                                            time_value = sample_member[time_col]
-                                            break
-                                    
-                                    if time_value:
-                                        # Format as "Day (Time)"
-                                        formatted_value = f"{sample_member[col]} ({time_value})"
-                                        circle_metadata[circle_id][prop] = formatted_value
-                                        print(f"  ✅ Set combined {prop}='{formatted_value}' for circle {circle_id} from columns {col} and time")
-                                        break
-                        
-                        circle_metadata[circle_id][prop] = sample_member[col]
-                        print(f"  ✅ Set {prop}='{sample_member[col]}' for circle {circle_id} from column {col}")
+        # Display circle type for debugging
+        print(f"  Circle {circle_id}: Type: {'NEW' if is_new_circle else 'CONTINUING' if is_continuing_circle else 'UNKNOWN'}")
+        
+        # Define property extraction for each member
+        property_values = {
+            'region': [],
+            'subregion': [],
+            'meeting_day': [],
+            'meeting_time': []
+        }
+        
+        # Define column priorities based on circle type
+        property_columns = {
+            'region': ['Derived_Region', 'Current_Region', 'proposed_NEW_Region', 'region'] if is_new_circle else 
+                     ['proposed_NEW_Region', 'Current_Region', 'Derived_Region', 'region'],
+            'subregion': ['proposed_NEW_Subregion', 'Current_Subregion', 'subregion'],
+            'meeting_day': ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day',
+                          'Meeting Day', 'Preferred Meeting Day'],
+            'meeting_time': ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time', 
+                           'Meeting Time', 'Preferred Meeting Time']
+        }
+        
+        # Check every member for each property
+        for _, member in members_df.iterrows():
+            # Get member status
+            status = str(member.get('Status', '')).upper() if not pd.isna(member.get('Status', '')) else ''
+            
+            # For continuing circles, prioritize data from CURRENT-CONTINUING members
+            for prop, columns in property_columns.items():
+                for col in columns:
+                    if col in member and not pd.isna(member[col]) and member[col]:
+                        # Store the value and the member's status (for prioritization)
+                        property_values[prop].append({
+                            'value': str(member[col]),
+                            'is_continuing': status == 'CURRENT-CONTINUING',
+                            'column': col
+                        })
                         break
-                        
-            # If meeting_time is still not set, try additional strategies
-            if prop == 'meeting_time' and ('meeting_time' not in circle_metadata[circle_id] or safe_isna(circle_metadata[circle_id].get('meeting_time'))):
-                # Look for day and time in separate columns and combine them
-                day_cols = [
-                    'Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day',
-                    'Meeting Day', 'Preferred Meeting Day', 'Preferred Day', 'Day',
-                    'Current Day', 'Current/ Continuing Day'
-                ]
-                time_cols = [
-                    'Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time',
-                    'Meeting Time', 'Preferred Meeting Time', 'Preferred Time', 'Time',
-                    'Current Time', 'Current/ Continuing Time'
-                ]
+        
+        # Process the collected values for each property
+        extracted_props = {}
+        
+        # For region and subregion, prioritize values from CURRENT-CONTINUING members
+        for prop in ['region', 'subregion']:
+            if property_values[prop]:
+                # First try CURRENT-CONTINUING members' values
+                continuing_values = [item['value'] for item in property_values[prop] if item['is_continuing']]
+                if continuing_values:
+                    extracted_props[prop] = continuing_values[0]  # Use the first non-empty value
+                    print(f"  ✅ Set {prop}='{extracted_props[prop]}' from CURRENT-CONTINUING member")
+                else:
+                    # If no CURRENT-CONTINUING values, use any value
+                    extracted_props[prop] = property_values[prop][0]['value']
+                    print(f"  ✅ Set {prop}='{extracted_props[prop]}' from any member")
+            else:
+                # No values found - use fallback
+                extracted_props[prop] = 'Unknown' if prop == 'subregion' else '' 
+                print(f"  ⚠️ Using fallback value '{extracted_props[prop]}' for {prop}")
+        
+        # For meeting day and time, combine them if both exist
+        has_day_data = len(property_values['meeting_day']) > 0
+        has_time_data = len(property_values['meeting_time']) > 0
+        
+        if has_day_data and has_time_data:
+            # Prioritize continuing member data
+            day_values = [item for item in property_values['meeting_day'] if item['is_continuing']]
+            time_values = [item for item in property_values['meeting_time'] if item['is_continuing']]
+            
+            # If no continuing member data, use any data
+            if not day_values:
+                day_values = property_values['meeting_day']
+            if not time_values:
+                time_values = property_values['meeting_time']
+            
+            # Format the combined day and time
+            day = day_values[0]['value']
+            time = time_values[0]['value']
+            
+            # Standardize time format
+            if time.lower() == 'evening':
+                time = 'Evenings'
+            elif time.lower() == 'day':
+                time = 'Days'
                 
-                day_value = None
-                time_value = None
+            formatted_time = f"{day} ({time})"
+            extracted_props['meeting_time'] = formatted_time
+            print(f"  ✅ Set combined meeting_time='{formatted_time}' from separate day and time columns")
+            
+        elif has_day_data:
+            # Just use the day
+            day_values = [item for item in property_values['meeting_day'] if item['is_continuing']]
+            if not day_values:
+                day_values = property_values['meeting_day']
                 
-                # Try to find day value
-                for day_col in day_cols:
-                    if day_col in sample_member and not safe_isna(sample_member[day_col]):
-                        day_value = sample_member[day_col]
-                        print(f"  Found day value '{day_value}' from column '{day_col}'")
+            extracted_props['meeting_time'] = day_values[0]['value']
+            print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from day only")
+            
+        elif has_time_data:
+            # Just use the time
+            time_values = [item for item in property_values['meeting_time'] if item['is_continuing']]
+            if not time_values:
+                time_values = property_values['meeting_time']
+                
+            extracted_props['meeting_time'] = time_values[0]['value']
+            print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from time only")
+            
+        else:
+            # Also check for combined day-time columns
+            combined_columns = ['proposed_NEW_DayTime', 'Current_DayTime', 'Current/ Continuing DayTime']
+            found_combined = False
+            
+            for _, member in members_df.iterrows():
+                for col in combined_columns:
+                    if col in member and not pd.isna(member[col]) and member[col]:
+                        extracted_props['meeting_time'] = str(member[col])
+                        print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from combined column {col}")
+                        found_combined = True
                         break
-                
-                # Try to find time value
-                for time_col in time_cols:
-                    if time_col in sample_member and not safe_isna(sample_member[time_col]):
-                        time_value = sample_member[time_col]
-                        print(f"  Found time value '{time_value}' from column '{time_col}'")
-                        break
-                
-                # If we found both, combine them
-                if day_value and time_value:
-                    combined_value = f"{day_value} ({time_value})"
-                    circle_metadata[circle_id][prop] = combined_value
-                    print(f"  ✅ COMBINED {prop}='{combined_value}' for circle {circle_id} from separate day and time columns")
+                if found_combined:
+                    break
+            
+            # If still no data, use fallback
+            if not found_combined:
+                extracted_props['meeting_time'] = 'Unknown'
+                print(f"  ⚠️ Using fallback value 'Unknown' for meeting_time")
+        
+        # Set the extracted properties in circle metadata
+        circle_metadata[circle_id]['region'] = extracted_props['region']
+        circle_metadata[circle_id]['subregion'] = extracted_props['subregion']
+        circle_metadata[circle_id]['meeting_time'] = extracted_props['meeting_time']
+        
+        # Print the final extracted values
+        print(f"  📊 FINAL VALUES for circle {circle_id}:")
+        print(f"    Region: {circle_metadata[circle_id]['region']}")
+        print(f"    Subregion: {circle_metadata[circle_id]['subregion']}")
+        print(f"    Meeting Time: {circle_metadata[circle_id]['meeting_time']}")
+        
+        # Property extraction is now done in the improved code above
                     
         # Check if the circle was in the original circles dataframe
         if circle_id in original_circle_info:
             # Copy properties not already set
-            for prop, value in original_circle_info[circle_id].items():
+            for key, value in original_circle_info[circle_id].items():
                 # Safe handling for DataFrame/Series truth value ambiguity
-                prop_exists = prop in circle_metadata[circle_id]
+                prop_exists = key in circle_metadata[circle_id]
                 if not prop_exists:
-                    circle_metadata[circle_id][prop] = value
+                    circle_metadata[circle_id][key] = value
                 else:
                     # Use our safe_isna helper function to handle all types
-                    val = circle_metadata[circle_id][prop]
+                    val = circle_metadata[circle_id][key]
                     if safe_isna(val):  # This handles both scalar and array-like values safely
-                        circle_metadata[circle_id][prop] = value
+                        circle_metadata[circle_id][key] = value
                     
         # Count hosts if host column exists
         if 'host' in results_df.columns:
