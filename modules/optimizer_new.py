@@ -758,9 +758,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     
                     # Set max_additions based on rules
                     if has_none_preference:
-                        # Check if this is a circle that should accept members despite preferences
-                        is_special_circle = circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
-                        
                         # Determine the current size of the circle
                         circle_size = len(members)
                         
@@ -770,44 +767,25 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         
                         print(f"\n🔍 DEBUG CIRCLE ELIGIBILITY #{DEBUG_ELIGIBILITY_COUNTER} 🔍")
                         print(f"Circle {circle_id} with {circle_size} members has 'None' preference")
-                        print(f"  Special circle? {is_special_circle}")
                         print(f"  Small circle? {circle_size < 5}")
                         print(f"  Region: {region}")
                         
                         # UNIVERSAL FIX: Allow small circles to grow regardless of co-leader preferences
-                        # This applies the same logic we use for test circles to ALL circles
-                        if is_special_circle or circle_size < 5:  # 5 is the minimum viable size
+                        if circle_size < 5:  # 5 is the minimum viable size
                             # Override the "None" preference to allow smaller circles to reach viable size
-                            max_to_viable = max(0, 5 - circle_size)  # Add enough to reach viable size
+                            # Universal fix for small circles: add enough to reach viable size
+                            final_max_additions = max(0, 5 - circle_size)
                             
-                            # Special handling for test circles
-                            if is_special_circle:
-                                if circle_id == 'IP-SIN-01':
-                                    # Special case for IP-SIN-01: Always allow 6 new members as specified by co-leader
-                                    final_max_additions = 6
-                                    print(f"  🔶 SPECIAL TEST CASE: IP-SIN-01 max_additions set to 6")
-                                elif circle_id == 'IP-LON-04':
-                                    # Special case for IP-LON-04: Add 1 as per original behavior
-                                    final_max_additions = 1
-                                    print(f"  🔶 SPECIAL TEST CASE: IP-LON-04 max_additions set to 1")
-                                elif circle_id == 'IP-HOU-02':
-                                    # Special case for IP-HOU-02: Allow up to max viable size
-                                    final_max_additions = max(2, 5 - circle_size)
-                                    print(f"  🔶 SPECIAL TEST CASE: IP-HOU-02 max_additions set to {final_max_additions}")
-                            else:
-                                # Universal fix for small non-test circles: add enough to reach viable size
-                                final_max_additions = max(0, 5 - circle_size)
-                                
-                                # If circle has 4 members, ensure they can add at least 1 to reach viable size
-                                if circle_size == 4:
-                                    final_max_additions = max(1, final_max_additions)
-                                
-                                # Ensure we don't exceed 8 total members for any circle
-                                final_max_additions = min(final_max_additions, 8 - circle_size)
-                                
-                                if final_max_additions > 0:
-                                    print(f"  🔷 UNIVERSAL FIX APPLIED: Small circle {circle_id} with {circle_size} members")
-                                    print(f"  Setting max_additions={final_max_additions} to help reach viable size")
+                            # If circle has 4 members, ensure they can add at least 1 to reach viable size
+                            if circle_size == 4:
+                                final_max_additions = max(1, final_max_additions)
+                            
+                            # Ensure we don't exceed 8 total members for any circle
+                            final_max_additions = min(final_max_additions, 8 - circle_size)
+                            
+                            if final_max_additions > 0:
+                                print(f"  🔷 UNIVERSAL FIX APPLIED: Small circle {circle_id} with {circle_size} members")
+                                print(f"  Setting max_additions={final_max_additions} to help reach viable size")
                             
                             # Record why we're making this change in our logs
                             circle_eligibility_logs[circle_id] = {
@@ -819,19 +797,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 'current_members': circle_size,
                                 'is_eligible': final_max_additions > 0,
                                 'original_preference': 'None',
-                                'override_reason': 'Test circle with special handling' if is_special_circle else 'Small circle needs to reach viable size',
-                                'is_test_circle': is_special_circle,
+                                'override_reason': 'Small circle needs to reach viable size',
+                                'is_test_circle': False,
                                 'is_small_circle': circle_size < 5,
                                 'has_none_preference': True,
                                 'preference_overridden': True
                             }
                             
-                            if debug_mode:
-                                if final_max_additions > 0:
-                                    if is_special_circle:
-                                        print(f"  ✅ TEST CIRCLE ELIGIBILITY: {circle_id} can accept {final_max_additions} new members")
-                                    else:
-                                        print(f"  ✅ SMALL CIRCLE ELIGIBILITY: {circle_id} can accept {final_max_additions} new members")
+                            if debug_mode and final_max_additions > 0:
+                                print(f"  ✅ SMALL CIRCLE ELIGIBILITY: {circle_id} can accept {final_max_additions} new members")
                         else:
                             # Regular case: Co-leader requested no new members and circle is already viable
                             final_max_additions = 0
@@ -847,7 +821,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 'is_eligible': False,
                                 'original_preference': 'None',
                                 'reason': 'Co-leader requested no new members and circle is already viable',
-                                'is_test_circle': is_special_circle,
+                                'is_test_circle': False,
                                 'is_small_circle': circle_size < 5,
                                 'has_none_preference': True,
                                 'preference_overridden': False
@@ -856,11 +830,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             if debug_mode:
                                 print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
                         
-                        # SPECIAL DEBUG for our test circle
-                        if circle_id == 'IP-SIN-01' and final_max_additions == 0:
-                            print(f"\n🚨 CRITICAL ISSUE DETECTED: Test circle {circle_id} has max_additions=0!")
-                            print(f"  Co-leader preferences indicate NO new members can be added to this circle")
-                            print(f"  This is likely why participant 73177784103 cannot be matched to this circle")
+
                     elif max_additions is not None:
                         # Use the minimum valid value provided by co-leaders
                         final_max_additions = max_additions
@@ -876,7 +846,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'is_eligible': final_max_additions > 0,
                             'original_preference': 'Specified by co-leader',
                             'preference_value': max_additions,
-                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+                            'is_test_circle': False,
                             'is_small_circle': len(members) < 5,
                             'has_none_preference': False,
                             'preference_overridden': False
@@ -899,7 +869,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'is_eligible': final_max_additions > 0,
                             'original_preference': 'Default',
                             'preference_value': 8,  # CRITICAL FIX: Use integer instead of string to fix PyArrow error
-                            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+                            'is_test_circle': False,
                             'is_small_circle': len(members) < 5,
                             'has_none_preference': False,
                             'preference_overridden': False
@@ -934,34 +904,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"  Current processing region: {region} (normalized: {normalized_current_region})")
                         print(f"  Circle region: {circle_region}")
                         
-                        # Additional debug for test circles
-                        if circle_id in ['IP-SIN-01', 'IP-LON-04']:
-                            print(f"  ⚠️ TEST CIRCLE DETECTED: Special handling in use")
                     
                     # Determine if this circle should be skipped in this region
-                    # Special handling for test circles to ensure they're always considered
                     circle_should_be_skipped = False
                     
-                    if circle_id == 'IP-SIN-01':
-                        # Always include IP-SIN-01 in Singapore region
-                        if region == 'Singapore' or normalized_current_region == 'Singapore':
-                            circle_should_be_skipped = False
-                            print(f"  ✅ ENFORCING TEST CASE: Including circle IP-SIN-01 in Singapore region")
-                        else:
-                            circle_should_be_skipped = True
-                    elif circle_id == 'IP-LON-04':
-                        # Always include IP-LON-04 in London region
-                        if region == 'London' or normalized_current_region == 'London':
-                            circle_should_be_skipped = False
-                            print(f"  ✅ ENFORCING TEST CASE: Including circle IP-LON-04 in London region")
-                        else:
-                            circle_should_be_skipped = True
-                    else:
-                        # For all other circles, use normalized region comparison
-                        if circle_region != normalized_current_region:
-                            circle_should_be_skipped = True
-                            if debug_mode:
-                                print(f"  📍 Region mismatch: Circle {circle_id} belongs to {circle_region}, not {normalized_current_region}")
+                    # Use normalized region comparison for all circles
+                    if circle_region != normalized_current_region:
+                        circle_should_be_skipped = True
+                        if debug_mode:
+                            print(f"  📍 Region mismatch: Circle {circle_id} belongs to {circle_region}, not {normalized_current_region}")
                     
                     # Skip this circle if it doesn't belong to the current region
                     if circle_should_be_skipped:
@@ -1214,31 +1165,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"❌ Could not find circle ID column in region_df")
             print(f"Available columns: {region_df.columns.tolist()}")
     
-    # If we still don't have any existing circles after all fixes, create test circles as fallback
+    # No synthetic circles are created when no real circles are found
     if not existing_circles:
-        print(f"\n🔧 No real circles could be created - adding synthetic test circles as fallback")
-        
-        # Create test circles
-        test_circles = {}
-        for i in range(1, 4):  # Create 3 test circles
-            circle_id = f"IP-TEST-0{i}"
-            member_count = 7 if i <= 2 else 3  # First two are normal size, third is small
-            test_circles[circle_id] = {
-                'circle_id': circle_id,
-                'region': 'Test Region',
-                'subregion': 'Test Subregion',
-                'meeting_time': f"Monday {'(Evenings)' if i <= 2 else '(Mornings)'}",
-                'member_count': member_count,
-                'members': [f"test-member-{i}-{j}" for j in range(1, member_count + 1)],
-                'is_existing': True,
-                'max_additions': 3 if i <= 2 else 2,  # Test different max additions
-                'always_hosts': 1,  # Assume at least one host for simplicity
-                'sometimes_hosts': 1 if i == 1 else 0
-            }
-            
-        # Use these test circles as our existing circles for debugging
-        existing_circles = test_circles
-        print(f"🔧 Added {len(test_circles)} test circles as fallback")
+        print(f"\n🔧 No real circles could be created - optimization will continue without existing circles")
+        # The algorithm will focus on creating new circles based on participants' preferences
     
     # For continuing participants not in circles, we need to handle them separately
     remaining_participants = []
@@ -1338,7 +1268,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'current_members': circle_data.get('member_count', 0),
             'is_eligible': is_viable,
             'reason': "Has capacity" if is_viable else "No capacity (max_additions=0)",
-            'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'],
+            'is_test_circle': False, # No test circles in the system
             'is_small_circle': circle_data.get('member_count', 0) < 5,
             'has_none_preference': max_additions == 0,  # Infer that 0 max_additions likely means "None" preference
             'preference_overridden': False  # By this point, overrides have already been applied above
@@ -1469,49 +1399,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"  Found in existing circles: ❌ No")
             print(f"  ⚠️ CRITICAL ERROR: Test circle {test_id} not found in {region} region!")
             
-            if test_id == 'IP-SIN-01' and region == 'Singapore':
-                print(f"  EMERGENCY FIX: Creating synthetic IP-SIN-01 for Singapore region")
-                
-                # Create a synthetic test circle if the regular mapping failed
-                synthetic_circle = {
-                    'circle_id': 'IP-SIN-01',
-                    'region': 'Singapore',
-                    'subregion': 'Singapore',
-                    'meeting_time': 'Varies (Evenings)',
-                    'members': [],  # No members, but we're forcing it to be available
-                    'member_count': 4,  # Minimum to make it viable
-                    'max_additions': 6,  # Maximum available spots
-                    'is_existing': True,
-                    'always_hosts': 1,  # Ensure host requirements are met
-                    'sometimes_hosts': 0
-                }
-                
-                # Add to both dictionaries
-                existing_circles['IP-SIN-01'] = synthetic_circle
-                viable_circles['IP-SIN-01'] = synthetic_circle
-                print(f"  ✅ Added synthetic IP-SIN-01 to viable and existing circles")
-                
-            elif test_id == 'IP-LON-04' and region == 'London':
-                print(f"  EMERGENCY FIX: Creating synthetic IP-LON-04 for London region")
-                
-                # Create a synthetic test circle if the regular mapping failed
-                synthetic_circle = {
-                    'circle_id': 'IP-LON-04',
-                    'region': 'London',
-                    'subregion': 'London',
-                    'meeting_time': 'Tuesday (Evenings)',
-                    'members': [],  # No members, but we're forcing it to be available
-                    'member_count': 4,  # Minimum to make it viable
-                    'max_additions': 1,  # Maximum available spots
-                    'is_existing': True,
-                    'always_hosts': 1,  # Ensure host requirements are met
-                    'sometimes_hosts': 0
-                }
-                
-                # Add to both dictionaries
-                existing_circles['IP-LON-04'] = synthetic_circle
-                viable_circles['IP-LON-04'] = synthetic_circle
-                print(f"  ✅ Added synthetic IP-LON-04 to viable and existing circles")
+            # No synthetic test circles are created anymore
+            pass
     
     # Add extensive debug for region matching
     if debug_mode:
