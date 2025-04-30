@@ -462,55 +462,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print("\n🚨 CRITICAL TEST CASE DEBUG 🚨")
     print("Looking for specific test participants:")
     
-    # Add Seattle test participant to diagnose Seattle circle matching
-    if region == "Seattle":
-        print(f"\n🔍 SEATTLE REGION PROCESSING - Adding test participant")
-        seattle_test_id = "99999000001"  # Made-up ID for test purposes
-        
-        # Check if we already have this test ID
-        if seattle_test_id not in region_df['Encoded ID'].values:
-            # Create a test participant with proper fields
-            test_participant_data = {
-                'Encoded ID': seattle_test_id,
-                'Status': 'NEW',
-                'Current_Region': 'Seattle',
-                'Current_Subregion': 'Seattle',
-                'first_choice_location': 'Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.)',  # Match IP-SEA-01 location
-                'second_choice_location': 'Bellevue/Mercer Island/Eastside',
-                'third_choice_location': 'South Seattle',
-                'first_choice_time': 'Wednesday (Evenings)',  # Direct match with IP-SEA-01
-                'second_choice_time': 'Monday-Thursday (Evenings)',  # Also should match
-                'third_choice_time': 'M-Th (Evenings)',  # Also should match
-                'Requested_Region': 'Seattle',
-                'Region': 'Seattle',
-                'Derived_Region': 'Seattle'  # Add derived region to ensure proper processing
-            }
-            
-            # Add this participant to the region dataframe
-            region_df = pd.concat([region_df, pd.DataFrame([test_participant_data])], ignore_index=True)
-            print(f"✅ DIAGNOSTIC: Test participant {seattle_test_id} added to Seattle region dataset")
-            print(f"  This participant should be compatible with IP-SEA-01 based on location and time")
-        else:
-            print(f"ℹ️ Seattle test participant {seattle_test_id} already exists in dataset")
+    # No Seattle test participant creation - removed to prevent test data in results
     
     # Houston debug code has been removed
     # Focus is exclusively on the Seattle test case
     
-    # Loop through all test participants (removed Houston test case)
-    seattle_test_id = "99999000001"  # Define Seattle test ID for consistent usage
-    for p_id in test_participants + [seattle_test_id]:
+    # Check for test participants in the data (for information only, no creation)
+    for p_id in test_participants:
         if p_id in region_df['Encoded ID'].values:
             p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0]
             print(f"  Found test participant {p_id} in region {region}:")
             print(f"    Status: {p_row.get('Status', 'Unknown')}")
             print(f"    Region: {p_row.get('Current_Region', 'Unknown')}")
-            print(f"    Subregion: {p_row.get('Current_Subregion', 'Unknown')}")
-            print(f"    Preferred locations: {p_row.get('first_choice_location', 'Unknown')}, " +
-                 f"{p_row.get('second_choice_location', 'Unknown')}, {p_row.get('third_choice_location', 'Unknown')}")
-            print(f"    Preferred times: {p_row.get('first_choice_time', 'Unknown')}, " +
-                 f"{p_row.get('second_choice_time', 'Unknown')}, {p_row.get('third_choice_time', 'Unknown')}")
-        else:
-            print(f"  Test participant {p_id} not found in region {region}")
+            print(f"    Note: This is a test participant that should be filtered out")
             
     # Check if our test circles are being processed for this region
     print("\nLooking for specific test circles:")
