@@ -325,9 +325,18 @@ def process_uploaded_file(uploaded_file):
                 if len(validation_errors) > 5:
                     st.write(f"...and {len(validation_errors) - 5} more issues.")
             
-            # Display just the count of fixed duplicate Encoded IDs
-            if len(deduplication_messages) > 0:
-                st.warning(f"Found and fixed {len(deduplication_messages)} duplicate Encoded IDs")
+            # Display filtered status counts and duplicate IDs
+            if 'status_filter_counts' in st.session_state:
+                counts = st.session_state.status_filter_counts
+                filter_message = []
+                if counts.get('not_continuing', 0) > 0:
+                    filter_message.append(f"{counts['not_continuing']} NOT Continuing participants filtered")
+                if counts.get('moving_out', 0) > 0:
+                    filter_message.append(f"{counts['moving_out']} MOVING OUT participants filtered") 
+                if len(deduplication_messages) > 0:
+                    filter_message.append(f"{len(deduplication_messages)} duplicate Encoded IDs fixed")
+                if filter_message:
+                    st.warning(" • ".join(filter_message))
             
             # Process and normalize data - pass debug_mode from session state if available
             debug_mode = st.session_state.get('debug_mode', False)
