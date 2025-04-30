@@ -532,6 +532,37 @@ def process_uploaded_file(uploaded_file):
                         print(f"Adjusted statistics (excluding test circles):")
                         for key, value in match_stats['adjusted_statistics'].items():
                             print(f"  {key}: {value}")
+                            
+                    # ENHANCED CSV DIAGNOSTICS: Compare with what will appear in the CSV
+                    print("\n🔍🔍🔍 COMPARING UI STATS VS CSV EXPORT 🔍🔍🔍")
+                    
+                    # Capture the list of matched participants that contribute to the UI count
+                    valid_circle_mask = (results_df['proposed_NEW_circles_id'].notna()) & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+                    ui_matched_ids = results_df[valid_circle_mask]['Encoded ID'].tolist()
+                    
+                    # Store this for comparison when CSV is downloaded
+                    st.session_state.ui_matched_ids = ui_matched_ids
+                    
+                    # Generate a test CSV (same process used in the download button)
+                    from utils.helpers import generate_download_link
+                    test_csv_content = generate_download_link(results_df)
+                    
+                    # The CSV generation returns the full CSV content, we'd need to parse it back to get the IDs
+                    # Instead of parsing the CSV, let's just store both for comparison
+                    print(f"Original UI Matched Count: {len(ui_matched_ids)}")
+                    print(f"First 5 Matched IDs in UI: {ui_matched_ids[:5] if len(ui_matched_ids) >= 5 else ui_matched_ids}")
+                    
+                    # Capture any participants with null Encoded IDs that would be filtered in CSV
+                    null_id_matched = results_df[valid_circle_mask & results_df['Encoded ID'].isna()]
+                    if len(null_id_matched) > 0:
+                        print(f"⚠️ Found {len(null_id_matched)} matched participants with NULL Encoded ID")
+                        for _, row in null_id_matched.iterrows():
+                            print(f"  Circle: {row['proposed_NEW_circles_id']}, Status: {row.get('Status', 'Unknown')}")
+                            
+                    # Add diagnostic mode to print all matched IDs for comparison
+                    if st.session_state.get('config', {}).get('debug_mode', False):
+                        print("All UI Matched IDs for comparison:")
+                        print(ui_matched_ids)
                     
                     print("🔍🔍🔍 END STANDARDIZED STATISTICS 🔍🔍🔍\n")
                     

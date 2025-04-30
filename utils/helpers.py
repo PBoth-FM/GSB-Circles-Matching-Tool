@@ -74,6 +74,29 @@ def generate_download_link(df):
     
     # CRITICAL FIX: Remove blank rows (rows with no Encoded ID)
     if 'Encoded ID' in output_df.columns:
+        # Before filtering, let's identify any rows that have null Encoded ID but valid circle assignments
+        if 'proposed_NEW_circles_id' in output_df.columns:
+            valid_circle_mask_pre = (output_df['proposed_NEW_circles_id'].notna()) & (output_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+            null_id_but_matched = output_df[valid_circle_mask_pre & output_df['Encoded ID'].isna()]
+            
+            if len(null_id_but_matched) > 0:
+                print(f"  ⚠️ FOUND THE MISSING PARTICIPANT(S): {len(null_id_but_matched)} rows have valid circle assignments but null Encoded ID")
+                print(f"  These will be removed from the CSV but are counted in UI statistics:")
+                for _, row in null_id_but_matched.iterrows():
+                    circle_id = row['proposed_NEW_circles_id']
+                    status = row.get('Status', 'Unknown')
+                    raw_status = row.get('Raw_Status', 'Unknown')
+                    print(f"  - Circle: {circle_id}, Status: {status}, Raw Status: {raw_status}")
+                    
+                    # Show more details about this row to help identify it
+                    if 'Last (Family) Name' in row and 'First (Given) Name' in row:
+                        name = f"{row['Last (Family) Name']} {row['First (Given) Name']}"
+                        print(f"    Name (if available): {name}")
+                    
+                    # Print all non-null values for this row to help identify it
+                    non_null_values = {col: val for col, val in row.items() if pd.notna(val) and not col.startswith('Unnamed:')}
+                    print(f"    Key attributes: {list(non_null_values.keys())[:10]}")
+                
         # Count blank rows before filtering
         blank_count = output_df['Encoded ID'].isna().sum()
         if blank_count > 0:
@@ -88,6 +111,24 @@ def generate_download_link(df):
             matched_count = len(output_df[valid_circle_mask])
             unmatched_count = len(output_df[output_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
             print(f"  CSV Post-processing - Matched: {matched_count}, Unmatched: {unmatched_count}")
+            
+            # Check if we have stored UI IDs for comparison
+            import streamlit as st
+            if 'ui_matched_ids' in st.session_state:
+                ui_ids = set(st.session_state.ui_matched_ids)
+                csv_ids = set(output_df[valid_circle_mask]['Encoded ID'].tolist())
+                
+                # Find IDs in UI that are not in CSV
+                ui_only_ids = ui_ids - csv_ids
+                if ui_only_ids:
+                    print(f"  ⚠️ Found {len(ui_only_ids)} IDs in UI statistics that are missing from CSV: {ui_only_ids}")
+                
+                # Find IDs in CSV that are not in UI (shouldn't happen, but check anyway)
+                csv_only_ids = csv_ids - ui_ids
+                if csv_only_ids:
+                    print(f"  ⚠️ Found {len(csv_only_ids)} IDs in CSV that are not counted in UI statistics: {csv_only_ids}")
+                    
+                print(f"  UI matched count: {len(ui_ids)}, CSV matched count: {len(csv_ids)}")
     
     # Define the column order according to specifications
     ordered_columns = []
