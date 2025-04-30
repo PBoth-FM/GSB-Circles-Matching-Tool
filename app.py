@@ -199,6 +199,15 @@ def run_optimization():
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
             
+            # Calculate standard statistics with our helper function
+            from utils.helpers import calculate_matching_statistics
+            match_stats = calculate_matching_statistics(results, matched_circles)
+            st.session_state.match_statistics = match_stats
+            
+            # Display an informative message if participants were filtered due to null IDs
+            if match_stats.get('filtered_participants', 0) > 0:
+                st.warning(f"{match_stats['filtered_participants']} participant(s) with missing identification data were excluded from statistics.")
+            
             # Calculate and store diversity score immediately after optimization
             from modules.ui_components import calculate_total_diversity_score
             total_diversity_score = calculate_total_diversity_score(matched_circles, results)

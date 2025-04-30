@@ -3898,6 +3898,11 @@ def render_circle_details():
     if results_df is None:
         st.warning("Participant data is not available. Cannot show detailed circle information.")
         return
+        
+    # Filter out participants with null Encoded IDs
+    from utils.helpers import get_valid_participants
+    results_df = get_valid_participants(results_df)
+    print(f"🔍 Circle details: Using {len(results_df)} valid participants with non-null Encoded IDs")
     
     # Get all circle IDs
     circle_ids = circles_df['circle_id'].tolist() if 'circle_id' in circles_df.columns else []
@@ -4044,6 +4049,11 @@ def render_participant_details():
     # Get the data
     results_df = st.session_state.results.copy()
     
+    # Filter out participants with null Encoded IDs
+    from utils.helpers import get_valid_participants
+    results_df = get_valid_participants(results_df)
+    print(f"🔍 Participant details: Using {len(results_df)} valid participants with non-null Encoded IDs")
+    
     # Create a search box for participants
     search_type = st.radio("Search by", ["Name", "ID"], horizontal=True)
     
@@ -4186,6 +4196,11 @@ def render_visualizations():
     # Get the data
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy()
+    
+    # Filter out participants with null Encoded IDs
+    from utils.helpers import get_valid_participants
+    results_df = get_valid_participants(results_df)
+    print(f"🔍 Visualizations: Using {len(results_df)} valid participants with non-null Encoded IDs")
     
     # Create tabs for different visualizations
     viz_tab1, viz_tab2, viz_tab3 = st.tabs(["Circle Composition", "Regional Distribution", "Preference Satisfaction"])
