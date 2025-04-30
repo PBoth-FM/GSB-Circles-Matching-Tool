@@ -454,50 +454,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         debug_mode = True
         print(f"\n🔍🔍🔍 ENTERING CRITICAL REGION: {region} 🔍🔍🔍")
         
-    # Special debug to check for our test participants
-    test_participants = ['73177784103', '50625303450']
-    test_circles = ['IP-SIN-01', 'IP-LON-04']
+    # Check for any potential test data in the input
+    print("\n🔍 INPUT DATA VALIDATION")
     
-    # SPECIAL DEBUG: Add explicit information about our examples
-    print("\n🚨 CRITICAL TEST CASE DEBUG 🚨")
-    print("Looking for specific test participants:")
+    # Filter for test participants (IDs starting with 99999)
+    test_participant_ids = [p_id for p_id in region_df['Encoded ID'].values if str(p_id).startswith('99999')]
+    if test_participant_ids:
+        print(f"  ⚠️ Found {len(test_participant_ids)} potential test participants (IDs starting with 99999)")
+        print(f"  These will be excluded from optimization results")
+        
+        # Remove test participants from the dataframe
+        region_df = region_df[~region_df['Encoded ID'].astype(str).str.startswith('99999')]
+        print(f"  ✅ Removed test participants from input data")
+    else:
+        print(f"  ✅ No test participants found in input data")
     
-    # No Seattle test participant creation - removed to prevent test data in results
+    # Check for test circles (containing TEST in the ID)
+    test_circle_pattern = 'TEST'
+    test_circles_found = False
     
-    # Houston debug code has been removed
-    # Focus is exclusively on the Seattle test case
+    for col in region_df.columns:
+        if 'circle' in col.lower() or 'id' in col.lower():
+            circle_values = region_df[col].dropna().astype(str)
+            test_circles = [c for c in circle_values if test_circle_pattern in c]
+            if test_circles:
+                test_circles_found = True
+                print(f"  ⚠️ Found test circles in column {col}: {test_circles}")
     
-    # Check for test participants in the data (for information only, no creation)
-    for p_id in test_participants:
-        if p_id in region_df['Encoded ID'].values:
-            p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0]
-            print(f"  Found test participant {p_id} in region {region}:")
-            print(f"    Status: {p_row.get('Status', 'Unknown')}")
-            print(f"    Region: {p_row.get('Current_Region', 'Unknown')}")
-            print(f"    Note: This is a test participant that should be filtered out")
-            
-    # Check if our test circles are being processed for this region
-    print("\nLooking for specific test circles:")
-    circle_found = False
-    for current_col in ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']:
-        if current_col in region_df.columns:
-            for c_id in test_circles:
-                circle_members = region_df[region_df[current_col] == c_id]
-                if not circle_members.empty:
-                    circle_found = True
-                    print(f"  Found test circle {c_id} in region {region}:")
-                    print(f"    Number of members: {len(circle_members)}")
-                    print(f"    Member IDs: {circle_members['Encoded ID'].tolist()}")
-                    
-                    # Find first row to get circle details
-                    rep_row = circle_members.iloc[0]
-                    if 'Current_Subregion' in rep_row:
-                        print(f"    Subregion: {rep_row.get('Current_Subregion', 'Unknown')}")
-                    if 'Current_DayTime' in rep_row:
-                        print(f"    Meeting time: {rep_row.get('Current_DayTime', 'Unknown')}")
-    
-    if not circle_found:
-        print(f"  No test circles found in region {region}")
+    if not test_circles_found:
+        print(f"  ✅ No test circles found in input data")
     
     # Print a notice about the new optimizer implementation
     print(f"\n🔄 Using new circle ID-based optimizer for region {region}")
@@ -4007,92 +3992,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             results.append(participant_dict)
             unmatched.append(participant_dict)
     
-    # [VERIFICATION CHECK] Validate Seattle test case - check if NEW participants match with existing circles
-    # This validation checks if our optimization mode works as expected to mix NEW participants into existing circles
-    
-    # Only run this for Seattle region
+    # Regular debug logging for Seattle region (removed verification check)
     if region == "Seattle":
-        seattle_test_id = '99999000001'
-        seattle_test_circle = 'IP-SEA-01'
-        
-        # Import streamlit for session state access 
-        import streamlit as st
-        
-        # Create Seattle debug logs if they don't exist
-        if 'seattle_debug_logs' not in st.session_state:
-            st.session_state.seattle_debug_logs = []
-            
-        # Add optimization mode info
-        st.session_state.seattle_debug_logs.append(f"Seattle region using '{existing_circle_handling}' mode for circle matching")
-        
-        # Check if our test participant was assigned to the correct circle
-        print(f"\n🔍 VERIFYING SEATTLE TEST CASE:")
-        print(f"  Expecting: NEW participant {seattle_test_id} to match with existing circle {seattle_test_circle}")
-        print(f"  Using circle handling mode: {existing_circle_handling}")
-        print(f"  Note: Only 'optimize' mode should allow matching NEW participants to existing circles")
-        
-        test_assigned = False
-        for result in results:
-            if result.get('Encoded ID') == seattle_test_id and result.get('proposed_NEW_circles_id') == seattle_test_circle:
-                test_assigned = True
-                print(f"✅ VERIFICATION SUCCESS: Seattle test participant successfully assigned to {seattle_test_circle}")
-                st.session_state.seattle_debug_logs.append(f"✅ SUCCESS: Seattle test participant assigned to {seattle_test_circle} in '{existing_circle_handling}' mode")
-                break
-                
-        # If not assigned as expected, report but don't override (diagnostic only)
-        if not test_assigned:
-            print(f"❌ VERIFICATION FAILED: Seattle test participant was NOT assigned to expected circle {seattle_test_circle}")
-            st.session_state.seattle_debug_logs.append(f"❌ FAILED: Seattle test participant not assigned to {seattle_test_circle} in '{existing_circle_handling}' mode")
-            
-            # Find where the test participant ended up
-            participant_found = False
-            for result in results:
-                if result.get('Encoded ID') == seattle_test_id:
-                    participant_found = True
-                    assigned_to = result.get('proposed_NEW_circles_id', 'UNMATCHED')
-                    reason = f"Assigned to: {assigned_to}" if assigned_to != "UNMATCHED" else f"Unmatched reason: {result.get('unmatched_reason', 'Unknown')}"
-                    print(f"  Test participant status: {reason}")
-                    st.session_state.seattle_debug_logs.append(f"  Actual result: {reason}")
-                    
-                    if assigned_to != "UNMATCHED":
-                        # Find the circle's details
-                        circle_details = next((c for c in circles if c.get('circle_id') == assigned_to), None)
-                        if circle_details:
-                            print(f"  Assigned circle details: Subregion={circle_details.get('subregion')}, Time={circle_details.get('meeting_time')}")
-                            st.session_state.seattle_debug_logs.append(f"  Assigned circle details: Subregion={circle_details.get('subregion')}, Time={circle_details.get('meeting_time')}")
-                    
-                    # Check compatibility with the expected circle
-                    expected_compatible = False
-                    for c in viable_circles.values():
-                        if c.get('circle_id') == seattle_test_circle:
-                            print(f"  Expected circle details: Subregion={c.get('subregion')}, Time={c.get('meeting_time')}")
-                            st.session_state.seattle_debug_logs.append(f"  Expected circle details: Subregion={c.get('subregion')}, Time={c.get('meeting_time')}")
-                            expected_compatible = compatibility.get((seattle_test_id, seattle_test_circle), 0) == 1
-                            print(f"  Compatible with expected circle: {expected_compatible}")
-                            st.session_state.seattle_debug_logs.append(f"  Compatible with expected circle: {expected_compatible}")
-                            break
-                    break
-            
-            if not participant_found:
-                for u in unmatched:
-                    if u.get('Encoded ID') == seattle_test_id:
-                        reason = f"Unmatched reason: {u.get('unmatched_reason', 'Unknown')}"
-                        print(f"  Test participant status: {reason}")
-                        st.session_state.seattle_debug_logs.append(f"  Actual result: {reason}")
-                        break
-                else:
-                    print(f"  Test participant not found in results or unmatched lists")
-                    st.session_state.seattle_debug_logs.append(f"  CRITICAL ERROR: Test participant not found in any results")
-        
-        # Note: We deliberately do NOT add any manual overrides for Seattle test case!
-        # This is purely diagnostic to see if our algorithm is working correctly.
-        print(f"  Circle handling mode: {existing_circle_handling}")
-        print(f"  Verification complete - no manual overrides were applied.")
-        
-        # Add one final debug entry
-        circle_handling_note = f"Seattle test checked with {existing_circle_handling} mode - NEW participants " + \
-            ("CAN" if existing_circle_handling == "optimize" else "CANNOT") + " be assigned to existing circles in this mode."
-        st.session_state.seattle_debug_logs.append(circle_handling_note)
+        print(f"\n🔍 PROCESSING SEATTLE REGION with mode: {existing_circle_handling}")
+        print(f"  * Preserve mode means continuing members are kept together")
+        print(f"  * Optimize mode means NEW participants can join CURRENT circles")
+        print(f"  * Dissolve mode means all circles are dissolved and re-created")
     
     # Store debug logs in session state
     import streamlit as st
