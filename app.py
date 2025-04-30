@@ -553,8 +553,11 @@ def process_uploaded_file(uploaded_file):
                     st.session_state.ui_matched_ids = ui_matched_ids
                     
                     # Generate a test CSV (same process used in the download button)
-                    from utils.helpers import generate_download_link
-                    test_csv_content = generate_download_link(results_df)
+                    from utils.helpers import generate_download_link, get_valid_participants
+                    # Filter out participants with null Encoded IDs for consistent counting
+                    filtered_results = get_valid_participants(results_df)
+                    print(f"🔍 Test CSV: Using {len(filtered_results)} valid participants with non-null Encoded IDs")
+                    test_csv_content = generate_download_link(filtered_results)
                     
                     # The CSV generation returns the full CSV content, we'd need to parse it back to get the IDs
                     # Instead of parsing the CSV, let's just store both for comparison
@@ -688,6 +691,11 @@ def process_uploaded_file(uploaded_file):
                 
                 if 'results' in st.session_state and st.session_state.results is not None:
                     results_df = st.session_state.results
+                    
+                    # Filter out participants with null Encoded IDs
+                    from utils.helpers import get_valid_participants
+                    results_df = get_valid_participants(results_df)
+                    print(f"🔍 Unmatched table: Using {len(results_df)} valid participants with non-null Encoded IDs")
                     
                     if 'proposed_NEW_circles_id' in results_df.columns:
                         unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'].reset_index(drop=True)
@@ -826,9 +834,14 @@ def process_uploaded_file(uploaded_file):
                         st.warning("Results data doesn't contain matching information.")
                 
                 # Download button for results - placed at bottom of page
+                # Filter out participants with null Encoded IDs for consistent counting
+                from utils.helpers import get_valid_participants
+                filtered_results = get_valid_participants(st.session_state.results)
+                print(f"🔍 CSV Download: Using {len(filtered_results)} valid participants with non-null Encoded IDs")
+                
                 st.download_button(
                     "Download Results CSV",
-                    generate_download_link(st.session_state.results),
+                    generate_download_link(filtered_results),
                     "circles_results.csv",
                     "text/csv",
                     key='download-csv'
