@@ -327,13 +327,11 @@ def process_uploaded_file(uploaded_file):
             if 'status_filter_counts' in st.session_state:
                 counts = st.session_state.status_filter_counts
                 filter_message = []
-                if counts.get('not_continuing', 0) > 0:
-                    filter_message.append(f"{counts['not_continuing']} NOT Continuing participants filtered")
-                if counts.get('moving_out', 0) > 0:
-                    filter_message.append(f"{counts['moving_out']} MOVING OUT participants filtered") 
+                filter_message.append(f"{counts.get('not_continuing', 0)} NOT Continuing records filtered")
+                filter_message.append(f"{counts.get('moving_out', 0)} MOVING OUT records filtered")
                 if len(deduplication_messages) > 0:
                     filter_message.append(f"{len(deduplication_messages)} duplicate Encoded IDs fixed")
-                if filter_message:
+                if True:  # Always show the message box
                     st.warning(" • ".join(filter_message))
             
             # Process and normalize data - pass debug_mode from session state if available
