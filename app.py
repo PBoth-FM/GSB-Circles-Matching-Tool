@@ -588,9 +588,13 @@ def process_uploaded_file(uploaded_file):
                             for col, val in non_null_attrs.items():
                                 print(f"  - {col}: {val}")
                                 
-                            # Update user about the phantom participant
+                            # Update user about the phantom participant and show it on screen
                             st.session_state['phantom_participant_id'] = participant_id
                             st.session_state['phantom_circle'] = circle_id
+                            
+                            # Create a special message at the top of the page
+                            if 'show_phantom_info' not in st.session_state:
+                                st.session_state['show_phantom_info'] = True
                             
                     # Add diagnostic mode to print all matched IDs for comparison
                     if st.session_state.get('config', {}).get('debug_mode', False):
