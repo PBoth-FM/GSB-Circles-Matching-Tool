@@ -39,9 +39,25 @@ def generate_download_link(df):
     # Create a copy to avoid modifying the original DataFrame
     output_df = df.copy()
     
+    # DIAGNOSTICS: Count participants in CSV before processing
+    print("\n🔍 CSV GENERATION DIAGNOSTICS")
+    print(f"  Initial DataFrame shape: {output_df.shape}")
+    
+    # Check for matched vs unmatched before any filtering
+    if 'proposed_NEW_circles_id' in output_df.columns:
+        valid_circle_mask = (output_df['proposed_NEW_circles_id'].notna()) & (output_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+        matched_count = len(output_df[valid_circle_mask])
+        unmatched_count = len(output_df[output_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+        print(f"  CSV Pre-processing - Matched: {matched_count}, Unmatched: {unmatched_count}")
+        
+        # Detailed counts by circle ID
+        circle_counts = output_df['proposed_NEW_circles_id'].value_counts().to_dict()
+        print(f"  Top circles (first 5): {dict(list(circle_counts.items())[:5])}")
+        
     # Only keep columns that don't start with "Unnamed:"
     filtered_columns = [col for col in output_df.columns if not col.startswith('Unnamed:')]
     output_df = output_df[filtered_columns]
+    print(f"  After filtering unnamed columns: {output_df.shape}")
     
     # CRITICAL FIX: Remove blank rows (rows with no Encoded ID)
     if 'Encoded ID' in output_df.columns:
@@ -52,6 +68,13 @@ def generate_download_link(df):
             # Keep only rows with a non-null Encoded ID
             output_df = output_df.dropna(subset=['Encoded ID'])
             print(f"  ✅ Removed {blank_count} blank rows from results CSV")
+            
+        # After removing blank rows, recount matched/unmatched
+        if 'proposed_NEW_circles_id' in output_df.columns:
+            valid_circle_mask = (output_df['proposed_NEW_circles_id'].notna()) & (output_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+            matched_count = len(output_df[valid_circle_mask])
+            unmatched_count = len(output_df[output_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+            print(f"  CSV Post-processing - Matched: {matched_count}, Unmatched: {unmatched_count}")
     
     # Define the column order according to specifications
     ordered_columns = []

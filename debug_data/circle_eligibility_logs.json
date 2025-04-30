@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-04-30 01:14:52",
+    "timestamp": "2025-04-30 18:23:31",
     "region": "all_regions",
     "total_logs": 141,
-    "added_logs": 128,
+    "added_logs": 125,
     "existing_logs": 141,
     "regions_processed": [
       "all_regions"
@@ -383,7 +383,7 @@
       "current_members": 3,
       "is_eligible": true,
       "reason": "Has capacity",
-      "is_test_circle": true,
+      "is_test_circle": false,
       "is_small_circle": true,
       "has_none_preference": false,
       "preference_overridden": false
@@ -575,13 +575,13 @@
       "region": "London",
       "subregion": "West",
       "meeting_time": "Tuesday (Evenings)",
-      "max_additions": 1,
+      "max_additions": 0,
       "current_members": 7,
-      "is_eligible": true,
-      "reason": "Has capacity",
-      "is_test_circle": true,
+      "is_eligible": false,
+      "reason": "No capacity (max_additions=0)",
+      "is_test_circle": false,
       "is_small_circle": false,
-      "has_none_preference": false,
+      "has_none_preference": true,
       "preference_overridden": false
     },
     "IP-LON-05": {
@@ -1755,7 +1755,7 @@
       "current_members": 4,
       "is_eligible": true,
       "reason": "Has capacity",
-      "is_test_circle": true,
+      "is_test_circle": false,
       "is_small_circle": true,
       "has_none_preference": false,
       "preference_overridden": false

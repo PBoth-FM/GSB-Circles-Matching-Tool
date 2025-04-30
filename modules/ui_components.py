@@ -3652,8 +3652,46 @@ def render_results_overview():
     
     # Column 2: Participant stats
     with col2:
-        # Total participants
+        # Print diagnostics about how we're calculating participants
+        print("\n🔍 DETAILS TAB CALCULATION DIAGNOSTICS")
+        print(f"  Matched DataFrame shape: {matched_df.shape}")
+        if results_df is not None:
+            print(f"  Results DataFrame shape: {results_df.shape}")
+        
+        # Calculate matched participants using circle member counts
         total_matched = matched_df['member_count'].sum() if 'member_count' in matched_df.columns else 0
+        print(f"  DETAILS TAB - Matched (from circle member_count sum): {total_matched}")
+
+        # Alternative calculations for comparison
+        if results_df is not None and 'proposed_NEW_circles_id' in results_df.columns:
+            # Count based on results DataFrame - same as the Match tab does
+            valid_circle_mask = (results_df['proposed_NEW_circles_id'].notna()) & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+            alt_matched_count = len(results_df[valid_circle_mask])
+            print(f"  DETAILS TAB - Alternative match count (from results_df): {alt_matched_count}")
+            print(f"  DIFFERENCE: {total_matched - alt_matched_count}")
+            
+            # Count unmatched using results DataFrame
+            unmatched_count = len(results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'])
+            print(f"  DETAILS TAB - Unmatched count: {unmatched_count}")
+            
+            # Verify all circle IDs in the results DataFrame have corresponding circles
+            circle_ids_in_results = results_df[valid_circle_mask]['proposed_NEW_circles_id'].unique().tolist()
+            circle_ids_in_circles = matched_df['circle_id'].unique().tolist() if 'circle_id' in matched_df.columns else []
+            
+            missing_circles = [c_id for c_id in circle_ids_in_results if c_id not in circle_ids_in_circles]
+            if missing_circles:
+                print(f"  ⚠️ Found {len(missing_circles)} circle IDs in results that don't exist in the circles DataFrame")
+                print(f"  Missing circles (first 5): {missing_circles[:5]}")
+            
+            # Look for test circles - check if they're inflating counts
+            test_circles = [c_id for c_id in circle_ids_in_results if any(pattern in c_id for pattern in ['TEST', 'test', 'SIN-01', 'LON-04', 'HOU-02'])]
+            if test_circles:
+                print(f"  ⚠️ FOUND {len(test_circles)} TEST CIRCLE IDs: {test_circles}")
+                # Count participants in test circles
+                test_participants = results_df[results_df['proposed_NEW_circles_id'].isin(test_circles)].shape[0]
+                print(f"  ⚠️ {test_participants} participants assigned to test circles")
+        
+        # Display the metric in the UI
         st.metric("Participants Matched", total_matched)
         
         # Total unmatched
@@ -3673,6 +3711,8 @@ def render_results_overview():
         if results_df is not None and 'proposed_NEW_circles_id' in results_df.columns:
             total_participants = len(results_df)
             match_rate = (total_matched / total_participants) * 100 if total_participants > 0 else 0
+            print(f"  DETAILS TAB - Total participants: {total_participants}")
+            print(f"  DETAILS TAB - Match rate: {match_rate:.1f}%")
             st.metric("Match Success Rate", f"{match_rate:.1f}%")
         
         # Circles with target size
