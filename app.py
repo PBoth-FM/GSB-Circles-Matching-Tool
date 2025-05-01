@@ -191,11 +191,37 @@ def run_optimization():
                 test_count = len(test_participants)
             print(f"Test participant adjustment: -{test_count}")
             
+            # CRITICAL: Apply centralized metadata fixes to results
+            print("\n🔧 APPLYING CENTRALIZED METADATA FIXES AT SOURCE")
+            try:
+                from utils.metadata_manager import fix_participant_metadata_in_results
+                # Apply the fixes to the results dataframe
+                fixed_results = fix_participant_metadata_in_results(results)
+                # Update with the fixed data
+                results = fixed_results
+                print("✅ Successfully applied metadata fixes to participant results")
+            except Exception as e:
+                print(f"⚠️ Error applying metadata fixes: {str(e)}")
+                print("  Continuing with original results")
+                
             # Store results in session state
             st.session_state.results = results
             st.session_state.matched_circles = matched_circles
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
+            
+            # Debug verification after storing in session state
+            if 'results' in st.session_state and isinstance(st.session_state.results, pd.DataFrame):
+                results_df = st.session_state.results
+                if 'proposed_NEW_Subregion' in results_df.columns:
+                    unknown_count = results_df[results_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+                    total_count = results_df.shape[0]
+                    print(f"VERIFICATION: {unknown_count}/{total_count} Unknown subregions in session state results")
+                    
+                if 'proposed_NEW_DayTime' in results_df.columns:
+                    unknown_count = results_df[results_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+                    total_count = results_df.shape[0]
+                    print(f"VERIFICATION: {unknown_count}/{total_count} Unknown meeting times in session state results")
             
             # Calculate standard statistics with our helper function
             from utils.helpers import calculate_matching_statistics
