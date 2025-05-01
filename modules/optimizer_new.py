@@ -289,8 +289,21 @@ def safe_string_match(value1, value2):
     Returns:
         bool: True if values match or one is a prefix of the other, False otherwise
     """
-    # Handle NaN, None values
-    if pd.isna(value1) or pd.isna(value2):
+    # Handle None values first
+    if value1 is None or value2 is None:
+        return False
+    
+    # Handle NaN values safely for both arrays and scalars
+    try:
+        # For array-like values, check if all are NaN
+        isna1 = hasattr(pd.isna(value1), '__iter__') and pd.isna(value1).all() if hasattr(pd.isna(value1), '__iter__') else pd.isna(value1)
+        isna2 = hasattr(pd.isna(value2), '__iter__') and pd.isna(value2).all() if hasattr(pd.isna(value2), '__iter__') else pd.isna(value2)
+        
+        if isna1 or isna2:
+            return False
+    except Exception as e:
+        # If there's an error in checking NaN, log it and assume they don't match
+        print(f"Warning: Error checking NaN in safe_string_match: {str(e)}")
         return False
     
     # Convert to string if needed
