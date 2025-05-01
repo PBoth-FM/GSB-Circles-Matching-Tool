@@ -18,7 +18,7 @@ def safe_isna(val):
         # For scalar values
         return pd.isna(val)
 
-def reconstruct_circles_from_results(results, original_circles=None):
+def reconstruct_circles_from_results(results, original_circles=None, use_standardized_metadata=False):
     """
     Reconstruct circles dataframe from individual participant results.
     This is crucial after post-processing to ensure that all circles, 
@@ -27,12 +27,19 @@ def reconstruct_circles_from_results(results, original_circles=None):
     Args:
         results: List of participant results with assignments
         original_circles: Original circles dataframe (optional)
+        use_standardized_metadata: Whether to use standardized metadata from optimizer
         
     Returns:
         DataFrame: Updated circles dataframe with all assigned circles
     """
     print("\n🔄 RECONSTRUCTING CIRCLES FROM PARTICIPANT RESULTS")
     print("🔍 ENHANCED DIAGNOSTICS: Starting comprehensive circle reconstruction")
+    
+    # Check if we should use standardized metadata
+    from utils.feature_flags import get_flag
+    use_standardized_metadata = use_standardized_metadata or get_flag('use_optimizer_metadata')
+    if use_standardized_metadata:
+        print("  ✅ Using standardized metadata from optimizer")
     
     # Debug any specific test circle IDs to watch
     test_circle_ids = ['IP-WDC-01', 'IP-WDC-02', 'IP-SFO-25', 'IP-SFO-26']

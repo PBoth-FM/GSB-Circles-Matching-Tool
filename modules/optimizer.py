@@ -230,6 +230,50 @@ def force_test_case_matching(results_df, circles_df, unmatched_df):
         
     return results_df, circles_df, unmatched_df
 
+def generate_circle_metadata(circle_id, members_list, region=None, subregion=None, meeting_time=None, max_additions=0, debug_mode=False):
+    """
+    Generate standardized metadata for a circle to be used by the CircleMetadataManager.
+    
+    Args:
+        circle_id: Unique ID for the circle
+        members_list: List of encoded IDs of members in the circle
+        region: Region of the circle
+        subregion: Subregion of the circle
+        meeting_time: Meeting time of the circle
+        max_additions: Maximum number of additions allowed to the circle
+        debug_mode: Whether to print debug information
+        
+    Returns:
+        Dictionary with standardized metadata
+    """
+    from utils.data_standardization import normalize_host_status, normalize_member_list
+    from utils.feature_flags import get_flag
+    
+    # Create base metadata dictionary
+    metadata = {
+        'circle_id': str(circle_id),
+        'members': normalize_member_list(members_list),
+        'member_count': len(members_list) if members_list else 0,
+        'max_additions': max_additions,
+        'region': region,
+        'subregion': subregion,
+        'meeting_time': meeting_time,
+        'host_status_counts': {
+            'ALWAYS': 0,
+            'SOMETIMES': 0,
+            'NEVER': 0
+        },
+        'metadata_source': 'optimizer'
+    }
+    
+    # Additional metadata will be calculated by CircleMetadataManager
+    # which has access to the results DataFrame for detailed host status info
+    
+    if debug_mode and get_flag('debug_data_standardization'):
+        print(f"Generated metadata for circle {circle_id} with {metadata['member_count']} members")
+    
+    return metadata
+
 def run_matching_algorithm(data, config):
     """
     Run the optimization algorithm to match participants into circles
