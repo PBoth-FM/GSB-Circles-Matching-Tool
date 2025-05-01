@@ -66,6 +66,102 @@ def generate_download_link(df):
             # Calculate adjusted totals without test circles
             adjusted_matched = matched_count - test_participants
             print(f"  Adjusted matched count (removing test participants): {adjusted_matched}")
+            
+        # CRITICAL FIX: Apply the same metadata fixes to the CSV output
+        # Check if we have unknown values in subregion or meeting time columns
+        if 'proposed_NEW_Subregion' in output_df.columns or 'proposed_NEW_DayTime' in output_df.columns:
+            # Check for unknown values
+            unknown_subregions = 0
+            unknown_meeting_times = 0
+            
+            if 'proposed_NEW_Subregion' in output_df.columns:
+                unknown_subregions = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+                
+            if 'proposed_NEW_DayTime' in output_df.columns:
+                unknown_meeting_times = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+                
+            print(f"\n  🔍 CSV METADATA CHECK: Found {unknown_subregions} Unknown subregions and {unknown_meeting_times} Unknown meeting times")
+            
+            if unknown_subregions > 0 or unknown_meeting_times > 0:
+                print("  🔧 APPLYING METADATA FIXES TO CSV OUTPUT")
+                
+                # Import centralized metadata manager
+                try:
+                    from utils.metadata_manager import REGION_SUBREGION_MAP, FALLBACK_MEETING_TIMES
+                    using_metadata_manager = True
+                    print("  ✅ Successfully imported metadata manager")
+                except ImportError:
+                    using_metadata_manager = False
+                    print("  ⚠️ Could not import metadata manager, using simplified fixes")
+                
+                # First approach: Build circle metadata from matched participants
+                print("  Approach 1: Using collective circle data to fix individual participants")
+                circle_metadata = {}
+                
+                # Group by circle and extract most common subregion and meeting time
+                for circle_id, group in output_df[valid_circle_mask].groupby('proposed_NEW_circles_id'):
+                    if 'proposed_NEW_Subregion' in group.columns:
+                        # Extract subregions that aren't 'Unknown'
+                        valid_subregions = group['proposed_NEW_Subregion'].dropna()
+                        valid_subregions = valid_subregions[valid_subregions != 'Unknown']
+                        
+                        if not valid_subregions.empty:
+                            circle_metadata.setdefault(circle_id, {})['subregion'] = valid_subregions.iloc[0]
+                    
+                    if 'proposed_NEW_DayTime' in group.columns:
+                        # Extract meeting times that aren't 'Unknown'
+                        valid_times = group['proposed_NEW_DayTime'].dropna()
+                        valid_times = valid_times[valid_times != 'Unknown']
+                        
+                        if not valid_times.empty:
+                            circle_metadata.setdefault(circle_id, {})['meeting_time'] = valid_times.iloc[0]
+                
+                print(f"  Built metadata for {len(circle_metadata)} circles")
+                
+                # Apply the fixes to all participants in each circle
+                fixed_subregions = 0
+                fixed_meeting_times = 0
+                
+                for i, row in output_df.iterrows():
+                    circle_id = row.get('proposed_NEW_circles_id', None)
+                    
+                    if circle_id and circle_id != 'UNMATCHED' and circle_id in circle_metadata:
+                        # Fix subregion
+                        if 'proposed_NEW_Subregion' in output_df.columns and row['proposed_NEW_Subregion'] == 'Unknown':
+                            if 'subregion' in circle_metadata[circle_id]:
+                                output_df.at[i, 'proposed_NEW_Subregion'] = circle_metadata[circle_id]['subregion']
+                                fixed_subregions += 1
+                            elif using_metadata_manager and 'region' in output_df.columns:
+                                region = row.get('region', '')
+                                if region and region in REGION_SUBREGION_MAP:
+                                    # Use the region name as fallback subregion
+                                    output_df.at[i, 'proposed_NEW_Subregion'] = region
+                                    fixed_subregions += 1
+                        
+                        # Fix meeting time
+                        if 'proposed_NEW_DayTime' in output_df.columns and row['proposed_NEW_DayTime'] == 'Unknown':
+                            if 'meeting_time' in circle_metadata[circle_id]:
+                                output_df.at[i, 'proposed_NEW_DayTime'] = circle_metadata[circle_id]['meeting_time']
+                                fixed_meeting_times += 1
+                            elif using_metadata_manager and 'region' in output_df.columns:
+                                region = row.get('region', '')
+                                if region and region in FALLBACK_MEETING_TIMES:
+                                    output_df.at[i, 'proposed_NEW_DayTime'] = FALLBACK_MEETING_TIMES[region]
+                                    fixed_meeting_times += 1
+                
+                print(f"  ✅ Fixed {fixed_subregions} subregions and {fixed_meeting_times} meeting times in CSV output")
+                
+                # Final check for any remaining unknown values
+                if 'proposed_NEW_Subregion' in output_df.columns:
+                    remaining_unknown = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+                    print(f"  Remaining unknown subregions: {remaining_unknown}")
+                
+                if 'proposed_NEW_DayTime' in output_df.columns:
+                    remaining_unknown = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+                    print(f"  Remaining unknown meeting times: {remaining_unknown}")
+            else:
+                print("  ✅ No Unknown metadata values found in CSV - no fixes needed")
+
         
     # Only keep columns that don't start with "Unnamed:"
     filtered_columns = [col for col in output_df.columns if not col.startswith('Unnamed:')]
