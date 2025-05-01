@@ -155,7 +155,7 @@ def process_data(df, debug_mode=False):
     
     # Convert Encoded ID to string if it exists
     if 'Encoded ID' in processed_df.columns:
-        processed_df['Encoded ID'] = processed_df['Encoded ID'].astype(str)
+        processed_df['Encoded ID'] = processed_df['Encoded ID'].apply(normalize_encoded_id)
     
     # Process co-leader max new members if the column exists
     if 'co_leader_max_new_members' in processed_df.columns:
@@ -165,6 +165,40 @@ def process_data(df, debug_mode=False):
     else:
         # Add the column with default None values if it doesn't exist
         processed_df['co_leader_max_new_members'] = None
+        
+    # Add standardized host status - find host column with case-insensitive search
+    host_col = None
+    for col in processed_df.columns:
+        if 'host' in col.lower():
+            host_col = col
+            break
+            
+    if host_col:
+        # Only perform standardization if feature flag is enabled or in debug mode
+        if get_flag('use_standardized_host_status') or debug_mode:
+            processed_df['host_status_standardized'] = processed_df[host_col].apply(normalize_host_status)
+            logging.info(f"Added standardized host status based on '{host_col}'")
+            
+            # Print host normalization logs if debug mode is enabled
+            if debug_mode:
+                print("\n🔍 HOST STATUS STANDARDIZATION:")
+                # Show sample of original vs standardized values
+                sample_size = min(10, len(processed_df))
+                sample = processed_df.sample(sample_size) if len(processed_df) > 0 else processed_df
+                
+                print(f"Sample of {sample_size} standardized host statuses:")
+                for _, row in sample.iterrows():
+                    original = row[host_col]
+                    standardized = row['host_status_standardized']
+                    print(f"  '{original}' → '{standardized}'")
+                
+                # Print full log if requested
+                if get_flag('debug_data_standardization'):
+                    print_normalization_logs()
+    else:
+        logging.warning("No host column found to create standardized host status")
+        # Create empty standardized column anyway for consistent schema
+        processed_df['host_status_standardized'] = 'NEVER'
     
     # Calculate Class Vintage if GSB Class column exists
     # Improved search for GSB Class column with better logging

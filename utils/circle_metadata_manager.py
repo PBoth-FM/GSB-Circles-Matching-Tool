@@ -227,7 +227,10 @@ class CircleMetadataManager:
         self.logger.info(f"Host normalization complete: Fixed {always_fixed} always_hosts and {sometimes_fixed} sometimes_hosts values")
     
     def _count_hosts_from_members(self, member_ids: List[str], circle_id: str = None) -> tuple:
-        """Count always and sometimes hosts from member list with improved detection"""
+        """Count always and sometimes hosts from member list with standardized detection"""
+        from utils.data_standardization import normalize_host_status
+        from utils.feature_flags import get_flag
+        
         always_hosts = 0
         sometimes_hosts = 0
         
@@ -258,12 +261,21 @@ class CircleMetadataManager:
                 print(f"  {debug_prefix} Available columns: {self.results_df.columns.tolist()}")
             return always_hosts, sometimes_hosts
         
-        # Host column may have different names, try to find it
-        host_col = None
-        for col in ['host', 'Host', 'willing_to_host']: 
-            if col in self.results_df.columns:
-                host_col = col
-                break
+        # First check if host_status_standardized exists and should be used
+        use_standardized = get_flag('use_standardized_host_status')
+        standardized_col_exists = 'host_status_standardized' in self.results_df.columns
+        
+        if use_standardized and standardized_col_exists:
+            host_col = 'host_status_standardized'
+            if is_test_circle:
+                print(f"  {debug_prefix} ✅ Using standardized host status column")
+        else:
+            # Host column may have different names, try to find it
+            host_col = None
+            for col in ['host', 'Host', 'willing_to_host']: 
+                if col in self.results_df.columns:
+                    host_col = col
+                    break
         
         if not host_col:
             self.logger.warning(f"{debug_prefix} Cannot count hosts: No host column found in results DataFrame")
@@ -287,28 +299,56 @@ class CircleMetadataManager:
         always_host_values = []
         sometimes_host_values = []
         
-        # No special handling - rely purely on data-driven approach
-        
-        # CRITICAL FIX: Test the optimization detection as well for IP-BOS-04 and IP-BOS-05
-        # This ensures both "Always Host" and "Always" are correctly detected
-        if is_test_circle:
-            print(f"\n{debug_prefix} 🧪 TESTING HOST DETECTION STRINGS:")
-            test_values = [
-                "Always", "Always Host", "always", "ALWAYS", "always host", 
-                "Sometimes", "Sometimes Host", "sometimes", "SOMETIMES", "sometimes host"
-            ]
+        # If we're using standardized host status, the counting is much simpler
+        if host_col == 'host_status_standardized':
+            if is_test_circle:
+                print(f"  {debug_prefix} Using standardized host status values (ALWAYS/SOMETIMES/NEVER)")
+                
+            # Get the member data
+            member_data = self.results_df[self.results_df['Encoded ID'].isin(member_ids)]
+            # Count based on standardized values
+            always_hosts = (member_data['host_status_standardized'] == 'ALWAYS').sum()
+            sometimes_hosts = (member_data['host_status_standardized'] == 'SOMETIMES').sum()
             
-            for test_val in test_values:
-                host_lower = test_val.lower()
-                detection = "UNDETECTED"
+            found_members = len(member_data)
+            missing_members = len(member_ids) - found_members
+            
+            # Debug output
+            if is_test_circle:
+                print(f"  {debug_prefix} Found {found_members} of {len(member_ids)} members in results DataFrame")
+                if missing_members > 0:
+                    print(f"  {debug_prefix} ⚠️ Could not find {missing_members} members in results DataFrame")
+                print(f"  {debug_prefix} Counted {always_hosts} ALWAYS hosts and {sometimes_hosts} SOMETIMES hosts")
+        else:
+            # Legacy counting with on-the-fly normalization if feature flag is enabled
+            # CRITICAL FIX: Test the optimization detection as well for IP-BOS-04 and IP-BOS-05
+            # This ensures both "Always Host" and "Always" are correctly detected
+            if is_test_circle:
+                print(f"\n{debug_prefix} 🧪 TESTING HOST DETECTION STRINGS:")
+                test_values = [
+                    "Always", "Always Host", "always", "ALWAYS", "always host", 
+                    "Sometimes", "Sometimes Host", "sometimes", "SOMETIMES", "sometimes host"
+                ]
                 
-                # Test with our enhanced pattern matching
-                if ('always' in host_lower) or host_lower == 'always':
-                    detection = "✅ Would be counted as ALWAYS HOST"
-                elif ('sometimes' in host_lower) or host_lower == 'sometimes':
-                    detection = "✅ Would be counted as SOMETIMES HOST"
-                
-                print(f"  {debug_prefix} Testing value '{test_val}': {detection}")
+                for test_val in test_values:
+                    # If normalize_on_the_fly is enabled, use the standardization function
+                    normalize_on_the_fly = get_flag('use_standardized_host_status')
+                    
+                    if normalize_on_the_fly:
+                        normalized = normalize_host_status(test_val)
+                        print(f"  {debug_prefix} Testing value '{test_val}': Normalized to '{normalized}'")
+                    else:
+                        host_lower = test_val.lower()
+                        detection = "UNDETECTED"
+                        
+                        # Test with our traditional pattern matching
+                        if ('always' in host_lower) or host_lower == 'always':
+                            detection = "✅ Would be counted as ALWAYS HOST"
+                        elif ('sometimes' in host_lower) or host_lower == 'sometimes':
+                            detection = "✅ Would be counted as SOMETIMES HOST"
+                        
+                        print(f"  {debug_prefix} Testing value '{test_val}': {detection}")
+
         
         for member_id in member_ids:
             # Look up this member in results_df
@@ -721,7 +761,15 @@ class CircleMetadataManager:
         return self.results_df[self.results_df['Encoded ID'].isin(member_ids)]
     
     def _ensure_list(self, value: Any) -> List:
-        """Ensure a value is a list"""
+        """Ensure a value is a list using standardized normalization"""
+        from utils.data_standardization import normalize_member_list
+        from utils.feature_flags import get_flag
+        
+        # If standardized member lists are enabled, use the normalization function
+        if get_flag('use_standardized_member_lists'):
+            return normalize_member_list(value)
+        
+        # Legacy implementation for backward compatibility
         if isinstance(value, list):
             return value
         elif isinstance(value, str):
@@ -730,8 +778,8 @@ class CircleMetadataManager:
                 try:
                     import ast
                     return ast.literal_eval(value)
-                except:
-                    self.logger.warning(f"Failed to parse string as list: {value}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to parse string as list: {value}. Error: {str(e)}")
                     return []
             else:
                 return [value]  # Single string item

@@ -1,315 +1,345 @@
 import pandas as pd
-import logging
-from typing import List, Any, Dict, Union, Optional
-import ast
 import re
+import logging
+from typing import List, Dict, Any, Union
 
-logger = logging.getLogger(__name__)
+# Configure logging
+logger = logging.getLogger('data_standardization')
 
-# Track normalization for debugging
-host_normalization_log = {}
-member_normalization_log = {}
+# Track normalization statistics for debugging
+_normalization_stats = {
+    'host_status': {
+        'total': 0,
+        'normalized_to_always': 0,
+        'normalized_to_sometimes': 0,
+        'normalized_to_never': 0,
+        'already_standardized': 0,
+        'examples': {}
+    },
+    'member_lists': {
+        'total': 0,
+        'from_string': 0,
+        'from_list': 0,
+        'from_nan': 0,
+        'from_other': 0,
+        'examples': {}
+    },
+    'encoded_ids': {
+        'total': 0,
+        'from_string': 0,
+        'from_numeric': 0,
+        'from_nan': 0,
+        'examples': {}
+    }
+}
 
-def normalize_host_status(raw_value: Any) -> str:
+def normalize_host_status(host_value: Any) -> str:
     """
-    Standardize host status values to consistent format: ALWAYS, SOMETIMES, or NEVER
-    Also logs the mapping for debugging purposes
+    Normalize host status to standard values: ALWAYS, SOMETIMES, or NEVER
     
-    Parameters:
-    -----------
-    raw_value : Any
-        The raw host status value from input data
+    Args:
+        host_value: The host value to normalize (could be string, boolean, number, or None)
         
     Returns:
-    --------
-    str
-        One of "ALWAYS", "SOMETIMES", or "NEVER"
+        Standardized host status: "ALWAYS", "SOMETIMES", or "NEVER"
     """
-    # Convert to string representation for consistent logging
-    raw_str = str(raw_value) if raw_value is not None else "None"
+    # Track statistics
+    _normalization_stats['host_status']['total'] += 1
     
-    # Check if we've already processed this value
-    if raw_str in host_normalization_log:
-        return host_normalization_log[raw_str]
-        
-    normalized = "NEVER"
+    # Handle None/NaN values
+    if pd.isna(host_value) or host_value is None or host_value == '':
+        _normalization_stats['host_status']['normalized_to_never'] += 1
+        _track_example('host_status', host_value, 'NEVER', 'null_or_empty')
+        return "NEVER"
     
-    # Handle null values
-    if pd.isna(raw_value) or raw_value is None:
-        normalized = "NEVER"
-    else:
-        # Normalize to string and lowercase for comparison
-        val = str(raw_value).strip().lower()
-        
-        # Check for "always" variations
-        if any(term in val for term in ["always", "always host"]):
-            normalized = "ALWAYS"
-        # Check for "sometimes" variations  
-        elif any(term in val for term in ["sometimes", "sometimes host", "maybe"]):
-            normalized = "SOMETIMES"
-        # Check for boolean true-like values
-        elif val in {"y", "yes", "true", "1", "1.0", "t"}:
-            normalized = "ALWAYS"
-        # Check for special numeric cases
-        elif val.isdigit() and int(val) == 1:
-            normalized = "ALWAYS"
-    
-    # Log the mapping for debugging
-    host_normalization_log[raw_str] = normalized
-    logger.debug(f"Host normalization: '{raw_value}' → '{normalized}'")
-    
-    return normalized
-
-def normalize_member_list(value: Any, log_key: Optional[str] = None) -> List[str]:
-    """
-    Ensures consistent format for member lists as List[str]
-    Handles various input formats and logs the transformation
-    
-    Parameters:
-    -----------
-    value : Any
-        The member list in any format
-    log_key : str, optional
-        A key to use for logging this normalization (e.g., circle_id)
-        
-    Returns:
-    --------
-    List[str]
-        Normalized list of member IDs as strings
-    """
-    original = value  # Save original for logging
-    
-    # Handle already normalized lists
-    if isinstance(value, list):
-        # Convert all elements to strings and ensure no empty strings
-        result = [str(item).strip() for item in value if str(item).strip()]
-        if not result:
-            result = []
-    
-    # Handle null values
-    elif pd.isna(value) or value is None:
-        result = []
-        
-    # Handle string values
-    elif isinstance(value, str):
-        if value.strip() == "":
-            result = []
-            
-        # Check if it's a string representation of a list
-        elif value.startswith('[') and value.endswith(']'):
-            try:
-                # Use AST for safe evaluation
-                parsed = ast.literal_eval(value)
-                if isinstance(parsed, list):
-                    result = [str(item).strip() for item in parsed if str(item).strip()]
-                else:
-                    # Handle case where parsing gives a non-list
-                    result = [str(parsed)] if str(parsed).strip() else []
-            except (SyntaxError, ValueError):
-                # If parsing fails, try other methods
-                # Strip brackets and treat as comma-separated
-                stripped = value[1:-1].strip()
-                if stripped:
-                    # Handle quoted items in list strings
-                    parts = re.findall(r"'([^']*?)'|\"([^\"]*?)\"|([^,\s]+)", stripped)
-                    result = [next(p for p in part if p) for part in parts]
-                else:
-                    result = []
-                
-        # Check if it's comma-separated
-        elif ',' in value:
-            result = [item.strip() for item in value.split(',') if item.strip()]
-            
-        # It's a single item
+    # Handle boolean values
+    if isinstance(host_value, bool):
+        if host_value:
+            _normalization_stats['host_status']['normalized_to_always'] += 1
+            _track_example('host_status', host_value, 'ALWAYS', 'boolean_true')
+            return "ALWAYS"
         else:
-            result = [value.strip()] if value.strip() else []
+            _normalization_stats['host_status']['normalized_to_never'] += 1
+            _track_example('host_status', host_value, 'NEVER', 'boolean_false')
+            return "NEVER"
+    
+    # Handle numeric values
+    if isinstance(host_value, (int, float)):
+        if host_value == 1:
+            _normalization_stats['host_status']['normalized_to_always'] += 1
+            _track_example('host_status', host_value, 'ALWAYS', 'numeric_one')
+            return "ALWAYS"
+        else:
+            _normalization_stats['host_status']['normalized_to_never'] += 1
+            _track_example('host_status', host_value, 'NEVER', 'numeric_zero')
+            return "NEVER"
+    
+    # Now we know it's a string or convertible to string
+    host_str = str(host_value).strip().lower()
+    
+    # Check if already in standard format
+    if host_str in ['always', 'sometimes', 'never']:
+        standardized = host_str.upper()
+        _normalization_stats['host_status']['already_standardized'] += 1
+        return standardized
+    
+    # Match patterns for "always" hosts
+    always_patterns = ['always', 'yes', 'true', 'definitely', 'certainly', 'happy to', '1', 'willing']
+    for pattern in always_patterns:
+        if pattern in host_str or host_str == pattern:
+            _normalization_stats['host_status']['normalized_to_always'] += 1
+            _track_example('host_status', host_value, 'ALWAYS', f'pattern_{pattern}')
+            return "ALWAYS"
+    
+    # Match patterns for "sometimes" hosts
+    sometimes_patterns = ['sometimes', 'maybe', 'possibly', 'occasionally', 'can', 'could', 
+                         'willing to but', 'able to but', 'if needed', 'if necessary']
+    for pattern in sometimes_patterns:
+        if pattern in host_str:
+            _normalization_stats['host_status']['normalized_to_sometimes'] += 1
+            _track_example('host_status', host_value, 'SOMETIMES', f'pattern_{pattern}')
+            return "SOMETIMES"
+    
+    # Match patterns for "never" hosts
+    never_patterns = ['never', 'no', 'not', 'cannot', "can't", 'unable', 'impossible', '0', 'don\'t']
+    for pattern in never_patterns:
+        if pattern in host_str:
+            _normalization_stats['host_status']['normalized_to_never'] += 1
+            _track_example('host_status', host_value, 'NEVER', f'pattern_{pattern}')
+            return "NEVER"
+    
+    # Default to NEVER for unmatched patterns
+    _normalization_stats['host_status']['normalized_to_never'] += 1
+    _track_example('host_status', host_value, 'NEVER', 'default_unmatched')
+    return "NEVER"
+
+def normalize_member_list(value: Any) -> List[str]:
+    """
+    Normalize member list to a consistent List[str] format
+    
+    Args:
+        value: The member list value to normalize (could be list, string, None, etc.)
         
-    # Handle numeric or other types
-    else:
-        result = [str(value)] if str(value).strip() else []
+    Returns:
+        List of member IDs as strings
+    """
+    # Track statistics
+    _normalization_stats['member_lists']['total'] += 1
     
-    # Log transformation if requested
-    if log_key:
-        member_normalization_log[log_key] = {
-            "original": original,
-            "normalized": result
-        }
-        logger.debug(f"Member normalization for {log_key}: {original} → {result}")
+    # Handle None/NaN values
+    if pd.isna(value) or value is None:
+        _normalization_stats['member_lists']['from_nan'] += 1
+        _track_example('member_lists', value, [], 'null_or_none')
+        return []
     
-    return result
+    # Handle already-list values
+    if isinstance(value, list):
+        _normalization_stats['member_lists']['from_list'] += 1
+        
+        # Ensure all elements are strings and handle potential None/NaN values within the list
+        normalized_list = []
+        for item in value:
+            if pd.isna(item) or item is None:
+                continue  # Skip None/NaN values
+            
+            # Convert to string
+            normalized_list.append(str(item).strip())
+        
+        _track_example('member_lists', value, normalized_list, 'from_list')
+        return normalized_list
+    
+    # Handle string values - potentially representing a list
+    if isinstance(value, str):
+        _normalization_stats['member_lists']['from_string'] += 1
+        
+        # Check if it's a string representation of a list
+        if value.strip().startswith('[') and value.strip().endswith(']'):
+            try:
+                # Try to parse as Python literal
+                import ast
+                parsed_list = ast.literal_eval(value)
+                
+                # Ensure it's actually a list
+                if isinstance(parsed_list, list):
+                    # Recursively normalize to handle nested structures
+                    _track_example('member_lists', value, parsed_list, 'string_as_list')
+                    return normalize_member_list(parsed_list)
+            except (ValueError, SyntaxError) as e:
+                # If parsing fails, treat as a single string item
+                logger.warning(f"Failed to parse member list string: {e}")
+        
+        # If we get here, treat as a single string value
+        if value.strip():  # Only add non-empty strings
+            _track_example('member_lists', value, [value.strip()], 'string_as_item')
+            return [value.strip()]
+        else:
+            _track_example('member_lists', value, [], 'empty_string')
+            return []
+    
+    # Handle other types (convert to string and treat as single item)
+    _normalization_stats['member_lists']['from_other'] += 1
+    
+    try:
+        # Try to convert to string and use as single item
+        str_value = str(value).strip()
+        if str_value:
+            _track_example('member_lists', value, [str_value], f'from_{type(value).__name__}')
+            return [str_value]
+    except Exception as e:
+        logger.warning(f"Failed to convert member list value to string: {e}")
+    
+    # If all else fails, return empty list
+    _track_example('member_lists', value, [], 'conversion_failed')
+    return []
 
 def normalize_encoded_id(value: Any) -> str:
     """
-    Ensure Encoded ID is consistently formatted as a string
+    Normalize encoded ID to string format
     
-    Parameters:
-    -----------
-    value : Any
-        The Encoded ID in any format
+    Args:
+        value: The encoded ID value to normalize
         
     Returns:
-    --------
-    str
-        Normalized Encoded ID as string
+        Encoded ID as string
     """
+    # Track statistics
+    _normalization_stats['encoded_ids']['total'] += 1
+    
+    # Handle None/NaN values
     if pd.isna(value) or value is None:
+        _normalization_stats['encoded_ids']['from_nan'] += 1
+        _track_example('encoded_ids', value, '', 'null_or_none')
         return ""
     
-    return str(value).strip()
-
-def print_normalization_logs():
-    """
-    Print the host status normalization mapping for debugging
-    """
-    logger.info("\n🔍 Host Normalization Mapping:")
-    for raw, norm in host_normalization_log.items():
-        logger.info(f"  '{raw}' → '{norm}'")
+    # Handle string values
+    if isinstance(value, str):
+        _normalization_stats['encoded_ids']['from_string'] += 1
+        _track_example('encoded_ids', value, value.strip(), 'from_string')
+        return value.strip()
     
-    logger.info("\n🔍 Member List Normalization Examples:")
-    # Print at most 5 examples to avoid overwhelming logs
-    for i, (key, mapping) in enumerate(list(member_normalization_log.items())[:5]):
-        logger.info(f"  {key}: {mapping['original']} → {mapping['normalized']}")
-    
-    if len(member_normalization_log) > 5:
-        logger.info(f"  ... and {len(member_normalization_log) - 5} more transformations")
-
-def build_circle_metadata(circle_id: str, members: List[str], results_df: pd.DataFrame, target_circle_size: int = 10) -> Dict[str, Any]:
-    """
-    Build comprehensive circle metadata from member and participant data
-    
-    Parameters:
-    -----------
-    circle_id : str
-        The ID of the circle
-    members : list
-        List of member IDs in this circle
-    results_df : DataFrame
-        The participant data DataFrame
-    target_circle_size : int, optional
-        The target size for circles (default 10)
+    # Handle numeric values
+    if isinstance(value, (int, float)):
+        _normalization_stats['encoded_ids']['from_numeric'] += 1
         
-    Returns:
-    --------
-    dict
-        Complete circle metadata dictionary
-    """
-    # Ensure members is normalized
-    member_ids = normalize_member_list(members, log_key=f"metadata_{circle_id}")
-    
-    # Clean participant IDs in results
-    if "Encoded ID" in results_df.columns:
-        results_df_clean = results_df.copy()
-        results_df_clean["Encoded ID"] = results_df_clean["Encoded ID"].apply(normalize_encoded_id)
-    else:
-        results_df_clean = results_df
-    
-    # Get participant data for these members
-    member_data = results_df_clean[results_df_clean["Encoded ID"].isin(member_ids)]
-    
-    # If we found no member data, log warning and return default metadata
-    if len(member_data) == 0:
-        logger.warning(f"No member data found for circle {circle_id} with members {member_ids}")
-        return {
-            "circle_id": circle_id,
-            "members": member_ids,
-            "member_count": len(member_ids),
-            "new_members": 0,
-            "continuing_members": 0,
-            "always_hosts": 0,
-            "sometimes_hosts": 0,
-            "max_additions": 0,
-            "_warning": "No member data found in results_df"
-        }
-        
-    # Calculate metadata
-    # 1. Host counts - using standardized host status
-    host_col = "host_status_standardized" if "host_status_standardized" in member_data.columns else next(
-        (col for col in member_data.columns if "host" in col.lower()), None)
-        
-    if host_col:
-        # If we're using raw host data, standardize it
-        if host_col != "host_status_standardized":
-            always_hosts = sum(normalize_host_status(val) == "ALWAYS" 
-                              for val in member_data[host_col].values)
-            sometimes_hosts = sum(normalize_host_status(val) == "SOMETIMES" 
-                                 for val in member_data[host_col].values)
+        # Convert to string, being careful with floating point
+        if isinstance(value, float) and value.is_integer():
+            # Convert to int first to remove decimal point
+            str_value = str(int(value))
         else:
-            # Use already standardized data
-            always_hosts = (member_data["host_status_standardized"] == "ALWAYS").sum()
-            sometimes_hosts = (member_data["host_status_standardized"] == "SOMETIMES").sum()
-    else:
-        # No host column found
-        always_hosts = 0
-        sometimes_hosts = 0
-        logger.warning(f"No host column found for circle {circle_id}")
+            str_value = str(value)
+        
+        _track_example('encoded_ids', value, str_value, 'from_numeric')
+        return str_value
     
-    # 2. Determine new vs continuing members
-    status_col = next((col for col in member_data.columns if "status" in col.lower()), None)
-    if status_col:
-        is_continuing = member_data[status_col].str.contains("CONTINUING", case=False, na=False)
-        continuing_members = is_continuing.sum()
-        new_members = len(member_ids) - continuing_members
-    else:
-        # No status column found
-        continuing_members = 0
-        new_members = len(member_ids)
-        logger.warning(f"No status column found for circle {circle_id}")
+    # For any other type, convert to string
+    try:
+        str_value = str(value).strip()
+        _track_example('encoded_ids', value, str_value, f'from_{type(value).__name__}')
+        return str_value
+    except Exception as e:
+        logger.warning(f"Failed to convert encoded ID to string: {e}")
+        return ""
+
+def _track_example(category: str, original: Any, normalized: Any, rule: str) -> None:
+    """
+    Track example conversions for debugging
     
-    # 3. Calculate max_additions based on continuing members
-    max_additions = max(0, target_circle_size - continuing_members)
+    Args:
+        category: The normalization category (host_status, member_lists, encoded_ids)
+        original: The original value
+        normalized: The normalized value
+        rule: The rule that triggered this normalization
+    """
+    examples = _normalization_stats[category]['examples']
     
-    # 4. Extract region and subregion from circle ID
-    region = ""
-    subregion = ""
-    if circle_id and isinstance(circle_id, str):
-        parts = circle_id.split('-')
-        if len(parts) >= 2:
-            region_code = parts[1]
-            # Map region codes to full names
-            region_map = {
-                'SFO': 'San Francisco',
-                'NYC': 'New York',
-                'BOS': 'Boston',
-                'CHI': 'Chicago',
-                # Add other regions as needed
-            }
-            region = region_map.get(region_code, region_code)
-            subregion = region  # Default subregion to region
+    # Create rule entry if it doesn't exist
+    if rule not in examples:
+        examples[rule] = []
     
-    # 5. Determine meeting time if available
-    meeting_time = ""
-    meeting_time_col = next((col for col in member_data.columns 
-                             if "meeting" in col.lower() and "time" in col.lower()), None)
-    if meeting_time_col:
-        # Use most common meeting time
-        meeting_times = member_data[meeting_time_col].value_counts()
-        if not meeting_times.empty:
-            meeting_time = meeting_times.index[0]
+    # Add example if we don't have too many already
+    if len(examples[rule]) < 5:  # Limit to 5 examples per rule
+        examples[rule].append({
+            'original': original,
+            'original_type': type(original).__name__,
+            'normalized': normalized
+        })
+
+def get_normalization_stats() -> Dict[str, Any]:
+    """
+    Get current normalization statistics
     
-    # 6. Determine if this is a test circle
-    is_test_circle = False
-    test_circle_patterns = ["TEST", "DEBUG", "SAMPLE"]
-    if any(pattern in str(circle_id).upper() for pattern in test_circle_patterns):
-        is_test_circle = True
-    
-    # Build the complete metadata
-    metadata = {
-        "circle_id": circle_id,
-        "members": member_ids,
-        "member_count": len(member_ids),
-        "new_members": new_members,
-        "continuing_members": continuing_members,
-        "always_hosts": always_hosts,
-        "sometimes_hosts": sometimes_hosts,
-        "max_additions": max_additions,
-        "region": region,
-        "subregion": subregion,
-        "meeting_time": meeting_time,
-        "is_test_circle": is_test_circle,
-        "is_new_circle": continuing_members == 0,
-        "is_existing": continuing_members > 0,
-        "_created_by": "optimizer_metadata_generator",
-        "_timestamp": pd.Timestamp.now().isoformat()
+    Returns:
+        Dictionary with normalization statistics
+    """
+    return _normalization_stats
+
+def reset_normalization_stats() -> None:
+    """
+    Reset normalization statistics
+    """
+    global _normalization_stats
+    _normalization_stats = {
+        'host_status': {
+            'total': 0,
+            'normalized_to_always': 0,
+            'normalized_to_sometimes': 0,
+            'normalized_to_never': 0,
+            'already_standardized': 0,
+            'examples': {}
+        },
+        'member_lists': {
+            'total': 0,
+            'from_string': 0,
+            'from_list': 0,
+            'from_nan': 0,
+            'from_other': 0,
+            'examples': {}
+        },
+        'encoded_ids': {
+            'total': 0,
+            'from_string': 0,
+            'from_numeric': 0,
+            'from_nan': 0,
+            'examples': {}
+        }
     }
+
+def print_normalization_logs() -> None:
+    """
+    Print detailed normalization logs
+    """
+    stats = get_normalization_stats()
     
-    return metadata
+    print("\n====== DATA STANDARDIZATION LOGS ======")
+    
+    # Host status logs
+    host_stats = stats['host_status']
+    print(f"\nHOST STATUS NORMALIZATION ({host_stats['total']} total):")
+    print(f"  - Normalized to ALWAYS:    {host_stats['normalized_to_always']}")
+    print(f"  - Normalized to SOMETIMES: {host_stats['normalized_to_sometimes']}")
+    print(f"  - Normalized to NEVER:     {host_stats['normalized_to_never']}")
+    print(f"  - Already standardized:    {host_stats['already_standardized']}")
+    
+    # Print examples for host status
+    print("\n  SAMPLE CONVERSIONS:")
+    for rule, examples in host_stats['examples'].items():
+        print(f"  Rule: {rule}")
+        for ex in examples:
+            print(f"    '{ex['original']}' ({ex['original_type']}) → '{ex['normalized']}'")
+    
+    # Member lists logs
+    member_stats = stats['member_lists']
+    print(f"\nMEMBER LIST NORMALIZATION ({member_stats['total']} total):")
+    print(f"  - From string:  {member_stats['from_string']}")
+    print(f"  - From list:    {member_stats['from_list']}")
+    print(f"  - From NaN:     {member_stats['from_nan']}")
+    print(f"  - From other:   {member_stats['from_other']}")
+    
+    # Encoded IDs logs
+    id_stats = stats['encoded_ids']
+    print(f"\nENCODED ID NORMALIZATION ({id_stats['total']} total):")
+    print(f"  - From string:  {id_stats['from_string']}")
+    print(f"  - From numeric: {id_stats['from_numeric']}")
+    print(f"  - From NaN:     {id_stats['from_nan']}")
+    
+    print("\n========================================")

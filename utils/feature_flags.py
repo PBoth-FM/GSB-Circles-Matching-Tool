@@ -1,68 +1,114 @@
 import streamlit as st
 import logging
 
-logger = logging.getLogger(__name__)
+# Configure logging
+logger = logging.getLogger('feature_flags')
 
-# Default configuration
+# Default feature flag values
 DEFAULT_FLAGS = {
-    "use_standardized_host_status": False,
-    "use_standardized_member_lists": False,
-    "use_optimizer_metadata": False,
-    "enable_metadata_validation": False,
-    "debug_data_standardization": True  # Enable debug logs by default
+    # Data standardization flags
+    'use_standardized_host_status': False,  # Use normalized host values (ALWAYS, SOMETIMES, NEVER)
+    'use_standardized_member_lists': False,  # Use standardized member list format
+    'use_optimizer_metadata': False,  # Use optimizer as source of truth for metadata
+    
+    # Validation flags
+    'enable_metadata_validation': False,  # Enable detailed metadata validation in Debug tab
+    'debug_data_standardization': False,  # Enable detailed data standardization logs
+    
+    # Debug flags
+    'enable_feature_flags_ui': False,  # Enable UI for toggling feature flags
 }
 
 def initialize_feature_flags():
-    """Initialize feature flags if not already in session state"""
-    if "feature_flags" not in st.session_state:
+    """Initialize feature flags in session state if they don't exist"""
+    if 'feature_flags' not in st.session_state:
         st.session_state.feature_flags = DEFAULT_FLAGS.copy()
         logger.info("Initialized feature flags with default values")
 
-def get_flag(flag_name, default=False):
-    """Get the value of a feature flag"""
+def get_flag(flag_name):
+    """Get the value of a feature flag, defaulting to False if not found"""
+    # Initialize flags if needed
+    if not hasattr(st, 'session_state') or 'feature_flags' not in st.session_state:
+        # When running outside of Streamlit context
+        return DEFAULT_FLAGS.get(flag_name, False)
+    
+    # Initialize if not already done
     initialize_feature_flags()
-    return st.session_state.feature_flags.get(flag_name, default)
+    
+    # Return flag value or default to False if flag doesn't exist
+    return st.session_state.feature_flags.get(flag_name, False)
 
 def set_flag(flag_name, value):
     """Set the value of a feature flag"""
+    # Initialize if not already done
     initialize_feature_flags()
-    previous_value = st.session_state.feature_flags.get(flag_name)
+    
+    # Set the flag value
     st.session_state.feature_flags[flag_name] = value
-    
-    if previous_value != value:
-        logger.info(f"Feature flag '{flag_name}' changed: {previous_value} → {value}")
-    
-    return value
-    
-def toggle_flag(flag_name):
-    """Toggle the value of a feature flag"""
-    current_value = get_flag(flag_name)
-    return set_flag(flag_name, not current_value)
+    logger.info(f"Set feature flag '{flag_name}' to {value}")
+
+def reset_flags():
+    """Reset all feature flags to default values"""
+    st.session_state.feature_flags = DEFAULT_FLAGS.copy()
+    logger.info("Reset all feature flags to default values")
 
 def render_debug_flags():
-    """Render debug UI for feature flags"""
-    initialize_feature_flags()
+    """Render a UI for toggling feature flags"""
+    # Only show if the UI flag is enabled
+    if not get_flag('enable_feature_flags_ui'):
+        return
     
-    with st.expander("⚙️ Implementation Feature Flags", expanded=False):
-        st.markdown("""### Feature Flags
+    st.subheader("Feature Flags")
+    
+    with st.expander("Configure Feature Flags", expanded=True):
+        # Group flags by category
+        st.markdown("### Data Standardization")
         
-        Toggle these flags to enable or disable new circle metadata features.
-        Use this to test changes safely and roll back if needed.
-        """)
+        # Host status standardization
+        host_status = st.checkbox(
+            "Use standardized host status", 
+            value=get_flag('use_standardized_host_status'),
+            help="Standardize host status values to ALWAYS, SOMETIMES, NEVER"
+        )
+        set_flag('use_standardized_host_status', host_status)
         
-        cols = st.columns(2)
-        for i, (flag, value) in enumerate(st.session_state.feature_flags.items()):
-            with cols[i % 2]:
-                new_value = st.checkbox(
-                    f"{flag}", 
-                    value=value,
-                    key=f"flag_{flag}"
-                )
-                if new_value != value:
-                    set_flag(flag, new_value)
-                    st.experimental_rerun()
+        # Member list standardization
+        member_lists = st.checkbox(
+            "Use standardized member lists", 
+            value=get_flag('use_standardized_member_lists'),
+            help="Standardize member lists to consistent format"
+        )
+        set_flag('use_standardized_member_lists', member_lists)
         
-        # Add button to reset all flags
-        if st.button("Reset All Flags to Default"):
-            st.session_state.feature_flags = DEFAULT_FLAGS.copy()
+        # Optimizer metadata
+        optimizer_metadata = st.checkbox(
+            "Use optimizer metadata", 
+            value=get_flag('use_optimizer_metadata'),
+            help="Use optimizer as source of truth for metadata"
+        )
+        set_flag('use_optimizer_metadata', optimizer_metadata)
+        
+        st.markdown("### Validation & Debug")
+        
+        # Metadata validation
+        metadata_validation = st.checkbox(
+            "Enable metadata validation", 
+            value=get_flag('enable_metadata_validation'),
+            help="Show detailed metadata validation in Debug tab"
+        )
+        set_flag('enable_metadata_validation', metadata_validation)
+        
+        # Data standardization debug
+        data_std_debug = st.checkbox(
+            "Debug data standardization", 
+            value=get_flag('debug_data_standardization'),
+            help="Show detailed data standardization logs"
+        )
+        set_flag('debug_data_standardization', data_std_debug)
+        
+        st.markdown("---")
+        
+        # Reset button
+        if st.button("Reset All Flags"):
+            reset_flags()
             st.experimental_rerun()
