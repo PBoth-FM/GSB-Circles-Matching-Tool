@@ -544,23 +544,76 @@ def process_uploaded_file(uploaded_file):
                         if 'matched_circles' in st.session_state:
                             circles = st.session_state.matched_circles
                             
-                            # Handle different types properly
-                            for circle in circles:
-                                if isinstance(circle, dict):
-                                    # Dictionary circle
-                                    circles_participant_count += circle.get('member_count', 0)
-                                elif isinstance(circle, pd.DataFrame):
-                                    # DataFrame circle
-                                    if 'member_count' in circle.columns:
-                                        circles_participant_count += circle['member_count'].sum()
-                                elif isinstance(circle, str):
-                                    # String entries (circle IDs) - can't get member count directly
-                                    print(f"⚠️ Found string circle entry: {circle}")
-                                else:
-                                    # Other types - log for debugging
-                                    print(f"⚠️ Unknown circle type: {type(circle)}")
+                            # DEBUG: Check the type and validity of circles
+                            print(f"\n🔍 CIRCLES DEBUG: matched_circles type is {type(circles)}")
+                            
+                            # Add safety checks for None and empty values
+                            if circles is None:
+                                print("⚠️ WARNING: matched_circles is None. Skipping member count calculation.")
+                            elif isinstance(circles, pd.DataFrame) and circles.empty:
+                                print("⚠️ WARNING: matched_circles DataFrame is empty. Skipping member count calculation.")
+                            elif isinstance(circles, list) and len(circles) == 0:
+                                print("⚠️ WARNING: matched_circles list is empty. Skipping member count calculation.")
+                            else:
+                                # Handle different collection types
+                                if isinstance(circles, pd.DataFrame):
+                                    # DataFrame direct access
+                                    print(f"🔍 Processing DataFrame with {len(circles)} rows")
+                                    if 'member_count' in circles.columns:
+                                        circles_participant_count = circles['member_count'].sum()
+                                    print(f"🔍 Circle member count from DataFrame: {circles_participant_count}")
                                     
-                            print(f"Total participants in matched_circles: {circles_participant_count}")
+                                elif isinstance(circles, list) or hasattr(circles, '__iter__'):
+                                    # Safe iteration for any iterable
+                                    print(f"🔍 Processing {type(circles)} with {len(circles) if hasattr(circles, '__len__') else 'unknown'} items")
+                                    iterator_count = 0
+                                    
+                                    # Defensive programming - ensure circles is valid before iteration
+                                    if circles is None:
+                                        print("⚠️ CRITICAL: circles was None during iteration. Using empty list.")
+                                        safe_circles = []
+                                    else:
+                                        # Ensure we have something iterable
+                                        try:
+                                            # Fast check for common collections
+                                            if isinstance(circles, (list, tuple, pd.DataFrame)):
+                                                safe_circles = circles
+                                            else:
+                                                # Try to convert to a list explicitly
+                                                safe_circles = list(circles)
+                                        except Exception as e:
+                                            print(f"⚠️ CRITICAL: Error converting circles to iterable: {str(e)}")
+                                            safe_circles = []
+                                    
+                                    # Handle different types properly with the safe iterable
+                                    try:
+                                        for circle in safe_circles:
+                                            iterator_count += 1
+                                            if isinstance(circle, dict):
+                                                # Dictionary circle
+                                                circles_participant_count += circle.get('member_count', 0)
+                                            elif isinstance(circle, pd.DataFrame):
+                                                # DataFrame circle
+                                                if 'member_count' in circle.columns:
+                                                    circles_participant_count += circle['member_count'].sum()
+                                            elif isinstance(circle, str):
+                                                # String entries (circle IDs) - can't get member count directly
+                                                print(f"⚠️ Found string circle entry: {circle}")
+                                            else:
+                                                # Other types - log for debugging
+                                                print(f"⚠️ Unknown circle type: {type(circle)}")
+                                    except Exception as e:
+                                        print(f"⚠️ Error during circle iteration: {str(e)}")
+                                        # Continue without failing
+                                    
+                                    print(f"🔍 Iterated through {iterator_count} items")
+                                else:
+                                    # Unknown, just log it
+                                    print(f"⚠️ matched_circles is unexpected type: {type(circles)}")
+                                
+                                print(f"Total participants in matched_circles: {circles_participant_count}")
+                        else:
+                            print("⚠️ WARNING: 'matched_circles' not found in session state")
                     
                     # Check if we have test participants and remove them
                     if 'Encoded ID' in results_df.columns:
