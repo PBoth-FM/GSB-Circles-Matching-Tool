@@ -245,24 +245,43 @@ class CircleMetadataManager:
                 # Get host status
                 host_status = member_rows.iloc[0][host_col]
                 
+                # First, ensure host_status is properly handled even if it's None or a non-string type
+                host_str = str(host_status).lower() if host_status is not None else ''
+                
                 # Enhanced debug output
                 if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                    print(f"  Member {member_id}: host_status='{host_status}'")
+                    print(f"  Member {member_id}: host_status='{host_status}' (type: {type(host_status).__name__})")
                 
-                # Expanded host status recognition
+                # Expanded host status recognition with robust type handling
                 # IMPORTANT: This is a critical fix - multiple representations of the same status
                 # must be recognized consistently
-                if host_status in ['Always', 'Always Host', 'always', 'yes', 'Yes', 'TRUE', True, 1]:
+                
+                # First check for exact matches that don't need string conversion
+                if host_status in [True, 1]:
                     always_hosts += 1
                     if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                        print(f"    ✅ Counted as ALWAYS HOST")
-                elif host_status in ['Sometimes', 'Sometimes Host', 'sometimes', 'maybe', 'Maybe']:
-                    sometimes_hosts += 1
-                    if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                        print(f"    ✅ Counted as SOMETIMES HOST")
+                        print(f"    ✅ Counted as ALWAYS HOST (boolean/int match)")
+                # Then check for string-based matches
+                elif isinstance(host_status, str):
+                    # Convert to lowercase for case-insensitive matching
+                    host_lower = host_status.lower()
+                    
+                    if host_lower in ['always', 'always host', 'yes', 'true']:
+                        always_hosts += 1
+                        if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                            print(f"    ✅ Counted as ALWAYS HOST (string match)")
+                    elif host_lower in ['sometimes', 'sometimes host', 'maybe']:
+                        sometimes_hosts += 1
+                        if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                            print(f"    ✅ Counted as SOMETIMES HOST (string match)")
+                    else:
+                        if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                            print(f"    ℹ️ Not counted as host (unrecognized string: '{host_status}')")
                 else:
+                    # Handle other types or None values
                     if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                        print(f"    ℹ️ Not counted as host (status: '{host_status}')")
+                        print(f"    ℹ️ Not counted as host (non-string type: {type(host_status).__name__}, value: {host_status})")
+                    
             else:
                 missing_members += 1
         
@@ -533,13 +552,41 @@ def initialize_or_update_manager(state, optimizer_circles=None, results_df=None)
     print(f"  optimizer_circles type: {type(optimizer_circles)}")
     print(f"  results_df type: {type(results_df)}")
     
+    # ENHANCED VALIDATION: Check for None and add detailed diagnostics
+    if optimizer_circles is None:
+        print(f"  ⚠️ WARNING: optimizer_circles is None. Will attempt to use matched_circles from session state.")
+    elif len(str(optimizer_circles)) < 100:
+        # Only print the full value if it's reasonably short
+        print(f"  optimizer_circles value: {optimizer_circles}")
+    
     # Validate optimizer_circles before using
     if optimizer_circles is not None:
-        if not isinstance(optimizer_circles, (list, pd.DataFrame, dict)):
+        if isinstance(optimizer_circles, str):
+            print(f"  ⚠️ WARNING: optimizer_circles is a string: '{optimizer_circles}'")
+            # Handle string values specially
+            try:
+                if optimizer_circles.startswith('[') and optimizer_circles.endswith(']'):
+                    # Try to parse as a list representation
+                    import ast
+                    optimizer_circles = ast.literal_eval(optimizer_circles)
+                    print(f"  ⚙️ Successfully parsed string as a list with {len(optimizer_circles)} items")
+                else:
+                    # Treat as a single item
+                    optimizer_circles = [optimizer_circles]
+                    print(f"  ⚙️ Treating string as a single item list: {optimizer_circles}")
+            except Exception as e:
+                print(f"  ⚠️ ERROR parsing string optimizer_circles: {str(e)}")
+                # Create an empty list as a fallback
+                optimizer_circles = []
+        elif not isinstance(optimizer_circles, (list, pd.DataFrame, dict)):
             print(f"  ⚠️ WARNING: optimizer_circles is {type(optimizer_circles)}, not a list/DataFrame/dict")
-            # Convert to list if needed as a fallback (handles string case)
-            if not isinstance(optimizer_circles, list):
-                print(f"  ⚙️ Converting optimizer_circles to list format")
+            try:
+                # Try to convert to list as a last resort
+                optimizer_circles = list(optimizer_circles) if hasattr(optimizer_circles, '__iter__') else [optimizer_circles]
+                print(f"  ⚙️ Converted to list with {len(optimizer_circles)} items")
+            except Exception as e:
+                print(f"  ⚠️ ERROR converting to list: {str(e)}")
+                # Create a single-item list with the original value
                 optimizer_circles = [optimizer_circles]
     
     # Check if we have the necessary data
