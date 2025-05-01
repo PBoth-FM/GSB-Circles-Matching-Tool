@@ -3782,21 +3782,46 @@ def render_circle_table():
     circles_df = st.session_state.matched_circles.copy()
     results_df = st.session_state.results.copy() if 'results' in st.session_state else None
     
+    # Diagnostics for debugging circle data
+    print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG:")
+    print(f"  Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
+    print(f"  Available columns: {list(circles_df.columns) if hasattr(circles_df, 'columns') else 'unknown'}")
+    
     # Show the table
     if 'circle_id' in circles_df.columns and 'meeting_time' in circles_df.columns:
         # Create a display table with key information
-        display_cols = ['circle_id', 'meeting_time', 'meeting_location', 'member_count']
-        display_cols = [col for col in display_cols if col in circles_df.columns]
+        # ENHANCED: Added region, subregion, new_members, and max_additions columns
+        display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 'new_members', 'max_additions']
         
-        if display_cols:
-            display_df = circles_df[display_cols].copy()
+        # Filter to only include columns that exist
+        available_cols = [col for col in display_cols if col in circles_df.columns]
+        
+        # Log which columns we're displaying
+        print(f"  Displaying columns: {available_cols}")
+        
+        if available_cols:
+            display_df = circles_df[available_cols].copy()
             
             # Rename columns for display
-            display_df.columns = [col.replace('_', ' ').title() for col in display_cols]
+            display_df.columns = [col.replace('_', ' ').title() for col in available_cols]
             
             # Sort by circle ID
             if 'Circle Id' in display_df.columns:
                 display_df = display_df.sort_values('Circle Id')
+            
+            # Debug check for Max Additions column
+            if 'max_additions' in circles_df.columns:
+                # Check the range of max_additions values
+                max_add_values = circles_df['max_additions'].unique()
+                print(f"  Max Additions values: {max_add_values}")
+                
+                # Check for specific circles that might have issues
+                for circle_id in ['IP-BOS-04', 'IP-BOS-05']:
+                    if circle_id in circles_df['circle_id'].values:
+                        row = circles_df[circles_df['circle_id'] == circle_id].iloc[0]
+                        print(f"  {circle_id} info: max_additions={row.get('max_additions', 'N/A')}, "  
+                              f"member_count={row.get('member_count', 'N/A')}, "
+                              f"new_members={row.get('new_members', 'N/A')}")
             
             # Show the table
             st.dataframe(display_df, use_container_width=True)
