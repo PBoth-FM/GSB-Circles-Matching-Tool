@@ -3771,27 +3771,41 @@ def render_results_overview():
 
 def render_circle_table():
     """Render the circle composition table"""
-    if ('matched_circles' not in st.session_state or 
-        st.session_state.matched_circles is None or
-        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+    # ENHANCED: Use CircleMetadataManager if available, fall back to direct session state access
+    from utils.circle_metadata_manager import get_manager_from_session_state
+    
+    # Try to get the circle manager first
+    manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+    
+    # Check if we have data to display
+    if not manager and ('matched_circles' not in st.session_state or 
+                     st.session_state.matched_circles is None or
+                     (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
         return
     
     st.subheader("Circle Composition")
     
-    # Get the data
-    circles_df = st.session_state.matched_circles.copy()
+    # Get the data - from manager or directly from session state
+    if manager:
+        print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using CircleMetadataManager):")
+        circles_df = manager.get_circles_dataframe()
+        print(f"  Retrieved {len(circles_df)} circles from CircleMetadataManager")
+    else:
+        print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using session state directly):")
+        circles_df = st.session_state.matched_circles.copy()
+    
     results_df = st.session_state.results.copy() if 'results' in st.session_state else None
     
     # Diagnostics for debugging circle data
-    print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG:")
     print(f"  Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
     print(f"  Available columns: {list(circles_df.columns) if hasattr(circles_df, 'columns') else 'unknown'}")
     
     # Show the table
     if 'circle_id' in circles_df.columns and 'meeting_time' in circles_df.columns:
         # Create a display table with key information
-        # ENHANCED: Added region, subregion, new_members, and max_additions columns
-        display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 'new_members', 'max_additions']
+        # ENHANCED: Added region, subregion, new_members, max_additions, always_hosts, sometimes_hosts columns
+        display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 
+                       'new_members', 'max_additions', 'always_hosts', 'sometimes_hosts']
         
         # Filter to only include columns that exist
         available_cols = [col for col in display_cols if col in circles_df.columns]
@@ -3818,10 +3832,20 @@ def render_circle_table():
                 # Check for specific circles that might have issues
                 for circle_id in ['IP-BOS-04', 'IP-BOS-05']:
                     if circle_id in circles_df['circle_id'].values:
-                        row = circles_df[circles_df['circle_id'] == circle_id].iloc[0]
-                        print(f"  {circle_id} info: max_additions={row.get('max_additions', 'N/A')}, "  
-                              f"member_count={row.get('member_count', 'N/A')}, "
-                              f"new_members={row.get('new_members', 'N/A')}")
+                        # If we have a manager, use it to get consistent data
+                        if manager:
+                            circle_data = manager.get_circle_data(circle_id)
+                            print(f"  {circle_id} info (from manager): max_additions={circle_data.get('max_additions', 'N/A')}, "  
+                                  f"member_count={circle_data.get('member_count', 'N/A')}, "
+                                  f"new_members={circle_data.get('new_members', 'N/A')}, "
+                                  f"always_hosts={circle_data.get('always_hosts', 'N/A')}")
+                        else:
+                            # Fall back to DataFrame lookup
+                            row = circles_df[circles_df['circle_id'] == circle_id].iloc[0]
+                            print(f"  {circle_id} info (from DataFrame): max_additions={row.get('max_additions', 'N/A')}, "  
+                                  f"member_count={row.get('member_count', 'N/A')}, "
+                                  f"new_members={row.get('new_members', 'N/A')}, "
+                                  f"always_hosts={row.get('always_hosts', 'N/A')}")
             
             # Show the table
             st.dataframe(display_df, use_container_width=True)
@@ -3905,21 +3929,36 @@ def render_unmatched_table():
 
 def render_circle_details():
     """Render detailed information about each circle"""
-    if ('matched_circles' not in st.session_state or 
-        st.session_state.matched_circles is None or
-        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+    # ENHANCED: Use CircleMetadataManager if available, fall back to direct session state access
+    from utils.circle_metadata_manager import get_manager_from_session_state
+    
+    # Try to get the circle manager first
+    manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+    
+    # Check if we have data to display
+    if not manager and ('matched_circles' not in st.session_state or 
+                     st.session_state.matched_circles is None or
+                     (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
         st.warning("No matching results available. Please run the matching algorithm first.")
         return
     
-    # Get the data
-    circles_df = st.session_state.matched_circles.copy()
+    # Get results DataFrame
     results_df = st.session_state.results.copy() if 'results' in st.session_state else None
     
     # If results aren't available, we can't show member details
     if results_df is None:
         st.warning("Participant data is not available. Cannot show detailed circle information.")
         return
-        
+    
+    # Get circle data - from manager or directly from session state
+    if manager:
+        print("\n🔍 CIRCLE DETAILS DEBUG (Using CircleMetadataManager):")
+        circles_df = manager.get_circles_dataframe()
+        print(f"  Retrieved {len(circles_df)} circles from CircleMetadataManager")
+    else:
+        print("\n🔍 CIRCLE DETAILS DEBUG (Using session state directly):")
+        circles_df = st.session_state.matched_circles.copy()
+    
     # Filter out participants with null Encoded IDs
     from utils.helpers import get_valid_participants
     results_df = get_valid_participants(results_df)
@@ -3938,8 +3977,20 @@ def render_circle_details():
     # Create a selection widget to choose a circle
     selected_circle = st.selectbox("Select a circle to view details", options=circle_ids, key="circle_details_selector")
     
-    # Get the selected circle's data
-    circle_row = circles_df[circles_df['circle_id'] == selected_circle].iloc[0]
+    # Get the selected circle's data - using manager if available
+    if manager:
+        circle_data = manager.get_circle_data(selected_circle)
+        # For display consistency, we'll need a similar dict structure to what we'd get from DataFrame
+        circle_row = circle_data
+        print(f"  Using CircleMetadataManager to get data for {selected_circle}")
+    else:
+        # Fall back to DataFrame lookup
+        try:
+            circle_row = circles_df[circles_df['circle_id'] == selected_circle].iloc[0]
+            print(f"  Using DataFrame to get data for {selected_circle}")
+        except:
+            st.error(f"Could not find data for circle {selected_circle}")
+            return
     
     # Create columns for the display
     col1, col2 = st.columns([1, 2])
@@ -3948,12 +3999,17 @@ def render_circle_details():
     with col1:
         st.subheader(f"Circle: {selected_circle}")
         
-        # Show circle metadata
+        # Show enhanced circle metadata (added max_additions, region, subregion)
         metadata = {
+            "Region": circle_row.get('region', 'Unknown'),
+            "Subregion": circle_row.get('subregion', 'Unknown'),
             "Meeting Time": circle_row.get('meeting_time', 'Not specified'),
             "Meeting Location": circle_row.get('meeting_location', 'Not specified'),
             "Member Count": circle_row.get('member_count', 'Unknown'),
-            "Target Size": circle_row.get('target_size', 'Unknown'),
+            "New Members": circle_row.get('new_members', 'Unknown'),
+            "Max Additions": circle_row.get('max_additions', 'Unknown'),
+            "Always Hosts": circle_row.get('always_hosts', 'Unknown'),
+            "Sometimes Hosts": circle_row.get('sometimes_hosts', 'Unknown'),
         }
         
         for key, value in metadata.items():
@@ -3963,32 +4019,46 @@ def render_circle_details():
     with col2:
         st.subheader("Members")
         
-        # Get member IDs
-        member_ids = []
-        if 'members' in circle_row:
-            # Handle both list and string representations
-            if isinstance(circle_row['members'], list):
-                member_ids = circle_row['members']
-            elif isinstance(circle_row['members'], str):
-                try:
-                    # Try to evaluate if it's a string representation of a list
-                    if circle_row['members'].startswith('['):
-                        member_ids = eval(circle_row['members'])
-                    else:
-                        member_ids = [circle_row['members']]
-                except:
-                    st.error(f"Could not parse member list: {circle_row['members']}")
+        # Get member IDs - use the manager's dedicated method if available
+        if manager:
+            member_ids = manager.get_circle_members(selected_circle)
+            if not member_ids:
+                st.warning("No members found for this circle.")
+                return
+        else:  
+            # Fall back to parsing from the DataFrame
+            member_ids = []
+            if 'members' in circle_row:
+                # Handle both list and string representations
+                if isinstance(circle_row['members'], list):
+                    member_ids = circle_row['members']
+                elif isinstance(circle_row['members'], str):
+                    try:
+                        # Try to evaluate if it's a string representation of a list
+                        if circle_row['members'].startswith('['):
+                            member_ids = eval(circle_row['members'])
+                        else:
+                            member_ids = [circle_row['members']]
+                    except:
+                        st.error(f"Could not parse member list: {circle_row['members']}")
+            
+            if not member_ids:
+                st.warning("No members found for this circle.")
+                return
         
-        if not member_ids:
-            st.warning("No members found for this circle.")
-            return
-        
-        # Get member data
-        members_df = results_df[results_df['Encoded ID'].isin(member_ids)]
+        # Get member data - use the manager's dedicated method if available
+        if manager:
+            members_df = manager.get_circle_member_data(selected_circle)
+            if members_df.empty:
+                st.warning("Could not retrieve member data for this circle.")
+                return
+        else:
+            # Fallback to manual lookup
+            members_df = results_df[results_df['Encoded ID'].isin(member_ids)]
         
         # Create a display table
         display_cols = ['Last Family Name', 'First Given Name', 'Encoded ID', 
-                        'Current_Region', 'Status', 'first_choice_time']
+                        'Current_Region', 'Status', 'first_choice_time', 'host']
         
         # Filter to available columns
         display_cols = [col for col in display_cols if col in members_df.columns]
@@ -3997,6 +4067,15 @@ def render_circle_details():
             st.dataframe(members_df[display_cols], use_container_width=True)
         else:
             st.warning("Member data doesn't contain the expected columns.")
+            
+        # Debug info
+        print(f"  Circle {selected_circle} has {len(member_ids)} member IDs")
+        print(f"  Found {len(members_df)} matching records in results DataFrame")
+        print(f"  Available member columns: {list(members_df.columns)}")
+        if len(members_df) < len(member_ids):
+            print(f"  ⚠️ WARNING: Could not find all member data. Expected {len(member_ids)} members but found {len(members_df)}.")
+            missing_members = set(member_ids) - set(members_df['Encoded ID'].values if 'Encoded ID' in members_df.columns else [])
+            print(f"  ⚠️ Missing members: {list(missing_members)[:5]}" + ("..." if len(missing_members) > 5 else ""))
     
     # Show visualizations specific to this circle
     st.subheader("Circle Analysis")

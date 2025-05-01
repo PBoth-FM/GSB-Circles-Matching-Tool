@@ -206,9 +206,43 @@ def run_optimization():
                 
             # Store results in session state
             st.session_state.results = results
-            st.session_state.matched_circles = matched_circles
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
+            
+            # ENHANCED APPROACH: Use CircleMetadataManager for consistent circle data management
+            from utils.circle_metadata_manager import CircleMetadataManager, initialize_or_update_manager
+            
+            # Initialize metadata manager with circle data and results
+            print("\n🔄 INITIALIZING CIRCLE METADATA MANAGER: Central source of truth for all circle data")
+            manager = initialize_or_update_manager(st.session_state, matched_circles, results)
+            
+            if manager:
+                # For backward compatibility, we still set matched_circles in session state
+                # but the CircleMetadataManager is now the authoritative source
+                circles_df = manager.get_circles_dataframe()
+                st.session_state.matched_circles = circles_df
+                print(f"  ✅ Successfully initialized CircleMetadataManager with {len(circles_df)} circles")
+            else:
+                st.session_state.matched_circles = matched_circles
+                print("  ⚠️ Failed to initialize CircleMetadataManager, falling back to direct storage")
+                # Log detailed types for debugging
+                print(f"  matched_circles type: {type(matched_circles)}")
+                print(f"  results type: {type(results)}")
+            
+            # Debug verification of max_additions values
+            print("\n🔍 VERIFYING MAX ADDITIONS: Checking that values are correctly preserved")
+            if 'circle_manager' in st.session_state:
+                sample_circles = st.session_state.circle_manager.get_all_circles()[:3]
+                for circle in sample_circles:
+                    print(f"  Circle {circle['circle_id']}: max_additions={circle.get('max_additions', 'N/A')}")
+            elif 'matched_circles' in st.session_state:
+                if hasattr(st.session_state.matched_circles, 'head'):
+                    sample_df = st.session_state.matched_circles.head(3)
+                    if 'max_additions' in sample_df.columns:
+                        for _, row in sample_df.iterrows():
+                            print(f"  Circle {row['circle_id']}: max_additions={row.get('max_additions', 'N/A')}")
+                    else:
+                        print("  ⚠️ max_additions column not found in matched_circles DataFrame")
             
             # Debug verification after storing in session state
             if 'results' in st.session_state and isinstance(st.session_state.results, pd.DataFrame):
