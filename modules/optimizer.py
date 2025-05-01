@@ -1152,6 +1152,59 @@ def run_matching_algorithm(data, config):
     
     # IMPORTANT: Make sure the logs saved in session state persist
     # We don't need to return them since they're already in session state
+    
+    # Create circles dataframe with standardized metadata
+    print("\n🔧 GENERATING STANDARDIZED CIRCLE METADATA")
+    
+    # Get feature flag
+    from utils.feature_flags import get_flag
+    use_optimizer_metadata = get_flag('use_optimizer_metadata')
+    
+    # Process circles with enhanced metadata if the feature flag is enabled
+    if use_optimizer_metadata and not circles_df.empty:
+        print("  ✅ Feature flag enabled: Generating standardized circle metadata")
+        enhanced_circles = []
+        
+        for _, circle in circles_df.iterrows():
+            # Extract key information from the circle
+            circle_id = str(circle.get('circle_id', ''))
+            members = circle.get('members', [])
+            region = circle.get('region', '')
+            subregion = circle.get('subregion', '')
+            meeting_time = circle.get('meeting_time', '')
+            max_additions = circle.get('max_additions', 0)
+            
+            # Generate standardized metadata
+            enhanced_metadata = generate_circle_metadata(
+                circle_id=circle_id,
+                members_list=members,
+                region=region,
+                subregion=subregion,
+                meeting_time=meeting_time,
+                max_additions=max_additions,
+                debug_mode=debug_mode
+            )
+            
+            # Add any missing fields from the original circle
+            for key, value in circle.items():
+                if key not in enhanced_metadata and pd.notna(value):
+                    enhanced_metadata[key] = value
+            
+            enhanced_circles.append(enhanced_metadata)
+        
+        # Use the enhanced circles
+        print(f"  ✅ Generated standardized metadata for {len(enhanced_circles)} circles")
+        circles_df = pd.DataFrame(enhanced_circles)
+        
+        # Add metadata_source column to indicate where the metadata came from
+        circles_df['metadata_source'] = 'optimizer'
+        print(f"  ✅ Added metadata_source column to circle DataFrame")
+    else:
+        if circles_df.empty:
+            print("  ⚠️ Cannot generate metadata: circles_df is empty")
+        else:
+            print("  ℹ️ Feature flag disabled: Skipping standardized metadata generation")
+    
     return results_df, circles_df, unmatched_df
 
 def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
