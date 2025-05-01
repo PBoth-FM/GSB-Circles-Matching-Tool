@@ -3794,6 +3794,88 @@ def render_circle_table():
         print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using session state directly):")
         circles_df = st.session_state.matched_circles.copy()
     
+    # Add special diagnostic section for test circles
+    with st.expander("Circle Inspector (Debug Tool)"):
+        st.write("Examine details of specific circles for debugging")
+        
+        # Input for circle ID
+        circle_id = st.text_input("Enter Circle ID to inspect (e.g., IP-BOS-04):", key="circle_inspector_id")
+        
+        if circle_id:
+            if manager is not None:
+                # Get circle data from metadata manager
+                circle_data = manager.get_circle_data(circle_id)
+                
+                if circle_data:
+                    st.subheader(f"Circle {circle_id} Details")
+                    st.write("Basic information:")
+                    st.write(f"- Region: {circle_data.get('region', 'Unknown')}")
+                    st.write(f"- Subregion: {circle_data.get('subregion', 'Unknown')}")
+                    st.write(f"- Meeting Time: {circle_data.get('meeting_time', 'Unknown')}")
+                    st.write(f"- Member Count: {circle_data.get('member_count', 0)}")
+                    st.write(f"- Always Hosts: {circle_data.get('always_hosts', 0)}")
+                    st.write(f"- Sometimes Hosts: {circle_data.get('sometimes_hosts', 0)}")
+                    st.write(f"- Max Additions: {circle_data.get('max_additions', 0)}")
+                    st.write(f"- New Members: {circle_data.get('new_members', 0)}")
+                    
+                    # Get member details
+                    members = circle_data.get('members', [])
+                    if members:
+                        st.write(f"\nMembers ({len(members)}):")  
+                        members_df = manager.get_circle_member_data(circle_id)
+                        
+                        if not members_df.empty:
+                            # Extract key columns for display
+                            display_cols = ['Encoded ID']
+                            
+                            # Add host column if it exists
+                            host_col = None
+                            for col in ['host', 'Host', 'willing_to_host']:
+                                if col in members_df.columns:
+                                    host_col = col
+                                    display_cols.append(host_col)
+                                    break
+                            
+                            # Show member data
+                            st.dataframe(members_df[display_cols])
+                            
+                            # Add special host analysis
+                            if host_col:
+                                st.subheader("Host Status Analysis")
+                                host_counts = members_df[host_col].value_counts().reset_index()
+                                host_counts.columns = ['Host Status', 'Count']
+                                st.dataframe(host_counts)
+                                
+                                # Quick visual confirmation
+                                always_hosts = sum(1 for h in members_df[host_col] if str(h).lower() in ['always', 'always host', 'yes', 'true'])
+                                sometimes_hosts = sum(1 for h in members_df[host_col] if str(h).lower() in ['sometimes', 'sometimes host', 'maybe'])
+                                
+                                st.write(f"Direct count from data: {always_hosts} Always Hosts, {sometimes_hosts} Sometimes Hosts")
+                                
+                                # Highlight discrepancies
+                                if always_hosts != circle_data.get('always_hosts', 0):
+                                    st.error(f"DISCREPANCY: Circle shows {circle_data.get('always_hosts', 0)} Always Hosts but data contains {always_hosts}")
+                                
+                                if sometimes_hosts != circle_data.get('sometimes_hosts', 0):
+                                    st.error(f"DISCREPANCY: Circle shows {circle_data.get('sometimes_hosts', 0)} Sometimes Hosts but data contains {sometimes_hosts}")
+                        else:
+                            st.warning("Could not retrieve member details from results data.")
+                    else:
+                        st.warning("No members found in this circle.")
+                else:
+                    st.error(f"Circle '{circle_id}' not found in metadata manager.")
+            else:
+                st.error("Metadata manager not available. Please run the optimization first.")
+                
+        # Add quick links to problematic circles
+        st.write("Quick access to test circles:")
+        test_circles = ['IP-BOS-04', 'IP-BOS-05']
+        cols = st.columns(len(test_circles))
+        for i, tc in enumerate(test_circles):
+            if cols[i].button(tc, key=f"quick_access_{tc}"):
+                # This will only work on next run due to how Streamlit works
+                st.session_state.circle_inspector_id = tc
+    
     results_df = st.session_state.results.copy() if 'results' in st.session_state else None
     
     # Diagnostics for debugging circle data
