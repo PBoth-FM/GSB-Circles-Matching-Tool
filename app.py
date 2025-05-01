@@ -194,12 +194,42 @@ def run_optimization():
             # CRITICAL: Apply centralized metadata fixes to results
             print("\n🔧 APPLYING CENTRALIZED METADATA FIXES AT SOURCE")
             try:
-                from utils.metadata_manager import fix_participant_metadata_in_results
-                # Apply the fixes to the results dataframe
-                fixed_results = fix_participant_metadata_in_results(results)
-                # Update with the fixed data
-                results = fixed_results
-                print("✅ Successfully applied metadata fixes to participant results")
+                # First try the new approach using CircleMetadataManager
+                from utils.circle_metadata_manager import initialize_or_update_manager
+                print("  Using CircleMetadataManager for comprehensive metadata management")
+                
+                # Initialize/update the circle metadata manager with optimizer results
+                circle_manager = initialize_or_update_manager(
+                    st.session_state,
+                    optimizer_circles=matched_circles,
+                    results_df=results
+                )
+                
+                # Log success and details of the manager
+                if circle_manager:
+                    print(f"  ✅ Successfully initialized/updated CircleMetadataManager")
+                    print(f"  Circle count: {len(circle_manager.get_all_circles())} circles")
+                    
+                    # Special debug for target circles
+                    for test_circle in ['IP-BOS-04', 'IP-BOS-05']:
+                        circle_data = circle_manager.get_circle_data(test_circle)
+                        if circle_data:
+                            print(f"\n  TARGET CIRCLE {test_circle} STATUS:")
+                            for key in ['always_hosts', 'sometimes_hosts', 'max_additions', 'member_count']:
+                                print(f"    {key}: {circle_data.get(key, 'Not Found')}")
+                else:
+                    print("  ⚠️ Could not initialize CircleMetadataManager")
+                    
+                # Legacy fallback in case we need it
+                try:
+                    from utils.metadata_manager import fix_participant_metadata_in_results
+                    # Apply the fixes to the results dataframe
+                    fixed_results = fix_participant_metadata_in_results(results)
+                    # Update with the fixed data
+                    results = fixed_results
+                    print("  ✅ Applied legacy metadata fixes to participant results")
+                except Exception as e:
+                    print(f"  ℹ️ Legacy metadata fixes not applied: {str(e)}")
             except Exception as e:
                 print(f"⚠️ Error applying metadata fixes: {str(e)}")
                 print("  Continuing with original results")
@@ -210,24 +240,46 @@ def run_optimization():
             st.session_state.exec_time = time.time() - start_time
             
             # ENHANCED APPROACH: Use CircleMetadataManager for consistent circle data management
-            from utils.circle_metadata_manager import CircleMetadataManager, initialize_or_update_manager
+            # Note: We already initialized this earlier, so this code is now redundant
+            # Simply retrieve the existing manager from session state
             
-            # Initialize metadata manager with circle data and results
-            print("\n🔄 INITIALIZING CIRCLE METADATA MANAGER: Central source of truth for all circle data")
-            manager = initialize_or_update_manager(st.session_state, matched_circles, results)
+            # Check if the manager was properly initialized
+            from utils.circle_metadata_manager import get_manager_from_session_state
+            
+            print("\n🔄 VERIFYING CIRCLE METADATA MANAGER INITIALIZATION")
+            manager = get_manager_from_session_state(st.session_state)
             
             if manager:
                 # For backward compatibility, we still set matched_circles in session state
                 # but the CircleMetadataManager is now the authoritative source
                 circles_df = manager.get_circles_dataframe()
                 st.session_state.matched_circles = circles_df
-                print(f"  ✅ Successfully initialized CircleMetadataManager with {len(circles_df)} circles")
+                print(f"  ✅ CircleMetadataManager is active with {len(circles_df)} circles")
+                
+                # Add special debug for target circles
+                for test_id in ['IP-BOS-04', 'IP-BOS-05']:
+                    circle_data = manager.get_circle_data(test_id)
+                    if circle_data:
+                        print(f"\n🔍 VALIDATION FOR {test_id} FROM METADATA MANAGER:")
+                        for key in ['max_additions', 'always_hosts', 'sometimes_hosts', 'member_count']:
+                            print(f"  {key}: {circle_data.get(key, 'Not Found')}")
             else:
-                st.session_state.matched_circles = matched_circles
-                print("  ⚠️ Failed to initialize CircleMetadataManager, falling back to direct storage")
-                # Log detailed types for debugging
-                print(f"  matched_circles type: {type(matched_circles)}")
-                print(f"  results type: {type(results)}")
+                # The manager was not initialized earlier, create it now
+                print("  ⚠️ CircleMetadataManager not found in session state, reinitializing")
+                from utils.circle_metadata_manager import initialize_or_update_manager
+                
+                # Initialize metadata manager with circle data and results
+                manager = initialize_or_update_manager(st.session_state, matched_circles, results)
+                if manager:
+                    circles_df = manager.get_circles_dataframe()
+                    st.session_state.matched_circles = circles_df
+                    print(f"  ✅ Successfully initialized CircleMetadataManager with {len(circles_df)} circles")
+                else:
+                    st.session_state.matched_circles = matched_circles
+                    print("  ⚠️ Failed to initialize CircleMetadataManager, falling back to direct storage")
+                    # Log detailed types for debugging
+                    print(f"  matched_circles type: {type(matched_circles)}")
+                    print(f"  results type: {type(results)}")
             
             # Debug verification of max_additions values
             print("\n🔍 VERIFYING MAX ADDITIONS: Checking that values are correctly preserved")
