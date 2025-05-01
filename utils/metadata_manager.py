@@ -104,10 +104,77 @@ def fix_participant_metadata_in_results(results_df):
     if has_subregion:
         unknown_subregions = fixed_results[fixed_results['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
         print(f"Initial state: {unknown_subregions} participants with Unknown subregion")
+        
+        # Check if Status column exists to identify CURRENT-CONTINUING participants
+        if 'Status' in fixed_results.columns:
+            continuing_mask = fixed_results['Status'].str.contains('CONTINUING', case=False, na=False)
+            continuing_unknown = fixed_results[continuing_mask & (fixed_results['proposed_NEW_Subregion'] == 'Unknown')]
+            print(f"CRITICAL: Found {len(continuing_unknown)} CONTINUING participants with Unknown subregion")
+            
+            # Sample display for debugging
+            if not continuing_unknown.empty:
+                print("Sample of continuing participants with unknown values:")
+                for i, (idx, row) in enumerate(continuing_unknown.head(3).iterrows()):
+                    circle_id = row.get(circle_column, 'N/A')
+                    encoded_id = row.get('Encoded ID', 'N/A')
+                    print(f"  #{i+1}: Encoded ID {encoded_id}, Circle {circle_id}, Status: {row.get('Status', 'N/A')}")
     
     if has_meeting_time:
         unknown_times = fixed_results[fixed_results['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
         print(f"Initial state: {unknown_times} participants with Unknown meeting time")
+    
+    # ENHANCED APPROACH: First check for circle IDs with consistent patterns
+    # (these are existing circles that should have metadata)
+    if circle_column in fixed_results.columns:
+        print("\n🔧 SPECIAL FIX: Analyzing circle ID patterns for metadata inference")
+        
+        # Get all circle IDs and extract region codes
+        all_circle_ids = fixed_results[fixed_results[circle_column].notna()][circle_column].unique()
+        print(f"Found {len(all_circle_ids)} unique circle IDs")
+        
+        # Extract ID patterns (e.g., IP-NYC-07, IP-BOS-07)
+        pattern_circles = [c_id for c_id in all_circle_ids if isinstance(c_id, str) 
+                          and c_id.startswith('IP-') and '-' in c_id and c_id != 'UNMATCHED']
+        
+        print(f"Found {len(pattern_circles)} circles with standard ID pattern")
+        if pattern_circles:
+            print(f"Sample circles: {pattern_circles[:5]}")
+            
+            # Map region codes to full region names
+            region_code_map = {
+                'NYC': 'New York',
+                'BOS': 'Boston',
+                'SFO': 'San Francisco',
+                'EAB': 'East Bay',
+                'PEN': 'Peninsula',
+                'ATL': 'Atlanta',
+                'MAR': 'Marin County',
+                'PAL': 'Palo Alto',
+                'SEA': 'Seattle',
+                'POR': 'Portland',
+                'CHI': 'Chicago',
+                'LAX': 'Los Angeles',
+                'PSA': 'Phoenix/Scottsdale/Arizona'
+            }
+            
+            # Add direct region and subregion defaults for circle IDs
+            circle_defaults = {}
+            for c_id in pattern_circles:
+                parts = c_id.split('-')
+                if len(parts) >= 2:
+                    region_code = parts[1]
+                    if region_code in region_code_map:
+                        region_name = region_code_map[region_code]
+                        circle_defaults[c_id] = {
+                            'region': region_name,
+                            'subregion': region_name  # Use region name as default subregion
+                        }
+                        
+                        # Add default meeting time based on region
+                        if region_name in FALLBACK_MEETING_TIMES:
+                            circle_defaults[c_id]['meeting_time'] = FALLBACK_MEETING_TIMES[region_name]
+            
+            print(f"Created default metadata for {len(circle_defaults)} circles based on ID patterns")
     
     # First approach: Build circle metadata by aggregating participant data by circle
     print("\nApproach 1: Build circle metadata from participant data")
@@ -146,7 +213,21 @@ def fix_participant_metadata_in_results(results_df):
                 circle_metadata[circle_id]['meeting_time'] = valid_times.iloc[0]
                 print(f"✅ Found valid meeting time for {circle_id}: '{valid_times.iloc[0]}'")
     
-    print(f"Built metadata for {len(circle_metadata)} circles")
+    print(f"Built metadata for {len(circle_metadata)} circles from participant data")
+    
+    # Combine with pattern-based defaults
+    if 'circle_defaults' in locals():
+        for circle_id, defaults in circle_defaults.items():
+            # Only add default metadata if we don't already have it from participants
+            if circle_id not in circle_metadata:
+                circle_metadata[circle_id] = defaults
+            else:
+                # Add defaults for missing fields
+                for key, value in defaults.items():
+                    if key not in circle_metadata[circle_id]:
+                        circle_metadata[circle_id][key] = value
+        
+        print(f"Combined metadata now covers {len(circle_metadata)} circles")
     
     # Apply the metadata fixes to all participants in each circle
     fixed_subregions = 0
@@ -161,18 +242,17 @@ def fix_participant_metadata_in_results(results_df):
         circle_id = row.get(circle_column)
         
         # Only fix participants who are assigned to a circle
-        if pd.notna(circle_id) and circle_id != 'UNMATCHED' and circle_id in circle_metadata:
+        if pd.notna(circle_id) and circle_id != 'UNMATCHED':
             region = row.get('region', '')
-            circle_meta = circle_metadata[circle_id]
             
             # Fix subregion
             if has_subregion and row['proposed_NEW_Subregion'] == 'Unknown':
-                # Method 1: Use shared circle metadata
-                if 'subregion' in circle_meta:
-                    fixed_results.at[i, 'proposed_NEW_Subregion'] = circle_meta['subregion']
+                # Method 1: Use circle metadata (including pattern-derived defaults)
+                if circle_id in circle_metadata and 'subregion' in circle_metadata[circle_id]:
+                    fixed_results.at[i, 'proposed_NEW_Subregion'] = circle_metadata[circle_id]['subregion']
                     fixed_subregions += 1
                     if len(subregion_fix_samples) < 5:
-                        subregion_fix_samples.append((circle_id, circle_meta['subregion']))
+                        subregion_fix_samples.append((circle_id, circle_metadata[circle_id]['subregion']))
                 # Method 2: Use region-based defaults
                 elif region and region in REGION_SUBREGION_MAP:
                     fixed_results.at[i, 'proposed_NEW_Subregion'] = region
@@ -182,12 +262,12 @@ def fix_participant_metadata_in_results(results_df):
             
             # Fix meeting time
             if has_meeting_time and row['proposed_NEW_DayTime'] == 'Unknown':
-                # Method 1: Use shared circle metadata
-                if 'meeting_time' in circle_meta:
-                    fixed_results.at[i, 'proposed_NEW_DayTime'] = circle_meta['meeting_time']
+                # Method 1: Use circle metadata (including pattern-derived defaults)
+                if circle_id in circle_metadata and 'meeting_time' in circle_metadata[circle_id]:
+                    fixed_results.at[i, 'proposed_NEW_DayTime'] = circle_metadata[circle_id]['meeting_time']
                     fixed_meeting_times += 1
                     if len(meeting_time_fix_samples) < 5:
-                        meeting_time_fix_samples.append((circle_id, circle_meta['meeting_time']))
+                        meeting_time_fix_samples.append((circle_id, circle_metadata[circle_id]['meeting_time']))
                 # Method 2: Use region-based defaults
                 elif region and region in FALLBACK_MEETING_TIMES:
                     fixed_results.at[i, 'proposed_NEW_DayTime'] = FALLBACK_MEETING_TIMES[region]
@@ -209,9 +289,52 @@ def fix_participant_metadata_in_results(results_df):
         remaining = fixed_results[fixed_results['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
         print(f"Final check: {remaining} participants still have Unknown subregion values")
         
+        # Check remaining CURRENT-CONTINUING participants
+        if 'Status' in fixed_results.columns:
+            continuing_mask = fixed_results['Status'].str.contains('CONTINUING', case=False, na=False)
+            still_unknown = fixed_results[continuing_mask & (fixed_results['proposed_NEW_Subregion'] == 'Unknown')]
+            if not still_unknown.empty:
+                print(f"\n⚠️ ATTENTION: Still have {len(still_unknown)} CONTINUING participants with Unknown subregion")
+                print("Sample of continuing participants still with unknown values:")
+                for i, (idx, row) in enumerate(still_unknown.head(3).iterrows()):
+                    circle_id = row.get(circle_column, 'N/A')
+                    encoded_id = row.get('Encoded ID', 'N/A')
+                    print(f"  #{i+1}: Encoded ID {encoded_id}, Circle {circle_id}")
+        
     if has_meeting_time:
         remaining = fixed_results[fixed_results['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
         print(f"Final check: {remaining} participants still have Unknown meeting time values")
+    
+    # Additional region-specific fix for any remaining unknown values
+    # This is a last resort for any participants that still have unknown values
+    if (remaining > 0 and has_subregion) or (has_meeting_time and fixed_results[fixed_results['proposed_NEW_DayTime'] == 'Unknown'].shape[0] > 0):
+        print("\n🔧 FINAL FIX: Applying region-based defaults to any remaining unknowns")
+        fixed_count = 0
+        
+        for i, row in fixed_results.iterrows():
+            region = row.get('region', '')
+            
+            if region and region in REGION_SUBREGION_MAP:
+                # Fix subregion
+                if has_subregion and row['proposed_NEW_Subregion'] == 'Unknown':
+                    fixed_results.at[i, 'proposed_NEW_Subregion'] = region
+                    fixed_count += 1
+                
+                # Fix meeting time
+                if has_meeting_time and row['proposed_NEW_DayTime'] == 'Unknown' and region in FALLBACK_MEETING_TIMES:
+                    fixed_results.at[i, 'proposed_NEW_DayTime'] = FALLBACK_MEETING_TIMES[region]
+                    fixed_count += 1
+        
+        print(f"Applied {fixed_count} additional region-based fixes")
+        
+        # Final final check
+        if has_subregion:
+            final_unknown = fixed_results[fixed_results['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+            print(f"After final fix: {final_unknown} participants still have Unknown subregion")
+            
+        if has_meeting_time:
+            final_unknown = fixed_results[fixed_results['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+            print(f"After final fix: {final_unknown} participants still have Unknown meeting time")
     
     return fixed_results
 

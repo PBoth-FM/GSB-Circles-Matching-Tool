@@ -39,9 +39,26 @@ def generate_download_link(df):
     # Create a copy to avoid modifying the original DataFrame
     output_df = df.copy()
     
-    # DIAGNOSTICS: Count participants in CSV before processing
-    print("\n🔍 CSV GENERATION DIAGNOSTICS")
+    # ENHANCED DIAGNOSTICS: Count participants in CSV before processing
+    print("\n🔍 🔍 🔍 CSV GENERATION DIAGNOSTICS - ENHANCED DEBUG 🔍 🔍 🔍")
     print(f"  Initial DataFrame shape: {output_df.shape}")
+    
+    # Debug: Check for specific columns we expect to have issues with
+    meta_columns = ['proposed_NEW_Subregion', 'proposed_NEW_DayTime', 'proposed_NEW_circles_id']
+    for col in meta_columns:
+        if col in output_df.columns:
+            print(f"  ✓ Column '{col}' exists in dataframe")
+        else:
+            print(f"  ⚠️ Column '{col}' NOT FOUND in dataframe!")
+    
+    # Count Unknown values in key columns before any fixes
+    if 'proposed_NEW_Subregion' in output_df.columns:
+        unknown_count = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+        print(f"  PRE-FIX: Found {unknown_count} rows with 'Unknown' subregion value")
+        
+    if 'proposed_NEW_DayTime' in output_df.columns:
+        unknown_count = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+        print(f"  PRE-FIX: Found {unknown_count} rows with 'Unknown' meeting time value")
     
     # Check for matched vs unmatched before any filtering
     if 'proposed_NEW_circles_id' in output_df.columns:
