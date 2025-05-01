@@ -2299,6 +2299,160 @@ def render_class_vintage_analysis(data):
 
 # East Bay debug tab function was removed to focus exclusively on Seattle test case
 
+def render_metadata_debug_tab():
+    """Render the metadata validation debug section"""
+    st.write("### Metadata Validation")
+    st.write("This section validates the consistency of circle metadata across the application.")
+    
+    # Import needed utilities
+    from utils.feature_flags import get_flag
+    from utils.circle_metadata_manager import CircleMetadataManager
+    
+    # Check if metadata validation is enabled
+    if get_flag('enable_metadata_validation'):
+        # Create tabs for different validation aspects
+        val_tab1, val_tab2 = st.tabs(["Metadata Sources", "Member Count Validation"])
+        
+        # Function to validate circle metadata
+        def validate_circle_metadata():
+            """Validate the circle metadata and return analysis results"""
+            validation_results = {
+                "sources": {},
+                "member_counts": {}
+            }
+            
+            # Check if we have matched circles to analyze
+            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+                circles_df = st.session_state.matched_circles
+                
+                # Analyze metadata sources
+                if 'metadata_source' in circles_df.columns:
+                    source_counts = circles_df['metadata_source'].value_counts().to_dict()
+                    validation_results["sources"] = {
+                        "has_source_column": True,
+                        "counts": source_counts,
+                        "total": len(circles_df)
+                    }
+                else:
+                    validation_results["sources"] = {
+                        "has_source_column": False,
+                        "counts": {},
+                        "total": len(circles_df)
+                    }
+                
+                # Analyze member counts
+                if 'member_count' in circles_df.columns and 'members' in circles_df.columns:
+                    # Check for mismatches between member_count and actual members list length
+                    mismatches = 0
+                    for _, row in circles_df.iterrows():
+                        member_count = row.get('member_count', 0)
+                        members_list = row.get('members', [])
+                        
+                        # Handle different formats of members list
+                        if isinstance(members_list, str) and '[' in members_list:
+                            try:
+                                members_list = eval(members_list)
+                            except:
+                                members_list = []
+                        
+                        actual_count = len(members_list) if isinstance(members_list, list) else 0
+                        
+                        if member_count != actual_count:
+                            mismatches += 1
+                    
+                    validation_results["member_counts"] = {
+                        "total_circles": len(circles_df),
+                        "mismatches": mismatches,
+                        "match_percentage": (len(circles_df) - mismatches) / len(circles_df) if len(circles_df) > 0 else 0
+                    }
+                else:
+                    validation_results["member_counts"] = {
+                        "total_circles": len(circles_df),
+                        "missing_columns": True
+                    }
+            
+            # Check for metadata manager
+            manager = CircleMetadataManager()
+            all_manager_circles = manager.get_all_circles()
+            validation_results["metadata_manager"] = {
+                "circle_count": len(all_manager_circles),
+                "has_circles": len(all_manager_circles) > 0
+            }
+            
+            return validation_results
+        
+        # Run validation
+        validation_data = validate_circle_metadata()
+        
+        with val_tab1:
+            st.write("#### Metadata Source Analysis")
+            
+            sources_data = validation_data.get("sources", {})
+            if sources_data.get("has_source_column", False):
+                source_counts = sources_data.get("counts", {})
+                total_circles = sources_data.get("total", 0)
+                
+                # Create a summary dataframe
+                source_df = pd.DataFrame({
+                    "Source": list(source_counts.keys()),
+                    "Count": list(source_counts.values())
+                })
+                
+                if not source_df.empty:
+                    source_df["Percentage"] = (source_df["Count"] / total_circles * 100).round(1).astype(str) + '%'
+                    st.dataframe(source_df, use_container_width=True)
+                    
+                    # Check for optimizer metadata
+                    optimizer_count = source_counts.get("optimizer", 0)
+                    if get_flag("use_optimizer_metadata") and optimizer_count == 0:
+                        st.warning("⚠️ 'use_optimizer_metadata' flag is enabled but no circles have 'optimizer' as the metadata source!")
+                    elif not get_flag("use_optimizer_metadata") and optimizer_count > 0:
+                        st.info("ℹ️ Some circles have 'optimizer' as the metadata source but 'use_optimizer_metadata' flag is disabled.")
+                else:
+                    st.info("No metadata source information available.")
+            else:
+                st.warning("⚠️ No 'metadata_source' column found in circles data.")
+            
+            # Check metadata manager
+            manager_data = validation_data.get("metadata_manager", {})
+            st.write("#### CircleMetadataManager Status")
+            st.write(f"Circles in metadata manager: {manager_data.get('circle_count', 0)}")
+            
+            if not manager_data.get("has_circles", False):
+                st.warning("⚠️ No circles found in the CircleMetadataManager!")
+        
+        with val_tab2:
+            st.write("#### Member Count Validation")
+            
+            counts_data = validation_data.get("member_counts", {})
+            if counts_data.get("missing_columns", False):
+                st.warning("⚠️ Missing required columns for member count validation.")
+            else:
+                total = counts_data.get("total_circles", 0)
+                mismatches = counts_data.get("mismatches", 0)
+                match_percentage = counts_data.get("match_percentage", 0) * 100
+                
+                # Create a summary
+                st.write(f"Total circles: {total}")
+                st.write(f"Member count mismatches: {mismatches}")
+                st.write(f"Member count accuracy: {match_percentage:.1f}%")
+                
+                if mismatches > 0:
+                    st.warning(f"⚠️ Found {mismatches} circles where 'member_count' doesn't match the actual length of the members list.")
+                else:
+                    st.success("✅ All member counts match the actual members list length.")
+    else:
+        # Metadata validation is disabled
+        st.info("Enable metadata validation in the Feature Flags section to see validation results.")
+        st.write("This will help diagnose issues with circle metadata processing and display.")
+        
+        # Add toggle button for quick enable
+        if st.button("Enable Metadata Validation"):
+            from utils.feature_flags import set_flag
+            set_flag('enable_metadata_validation', True)
+            st.success("✅ Metadata validation enabled! Refresh this section to see results.")
+            
+
 def render_debug_tab():
     """Render the debug tab content"""
     st.subheader("Debug Information")
@@ -3449,11 +3603,15 @@ def render_debug_tab():
         logs = st.session_state.seattle_debug_logs
         
         if logs and len(logs) > 0:
-            
             # Create tabs for different views
             seattle_tab1, seattle_tab2, seattle_tab3 = st.tabs(["Complete Logs", "IP-SEA-01 Analysis", "Compatibility Checks"])
             
             with seattle_tab1:
+                st.write("Seattle debug logs would appear here")
+    
+    with debug_tab6:
+        # Use our standalone function for metadata debug
+        render_metadata_debug_tab()
                 logs_text = "\n".join(logs)
                 st.text_area("Seattle Debug Logs", logs_text, height=400, key="seattle_logs_area")
                 
