@@ -657,8 +657,11 @@ def process_uploaded_file(uploaded_file):
                         st.warning(f"Unexpected matched_circles type: {type(st.session_state.matched_circles)}")
                         circles_df = pd.DataFrame()  # Empty DataFrame as fallback
                     
-                    # ENHANCED: Debug subregion and meeting_time data in Streamlit session state
-                    print("\n🔍 CIRCLE COMPOSITION DEBUG: Examining circle data in session state")
+                    # SYSTEM UPGRADE: Using the centralized metadata manager for comprehensive fixing
+                    from utils.metadata_manager import debug_circle_metadata, fill_circle_metadata
+                    import logging
+                    
+                    print("\n🔍 CIRCLE COMPOSITION DEBUG: Using centralized metadata manager")
                     print(f"Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
                     if hasattr(circles_df, 'columns'):
                         print(f"Available columns: {list(circles_df.columns)}")
@@ -682,7 +685,7 @@ def process_uploaded_file(uploaded_file):
                                 unknown_circles = circles_df[circles_df['meeting_time'] == 'Unknown']['circle_id'].tolist()[:5]
                                 print(f"Sample circles with Unknown meeting time: {unknown_circles}")
                     
-                    # CRITICAL DEBUG: Log a sample of circle data to debug unknown values
+                    # CRITICAL DEBUG: Log a detailed sample of raw circle data
                     if hasattr(circles_df, 'iterrows'):
                         print("\n🔍 SAMPLE CIRCLE DATA FOR FIRST 3 CIRCLES WITH UNKNOWN SUBREGION OR MEETING TIME:")
                         sample_count = 0
@@ -703,37 +706,91 @@ def process_uploaded_file(uploaded_file):
                                     if not pd.isna(val) and col not in ['circle_id', 'region', 'subregion', 'meeting_time']:
                                         print(f"    {col}: {val}")
                     
-                    # Enhanced: Before displaying, improve the quality of the data
-                    # Fill in missing subregion and meeting time from participant data
-                    if 'results' in st.session_state and ('subregion' in circles_df.columns or 'meeting_time' in circles_df.columns):
-                        print("\n🔧 ATTEMPTING TO FIX UNKNOWN VALUES FROM PARTICIPANT DATA")
+                    # COMPREHENSIVE FIX: Apply centralized metadata manager to fix Unknown values
+                    # First, check the results_df columns to debug why previous fix attempts failed
+                    if 'results' in st.session_state and st.session_state.results is not None:
                         results_df = st.session_state.results
                         
-                        # For each circle, check if we can find better data in the participant records
-                        for i, row in circles_df.iterrows():
-                            circle_id = row['circle_id']
-                            needs_fix = (row.get('subregion', '') == 'Unknown' or row.get('meeting_time', '') == 'Unknown')
-                            
-                            if needs_fix:
-                                # Find all participants in this circle
-                                circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+                        # Examine results columns to understand why previous fixes failed
+                        print("\n🔍 DETAILED RESULTS DATA ANALYSIS:")
+                        print(f"Results DataFrame shape: {results_df.shape}")
+                        print(f"Results columns: {list(results_df.columns)}")
+                        
+                        # Check for specific columns that we expect to use for repairs
+                        interesting_cols = [
+                            'proposed_NEW_circles_id', 'assigned_circle', 'circle_id',
+                            'proposed_NEW_Subregion', 'proposed_NEW_DayTime', 'Current_Subregion', 
+                            'Current_Meeting_Time', 'Subregion', 'Meeting_Time'
+                        ]
+                        
+                        found_cols = [col for col in interesting_cols if col in results_df.columns]
+                        print(f"Found these interesting columns: {found_cols}")
+                        
+                        # Check what values exist in the identified columns
+                        if found_cols:
+                            print("Sample values from key columns:")
+                            for col in found_cols[:5]:  # Show first 5 columns max
+                                print(f"  Column '{col}':")
+                                # Get unique non-null values
+                                values = results_df[col].dropna().unique()
+                                if len(values) > 0:
+                                    # Show up to 5 sample values
+                                    print(f"    Sample values: {values[:5]}")
+                                else:
+                                    print(f"    No non-null values found")
+                        
+                        # Now apply the comprehensive fix using our metadata manager
+                        # Set up logging to capture detailed output
+                        logging.basicConfig(level=logging.INFO)
+                        
+                        # Debug and log the circle metadata issues
+                        debug_circle_metadata(circles_df)
+                        
+                        # Apply the comprehensive fix
+                        print("\n🔧 APPLYING COMPREHENSIVE METADATA FIX")
+                        fixed_circles_df = fill_circle_metadata(circles_df, results_df)
+                        
+                        # Update the circles DataFrame with the fixed version
+                        circles_df = fixed_circles_df
+                        
+                        # Final verification
+                        if 'subregion' in circles_df.columns:
+                            unknown_count = circles_df[circles_df['subregion'] == 'Unknown'].shape[0]
+                            if unknown_count > 0:
+                                print(f"⚠️ After fixes, still have {unknown_count} circles with Unknown subregion")
+                            else:
+                                print("✅ All circles now have valid subregion data!")
                                 
-                                if not circle_members.empty:
-                                    # Look for subregion data
-                                    if row.get('subregion', '') == 'Unknown' and 'proposed_NEW_Subregion' in circle_members.columns:
-                                        # Get unique non-null subregions from participant data
-                                        subregions = circle_members['proposed_NEW_Subregion'].dropna().unique()
-                                        if len(subregions) > 0 and subregions[0] != 'Unknown':
-                                            circles_df.at[i, 'subregion'] = subregions[0]
-                                            print(f"  ✅ Fixed subregion for circle {circle_id}: '{subregions[0]}'")
-                                    
-                                    # Look for meeting time data
-                                    if row.get('meeting_time', '') == 'Unknown' and 'proposed_NEW_DayTime' in circle_members.columns:
-                                        # Get unique non-null meeting times from participant data
-                                        meeting_times = circle_members['proposed_NEW_DayTime'].dropna().unique()
-                                        if len(meeting_times) > 0 and meeting_times[0] != 'Unknown':
-                                            circles_df.at[i, 'meeting_time'] = meeting_times[0]
-                                            print(f"  ✅ Fixed meeting time for circle {circle_id}: '{meeting_times[0]}'")
+                        if 'meeting_time' in circles_df.columns:
+                            unknown_count = circles_df[circles_df['meeting_time'] == 'Unknown'].shape[0]
+                            if unknown_count > 0:
+                                print(f"⚠️ After fixes, still have {unknown_count} circles with Unknown meeting time")
+                            else:
+                                print("✅ All circles now have valid meeting time data!")
+                    else:
+                        print("⚠️ No results data available for metadata fixes")
+                        
+                    # If we still have unknowns after the comprehensive fix, log which circles remain problematic
+                    if hasattr(circles_df, 'columns'):
+                        remaining_unknown = []
+                        if 'subregion' in circles_df.columns and 'meeting_time' in circles_df.columns:
+                            still_unknown = circles_df[
+                                (circles_df['subregion'] == 'Unknown') | 
+                                (circles_df['meeting_time'] == 'Unknown')
+                            ]
+                            
+                            if not still_unknown.empty:
+                                print("\n⚠️ REMAINING PROBLEM CIRCLES:")
+                                for _, row in still_unknown.iterrows():
+                                    circle_id = row.get('circle_id', 'Unknown')
+                                    region = row.get('region', 'Unknown')
+                                    subregion = row.get('subregion', 'Unknown')
+                                    meeting_time = row.get('meeting_time', 'Unknown')
+                                    print(f"Circle {circle_id} (Region: {region})")
+                                    if subregion == 'Unknown':
+                                        print(f"  ⚠️ Missing subregion")
+                                    if meeting_time == 'Unknown':
+                                        print(f"  ⚠️ Missing meeting time")
                     
                     # Extract key columns as specified
                     display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 'new_members', 'max_additions', 'always_hosts', 'sometimes_hosts']
