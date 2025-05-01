@@ -2313,13 +2313,29 @@ def render_metadata_debug_tab():
         # Create tabs for different validation aspects
         val_tab1, val_tab2 = st.tabs(["Metadata Sources", "Member Count Validation"])
         
-        # Function to validate circle metadata
+        # Function to validate circle metadata using CircleMetadataManager as source of truth
         def validate_circle_metadata():
             """Validate the circle metadata and return analysis results"""
+            from utils.data_standardization import normalize_host_status, normalize_member_list
+            from utils.circle_metadata_manager import get_manager_from_session_state
+            
             validation_results = {
                 "sources": {},
-                "member_counts": {}
+                "member_counts": {},
+                "host_counts": {},
+                "metadata_manager": {
+                    "available": False,
+                    "circles": 0
+                }
             }
+            
+            # Get the CircleMetadataManager if available
+            manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+            
+            # Check if manager is available and initialized
+            if manager:
+                validation_results["metadata_manager"]["available"] = True
+                validation_results["metadata_manager"]["circles"] = len(manager.circles)
             
             # Check if we have matched circles to analyze
             if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
@@ -2340,13 +2356,22 @@ def render_metadata_debug_tab():
                         "total": len(circles_df)
                     }
                 
-                # Analyze member counts
+                # Get the results DataFrame for member metadata
+                results_df = st.session_state.results.copy() if 'results' in st.session_state else None
+                
+                # Analyze member counts and host counts using standardized utility functions
+                member_count_mismatches = []
+                host_count_mismatches = []
+                
                 if 'member_count' in circles_df.columns and 'members' in circles_df.columns:
                     # Check for mismatches between member_count and actual members list length
-                    mismatches = 0
                     for _, row in circles_df.iterrows():
+                        circle_id = row.get('circle_id', 'unknown')
                         member_count = row.get('member_count', 0)
                         members_list = row.get('members', [])
+                        
+                        # Use the normalizer to ensure consistent member list format
+                        normalized_members = normalize_member_list(members_list)
                         
                         # Handle different formats of members list
                         if isinstance(members_list, str) and '[' in members_list:
@@ -2355,15 +2380,20 @@ def render_metadata_debug_tab():
                             except:
                                 members_list = []
                         
-                        actual_count = len(members_list) if isinstance(members_list, list) else 0
+                        actual_count = len(normalized_members) if isinstance(normalized_members, list) else 0
                         
                         if member_count != actual_count:
-                            mismatches += 1
+                            member_count_mismatches.append({
+                                'circle_id': circle_id,
+                                'stored_count': member_count,
+                                'actual_count': actual_count
+                            })
                     
                     validation_results["member_counts"] = {
                         "total_circles": len(circles_df),
-                        "mismatches": mismatches,
-                        "match_percentage": (len(circles_df) - mismatches) / len(circles_df) if len(circles_df) > 0 else 0
+                        "mismatches": len(member_count_mismatches),
+                        "mismatch_details": member_count_mismatches,
+                        "match_percentage": (len(circles_df) - len(member_count_mismatches)) / len(circles_df) if len(circles_df) > 0 else 0
                     }
                 else:
                     validation_results["member_counts"] = {
