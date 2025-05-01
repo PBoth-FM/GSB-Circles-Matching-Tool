@@ -28,8 +28,23 @@ def normalize_host_status(status_value: Any) -> str:
         logger.info(f"Standardizing host status: '{status_value}' (type: {type(status_value).__name__})")
     
     # Handle None/NaN values
-    if pd.isna(status_value) or status_value is None:
+    if status_value is None:
         return "NEVER"
+    
+    try:
+        # For pandas arrays/series and numpy arrays, check if all values are NaN
+        if hasattr(pd.isna(status_value), '__iter__'):
+            if pd.isna(status_value).all():
+                return "NEVER"
+        # For scalar values
+        elif pd.isna(status_value):
+            return "NEVER"
+    except Exception as e:
+        # If there's any error in checking, log it and try to proceed
+        logger.warning(f"Error checking NaN in host status: {str(e)}")
+        # Default to NEVER for any errors
+        if not status_value:
+            return "NEVER"
     
     # Convert to string for consistent processing
     status_str = str(status_value).strip().upper()
@@ -96,7 +111,9 @@ def normalize_member_list(members_value: Any) -> List[str]:
         # but make sure it's a list
         if isinstance(members_value, list):
             return members_value
-        elif pd.isna(members_value) or members_value is None:
+        elif members_value is None:
+            return []
+        elif isinstance(members_value, (float, int, str)) and pd.isna(members_value):
             return []
         else:
             return [members_value]
@@ -107,8 +124,24 @@ def normalize_member_list(members_value: Any) -> List[str]:
         logger.info(f"Standardizing member list: '{members_value}' (type: {type(members_value).__name__})")
     
     # Handle None/NaN values
-    if pd.isna(members_value) or members_value is None:
+    # Use pd.isna().all() for arrays, or direct check for scalar values
+    if members_value is None:
         return []
+    
+    try:
+        # For pandas arrays/series and numpy arrays, check if all values are NaN
+        if hasattr(pd.isna(members_value), '__iter__'):
+            if pd.isna(members_value).all():
+                return []
+        # For scalar values
+        elif pd.isna(members_value):
+            return []
+    except Exception as e:
+        # If there's any error in checking, log it and try to proceed
+        logger.warning(f"Error checking NaN in member list: {str(e)}")
+        # If we can't determine, but it's clearly empty/None-like, return empty list
+        if members_value in (None, [], "", {}):
+            return []
     
     # If it's already a list, validate the items
     if isinstance(members_value, list):
@@ -223,8 +256,23 @@ def normalize_encoded_id(id_value: Any) -> str:
         str: Normalized ID as string.
     """
     # Handle None/NaN values
-    if pd.isna(id_value) or id_value is None:
+    if id_value is None:
         return ""
+    
+    try:
+        # For pandas arrays/series and numpy arrays, check if all values are NaN
+        if hasattr(pd.isna(id_value), '__iter__'):
+            if pd.isna(id_value).all():
+                return ""
+        # For scalar values
+        elif pd.isna(id_value):
+            return ""
+    except Exception as e:
+        # If there's any error in checking, log it and try to proceed
+        logger.warning(f"Error checking NaN in id value: {str(e)}")
+        # If we can't determine, but it seems empty, return empty string
+        if not id_value:
+            return ""
     
     # Convert to string
     return str(id_value).strip()
