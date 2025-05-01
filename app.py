@@ -205,6 +205,24 @@ def run_optimization():
                 from utils.circle_metadata_manager import initialize_or_update_manager
                 print("  Using CircleMetadataManager for comprehensive metadata management")
                 
+                # Add metadata_source column to matched_circles if it doesn't exist already
+                if isinstance(matched_circles, pd.DataFrame) and not matched_circles.empty:
+                    # Check if we need to add metadata_source column
+                    if 'metadata_source' not in matched_circles.columns:
+                        print("  Adding metadata_source column to matched_circles")
+                        matched_circles['metadata_source'] = 'optimizer'
+                    
+                    # Debug what's in the matched_circles DataFrame
+                    print(f"  Number of matched circles: {len(matched_circles)}")
+                    if len(matched_circles) > 0 and 'circle_id' in matched_circles.columns:
+                        print(f"  Sample circle IDs: {matched_circles['circle_id'].head(5).tolist()}")
+                
+                # Get feature flag
+                from utils.feature_flags import get_flag
+                use_optimizer_metadata = get_flag('use_optimizer_metadata')
+                if use_optimizer_metadata:
+                    print("  ✅ Using optimizer metadata for circle reconstruction")
+                    
                 # Initialize/update the circle metadata manager with optimizer results
                 circle_manager = initialize_or_update_manager(
                     st.session_state,

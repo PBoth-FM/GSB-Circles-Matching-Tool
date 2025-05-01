@@ -96,6 +96,28 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     circle_members = {}
     circle_metadata = {}
     
+    # If we're using standardized metadata from the optimizer, we may have it already
+    if use_standardized_metadata:
+        # Check if there's optimizer metadata in the original circles
+        has_optimizer_metadata = False
+        if isinstance(original_circles, pd.DataFrame) and not original_circles.empty:
+            # Check for metadata_source column which would indicate optimizer metadata
+            if 'metadata_source' in original_circles.columns:
+                optimizer_circles = original_circles[original_circles['metadata_source'] == 'optimizer']
+                if not optimizer_circles.empty:
+                    print(f"  ✅ Found {len(optimizer_circles)} circles with optimizer metadata")
+                    has_optimizer_metadata = True
+                    
+                    # Use the optimizer's circle metadata as our starting point
+                    for _, circle in optimizer_circles.iterrows():
+                        circle_id = circle['circle_id']
+                        circle_metadata[circle_id] = circle.to_dict()
+                        print(f"  ✅ Loaded optimizer metadata for circle {circle_id}")
+        
+        if not has_optimizer_metadata:
+            print("  ⚠️ No optimizer metadata found in original_circles, proceeding with standard reconstruction")
+            use_standardized_metadata = False  # Fall back to standard reconstruction
+    
     # Extract all participants assigned to circles (not UNMATCHED)
     matched_df = results_df[results_df[circle_column] != 'UNMATCHED']
     print(f"  Found {len(matched_df)} matched participants")
