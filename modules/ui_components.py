@@ -3895,18 +3895,60 @@ def render_circle_table():
                                 host_counts.columns = ['Host Status', 'Count']
                                 st.dataframe(host_counts)
                                 
-                                # Quick visual confirmation
-                                always_hosts = sum(1 for h in members_df[host_col] if str(h).lower() in ['always', 'always host', 'yes', 'true'])
-                                sometimes_hosts = sum(1 for h in members_df[host_col] if str(h).lower() in ['sometimes', 'sometimes host', 'maybe'])
+                                # Use standardized host status normalization from data_standardization module
+                                from utils.data_standardization import normalize_host_status
                                 
-                                st.write(f"Direct count from data: {always_hosts} Always Hosts, {sometimes_hosts} Sometimes Hosts")
+                                # Count using standardized method
+                                always_count = 0
+                                sometimes_count = 0
+                                
+                                # Show detailed host status analysis
+                                st.write("### Host Status Normalization")
+                                st.write("This shows how each member's host status is standardized:")
+                                
+                                host_analysis = []
+                                for _, row in members_df.iterrows():
+                                    raw_value = row[host_col] if not pd.isna(row[host_col]) else None
+                                    normalized = normalize_host_status(raw_value)
+                                    
+                                    # Count based on standardized values
+                                    if normalized == 'ALWAYS':
+                                        always_count += 1
+                                    elif normalized == 'SOMETIMES':
+                                        sometimes_count += 1
+                                        
+                                    host_analysis.append({
+                                        'Encoded ID': row['Encoded ID'],
+                                        'Raw Host Value': str(raw_value),
+                                        'Standardized Value': normalized
+                                    })
+                                
+                                # Show the normalization analysis
+                                host_analysis_df = pd.DataFrame(host_analysis)
+                                st.dataframe(host_analysis_df)
+                                
+                                # Show the standardized counts
+                                st.write(f"**Standardized host counts:** {always_count} Always, {sometimes_count} Sometimes")
+                                st.write(f"**Metadata manager values:** {circle_data.get('always_hosts', 0)} Always, {circle_data.get('sometimes_hosts', 0)} Sometimes")
                                 
                                 # Highlight discrepancies
-                                if always_hosts != circle_data.get('always_hosts', 0):
-                                    st.error(f"DISCREPANCY: Circle shows {circle_data.get('always_hosts', 0)} Always Hosts but data contains {always_hosts}")
+                                if always_count != circle_data.get('always_hosts', 0):
+                                    st.error(f"DISCREPANCY: Circle shows {circle_data.get('always_hosts', 0)} Always Hosts but standardized count is {always_count}")
+                                    
+                                    # Show explanation for debugging
+                                    st.info("This discrepancy could be caused by:"
+                                           "\n1. The metadata hasn't been updated with the latest standardization"
+                                           "\n2. Different standardization logic was used when metadata was created"
+                                           "\n3. Data has changed since metadata was last calculated")
                                 
-                                if sometimes_hosts != circle_data.get('sometimes_hosts', 0):
-                                    st.error(f"DISCREPANCY: Circle shows {circle_data.get('sometimes_hosts', 0)} Sometimes Hosts but data contains {sometimes_hosts}")
+                                if sometimes_count != circle_data.get('sometimes_hosts', 0):
+                                    st.error(f"DISCREPANCY: Circle shows {circle_data.get('sometimes_hosts', 0)} Sometimes Hosts but standardized count is {sometimes_count}")
+                                    
+                                    # Show explanation for debugging
+                                    st.info("This discrepancy could be caused by:"
+                                           "\n1. The metadata hasn't been updated with the latest standardization"
+                                           "\n2. Different standardization logic was used when metadata was created"
+                                           "\n3. Data has changed since metadata was last calculated")
                         else:
                             st.warning("Could not retrieve member details from results data.")
                     else:
