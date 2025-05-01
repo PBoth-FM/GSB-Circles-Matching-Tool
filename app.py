@@ -657,6 +657,84 @@ def process_uploaded_file(uploaded_file):
                         st.warning(f"Unexpected matched_circles type: {type(st.session_state.matched_circles)}")
                         circles_df = pd.DataFrame()  # Empty DataFrame as fallback
                     
+                    # ENHANCED: Debug subregion and meeting_time data in Streamlit session state
+                    print("\n🔍 CIRCLE COMPOSITION DEBUG: Examining circle data in session state")
+                    print(f"Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
+                    if hasattr(circles_df, 'columns'):
+                        print(f"Available columns: {list(circles_df.columns)}")
+                        
+                        # Count how many subregion and meeting_time values are "Unknown"
+                        if 'subregion' in circles_df.columns:
+                            unknown_subregions = circles_df[circles_df['subregion'] == 'Unknown'].shape[0]
+                            total_subregions = circles_df.shape[0]
+                            print(f"'Unknown' subregions: {unknown_subregions}/{total_subregions} ({unknown_subregions/total_subregions*100:.1f}%)")
+                            # Log first 5 circles with Unknown subregion
+                            if unknown_subregions > 0:
+                                unknown_circles = circles_df[circles_df['subregion'] == 'Unknown']['circle_id'].tolist()[:5]
+                                print(f"Sample circles with Unknown subregion: {unknown_circles}")
+                        
+                        if 'meeting_time' in circles_df.columns:
+                            unknown_times = circles_df[circles_df['meeting_time'] == 'Unknown'].shape[0]
+                            total_times = circles_df.shape[0]
+                            print(f"'Unknown' meeting times: {unknown_times}/{total_times} ({unknown_times/total_times*100:.1f}%)")
+                            # Log first 5 circles with Unknown meeting time
+                            if unknown_times > 0:
+                                unknown_circles = circles_df[circles_df['meeting_time'] == 'Unknown']['circle_id'].tolist()[:5]
+                                print(f"Sample circles with Unknown meeting time: {unknown_circles}")
+                    
+                    # CRITICAL DEBUG: Log a sample of circle data to debug unknown values
+                    if hasattr(circles_df, 'iterrows'):
+                        print("\n🔍 SAMPLE CIRCLE DATA FOR FIRST 3 CIRCLES WITH UNKNOWN SUBREGION OR MEETING TIME:")
+                        sample_count = 0
+                        for _, row in circles_df.iterrows():
+                            if ((row.get('subregion', '') == 'Unknown' or row.get('meeting_time', '') == 'Unknown') 
+                                and sample_count < 3):
+                                sample_count += 1
+                                circle_id = row.get('circle_id', 'Unknown')
+                                region = row.get('region', 'Unknown')
+                                subregion = row.get('subregion', 'Unknown')
+                                meeting_time = row.get('meeting_time', 'Unknown')
+                                print(f"Circle {circle_id} (Region: {region})")
+                                print(f"  Subregion: {subregion}")
+                                print(f"  Meeting Time: {meeting_time}")
+                                # Log all non-NA attributes to help with debugging
+                                print(f"  All data attributes:")
+                                for col, val in row.items():
+                                    if not pd.isna(val) and col not in ['circle_id', 'region', 'subregion', 'meeting_time']:
+                                        print(f"    {col}: {val}")
+                    
+                    # Enhanced: Before displaying, improve the quality of the data
+                    # Fill in missing subregion and meeting time from participant data
+                    if 'results' in st.session_state and ('subregion' in circles_df.columns or 'meeting_time' in circles_df.columns):
+                        print("\n🔧 ATTEMPTING TO FIX UNKNOWN VALUES FROM PARTICIPANT DATA")
+                        results_df = st.session_state.results
+                        
+                        # For each circle, check if we can find better data in the participant records
+                        for i, row in circles_df.iterrows():
+                            circle_id = row['circle_id']
+                            needs_fix = (row.get('subregion', '') == 'Unknown' or row.get('meeting_time', '') == 'Unknown')
+                            
+                            if needs_fix:
+                                # Find all participants in this circle
+                                circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+                                
+                                if not circle_members.empty:
+                                    # Look for subregion data
+                                    if row.get('subregion', '') == 'Unknown' and 'proposed_NEW_Subregion' in circle_members.columns:
+                                        # Get unique non-null subregions from participant data
+                                        subregions = circle_members['proposed_NEW_Subregion'].dropna().unique()
+                                        if len(subregions) > 0 and subregions[0] != 'Unknown':
+                                            circles_df.at[i, 'subregion'] = subregions[0]
+                                            print(f"  ✅ Fixed subregion for circle {circle_id}: '{subregions[0]}'")
+                                    
+                                    # Look for meeting time data
+                                    if row.get('meeting_time', '') == 'Unknown' and 'proposed_NEW_DayTime' in circle_members.columns:
+                                        # Get unique non-null meeting times from participant data
+                                        meeting_times = circle_members['proposed_NEW_DayTime'].dropna().unique()
+                                        if len(meeting_times) > 0 and meeting_times[0] != 'Unknown':
+                                            circles_df.at[i, 'meeting_time'] = meeting_times[0]
+                                            print(f"  ✅ Fixed meeting time for circle {circle_id}: '{meeting_times[0]}'")
+                    
                     # Extract key columns as specified
                     display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 'new_members', 'max_additions', 'always_hosts', 'sometimes_hosts']
                     
