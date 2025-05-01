@@ -256,6 +256,25 @@ def run_optimization():
                     unknown_count = results_df[results_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
                     total_count = results_df.shape[0]
                     print(f"VERIFICATION: {unknown_count}/{total_count} Unknown meeting times in session state results")
+                
+            # ENHANCED APPROACH: Check if there was an issue initializing the CircleMetadataManager earlier
+            # If so, try again with the stored data
+            if 'circle_manager' not in st.session_state and 'matched_circles' in st.session_state:
+                print("\n🔄 INITIALIZING METADATA MANAGER (SECOND ATTEMPT): Using stored circle data")
+                from utils.circle_metadata_manager import initialize_or_update_manager
+                
+                # Initialize metadata manager with circle data and results
+                manager = initialize_or_update_manager(st.session_state)
+                if manager:
+                    print(f"  ✅ Successfully initialized CircleMetadataManager on second attempt")
+                    
+                    # Verify max_additions values
+                    print("\n🔍 MAX ADDITIONS VERIFICATION (2nd check):")
+                    sample_circles = manager.get_all_circles()[:3]
+                    for circle in sample_circles:
+                        print(f"  Circle {circle['circle_id']}: max_additions={circle.get('max_additions', 'N/A')}")
+                else:
+                    print("  ⚠️ Failed to initialize CircleMetadataManager on second attempt")
             
             # Calculate standard statistics with our helper function
             from utils.helpers import calculate_matching_statistics

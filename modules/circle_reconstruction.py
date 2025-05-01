@@ -666,4 +666,34 @@ def reconstruct_circles_from_results(results, original_circles=None):
                  f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
                  f"max_additions={row.get('max_additions', 0)})")
     
+    # ENHANCED APPROACH: Use CircleMetadataManager to store circles data
+    print("\n🔄 INTEGRATING WITH METADATA MANAGER: Creating centralized circle data store")
+    try:
+        # Import the CircleMetadataManager
+        from utils.circle_metadata_manager import CircleMetadataManager
+        
+        # Convert circles_df to list of dictionaries for the manager
+        if hasattr(circles_df, 'to_dict'):
+            circle_list = circles_df.to_dict('records')
+            print(f"  Converted DataFrame with {len(circles_df)} circles to list format")
+            
+            # If results was passed as a parameter and is available, use it
+            results_df = None
+            if isinstance(results, pd.DataFrame):
+                results_df = results
+                print(f"  Using results DataFrame with {len(results_df)} participants")
+            
+            # Create metadata manager instance for use in other components
+            manager = CircleMetadataManager().initialize_from_optimizer(circle_list, results_df)
+            print(f"  ✅ Successfully created CircleMetadataManager with {len(circle_list)} circles")
+            
+            # This manager object will be available for use by caller, but we still return the DataFrame
+            # for backward compatibility with existing code
+            return circles_df
+        else:
+            print("  ⚠️ Failed to convert circles_df to dictionary format - not a DataFrame?")
+    except Exception as e:
+        print(f"  ⚠️ Error creating CircleMetadataManager: {str(e)}")
+        print("  Continuing with DataFrame return only")
+    
     return circles_df
