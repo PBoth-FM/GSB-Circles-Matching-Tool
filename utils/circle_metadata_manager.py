@@ -287,22 +287,7 @@ class CircleMetadataManager:
         always_host_values = []
         sometimes_host_values = []
         
-        # SPECIAL HANDLING FOR KNOWN PROBLEM CIRCLES
-        # Hard-coded corrections for IP-BOS-05 based on spreadsheet evidence
-        if circle_id == 'IP-BOS-05':
-            print(f"\n🔧 SPECIAL HANDLING: Using direct corrections for {circle_id}")
-            print(f"  Based on spreadsheet evidence, this circle has:")
-            print(f"  - 2 Always hosts (IDs 54769189418, 495392790423)")
-            print(f"  - 6 Sometimes hosts")
-            if is_test_circle:
-                # For test circles, still do the regular counting for debugging,
-                # but we'll override the final values
-                print(f"  Will still run normal count for verification but override final values")
-                # Set an indicator for later override
-                self._special_bos05_override = True
-            else:
-                # For non-test runs, just return the corrected values directly
-                return 2, 6
+        # No special handling - rely purely on data-driven approach
         
         # CRITICAL FIX: Test the optimization detection as well for IP-BOS-04 and IP-BOS-05
         # This ensures both "Always Host" and "Always" are correctly detected
@@ -393,15 +378,7 @@ class CircleMetadataManager:
             if is_test_circle:
                 print(f"  {debug_prefix} ⚠️ Could not find {missing_members} out of {len(member_ids)} members")
         
-        # SPECIAL CASE: Override for problem circles based on spreadsheet evidence
-        if circle_id == 'IP-BOS-05' and hasattr(self, '_special_bos05_override'):
-            old_always = always_hosts
-            old_sometimes = sometimes_hosts
-            always_hosts = 2
-            sometimes_hosts = 6
-            print(f"  🔧 OVERRIDING {circle_id} host counts: {old_always} Always → 2, {old_sometimes} Sometimes → 6")
-            # Remove the override flag
-            delattr(self, '_special_bos05_override')
+        # No special case overrides - rely on data-driven approach only
         
         # Final host counts summary with enhanced debugging for test circles
         if is_test_circle:
@@ -600,21 +577,9 @@ class CircleMetadataManager:
                 new_members = circle.get('new_members', 0)
                 max_additions = circle.get('max_additions', 0)
                 
-                # CRITICAL FIX: Add default value for Boston circles
-                # Boston circles should have max_additions=4 by default
-                boston_default_max_add = 4
-                if max_additions == 0 and circle_id.startswith('IP-BOS-0') and circle_id != 'IP-BOS-05':
-                    original_value = max_additions
-                    circle['max_additions'] = boston_default_max_add
-                    corrections += 1
-                    print(f"  ✅ FIXED: Circle {circle_id} had max_additions={original_value}, updated to default {boston_default_max_add}")
+                # No special handling for Boston circles - rely on data-driven approach
                 
-                # BOS-05 is specially handled as shown in your screenshot
-                if circle_id == 'IP-BOS-05' and max_additions == 0:
-                    original_value = max_additions
-                    circle['max_additions'] = 1  # Based on the screenshot value
-                    corrections += 1
-                    print(f"  ✅ FIXED: Circle {circle_id} had max_additions={original_value}, updated to special value 1")
+                # No special handling - rely only on data-driven approach
                 
                 # If there are more new members than allowed, flag this
                 if new_members > max_additions:
@@ -641,100 +606,9 @@ class CircleMetadataManager:
         # NOTE: This is a temporary measure to fix known issues with specific circles
         # These fixes are based on the screenshot evidence shown by the user
         
-        # Store original values for validation
-        original_values = {}
-        for test_id in ['IP-BOS-04', 'IP-BOS-05']:
-            if test_id in self.circles:
-                original_values[test_id] = {
-                    'max_additions': self.circles[test_id].get('max_additions', 0),
-                    'always_hosts': self.circles[test_id].get('always_hosts', 0),
-                    'sometimes_hosts': self.circles[test_id].get('sometimes_hosts', 0)
-                }
-                
-        # Special handling for IP-BOS-04
-        if 'IP-BOS-04' in self.circles:
-            target_max_add = 4  # From the screenshot
-            target_always_hosts = 1  # From screenshot evidence - has at least one Always Host
-            target_sometimes_hosts = 6  # From screenshot evidence - has multiple Sometimes Hosts
-            
-            changes_made = []
-            
-            # Apply the fixes unconditionally to ensure consistency
-            if self.circles['IP-BOS-04'].get('max_additions', 0) != target_max_add:
-                original = self.circles['IP-BOS-04'].get('max_additions', 0)
-                self.circles['IP-BOS-04']['max_additions'] = target_max_add
-                changes_made.append(f"max_additions: {original} → {target_max_add}")
-                corrections += 1
-                
-            if self.circles['IP-BOS-04'].get('always_hosts', 0) != target_always_hosts:
-                original = self.circles['IP-BOS-04'].get('always_hosts', 0)
-                self.circles['IP-BOS-04']['always_hosts'] = target_always_hosts
-                changes_made.append(f"always_hosts: {original} → {target_always_hosts}")
-                corrections += 1
-                
-            if self.circles['IP-BOS-04'].get('sometimes_hosts', 0) != target_sometimes_hosts:
-                original = self.circles['IP-BOS-04'].get('sometimes_hosts', 0)
-                self.circles['IP-BOS-04']['sometimes_hosts'] = target_sometimes_hosts
-                changes_made.append(f"sometimes_hosts: {original} → {target_sometimes_hosts}")
-                corrections += 1
-                
-            if changes_made:
-                print(f"  ✅ SPECIAL FIX FOR IP-BOS-04: {', '.join(changes_made)}")
-        
-        # Special handling for IP-BOS-05
-        if 'IP-BOS-05' in self.circles:
-            target_max_add = 1  # From the screenshot
-            target_always_hosts = 2  # From screenshot evidence - has multiple Always Hosts
-            target_sometimes_hosts = 6  # From screenshot evidence - has multiple Sometimes Hosts
-            
-            changes_made = []
-            
-            # Apply the fixes unconditionally to ensure consistency
-            if self.circles['IP-BOS-05'].get('max_additions', 0) != target_max_add:
-                original = self.circles['IP-BOS-05'].get('max_additions', 0)
-                self.circles['IP-BOS-05']['max_additions'] = target_max_add
-                changes_made.append(f"max_additions: {original} → {target_max_add}")
-                corrections += 1
-                
-            if self.circles['IP-BOS-05'].get('always_hosts', 0) != target_always_hosts:
-                original = self.circles['IP-BOS-05'].get('always_hosts', 0)
-                self.circles['IP-BOS-05']['always_hosts'] = target_always_hosts
-                changes_made.append(f"always_hosts: {original} → {target_always_hosts}")
-                corrections += 1
-                
-            if self.circles['IP-BOS-05'].get('sometimes_hosts', 0) != target_sometimes_hosts:
-                original = self.circles['IP-BOS-05'].get('sometimes_hosts', 0)
-                self.circles['IP-BOS-05']['sometimes_hosts'] = target_sometimes_hosts
-                changes_made.append(f"sometimes_hosts: {original} → {target_sometimes_hosts}")
-                corrections += 1
-                
-            if changes_made:
-                print(f"  ✅ SPECIAL FIX FOR IP-BOS-05: {', '.join(changes_made)}")
-                
-        # Compare with original values for validation
-        for test_id in ['IP-BOS-04', 'IP-BOS-05']:
-            if test_id in self.circles and test_id in original_values:
-                original = original_values[test_id]
-                current = {
-                    'max_additions': self.circles[test_id].get('max_additions', 0),
-                    'always_hosts': self.circles[test_id].get('always_hosts', 0),
-                    'sometimes_hosts': self.circles[test_id].get('sometimes_hosts', 0)
-                }
-                
-                print(f"  🔍 VALIDATION FOR {test_id}:")
-                print(f"    Original values: {original}")
-                print(f"    Updated values: {current}")
-                
-                # Highlight changes made
-                changes = []
-                for key in original:
-                    if original[key] != current[key]:
-                        changes.append(f"{key}: {original[key]} → {current[key]}")
-                        
-                if changes:
-                    print(f"    Changes applied: {', '.join(changes)}")
-                else:
-                    print(f"    No changes were needed")
+        # No special handling for test circles
+        # This ensures we rely solely on data-driven approaches
+        print("  📊 Using pure data-driven approach for all circles - no special handling")
         
         summary = f"Found {inconsistencies} max_additions inconsistencies, applied {corrections} corrections"
         print(summary)
@@ -787,18 +661,8 @@ class CircleMetadataManager:
                     # Update member_count in the returned data
                     base_data['member_count'] = member_count
                 
-                # SPECIAL CASE: Handle IP-BOS-05 max_additions
-                if circle_id == 'IP-BOS-05':
-                    # Based on the screenshot, IP-BOS-05 should have max_additions=1
-                    base_data['max_additions'] = 1
-                    print(f"🔧 FIXING: Setting max_additions=1 for {circle_id} based on screenshot evidence")
-                
-                # SPECIAL CASE: Handle Boston circles default max_additions
-                elif circle_id.startswith('IP-BOS-0') and base_data.get('max_additions', 0) == 0:
-                    # From our analysis, Boston circles should allow 4 new members by default
-                    # except for IP-BOS-05 which is handled above
-                    base_data['max_additions'] = 4
-                    print(f"🔧 FIXING: Setting max_additions=4 for {circle_id} (Boston default)")
+                # Dynamic recalculation - no hardcoded values
+                # Let Streamlit UI handle max_additions via normal processing
             except Exception as e:
                 print(f"⚠️ Error during dynamic member count calculation for {circle_id}: {str(e)}")
         
