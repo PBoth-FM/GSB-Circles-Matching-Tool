@@ -608,7 +608,8 @@ def process_uploaded_file(uploaded_file):
                         unmatched_count = circle_values.get('UNMATCHED', 0)
                         null_count = results_df['proposed_NEW_circles_id'].isna().sum()
                         circle_count = sum(v for k, v in circle_values.items() 
-                                           if k != 'UNMATCHED' and not pd.isna(k))
+                                           if k != 'UNMATCHED' and not (isinstance(k, str) and k.strip() == '') and
+                                           not (hasattr(pd.isna(k), '__iter__') and pd.isna(k).all() if hasattr(pd.isna(k), '__iter__') else pd.isna(k)))
                         
                         print(f"  Assigned to circles: {circle_count}")
                         print(f"  UNMATCHED: {unmatched_count}")
@@ -936,7 +937,20 @@ def process_uploaded_file(uploaded_file):
                                 # Log all non-NA attributes to help with debugging
                                 print(f"  All data attributes:")
                                 for col, val in row.items():
-                                    if not pd.isna(val) and col not in ['circle_id', 'region', 'subregion', 'meeting_time']:
+                                    # Handle array-like pd.isna() values by using .all() to check if all elements are NaN
+                                    is_valid_value = True
+                                    try:
+                                        # For array-like values, check if any are not NaN
+                                        if hasattr(pd.isna(val), '__iter__'):
+                                            is_valid_value = not pd.isna(val).all()
+                                        else:
+                                            is_valid_value = not pd.isna(val)
+                                    except Exception as e:
+                                        print(f"Warning: Error checking NaN for {col}: {str(e)}")
+                                        # Default to showing the value if there's an error
+                                        is_valid_value = True
+                                        
+                                    if is_valid_value and col not in ['circle_id', 'region', 'subregion', 'meeting_time']:
                                         print(f"    {col}: {val}")
                     
                     # COMPREHENSIVE FIX: Apply centralized metadata manager to fix Unknown values
