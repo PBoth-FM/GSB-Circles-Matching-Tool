@@ -58,8 +58,12 @@ if 'config' not in st.session_state:
 # Initialize feature flags
 initialize_feature_flags()
 
-# Enable the feature flags UI in debug mode
+# Enable the feature flags UI and key metadata features by default
 set_flag('enable_feature_flags_ui', True)
+set_flag('use_optimizer_metadata', True)  # Use optimizer-generated metadata
+set_flag('enable_metadata_validation', True)  # Enable validation in Debug tab
+set_flag('use_standardized_member_lists', True)  # Ensure consistent member list format
+set_flag('use_standardized_host_status', True)  # Normalize host status values
 
 def main():
     st.title("CirclesTool2")
