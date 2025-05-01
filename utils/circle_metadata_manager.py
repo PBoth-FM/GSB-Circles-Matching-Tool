@@ -29,8 +29,8 @@ class CircleMetadataManager:
             logger.addHandler(handler)
         return logger
     
-    def initialize_from_optimizer(self, optimizer_circles: List[Dict[str, Any]], 
-                               results_df: pd.DataFrame) -> 'CircleMetadataManager':
+    def initialize_from_optimizer(self, optimizer_circles, 
+                               results_df) -> 'CircleMetadataManager':
         """
         Initialize circle metadata from optimizer results and store reference to results DataFrame
         
@@ -41,19 +41,76 @@ class CircleMetadataManager:
         Returns:
             Self for method chaining
         """
-        self.logger.info(f"Initializing CircleMetadataManager with {len(optimizer_circles)} circles")
+        # Handle invalid or empty input
+        if optimizer_circles is None:
+            self.logger.error("Cannot initialize with None optimizer_circles")
+            return self
+        
+        # Ensure we have a list of dictionaries to work with
+        processed_circles = []
+        try:
+            # Process the optimizer_circles based on type
+            if isinstance(optimizer_circles, pd.DataFrame):
+                self.logger.info(f"Converting DataFrame with {len(optimizer_circles)} rows to list of dictionaries")
+                # Convert DataFrame to list of dictionaries
+                processed_circles = optimizer_circles.to_dict('records')
+            elif isinstance(optimizer_circles, list):
+                # Process each item in the list
+                for circle in optimizer_circles:
+                    if isinstance(circle, dict):
+                        processed_circles.append(circle)
+                    elif isinstance(circle, str):
+                        # Handle string item - convert to dict with circle_id
+                        self.logger.warning(f"Found string circle item: {circle}, converting to dict")
+                        processed_circles.append({'circle_id': circle})
+                    else:
+                        self.logger.warning(f"Found invalid circle item type: {type(circle)}, skipping")
+            elif isinstance(optimizer_circles, dict):
+                # Single dictionary - add to list
+                processed_circles = [optimizer_circles]
+            else:
+                # Try to handle other types as a last resort
+                self.logger.warning(f"Unexpected optimizer_circles type: {type(optimizer_circles)}")
+                # Try stringification as last resort
+                processed_circles = [{'circle_id': str(optimizer_circles)}]
+        except Exception as e:
+            self.logger.error(f"Error processing optimizer_circles: {str(e)}")
+            processed_circles = []
+        
+        self.logger.info(f"Processed {len(processed_circles)} circles from optimizer input")
         
         # Store reference to results DataFrame for member lookups
         self.results_df = results_df
         
-        # Initialize circles dictionary from optimizer circles
+        # Initialize circles dictionary from processed circles
         self.circles = {}
-        for circle in optimizer_circles:
-            circle_id = circle.get('circle_id')
-            if circle_id:
-                self.circles[circle_id] = circle.copy()  # Create a deep copy to avoid reference issues
-            else:
-                self.logger.warning(f"Found circle without circle_id: {circle}")
+        for circle in processed_circles:
+            try:
+                # Safely get circle_id
+                circle_id = None
+                if isinstance(circle, dict) and 'circle_id' in circle:
+                    circle_id = circle['circle_id']
+                elif hasattr(circle, 'get'):
+                    circle_id = circle.get('circle_id')
+                elif hasattr(circle, 'circle_id'):
+                    circle_id = circle.circle_id
+                
+                if circle_id:
+                    # Ensure we store a dictionary
+                    if isinstance(circle, dict):
+                        self.circles[circle_id] = circle.copy()  # Create a deep copy to avoid reference issues
+                    else:
+                        # Convert to dict if needed
+                        self.logger.warning(f"Converting non-dict circle to dictionary: {circle}")
+                        if hasattr(circle, '__dict__'):
+                            self.circles[circle_id] = circle.__dict__.copy()
+                        else:
+                            self.circles[circle_id] = {'circle_id': circle_id}
+                else:
+                    self.logger.warning(f"Found circle without circle_id: {circle}")
+            except Exception as e:
+                self.logger.error(f"Error processing circle: {str(e)} - {circle}")
+                continue
         
         self._initialized = True
         self.logger.info(f"Successfully initialized {len(self.circles)} circles")
@@ -469,37 +526,93 @@ def get_manager_from_session_state(state):
 
 def initialize_or_update_manager(state, optimizer_circles=None, results_df=None):
     """Initialize or update the circle metadata manager in session state"""
+    logger = logging.getLogger('circle_metadata_manager')
+    
+    # Debug input parameters
+    print(f"\n🔄 INITIALIZING METADATA MANAGER: Input validation")
+    print(f"  optimizer_circles type: {type(optimizer_circles)}")
+    print(f"  results_df type: {type(results_df)}")
+    
+    # Validate optimizer_circles before using
+    if optimizer_circles is not None:
+        if not isinstance(optimizer_circles, (list, pd.DataFrame, dict)):
+            print(f"  ⚠️ WARNING: optimizer_circles is {type(optimizer_circles)}, not a list/DataFrame/dict")
+            # Convert to list if needed as a fallback (handles string case)
+            if not isinstance(optimizer_circles, list):
+                print(f"  ⚙️ Converting optimizer_circles to list format")
+                optimizer_circles = [optimizer_circles]
+    
     # Check if we have the necessary data
     if optimizer_circles is None and 'matched_circles' in state:
         # Try to use existing matched_circles
+        print(f"  ⚙️ Using matched_circles from session state as fallback")
         optimizer_circles = state.matched_circles
+        
+        # Debug the matched_circles content
+        print(f"  matched_circles type: {type(optimizer_circles)}")
         
         # Convert DataFrame to list of dicts if needed
         if hasattr(optimizer_circles, 'to_dict'):
+            print(f"  ⚙️ Converting matched_circles DataFrame to dict records")
             optimizer_circles = optimizer_circles.to_dict('records')
     
     if results_df is None and 'results' in state:
+        print(f"  ⚙️ Using results from session state as fallback")
         results_df = state.results
     
+    # Additional validation
+    if optimizer_circles is None:
+        print(f"  ⚠️ ERROR: No circle data available. Cannot initialize manager.")
+        return None
+        
+    if results_df is None:
+        print(f"  ⚠️ WARNING: No results data available. Manager will have limited functionality.")
+    
+    # Check if optimizer_circles is an empty collection
+    is_empty = False
+    try:
+        if isinstance(optimizer_circles, (list, pd.DataFrame)) and len(optimizer_circles) == 0:
+            is_empty = True
+    except Exception:
+        # If len() raises an exception, treat as empty
+        is_empty = True
+    
+    if is_empty:
+        print(f"  ⚠️ ERROR: optimizer_circles is empty. Cannot initialize manager.")
+        return None
+    
     # If we have circle data, initialize/update the manager
-    if optimizer_circles is not None and results_df is not None:
+    try:
         # Create or retrieve manager
         if 'circle_manager' in state:
+            print(f"  ⚙️ Updating existing CircleMetadataManager")
             manager = state.circle_manager
             manager.update_all_circles(optimizer_circles)
             manager.results_df = results_df
             manager.normalize_metadata()
             manager.validate_circles()
         else:
+            print(f"  ⚙️ Creating new CircleMetadataManager")
             manager = CircleMetadataManager().initialize_from_optimizer(optimizer_circles, results_df)
         
         # Store in session state
         state.circle_manager = manager
         
         # For backward compatibility, also update matched_circles
-        circles_df = manager.get_circles_dataframe()
-        state.matched_circles = circles_df
+        try:
+            circles_df = manager.get_circles_dataframe()
+            state.matched_circles = circles_df
+            print(f"  ✅ Successfully updated session state with {len(circles_df)} circles")
+        except Exception as e:
+            print(f"  ⚠️ Error updating matched_circles: {str(e)}")
+            # Don't update matched_circles if there's an error to avoid corrupting it
         
         return manager
+    except Exception as e:
+        print(f"  ⚠️ Error in initialize_or_update_manager: {str(e)}")
+        logger.error(f"Error in initialize_or_update_manager: {str(e)}")
+        # Return existing manager if available as fallback
+        if 'circle_manager' in state:
+            return state.circle_manager
     
     return None
