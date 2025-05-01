@@ -175,7 +175,8 @@ class CircleMetadataManager:
                     print(f"  Member IDs: {members_list}")
                 
                 # Count by analyzing each member
-                always_hosts, sometimes_hosts = self._count_hosts_from_members(members_list)
+                # CRITICAL FIX: Pass circle_id to the host counting function for better debugging
+                always_hosts, sometimes_hosts = self._count_hosts_from_members(members_list, circle_id)
                 
                 # Update counts if they differ from current values
                 always_before = circle.get('always_hosts', 0)
@@ -225,37 +226,36 @@ class CircleMetadataManager:
         print(f"Host normalization complete: Fixed {always_fixed} always_hosts and {sometimes_fixed} sometimes_hosts values")
         self.logger.info(f"Host normalization complete: Fixed {always_fixed} always_hosts and {sometimes_fixed} sometimes_hosts values")
     
-    def _count_hosts_from_members(self, member_ids: List[str]) -> tuple:
-        """Count always and sometimes hosts from member list"""
+    def _count_hosts_from_members(self, member_ids: List[str], circle_id: str = None) -> tuple:
+        """Count always and sometimes hosts from member list with improved detection"""
         always_hosts = 0
         sometimes_hosts = 0
         
         # Add special circle debugging for our test circles
-        test_circle_prefixes = ['IP-BOS-04', 'IP-BOS-05']
-        is_test_circle = any(member_id.startswith(prefix) for member_id in member_ids for prefix in test_circle_prefixes)
+        test_circle_ids = ['IP-BOS-04', 'IP-BOS-05']
+        is_test_circle = circle_id in test_circle_ids if circle_id else False
+        
+        # ENHANCED DEBUG: More descriptive debug information
+        debug_prefix = f"[CIRCLE: {circle_id}]" if circle_id else "[UNKNOWN CIRCLE]"
         
         # SPECIAL DEBUG: Targeted diagnostics for test circles
         if is_test_circle:
-            circle_id = "Unknown"
-            for m_id in member_ids:
-                for prefix in test_circle_prefixes:
-                    if m_id.endswith(prefix):
-                        circle_id = prefix
-                        break
             print(f"\n🔍🔍🔍 SPECIAL TEST CIRCLE HOST DEBUG FOR {circle_id} 🔍🔍🔍")
-            print(f"  Found {len(member_ids)} members in member_ids list: {member_ids}")
+            print(f"  {debug_prefix} Found {len(member_ids)} members in member_ids list")
+            if len(member_ids) <= 10:  # Only print full list if it's reasonably short
+                print(f"  {debug_prefix} Member IDs: {member_ids}")
         
         if self.results_df is None:
             if is_test_circle:
-                print("  ⚠️ ERROR: results_df is None, cannot count hosts")
+                print(f"  {debug_prefix} ⚠️ ERROR: results_df is None, cannot count hosts")
             return always_hosts, sometimes_hosts
         
         # Ensure Encoded ID column exists
         if 'Encoded ID' not in self.results_df.columns:
-            self.logger.warning("Cannot count hosts: 'Encoded ID' column missing from results DataFrame")
+            self.logger.warning(f"{debug_prefix} Cannot count hosts: 'Encoded ID' column missing from results DataFrame")
             if is_test_circle:
-                print("  ⚠️ ERROR: 'Encoded ID' column missing from results DataFrame")
-                print(f"  Available columns: {self.results_df.columns.tolist()}")
+                print(f"  {debug_prefix} ⚠️ ERROR: 'Encoded ID' column missing from results DataFrame")
+                print(f"  {debug_prefix} Available columns: {self.results_df.columns.tolist()}")
             return always_hosts, sometimes_hosts
         
         # Host column may have different names, try to find it
@@ -266,29 +266,47 @@ class CircleMetadataManager:
                 break
         
         if not host_col:
-            self.logger.warning("Cannot count hosts: No host column found in results DataFrame")
+            self.logger.warning(f"{debug_prefix} Cannot count hosts: No host column found in results DataFrame")
             if is_test_circle:
-                print("  ⚠️ ERROR: No host column found in results DataFrame")
-                print(f"  Available columns: {self.results_df.columns.tolist()}")
+                print(f"  {debug_prefix} ⚠️ ERROR: No host column found in results DataFrame")
+                print(f"  {debug_prefix} Available columns: {self.results_df.columns.tolist()}")
             return always_hosts, sometimes_hosts
         
-        # Count hosts from results DataFrame
+        # Count hosts from results DataFrame with enhanced robustness
         missing_members = 0
         found_members = 0
-        host_values_found = []
         
         # Debug check - more comprehensive for test circles
         if is_test_circle:
-            print(f"\n🔍 DETAILED HOST COUNTING FOR TEST CIRCLE:")
-            print(f"  Looking up {len(member_ids)} members in results_df with {len(self.results_df)} rows")
-            print(f"  Using '{host_col}' column for host status")
-        else:
-            print(f"\n🔍 HOST COUNT DEBUG FOR {len(member_ids)} MEMBERS:")
+            print(f"\n{debug_prefix} 🔍 DETAILED HOST STATUS DETECTION:")
+            print(f"  {debug_prefix} Looking up {len(member_ids)} members in results_df with {len(self.results_df)} rows")
+            print(f"  {debug_prefix} Using '{host_col}' column for host status")
         
         # Track all host status values for debugging
-        all_host_statuses = []
+        all_host_statuses = {}
         always_host_values = []
         sometimes_host_values = []
+        
+        # CRITICAL FIX: Test the optimization detection as well for IP-BOS-04 and IP-BOS-05
+        # This ensures both "Always Host" and "Always" are correctly detected
+        if is_test_circle:
+            print(f"\n{debug_prefix} 🧪 TESTING HOST DETECTION STRINGS:")
+            test_values = [
+                "Always", "Always Host", "always", "ALWAYS", "always host", 
+                "Sometimes", "Sometimes Host", "sometimes", "SOMETIMES", "sometimes host"
+            ]
+            
+            for test_val in test_values:
+                host_lower = test_val.lower()
+                detection = "UNDETECTED"
+                
+                # Test with our enhanced pattern matching
+                if ('always' in host_lower) or host_lower == 'always':
+                    detection = "✅ Would be counted as ALWAYS HOST"
+                elif ('sometimes' in host_lower) or host_lower == 'sometimes':
+                    detection = "✅ Would be counted as SOMETIMES HOST"
+                
+                print(f"  {debug_prefix} Testing value '{test_val}': {detection}")
         
         for member_id in member_ids:
             # Look up this member in results_df
@@ -299,72 +317,73 @@ class CircleMetadataManager:
                     found_members += 1
                     # Get host status
                     host_status = member_rows.iloc[0][host_col]
-                    all_host_statuses.append(str(host_status))
+                    all_host_statuses[member_id] = str(host_status) if not pd.isna(host_status) else "None/NaN"
                     
-                    # CRITICAL FIX: Simplify host detection for more robust behavior
+                    # CRITICAL FIX: Enhanced host detection with comprehensive pattern matching
+                    
                     # First handle None/NaN values
                     if pd.isna(host_status) or host_status is None:
-                        if is_test_circle or member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                            print(f"  Member {member_id}: host_status is None/NaN - Not counted as host")
+                        if is_test_circle:
+                            print(f"  {debug_prefix} Member {member_id}: host_status is None/NaN - Not counted as host")
                         continue
                     
-                    # Convert to string and lowercase for more consistent comparison
+                    # Convert to string for consistent comparison
                     if not isinstance(host_status, str):
                         # Handle boolean and numeric values
                         if host_status in [True, 1]:
                             always_hosts += 1
                             always_host_values.append(str(host_status))
-                            if is_test_circle or member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                                print(f"  Member {member_id}: host_status={host_status} (type: {type(host_status).__name__})")
-                                print(f"    ✅ Counted as ALWAYS HOST (boolean/numeric match)")
+                            if is_test_circle:
+                                print(f"  {debug_prefix} Member {member_id}: host_status={host_status} (type: {type(host_status).__name__})")
+                                print(f"    {debug_prefix} ✅ Counted as ALWAYS HOST (boolean/numeric match)")
                             continue
                         else:
                             # Convert non-string non-boolean to string for further processing
                             host_status = str(host_status)
                     
-                    # Now we're sure it's a string, convert to lowercase
-                    host_lower = host_status.lower()
-                    host_values_found.append(host_lower)
+                    # Now we're sure it's a string, normalize for comparison
+                    host_lower = host_status.lower().strip()
                     
                     # Enhanced debug for test circles
-                    if is_test_circle or member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                        print(f"  Member {member_id}: host_status='{host_status}' (type: {type(host_status).__name__})")
+                    if is_test_circle:
+                        print(f"  {debug_prefix} Member {member_id}: host_status='{host_status}' (type: {type(host_status).__name__})")
                     
-                    # SIMPLIFIED MATCHING: More permissive pattern matching for both Always and Sometimes hosts
-                    if 'always' in host_lower or host_lower in ['yes', 'true']:
+                    # IMPROVED MATCHING: More comprehensive pattern matching for both Always and Sometimes hosts
+                    # Correctly interpret "Always Host" as well as "Always"
+                    if ('always' in host_lower) or host_lower == 'always' or host_lower in ['yes', 'true', 'true.0']:
                         always_hosts += 1
                         always_host_values.append(host_status)
-                        if is_test_circle or member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                            print(f"    ✅ Counted as ALWAYS HOST")
-                    elif 'sometimes' in host_lower or host_lower in ['maybe']:
+                        if is_test_circle:
+                            print(f"    {debug_prefix} ✅ Counted as ALWAYS HOST")
+                    elif ('sometimes' in host_lower) or host_lower == 'sometimes' or host_lower in ['maybe']:
                         sometimes_hosts += 1
                         sometimes_host_values.append(host_status)
-                        if is_test_circle or member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                            print(f"    ✅ Counted as SOMETIMES HOST")
+                        if is_test_circle:
+                            print(f"    {debug_prefix} ✅ Counted as SOMETIMES HOST")
                     else:
-                        if is_test_circle or member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
-                            print(f"    ℹ️ Not counted as host (unrecognized value: '{host_status}')")
+                        if is_test_circle:
+                            print(f"    {debug_prefix} ℹ️ Not counted as host (unrecognized value: '{host_status}')")
                 else:
                     missing_members += 1
                     if is_test_circle:
-                        print(f"  ⚠️ Member {member_id} not found in results_df")
+                        print(f"  {debug_prefix} ⚠️ Member {member_id} not found in results_df")
             except Exception as e:
-                print(f"  ⚠️ Error processing member {member_id}: {str(e)}")
+                print(f"  {debug_prefix} ⚠️ Error processing member {member_id}: {str(e)}")
                 missing_members += 1
         
         if missing_members > 0:
-            self.logger.warning(f"Could not find {missing_members} members in results DataFrame")
+            self.logger.warning(f"{debug_prefix} Could not find {missing_members} members in results DataFrame")
             if is_test_circle:
-                print(f"  ⚠️ Could not find {missing_members} out of {len(member_ids)} members")
+                print(f"  {debug_prefix} ⚠️ Could not find {missing_members} out of {len(member_ids)} members")
         
         # Final host counts summary with enhanced debugging for test circles
         if is_test_circle:
-            print(f"\n🔍 FINAL HOST COUNT SUMMARY FOR TEST CIRCLE:")
-            print(f"  Members found: {found_members} out of {len(member_ids)}")
-            print(f"  All host values found: {all_host_statuses}")
-            print(f"  'Always' host values: {always_host_values}")
-            print(f"  'Sometimes' host values: {sometimes_host_values}")
-            print(f"  FINAL COUNTS: {always_hosts} Always Hosts, {sometimes_hosts} Sometimes Hosts")
+            print(f"\n{debug_prefix} 🔍 FINAL HOST COUNT SUMMARY:")
+            print(f"  {debug_prefix} Members found: {found_members} out of {len(member_ids)}")
+            print(f"  {debug_prefix} All host values found: {all_host_statuses}")
+            print(f"  {debug_prefix} 'Always' host values: {always_host_values}")
+            print(f"  {debug_prefix} 'Sometimes' host values: {sometimes_host_values}")
+            print(f"  {debug_prefix} FINAL COUNTS: {always_hosts} Always Hosts, {sometimes_hosts} Sometimes Hosts")
         else:
             print(f"  Final counts: {always_hosts} Always Hosts, {sometimes_hosts} Sometimes Hosts")
         
