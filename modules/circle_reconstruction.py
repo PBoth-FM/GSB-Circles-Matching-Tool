@@ -695,11 +695,31 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                  f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
                  f"max_additions={row.get('max_additions', 0)})")
     
+    # Add a validation step to verify our metadata is correct
+    print("\n🔍 VALIDATING CIRCLE METADATA: Checking for consistent metadata")
+    metadata_source_count = 0
+    if 'metadata_source' in circles_df.columns:
+        metadata_source_count = (circles_df['metadata_source'] == 'optimizer').sum()
+        print(f"  Found {metadata_source_count}/{len(circles_df)} circles with optimizer metadata")
+    else:
+        print("  ⚠️ No metadata_source column found - standardized metadata may not be in use")
+    
+    # Check for any member_count=0 issues
+    zero_member_count = len(circles_df[circles_df['member_count'] == 0]) if 'member_count' in circles_df.columns else 0
+    if zero_member_count > 0:
+        print(f"  ⚠️ Found {zero_member_count} circles with member_count=0")
+    else:
+        print("  ✅ No circles with member_count=0 detected")
+    
     # ENHANCED APPROACH: Use CircleMetadataManager to store circles data
     print("\n🔄 INTEGRATING WITH METADATA MANAGER: Creating centralized circle data store")
     try:
         # Import the CircleMetadataManager
         from utils.circle_metadata_manager import CircleMetadataManager
+        from utils.feature_flags import get_flag
+        
+        # Check if we're using standardized metadata
+        use_standardized_metadata = get_flag('use_optimizer_metadata')
         
         # Convert circles_df to list of dictionaries for the manager
         if hasattr(circles_df, 'to_dict'):
@@ -715,6 +735,19 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             # Create metadata manager instance for use in other components
             manager = CircleMetadataManager().initialize_from_optimizer(circle_list, results_df)
             print(f"  ✅ Successfully created CircleMetadataManager with {len(circle_list)} circles")
+            
+            # Add enhanced debugging information
+            if use_standardized_metadata:
+                # Check if all circles in the metadata manager are properly tracked
+                all_manager_circles = manager.get_all_circles()
+                print(f"  💡 CircleMetadataManager contains {len(all_manager_circles)} circles")
+                
+                if len(all_manager_circles) > 0:
+                    # Show a few sample circles with their key metadata
+                    print("  Sample circles in metadata manager:")
+                    for i, circle in enumerate(all_manager_circles[:3]):
+                        print(f"    {i+1}. {circle['circle_id']}: {circle.get('member_count', 'Unknown')} members, "
+                              f"metadata_source={circle.get('metadata_source', 'Unknown')}")
             
             # This manager object will be available for use by caller, but we still return the DataFrame
             # for backward compatibility with existing code
