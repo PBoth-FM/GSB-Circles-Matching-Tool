@@ -82,12 +82,22 @@ class CircleMetadataManager:
         # Initialize counters for statistics
         always_fixed = 0
         sometimes_fixed = 0
+        target_circles = ['IP-BOS-04', 'IP-BOS-05']  # Specific circles we're troubleshooting
+        
+        print("\n🔍 HOST NORMALIZATION: Checking host counts across all circles")
         
         for circle_id, circle in self.circles.items():
             # Count hosts using results_df as source of truth
             if self.results_df is not None and 'members' in circle and circle['members']:
                 # Convert to list if needed
                 members_list = self._ensure_list(circle['members'])
+                
+                # Extra debug for target circles
+                is_target = circle_id in target_circles
+                if is_target:
+                    print(f"\n🔍 DETAILED HOST CHECK FOR {circle_id}:")
+                    print(f"  Found {len(members_list)} members in this circle")
+                    print(f"  Member IDs: {members_list}")
                 
                 # Count by analyzing each member
                 always_hosts, sometimes_hosts = self._count_hosts_from_members(members_list)
@@ -96,16 +106,48 @@ class CircleMetadataManager:
                 always_before = circle.get('always_hosts', 0)
                 sometimes_before = circle.get('sometimes_hosts', 0)
                 
+                # Additional debug for target circles
+                if is_target:
+                    print(f"  Current host counts: {always_before} Always, {sometimes_before} Sometimes")
+                    print(f"  Calculated host counts: {always_hosts} Always, {sometimes_hosts} Sometimes")
+                
+                # Check for significant differences that might indicate a problem
+                if always_before > 0 and always_hosts == 0:
+                    print(f"  ⚠️ WARNING: Circle {circle_id} had {always_before} Always Hosts before but 0 now")
+                    # Add more detailed debugging for this case
+                    if self.results_df is not None and len(members_list) > 0:
+                        print(f"  🔍 MEMBER HOST STATUS CHECK:")
+                        for member_id in members_list:
+                            member_rows = self.results_df[self.results_df['Encoded ID'] == member_id]
+                            if not member_rows.empty:
+                                host_col = None
+                                for col in ['host', 'Host', 'willing_to_host']:
+                                    if col in self.results_df.columns:
+                                        host_col = col
+                                        break
+                                if host_col:
+                                    host_status = member_rows.iloc[0][host_col]
+                                    print(f"    Member {member_id}: host_status='{host_status}'")
+                                else:
+                                    print(f"    Member {member_id}: No host column found")
+                            else:
+                                print(f"    Member {member_id}: Not found in results DataFrame")
+                
                 if always_before != always_hosts:
                     circle['always_hosts'] = always_hosts
                     always_fixed += 1
+                    if is_target or (always_before == 0 and always_hosts > 0) or (always_before > 0 and always_hosts == 0):
+                        print(f"  ✅ FIXED: Updated always_hosts for {circle_id}: {always_before} → {always_hosts}")
                     self.logger.debug(f"Fixed always_hosts for {circle_id}: {always_before} → {always_hosts}")
                 
                 if sometimes_before != sometimes_hosts:
                     circle['sometimes_hosts'] = sometimes_hosts
                     sometimes_fixed += 1
+                    if is_target:
+                        print(f"  ✅ FIXED: Updated sometimes_hosts for {circle_id}: {sometimes_before} → {sometimes_hosts}")
                     self.logger.debug(f"Fixed sometimes_hosts for {circle_id}: {sometimes_before} → {sometimes_hosts}")
         
+        print(f"Host normalization complete: Fixed {always_fixed} always_hosts and {sometimes_fixed} sometimes_hosts values")
         self.logger.info(f"Host normalization complete: Fixed {always_fixed} always_hosts and {sometimes_fixed} sometimes_hosts values")
     
     def _count_hosts_from_members(self, member_ids: List[str]) -> tuple:
@@ -123,7 +165,7 @@ class CircleMetadataManager:
         
         # Host column may have different names, try to find it
         host_col = None
-        for col in ['host', 'Host']: 
+        for col in ['host', 'Host', 'willing_to_host']: 
             if col in self.results_df.columns:
                 host_col = col
                 break
@@ -133,6 +175,11 @@ class CircleMetadataManager:
             return always_hosts, sometimes_hosts
         
         # Count hosts from results DataFrame
+        missing_members = 0
+        
+        # First debug check
+        print(f"\n🔍 HOST COUNT DEBUG FOR {len(member_ids)} MEMBERS:")
+        
         for member_id in member_ids:
             # Look up this member in results_df
             member_rows = self.results_df[self.results_df['Encoded ID'] == member_id]
@@ -141,11 +188,32 @@ class CircleMetadataManager:
                 # Get host status
                 host_status = member_rows.iloc[0][host_col]
                 
-                # Count based on status
-                if host_status in ['Always', 'Always Host']:
+                # Enhanced debug output
+                if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                    print(f"  Member {member_id}: host_status='{host_status}'")
+                
+                # Expanded host status recognition
+                # IMPORTANT: This is a critical fix - multiple representations of the same status
+                # must be recognized consistently
+                if host_status in ['Always', 'Always Host', 'always', 'yes', 'Yes', 'TRUE', True, 1]:
                     always_hosts += 1
-                elif host_status in ['Sometimes', 'Sometimes Host']:
+                    if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                        print(f"    ✅ Counted as ALWAYS HOST")
+                elif host_status in ['Sometimes', 'Sometimes Host', 'sometimes', 'maybe', 'Maybe']:
                     sometimes_hosts += 1
+                    if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                        print(f"    ✅ Counted as SOMETIMES HOST")
+                else:
+                    if member_id.endswith('01') or member_id.endswith('02') or member_id.endswith('03'):
+                        print(f"    ℹ️ Not counted as host (status: '{host_status}')")
+            else:
+                missing_members += 1
+        
+        if missing_members > 0:
+            self.logger.warning(f"Could not find {missing_members} members in results DataFrame")
+        
+        # Final host counts summary
+        print(f"  Final counts: {always_hosts} Always Hosts, {sometimes_hosts} Sometimes Hosts")
         
         return always_hosts, sometimes_hosts
     
@@ -246,24 +314,56 @@ class CircleMetadataManager:
         """Ensure max_additions is consistent with actual new members"""
         inconsistencies = 0
         corrections = 0
+        target_circles = ['IP-BOS-04', 'IP-BOS-05']  # Specific circles we're troubleshooting
+        
+        print("\n🔍 MAX ADDITIONS VALIDATION: Checking consistency across all circles")
         
         for circle_id, circle in self.circles.items():
+            is_target = circle_id in target_circles
+            
+            # Special debug for target circles
+            if is_target:
+                print(f"\n🔍 DETAILED MAX ADDITIONS CHECK FOR {circle_id}:")
+                print(f"  Circle data summary:")
+                print(f"    member_count: {circle.get('member_count', 'N/A')}")
+                print(f"    continuing_members: {circle.get('continuing_members', 'N/A')}")
+                print(f"    new_members: {circle.get('new_members', 'N/A')}")
+                print(f"    max_additions: {circle.get('max_additions', 'N/A')}")
+                print(f"    always_hosts: {circle.get('always_hosts', 'N/A')}")
+                print(f"    sometimes_hosts: {circle.get('sometimes_hosts', 'N/A')}")
+            
             if 'new_members' in circle and 'max_additions' in circle:
                 new_members = circle.get('new_members', 0)
                 max_additions = circle.get('max_additions', 0)
                 
+                # Check for zeros where we wouldn't expect them
+                if max_additions == 0 and circle_id.startswith('IP-BOS-0'):
+                    print(f"  ⚠️ SUSPICIOUS: Circle {circle_id} has max_additions=0, which seems unusual for this circle series")
+                
                 # If there are more new members than allowed, flag this
                 if new_members > max_additions:
                     inconsistencies += 1
-                    self.logger.warning(f"⚠️ INCONSISTENCY: Circle {circle_id} has {new_members} new members but max_additions={max_additions}")
+                    msg = f"⚠️ INCONSISTENCY: Circle {circle_id} has {new_members} new members but max_additions={max_additions}"
+                    print(msg)
+                    self.logger.warning(msg)
                     
                     # Correct max_additions to match reality if instructed
                     # In this implementation, we choose to update max_additions to match actual new members
                     circle['max_additions'] = new_members
                     corrections += 1
-                    self.logger.info(f"✅ FIXED: Updated max_additions for {circle_id} to {new_members} to match actual new members")
+                    success_msg = f"✅ FIXED: Updated max_additions for {circle_id} to {new_members} to match actual new members"
+                    print(success_msg)
+                    self.logger.info(success_msg)
+                    
+                # Also look for suspiciously low max_additions
+                elif max_additions == 0 and new_members == 0 and circle.get('member_count', 0) < 8:
+                    # This might be a circle that should actually allow additions but doesn't
+                    print(f"  🔎 SUSPICIOUS: Circle {circle_id} has {circle.get('member_count', 0)} members but max_additions=0")
+                    # No automatic correction here, just flagging for attention
         
-        self.logger.info(f"Found {inconsistencies} max_additions inconsistencies, applied {corrections} corrections")
+        summary = f"Found {inconsistencies} max_additions inconsistencies, applied {corrections} corrections"
+        print(summary)
+        self.logger.info(summary)
     
     def get_all_circles(self) -> List[Dict[str, Any]]:
         """Get all circle data as a list of dictionaries"""
