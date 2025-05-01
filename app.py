@@ -790,8 +790,28 @@ def process_uploaded_file(uploaded_file):
                         circles_df = pd.DataFrame()  # Empty DataFrame as fallback
                     
                     # SYSTEM UPGRADE: Using the centralized metadata manager for comprehensive fixing
-                    from utils.metadata_manager import debug_circle_metadata, fill_circle_metadata
+                    from utils.circle_metadata_manager import get_manager_from_session_state, initialize_or_update_manager
                     import logging
+                    
+                    # Get the metadata manager from session state
+                    print("\n🔄 GETTING CIRCLE DATA FROM METADATA MANAGER: Authoritative single source of truth")
+                    metadata_manager = get_manager_from_session_state(st.session_state)
+                    
+                    # Check if we got a valid manager
+                    if metadata_manager:
+                        # Replace the circles_df with the one from the manager to ensure consistency
+                        circles_df = metadata_manager.get_circles_dataframe()
+                        print(f"  ✅ Successfully retrieved circle data from metadata manager: {len(circles_df)} circles")
+                        
+                        # CRITICAL FIX: Target circle diagnostics
+                        for test_id in ['IP-BOS-04', 'IP-BOS-05']:
+                            circle_data = metadata_manager.get_circle_data(test_id)
+                            if circle_data:
+                                print(f"\n🔍 TEST CIRCLE {test_id} VALIDATION FROM METADATA MANAGER:")
+                                for key in ['max_additions', 'always_hosts', 'sometimes_hosts', 'member_count', 'new_members', 'continuing_members']:
+                                    print(f"  {key}: {circle_data.get(key, 'Not Found')}")
+                    else:
+                        print("  ⚠️ WARNING: Could not get metadata manager from session state")
                     
                     print("\n🔍 CIRCLE COMPOSITION DEBUG: Using centralized metadata manager")
                     print(f"Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
@@ -875,12 +895,24 @@ def process_uploaded_file(uploaded_file):
                         # Set up logging to capture detailed output
                         logging.basicConfig(level=logging.INFO)
                         
-                        # Debug and log the circle metadata issues
-                        debug_circle_metadata(circles_df)
-                        
-                        # Apply the comprehensive fix
-                        print("\n🔧 APPLYING COMPREHENSIVE METADATA FIX")
-                        fixed_circles_df = fill_circle_metadata(circles_df, results_df)
+                        # CRITICAL FIX: Use our metadata manager for comprehensive fixing
+                        if metadata_manager:
+                            print("\n🔧 APPLYING COMPREHENSIVE METADATA FIX using CircleMetadataManager")
+                            
+                            # Update metadata from results
+                            metadata_manager.results_df = results_df
+                            
+                            # Normalize and validate circle data
+                            metadata_manager.normalize_metadata()
+                            metadata_manager.validate_circles()
+                            
+                            # Get the updated data as a DataFrame
+                            fixed_circles_df = metadata_manager.get_circles_dataframe()
+                            print(f"  ✅ Successfully applied comprehensive metadata fix to {len(fixed_circles_df)} circles")
+                        else:
+                            print("  ⚠️ WARNING: Cannot apply comprehensive fix - no metadata manager available")
+                            # Fallback to the original circles_df
+                            fixed_circles_df = circles_df
                         
                         # Update the circles DataFrame with the fixed version
                         circles_df = fixed_circles_df
