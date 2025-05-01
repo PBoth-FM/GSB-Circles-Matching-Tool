@@ -2303,16 +2303,21 @@ def render_debug_tab():
     """Render the debug tab content"""
     st.subheader("Debug Information")
     
+    # Add Feature Flags section
+    from utils.feature_flags import render_debug_flags
+    render_debug_flags()
+    
     # Add a comprehensive log viewer with copy button
     st.write("## Optimization Debug Logs")
     
     # Create tabs for different sections of debug info
-    debug_tab1, debug_tab2, debug_tab3, debug_tab4, debug_tab5 = st.tabs([
+    debug_tab1, debug_tab2, debug_tab3, debug_tab4, debug_tab5, debug_tab6 = st.tabs([
         "Circle Capacity Analysis", 
         "Houston Debug Logs", 
         "Circle Eligibility Debug", 
         "All Circles Debug",
-        "Seattle Compatibility Analysis"
+        "Seattle Compatibility Analysis",
+        "Metadata Debug"
     ])
     
     with debug_tab1:

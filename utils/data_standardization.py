@@ -1,345 +1,243 @@
 import pandas as pd
-import re
 import logging
-from typing import List, Dict, Any, Union
+import ast
+from typing import List, Dict, Any, Union, Optional
+from utils.feature_flags import get_flag
 
-# Configure logging
-logger = logging.getLogger('data_standardization')
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("data_standardization")
 
-# Track normalization statistics for debugging
-_normalization_stats = {
-    'host_status': {
-        'total': 0,
-        'normalized_to_always': 0,
-        'normalized_to_sometimes': 0,
-        'normalized_to_never': 0,
-        'already_standardized': 0,
-        'examples': {}
-    },
-    'member_lists': {
-        'total': 0,
-        'from_string': 0,
-        'from_list': 0,
-        'from_nan': 0,
-        'from_other': 0,
-        'examples': {}
-    },
-    'encoded_ids': {
-        'total': 0,
-        'from_string': 0,
-        'from_numeric': 0,
-        'from_nan': 0,
-        'examples': {}
-    }
-}
-
-def normalize_host_status(host_value: Any) -> str:
+def normalize_host_status(status_value: Any) -> str:
     """
-    Normalize host status to standard values: ALWAYS, SOMETIMES, or NEVER
+    Standardize host status to "ALWAYS", "SOMETIMES", or "NEVER".
     
     Args:
-        host_value: The host value to normalize (could be string, boolean, number, or None)
+        status_value: The raw host status value which could be in various formats.
         
     Returns:
-        Standardized host status: "ALWAYS", "SOMETIMES", or "NEVER"
+        str: Standardized host status as "ALWAYS", "SOMETIMES", or "NEVER".
     """
-    # Track statistics
-    _normalization_stats['host_status']['total'] += 1
+    if not get_flag('use_standardized_host_status'):
+        # Simply return the original value converted to string if feature is disabled
+        return str(status_value) if status_value is not None else "NEVER"
+    
+    # Enable verbose logging if debug flag is set
+    debug = get_flag('debug_data_standardization')
+    if debug:
+        logger.info(f"Standardizing host status: '{status_value}' (type: {type(status_value).__name__})")
     
     # Handle None/NaN values
-    if pd.isna(host_value) or host_value is None or host_value == '':
-        _normalization_stats['host_status']['normalized_to_never'] += 1
-        _track_example('host_status', host_value, 'NEVER', 'null_or_empty')
+    if pd.isna(status_value) or status_value is None:
         return "NEVER"
     
-    # Handle boolean values
-    if isinstance(host_value, bool):
-        if host_value:
-            _normalization_stats['host_status']['normalized_to_always'] += 1
-            _track_example('host_status', host_value, 'ALWAYS', 'boolean_true')
+    # Convert to string for consistent processing
+    status_str = str(status_value).strip().upper()
+    
+    # Direct mappings
+    if status_str in ["1", "TRUE", "YES", "ALWAYS", "1.0"]:
+        return "ALWAYS"
+    elif status_str in ["0.5", "SOMETIMES", "ROTATING"]:
+        return "SOMETIMES"
+    elif status_str in ["0", "FALSE", "NO", "NEVER", "0.0"]:
+        return "NEVER"
+    
+    # Check for boolean values
+    if isinstance(status_value, bool):
+        return "ALWAYS" if status_value else "NEVER"
+    
+    # Check for numeric values
+    try:
+        num_value = float(status_value)
+        if num_value == 1.0:
             return "ALWAYS"
-        else:
-            _normalization_stats['host_status']['normalized_to_never'] += 1
-            _track_example('host_status', host_value, 'NEVER', 'boolean_false')
+        elif num_value == 0.5:
+            return "SOMETIMES"
+        elif num_value == 0.0:
             return "NEVER"
-    
-    # Handle numeric values
-    if isinstance(host_value, (int, float)):
-        if host_value == 1:
-            _normalization_stats['host_status']['normalized_to_always'] += 1
-            _track_example('host_status', host_value, 'ALWAYS', 'numeric_one')
-            return "ALWAYS"
         else:
-            _normalization_stats['host_status']['normalized_to_never'] += 1
-            _track_example('host_status', host_value, 'NEVER', 'numeric_zero')
-            return "NEVER"
+            # For any other numeric value between 0 and 1, assume "SOMETIMES"
+            if 0 < num_value < 1:
+                return "SOMETIMES"
+            # For >1, assume "ALWAYS"
+            elif num_value > 0:
+                return "ALWAYS"
+            else:
+                return "NEVER"
+    except (ValueError, TypeError):
+        pass
     
-    # Now we know it's a string or convertible to string
-    host_str = str(host_value).strip().lower()
-    
-    # Check if already in standard format
-    if host_str in ['always', 'sometimes', 'never']:
-        standardized = host_str.upper()
-        _normalization_stats['host_status']['already_standardized'] += 1
-        return standardized
-    
-    # Match patterns for "always" hosts
-    always_patterns = ['always', 'yes', 'true', 'definitely', 'certainly', 'happy to', '1', 'willing']
-    for pattern in always_patterns:
-        if pattern in host_str or host_str == pattern:
-            _normalization_stats['host_status']['normalized_to_always'] += 1
-            _track_example('host_status', host_value, 'ALWAYS', f'pattern_{pattern}')
-            return "ALWAYS"
-    
-    # Match patterns for "sometimes" hosts
-    sometimes_patterns = ['sometimes', 'maybe', 'possibly', 'occasionally', 'can', 'could', 
-                         'willing to but', 'able to but', 'if needed', 'if necessary']
-    for pattern in sometimes_patterns:
-        if pattern in host_str:
-            _normalization_stats['host_status']['normalized_to_sometimes'] += 1
-            _track_example('host_status', host_value, 'SOMETIMES', f'pattern_{pattern}')
+    # Handle "Rotating" or similar terms
+    for term in ["ROTAT", "SHAR", "SOME"]:
+        if term in status_str:
             return "SOMETIMES"
     
-    # Match patterns for "never" hosts
-    never_patterns = ['never', 'no', 'not', 'cannot', "can't", 'unable', 'impossible', '0', 'don\'t']
-    for pattern in never_patterns:
-        if pattern in host_str:
-            _normalization_stats['host_status']['normalized_to_never'] += 1
-            _track_example('host_status', host_value, 'NEVER', f'pattern_{pattern}')
-            return "NEVER"
-    
-    # Default to NEVER for unmatched patterns
-    _normalization_stats['host_status']['normalized_to_never'] += 1
-    _track_example('host_status', host_value, 'NEVER', 'default_unmatched')
+    # Default to "NEVER" for unrecognized values
+    if debug:
+        logger.warning(f"Unrecognized host status value: '{status_value}', defaulting to 'NEVER'")
     return "NEVER"
 
-def normalize_member_list(value: Any) -> List[str]:
+def normalize_member_list(members_value: Any) -> List[str]:
     """
-    Normalize member list to a consistent List[str] format
+    Standardize member lists to a consistent format (List[str]).
     
     Args:
-        value: The member list value to normalize (could be list, string, None, etc.)
+        members_value: The raw members value which could be in various formats:
+                       - List of strings or numbers
+                       - String representation of a list
+                       - Single string or number
+                       - None/NaN
         
     Returns:
-        List of member IDs as strings
+        List[str]: Standardized list of member IDs as strings.
     """
-    # Track statistics
-    _normalization_stats['member_lists']['total'] += 1
+    if not get_flag('use_standardized_member_lists'):
+        # Simply return the original value if feature is disabled
+        # but make sure it's a list
+        if isinstance(members_value, list):
+            return members_value
+        elif pd.isna(members_value) or members_value is None:
+            return []
+        else:
+            return [members_value]
+    
+    # Enable verbose logging if debug flag is set
+    debug = get_flag('debug_data_standardization')
+    if debug:
+        logger.info(f"Standardizing member list: '{members_value}' (type: {type(members_value).__name__})")
     
     # Handle None/NaN values
-    if pd.isna(value) or value is None:
-        _normalization_stats['member_lists']['from_nan'] += 1
-        _track_example('member_lists', value, [], 'null_or_none')
+    if pd.isna(members_value) or members_value is None:
         return []
     
-    # Handle already-list values
-    if isinstance(value, list):
-        _normalization_stats['member_lists']['from_list'] += 1
-        
-        # Ensure all elements are strings and handle potential None/NaN values within the list
-        normalized_list = []
-        for item in value:
-            if pd.isna(item) or item is None:
-                continue  # Skip None/NaN values
-            
-            # Convert to string
-            normalized_list.append(str(item).strip())
-        
-        _track_example('member_lists', value, normalized_list, 'from_list')
-        return normalized_list
+    # If it's already a list, validate the items
+    if isinstance(members_value, list):
+        # Convert each element to string and filter out None/NaN
+        return [str(member) for member in members_value if not pd.isna(member)]
     
-    # Handle string values - potentially representing a list
-    if isinstance(value, str):
-        _normalization_stats['member_lists']['from_string'] += 1
-        
-        # Check if it's a string representation of a list
-        if value.strip().startswith('[') and value.strip().endswith(']'):
+    # If it's a string that looks like a list representation, parse it
+    if isinstance(members_value, str):
+        if members_value.strip().startswith('[') and members_value.strip().endswith(']'):
             try:
-                # Try to parse as Python literal
-                import ast
-                parsed_list = ast.literal_eval(value)
-                
-                # Ensure it's actually a list
+                # Use ast.literal_eval for safe parsing of list literals
+                parsed_list = ast.literal_eval(members_value)
                 if isinstance(parsed_list, list):
-                    # Recursively normalize to handle nested structures
-                    _track_example('member_lists', value, parsed_list, 'string_as_list')
-                    return normalize_member_list(parsed_list)
-            except (ValueError, SyntaxError) as e:
-                # If parsing fails, treat as a single string item
-                logger.warning(f"Failed to parse member list string: {e}")
+                    # Convert each element to string and filter out None/NaN
+                    return [str(member) for member in parsed_list if not pd.isna(member)]
+            except (ValueError, SyntaxError):
+                if debug:
+                    logger.warning(f"Failed to parse string as list: '{members_value}'")
         
-        # If we get here, treat as a single string value
-        if value.strip():  # Only add non-empty strings
-            _track_example('member_lists', value, [value.strip()], 'string_as_item')
-            return [value.strip()]
-        else:
-            _track_example('member_lists', value, [], 'empty_string')
-            return []
+        # If it's a comma-separated string, split it
+        if ',' in members_value:
+            # Split by comma and strip whitespace
+            return [item.strip() for item in members_value.split(',') if item.strip()]
+        
+        # If it's a single string value, return it as a one-item list
+        return [members_value.strip()]
     
-    # Handle other types (convert to string and treat as single item)
-    _normalization_stats['member_lists']['from_other'] += 1
-    
-    try:
-        # Try to convert to string and use as single item
-        str_value = str(value).strip()
-        if str_value:
-            _track_example('member_lists', value, [str_value], f'from_{type(value).__name__}')
-            return [str_value]
-    except Exception as e:
-        logger.warning(f"Failed to convert member list value to string: {e}")
-    
-    # If all else fails, return empty list
-    _track_example('member_lists', value, [], 'conversion_failed')
-    return []
+    # If it's a scalar value (like a number), convert to string and return as list
+    return [str(members_value)]
 
-def normalize_encoded_id(value: Any) -> str:
+def standardize_circle_metadata(circle_data: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Normalize encoded ID to string format
+    Standardize all metadata for a single circle.
     
     Args:
-        value: The encoded ID value to normalize
+        circle_data: Dictionary containing circle metadata.
         
     Returns:
-        Encoded ID as string
+        Dict[str, Any]: Standardized circle metadata.
     """
-    # Track statistics
-    _normalization_stats['encoded_ids']['total'] += 1
+    # Create a copy of the dictionary to avoid modifying the original
+    standardized = circle_data.copy()
     
+    # Standardize host statuses
+    for field in ['host_status', 'will_host', 'always_hosts', 'sometimes_hosts']:
+        if field in standardized:
+            standardized[field] = normalize_host_status(standardized[field])
+    
+    # Standardize member lists
+    for field in ['members', 'current_members', 'new_members']:
+        if field in standardized:
+            standardized[field] = normalize_member_list(standardized[field])
+    
+    # Ensure consistent ID types (strings)
+    if 'circle_id' in standardized:
+        standardized['circle_id'] = str(standardized['circle_id'])
+    
+    return standardized
+
+def standardize_df_host_status(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Standardize host status values in a DataFrame column.
+    
+    Args:
+        df: pandas DataFrame containing host status data
+        column_name: Name of the column containing host status values
+        
+    Returns:
+        DataFrame with standardized host status values.
+    """
+    if column_name not in df.columns:
+        return df
+    
+    # Create a copy of the DataFrame to avoid modifying the original
+    result_df = df.copy()
+    
+    # Apply standardization function to the column
+    result_df[column_name] = result_df[column_name].apply(normalize_host_status)
+    
+    return result_df
+
+def standardize_df_member_lists(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+    """
+    Standardize member list values in a DataFrame column.
+    
+    Args:
+        df: pandas DataFrame containing member list data
+        column_name: Name of the column containing member list values
+        
+    Returns:
+        DataFrame with standardized member list values.
+    """
+    if column_name not in df.columns:
+        return df
+    
+    # Create a copy of the DataFrame to avoid modifying the original
+    result_df = df.copy()
+    
+    # Apply standardization function to the column
+    result_df[column_name] = result_df[column_name].apply(normalize_member_list)
+    
+    return result_df
+
+def normalize_encoded_id(id_value: Any) -> str:
+    """
+    Normalize encoded ID values to consistent string format.
+    
+    Args:
+        id_value: The ID value to normalize, could be int, float, or string.
+        
+    Returns:
+        str: Normalized ID as string.
+    """
     # Handle None/NaN values
-    if pd.isna(value) or value is None:
-        _normalization_stats['encoded_ids']['from_nan'] += 1
-        _track_example('encoded_ids', value, '', 'null_or_none')
+    if pd.isna(id_value) or id_value is None:
         return ""
     
-    # Handle string values
-    if isinstance(value, str):
-        _normalization_stats['encoded_ids']['from_string'] += 1
-        _track_example('encoded_ids', value, value.strip(), 'from_string')
-        return value.strip()
-    
-    # Handle numeric values
-    if isinstance(value, (int, float)):
-        _normalization_stats['encoded_ids']['from_numeric'] += 1
-        
-        # Convert to string, being careful with floating point
-        if isinstance(value, float) and value.is_integer():
-            # Convert to int first to remove decimal point
-            str_value = str(int(value))
-        else:
-            str_value = str(value)
-        
-        _track_example('encoded_ids', value, str_value, 'from_numeric')
-        return str_value
-    
-    # For any other type, convert to string
-    try:
-        str_value = str(value).strip()
-        _track_example('encoded_ids', value, str_value, f'from_{type(value).__name__}')
-        return str_value
-    except Exception as e:
-        logger.warning(f"Failed to convert encoded ID to string: {e}")
-        return ""
+    # Convert to string
+    return str(id_value).strip()
 
-def _track_example(category: str, original: Any, normalized: Any, rule: str) -> None:
+def print_normalization_logs(message: str, verbose: bool = False) -> None:
     """
-    Track example conversions for debugging
+    Print normalization logs if debug flag is enabled.
     
     Args:
-        category: The normalization category (host_status, member_lists, encoded_ids)
-        original: The original value
-        normalized: The normalized value
-        rule: The rule that triggered this normalization
+        message: The message to log.
+        verbose: Whether to print the log even if debug flag is not set.
     """
-    examples = _normalization_stats[category]['examples']
-    
-    # Create rule entry if it doesn't exist
-    if rule not in examples:
-        examples[rule] = []
-    
-    # Add example if we don't have too many already
-    if len(examples[rule]) < 5:  # Limit to 5 examples per rule
-        examples[rule].append({
-            'original': original,
-            'original_type': type(original).__name__,
-            'normalized': normalized
-        })
+    debug = get_flag('debug_data_standardization')
+    if debug or verbose:
+        logger.info(message)
 
-def get_normalization_stats() -> Dict[str, Any]:
-    """
-    Get current normalization statistics
-    
-    Returns:
-        Dictionary with normalization statistics
-    """
-    return _normalization_stats
-
-def reset_normalization_stats() -> None:
-    """
-    Reset normalization statistics
-    """
-    global _normalization_stats
-    _normalization_stats = {
-        'host_status': {
-            'total': 0,
-            'normalized_to_always': 0,
-            'normalized_to_sometimes': 0,
-            'normalized_to_never': 0,
-            'already_standardized': 0,
-            'examples': {}
-        },
-        'member_lists': {
-            'total': 0,
-            'from_string': 0,
-            'from_list': 0,
-            'from_nan': 0,
-            'from_other': 0,
-            'examples': {}
-        },
-        'encoded_ids': {
-            'total': 0,
-            'from_string': 0,
-            'from_numeric': 0,
-            'from_nan': 0,
-            'examples': {}
-        }
-    }
-
-def print_normalization_logs() -> None:
-    """
-    Print detailed normalization logs
-    """
-    stats = get_normalization_stats()
-    
-    print("\n====== DATA STANDARDIZATION LOGS ======")
-    
-    # Host status logs
-    host_stats = stats['host_status']
-    print(f"\nHOST STATUS NORMALIZATION ({host_stats['total']} total):")
-    print(f"  - Normalized to ALWAYS:    {host_stats['normalized_to_always']}")
-    print(f"  - Normalized to SOMETIMES: {host_stats['normalized_to_sometimes']}")
-    print(f"  - Normalized to NEVER:     {host_stats['normalized_to_never']}")
-    print(f"  - Already standardized:    {host_stats['already_standardized']}")
-    
-    # Print examples for host status
-    print("\n  SAMPLE CONVERSIONS:")
-    for rule, examples in host_stats['examples'].items():
-        print(f"  Rule: {rule}")
-        for ex in examples:
-            print(f"    '{ex['original']}' ({ex['original_type']}) → '{ex['normalized']}'")
-    
-    # Member lists logs
-    member_stats = stats['member_lists']
-    print(f"\nMEMBER LIST NORMALIZATION ({member_stats['total']} total):")
-    print(f"  - From string:  {member_stats['from_string']}")
-    print(f"  - From list:    {member_stats['from_list']}")
-    print(f"  - From NaN:     {member_stats['from_nan']}")
-    print(f"  - From other:   {member_stats['from_other']}")
-    
-    # Encoded IDs logs
-    id_stats = stats['encoded_ids']
-    print(f"\nENCODED ID NORMALIZATION ({id_stats['total']} total):")
-    print(f"  - From string:  {id_stats['from_string']}")
-    print(f"  - From numeric: {id_stats['from_numeric']}")
-    print(f"  - From NaN:     {id_stats['from_nan']}")
-    
-    print("\n========================================")

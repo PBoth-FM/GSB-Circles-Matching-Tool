@@ -16,6 +16,7 @@ from modules.ui_components import (
     render_unmatched_table
 )
 from utils.helpers import generate_download_link
+from utils.feature_flags import initialize_feature_flags, set_flag
 
 # Configure Streamlit page
 st.set_page_config(
@@ -53,6 +54,12 @@ if 'config' not in st.session_state:
         'optimization_weight_time': 2,
         'enable_host_requirement': True
     }
+
+# Initialize feature flags
+initialize_feature_flags()
+
+# Enable the feature flags UI in debug mode
+set_flag('enable_feature_flags_ui', True)
 
 def main():
     st.title("CirclesTool2")
