@@ -4266,11 +4266,67 @@ def render_circle_details():
         # Filter to available columns
         display_cols = [col for col in display_cols if col in members_df.columns]
         
+        # Import standardization utilities if not already imported
+        if 'normalize_host_status' not in locals():
+            from utils.data_standardization import normalize_host_status
+        
+        # Add standardized host status column if host column exists
+        host_col = None
+        for col in ['host', 'Host', 'willing_to_host']:
+            if col in members_df.columns:
+                host_col = col
+                # Add normalized host status column
+                members_df['Standardized Host'] = members_df[host_col].apply(normalize_host_status)
+                # Add to display columns
+                display_cols.append('Standardized Host')
+                break
+        
         if display_cols:
             st.dataframe(members_df[display_cols], use_container_width=True)
         else:
             st.warning("Member data doesn't contain the expected columns.")
-            
+        
+        # Show host status analysis
+        if host_col:
+            with st.expander("Host Status Analysis"):
+                st.write("### Host Status Distribution")
+                
+                # Show counts by standardized host status
+                host_counts = members_df['Standardized Host'].value_counts().reset_index()
+                host_counts.columns = ['Host Status', 'Count']
+                
+                # Create a small bar chart
+                fig = px.bar(
+                    host_counts,
+                    x='Host Status',
+                    y='Count',
+                    color='Host Status',
+                    title='Host Status Distribution',
+                    color_discrete_map={
+                        'ALWAYS': '#2E8B57',  # Sea Green
+                        'SOMETIMES': '#4682B4',  # Steel Blue
+                        'NEVER': '#CD5C5C'  # Indian Red
+                    }
+                )
+                
+                # Show the chart
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Compare with metadata
+                always_count = (members_df['Standardized Host'] == 'ALWAYS').sum()
+                sometimes_count = (members_df['Standardized Host'] == 'SOMETIMES').sum()
+                
+                st.write("### Host Counts Verification")
+                st.write(f"**Calculated from member data:** {always_count} Always, {sometimes_count} Sometimes")
+                st.write(f"**From circle metadata:** {circle_row.get('always_hosts', 0)} Always, {circle_row.get('sometimes_hosts', 0)} Sometimes")
+                
+                # Highlight discrepancies
+                if always_count != circle_row.get('always_hosts', 0):
+                    st.error(f"DISCREPANCY: Circle metadata shows {circle_row.get('always_hosts', 0)} Always Hosts but calculated count is {always_count}")
+                
+                if sometimes_count != circle_row.get('sometimes_hosts', 0):
+                    st.error(f"DISCREPANCY: Circle metadata shows {circle_row.get('sometimes_hosts', 0)} Sometimes Hosts but calculated count is {sometimes_count}")
+        
         # Debug info
         print(f"  Circle {selected_circle} has {len(member_ids)} member IDs")
         print(f"  Found {len(members_df)} matching records in results DataFrame")
@@ -4452,15 +4508,37 @@ def render_participant_details():
                         st.success(f"**Assigned Circle:** {circle_id}")
                         
                         # Show circle details if available
-                        if ('matched_circles' in st.session_state and 
-                            st.session_state.matched_circles is not None and
-                            'circle_id' in st.session_state.matched_circles.columns):
-                            
-                            circles_df = st.session_state.matched_circles
-                            circle_info = circles_df[circles_df['circle_id'] == circle_id]
-                            
-                            if not circle_info.empty:
-                                circle_row = circle_info.iloc[0]
+                        # First try using the CircleMetadataManager if available
+                        from utils.circle_metadata_manager import get_manager_from_session_state
+                        manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+                        
+                        if manager:
+                            # Use CircleMetadataManager to get circle data
+                            circle_data = manager.get_circle_data(circle_id)
+                            if circle_data:
+                                # Create a dict for consistent display
+                                circle_row = circle_data
+                                circle_info_available = True
+                            else:
+                                circle_info_available = False
+                        else:
+                            # Fall back to direct session state access
+                            if ('matched_circles' in st.session_state and 
+                                st.session_state.matched_circles is not None and
+                                'circle_id' in st.session_state.matched_circles.columns):
+                                
+                                circles_df = st.session_state.matched_circles
+                                circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                                
+                                if not circle_info.empty:
+                                    circle_row = circle_info.iloc[0]
+                                    circle_info_available = True
+                                else:
+                                    circle_info_available = False
+                            else:
+                                circle_info_available = False
+                        
+                        if circle_info_available:
                                 st.write(f"**Meeting Time:** {circle_row.get('meeting_time', 'Not specified')}")
                                 st.write(f"**Meeting Location:** {circle_row.get('meeting_location', 'Not specified')}")
                                 st.write(f"**Circle Size:** {circle_row.get('member_count', 'Unknown')}")
