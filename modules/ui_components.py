@@ -4742,18 +4742,37 @@ def render_visualizations():
             time_cols = [col for col in matched_df.columns if 'choice_time' in col]
             
             if time_cols and 'proposed_NEW_circles_id' in matched_df.columns:
+                # Import CircleMetadataManager
+                from utils.circle_metadata_manager import get_manager_from_session_state
+                
+                # Try to get the circle manager
+                manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+                
                 # Function to check if assigned time matches preferences
                 def check_time_match(row):
                     circle_id = row['proposed_NEW_circles_id']
                     if circle_id == 'UNMATCHED' or pd.isna(circle_id):
                         return None
                     
-                    # Get the assigned circle's time
-                    circle_info = circles_df[circles_df['circle_id'] == circle_id]
-                    if circle_info.empty or 'meeting_time' not in circle_info.columns:
-                        return None
+                    # Get the assigned circle's time - first try using CircleMetadataManager
+                    if manager:
+                        circle_data = manager.get_circle_data(circle_id)
+                        if circle_data and 'meeting_time' in circle_data:
+                            assigned_time = circle_data['meeting_time']
+                        else:
+                            # Fall back to DataFrame lookup
+                            circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                            if circle_info.empty or 'meeting_time' not in circle_info.columns:
+                                return None
+                            assigned_time = circle_info.iloc[0]['meeting_time']
+                    else:
+                        # Fall back to DataFrame lookup
+                        circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                        if circle_info.empty or 'meeting_time' not in circle_info.columns:
+                            return None
+                        assigned_time = circle_info.iloc[0]['meeting_time']
                     
-                    assigned_time = circle_info.iloc[0]['meeting_time']
+                    # Check for missing time value
                     if pd.isna(assigned_time):
                         return None
                     
@@ -4820,18 +4839,39 @@ def render_visualizations():
             loc_cols = [col for col in matched_df.columns if 'choice_location' in col]
             
             if loc_cols and 'proposed_NEW_circles_id' in matched_df.columns:
+                # Import CircleMetadataManager if not already imported
+                if 'get_manager_from_session_state' not in locals():
+                    from utils.circle_metadata_manager import get_manager_from_session_state
+                    
+                # Try to get the circle manager if not already obtained
+                if 'manager' not in locals() or manager is None:
+                    manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+                
                 # Function to check if assigned location matches preferences
                 def check_location_match(row):
                     circle_id = row['proposed_NEW_circles_id']
                     if circle_id == 'UNMATCHED' or pd.isna(circle_id):
                         return None
                     
-                    # Get the assigned circle's location
-                    circle_info = circles_df[circles_df['circle_id'] == circle_id]
-                    if circle_info.empty or 'meeting_location' not in circle_info.columns:
-                        return None
+                    # Get the assigned circle's location - first try using CircleMetadataManager
+                    if manager:
+                        circle_data = manager.get_circle_data(circle_id)
+                        if circle_data and 'meeting_location' in circle_data:
+                            assigned_loc = circle_data['meeting_location']
+                        else:
+                            # Fall back to DataFrame lookup
+                            circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                            if circle_info.empty or 'meeting_location' not in circle_info.columns:
+                                return None
+                            assigned_loc = circle_info.iloc[0]['meeting_location']
+                    else:
+                        # Fall back to DataFrame lookup
+                        circle_info = circles_df[circles_df['circle_id'] == circle_id]
+                        if circle_info.empty or 'meeting_location' not in circle_info.columns:
+                            return None
+                        assigned_loc = circle_info.iloc[0]['meeting_location']
                     
-                    assigned_loc = circle_info.iloc[0]['meeting_location']
+                    # Check for missing location value
                     if pd.isna(assigned_loc):
                         return None
                     
