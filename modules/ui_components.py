@@ -2301,176 +2301,442 @@ def render_class_vintage_analysis(data):
 
 def render_metadata_debug_tab():
     """Render the metadata validation debug section"""
-    st.write("### Metadata Validation")
+    st.subheader("Metadata Validation")
     st.write("This section validates the consistency of circle metadata across the application.")
     
     # Import needed utilities
     from utils.feature_flags import get_flag
-    from utils.circle_metadata_manager import CircleMetadataManager
+    from utils.circle_metadata_manager import CircleMetadataManager, get_manager_from_session_state
+    import pandas as pd
+    import plotly.express as px
     
     # Check if metadata validation is enabled
     if get_flag('enable_metadata_validation'):
         # Create tabs for different validation aspects
-        val_tab1, val_tab2 = st.tabs(["Metadata Sources", "Member Count Validation"])
+        val_tab1, val_tab2, val_tab3, val_tab4 = st.tabs(["Metadata Sources", "Member List Format", "Max Additions", "Host Status"])
         
-        # Function to validate circle metadata using CircleMetadataManager as source of truth
-        def validate_circle_metadata():
-            """Validate the circle metadata and return analysis results"""
-            from utils.data_standardization import normalize_host_status, normalize_member_list
-            from utils.circle_metadata_manager import get_manager_from_session_state
-            
-            validation_results = {
-                "sources": {},
-                "member_counts": {},
-                "host_counts": {},
-                "metadata_manager": {
-                    "available": False,
-                    "circles": 0
-                }
+        # Get the CircleMetadataManager if available
+        manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+        
+        # Function to get circle data sources for validation
+        def get_circle_data_sources():
+            sources = {
+                'manager': {'available': False, 'circle_count': 0, 'circle_ids': []},
+                'df': {'available': False, 'circle_count': 0, 'circle_ids': []}
             }
             
-            # Get the CircleMetadataManager if available
-            manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
-            
-            # Check if manager is available and initialized
+            # Check CircleMetadataManager availability
             if manager:
-                validation_results["metadata_manager"]["available"] = True
-                validation_results["metadata_manager"]["circles"] = len(manager.circles)
+                sources['manager']['available'] = True
+                sources['manager']['circle_count'] = len(manager.circles)
+                sources['manager']['circle_ids'] = list(manager.circles.keys())
             
-            # Check if we have matched circles to analyze
+            # Check DataFrame availability
             if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
                 circles_df = st.session_state.matched_circles
-                
-                # Analyze metadata sources
-                if 'metadata_source' in circles_df.columns:
-                    source_counts = circles_df['metadata_source'].value_counts().to_dict()
-                    validation_results["sources"] = {
-                        "has_source_column": True,
-                        "counts": source_counts,
-                        "total": len(circles_df)
-                    }
-                else:
-                    validation_results["sources"] = {
-                        "has_source_column": False,
-                        "counts": {},
-                        "total": len(circles_df)
-                    }
-                
-                # Get the results DataFrame for member metadata
-                results_df = st.session_state.results.copy() if 'results' in st.session_state else None
-                
-                # Analyze member counts and host counts using standardized utility functions
-                member_count_mismatches = []
-                host_count_mismatches = []
-                
-                if 'member_count' in circles_df.columns and 'members' in circles_df.columns:
-                    # Check for mismatches between member_count and actual members list length
-                    for _, row in circles_df.iterrows():
-                        circle_id = row.get('circle_id', 'unknown')
-                        member_count = row.get('member_count', 0)
-                        members_list = row.get('members', [])
-                        
-                        # Use the normalizer to ensure consistent member list format
-                        normalized_members = normalize_member_list(members_list)
-                        
-                        # Handle different formats of members list
-                        if isinstance(members_list, str) and '[' in members_list:
-                            try:
-                                members_list = eval(members_list)
-                            except:
-                                members_list = []
-                        
-                        actual_count = len(normalized_members) if isinstance(normalized_members, list) else 0
-                        
-                        if member_count != actual_count:
-                            member_count_mismatches.append({
-                                'circle_id': circle_id,
-                                'stored_count': member_count,
-                                'actual_count': actual_count
-                            })
-                    
-                    validation_results["member_counts"] = {
-                        "total_circles": len(circles_df),
-                        "mismatches": len(member_count_mismatches),
-                        "mismatch_details": member_count_mismatches,
-                        "match_percentage": (len(circles_df) - len(member_count_mismatches)) / len(circles_df) if len(circles_df) > 0 else 0
-                    }
-                else:
-                    validation_results["member_counts"] = {
-                        "total_circles": len(circles_df),
-                        "missing_columns": True
-                    }
+                sources['df']['available'] = True
+                sources['df']['circle_count'] = len(circles_df)
+                sources['df']['circle_ids'] = []
+                if 'circle_id' in circles_df.columns:
+                    sources['df']['circle_ids'] = circles_df['circle_id'].tolist()
             
-            # Check for metadata manager
-            manager = CircleMetadataManager()
-            all_manager_circles = manager.get_all_circles()
-            validation_results["metadata_manager"] = {
-                "circle_count": len(all_manager_circles),
-                "has_circles": len(all_manager_circles) > 0
-            }
-            
-            return validation_results
+            return sources
         
-        # Run validation
-        validation_data = validate_circle_metadata()
+        # Get data sources
+        sources = get_circle_data_sources()
         
         with val_tab1:
             st.write("#### Metadata Source Analysis")
             
-            sources_data = validation_data.get("sources", {})
-            if sources_data.get("has_source_column", False):
-                source_counts = sources_data.get("counts", {})
-                total_circles = sources_data.get("total", 0)
+            # Check if both sources are available
+            if sources['manager']['available'] and sources['df']['available']:
+                manager_count = sources['manager']['circle_count']
+                df_count = sources['df']['circle_count']
                 
-                # Create a summary dataframe
-                source_df = pd.DataFrame({
-                    "Source": list(source_counts.keys()),
-                    "Count": list(source_counts.values())
-                })
+                # Create a comparison
+                comp_data = {
+                    'Source': ['CircleMetadataManager', 'DataFrame'],
+                    'Circle Count': [manager_count, df_count]
+                }
+                comp_df = pd.DataFrame(comp_data)
                 
-                if not source_df.empty:
-                    source_df["Percentage"] = (source_df["Count"] / total_circles * 100).round(1).astype(str) + '%'
-                    st.dataframe(source_df, use_container_width=True)
-                    
-                    # Check for optimizer metadata
-                    optimizer_count = source_counts.get("optimizer", 0)
-                    if get_flag("use_optimizer_metadata") and optimizer_count == 0:
-                        st.warning("⚠️ 'use_optimizer_metadata' flag is enabled but no circles have 'optimizer' as the metadata source!")
-                    elif not get_flag("use_optimizer_metadata") and optimizer_count > 0:
-                        st.info("ℹ️ Some circles have 'optimizer' as the metadata source but 'use_optimizer_metadata' flag is disabled.")
-                else:
-                    st.info("No metadata source information available.")
+                # Create a bar chart
+                fig = px.bar(
+                    comp_df,
+                    x='Source',
+                    y='Circle Count',
+                    title='Circle Count by Data Source',
+                    color='Source',
+                    color_discrete_sequence=['#8C1515', '#175E54']
+                )
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Check metadata source field
+                if 'matched_circles' in st.session_state:
+                    circles_df = st.session_state.matched_circles
+                    if 'metadata_source' in circles_df.columns:
+                        # Get counts by source
+                        source_counts = circles_df['metadata_source'].value_counts().reset_index()
+                        source_counts.columns = ['Source', 'Count']
+                        
+                        # Calculate percentages
+                        source_counts['Percentage'] = (source_counts['Count'] / len(circles_df) * 100).round(1)
+                        
+                        # Show the table
+                        st.write("#### Metadata Source Field Values")
+                        st.dataframe(source_counts, use_container_width=True)
+                        
+                        # Create a pie chart
+                        fig = px.pie(
+                            source_counts,
+                            names='Source',
+                            values='Count',
+                            title='Metadata Source Distribution',
+                            color_discrete_sequence=px.colors.qualitative.Dark24
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Check if optimizer metadata flag is aligned with the data
+                        optimizer_count = source_counts[source_counts['Source'] == 'optimizer']['Count'].sum() if 'optimizer' in source_counts['Source'].values else 0
+                        if get_flag("use_optimizer_metadata") and optimizer_count == 0:
+                            st.warning("⚠️ 'use_optimizer_metadata' flag is enabled but no circles have 'optimizer' as the metadata source!")
+                        elif not get_flag("use_optimizer_metadata") and optimizer_count > 0:
+                            st.info("ℹ️ Some circles have 'optimizer' as the metadata source but 'use_optimizer_metadata' flag is disabled.")
+                    else:
+                        st.warning("⚠️ No 'metadata_source' column found in circles DataFrame.")
+                
+                # Check for consistency between manager and dataframe
+                manager_ids = set(sources['manager']['circle_ids'])
+                df_ids = set(sources['df']['circle_ids'])
+                
+                in_both = manager_ids.intersection(df_ids)
+                only_manager = manager_ids - df_ids
+                only_df = df_ids - manager_ids
+                
+                # Display Venn diagram data as metrics
+                st.write("#### Data Source Consistency")
+                cols = st.columns(3)
+                cols[0].metric("Circles in both sources", len(in_both))
+                cols[1].metric("Only in Manager", len(only_manager))
+                cols[2].metric("Only in DataFrame", len(only_df))
+                
+                # Show detailed list of inconsistent circles if any
+                if only_manager or only_df:
+                    with st.expander("View Inconsistent Circle IDs"):
+                        if only_manager:
+                            st.write("**Circles only in Manager:**")
+                            st.write(", ".join(sorted(list(only_manager))))
+                        if only_df:
+                            st.write("**Circles only in DataFrame:**")
+                            st.write(", ".join(sorted(list(only_df))))
             else:
-                st.warning("⚠️ No 'metadata_source' column found in circles data.")
-            
-            # Check metadata manager
-            manager_data = validation_data.get("metadata_manager", {})
-            st.write("#### CircleMetadataManager Status")
-            st.write(f"Circles in metadata manager: {manager_data.get('circle_count', 0)}")
-            
-            if not manager_data.get("has_circles", False):
-                st.warning("⚠️ No circles found in the CircleMetadataManager!")
+                if not sources['manager']['available']:
+                    st.warning("⚠️ CircleMetadataManager is not available. Run the matching process first.")
+                if not sources['df']['available']:
+                    st.warning("⚠️ No circles DataFrame available. Run the matching process first.")
         
         with val_tab2:
-            st.write("#### Member Count Validation")
+            st.write("#### Member List Format Validation")
             
-            counts_data = validation_data.get("member_counts", {})
-            if counts_data.get("missing_columns", False):
-                st.warning("⚠️ Missing required columns for member count validation.")
-            else:
-                total = counts_data.get("total_circles", 0)
-                mismatches = counts_data.get("mismatches", 0)
-                match_percentage = counts_data.get("match_percentage", 0) * 100
-                
-                # Create a summary
-                st.write(f"Total circles: {total}")
-                st.write(f"Member count mismatches: {mismatches}")
-                st.write(f"Member count accuracy: {match_percentage:.1f}%")
-                
-                if mismatches > 0:
-                    st.warning(f"⚠️ Found {mismatches} circles where 'member_count' doesn't match the actual length of the members list.")
+            if not manager:
+                st.warning("⚠️ CircleMetadataManager is not available. Run the matching process first.")
+                return
+            
+            # Validate member list formats
+            format_types = {
+                'list': 0,
+                'string': 0,
+                'dict': 0,
+                'other': 0,
+                'missing': 0,
+                'empty': 0
+            }
+            
+            member_count_validation = {
+                'match': 0,
+                'mismatch': 0,
+                'missing_count': 0
+            }
+            
+            problematic_circles = []
+            
+            # Analyze each circle
+            for circle_id, circle_data in manager.circles.items():
+                # Check member list format
+                if 'members' in circle_data:
+                    members = circle_data['members']
+                    
+                    if isinstance(members, list):
+                        format_types['list'] += 1
+                        if len(members) == 0:
+                            format_types['empty'] += 1
+                            problematic_circles.append((circle_id, 'empty member list'))
+                    elif isinstance(members, str):
+                        format_types['string'] += 1
+                        problematic_circles.append((circle_id, 'string member format'))
+                    elif isinstance(members, dict):
+                        format_types['dict'] += 1
+                        problematic_circles.append((circle_id, 'dict member format'))
+                    else:
+                        format_types['other'] += 1
+                        problematic_circles.append((circle_id, f'unexpected type: {type(members)}'))
                 else:
-                    st.success("✅ All member counts match the actual members list length.")
+                    format_types['missing'] += 1
+                    problematic_circles.append((circle_id, 'missing members field'))
+                
+                # Validate member count consistency
+                if 'members' in circle_data and 'member_count' in circle_data:
+                    members = circle_data['members']
+                    member_count = circle_data['member_count']
+                    
+                    if isinstance(members, list):
+                        actual_count = len(members)
+                        if actual_count == member_count:
+                            member_count_validation['match'] += 1
+                        else:
+                            member_count_validation['mismatch'] += 1
+                            problematic_circles.append((circle_id, f'member count mismatch: {member_count} vs {actual_count}'))
+                elif 'member_count' not in circle_data:
+                    member_count_validation['missing_count'] += 1
+                    problematic_circles.append((circle_id, 'missing member_count field'))
+            
+            # Create metrics
+            cols = st.columns(2)
+            total_circles = len(manager.circles)
+            cols[0].metric("Total Circles", total_circles)
+            cols[1].metric("Standardized List Format", format_types['list'], 
+                        delta=format_types['list']-total_circles, delta_color="inverse")
+            
+            # Create bar chart of format types
+            format_df = pd.DataFrame({
+                'Format': list(format_types.keys()),
+                'Count': list(format_types.values())
+            })
+            
+            # Add percentage
+            format_df['Percentage'] = (format_df['Count'] / total_circles * 100).round(1)
+            
+            # Create chart
+            fig = px.bar(
+                format_df,
+                x='Format',
+                y='Count',
+                title='Member List Format Distribution',
+                color='Format',
+                color_discrete_sequence=['#8C1515', '#175E54', '#B83A4B', '#820000', '#D2C295', '#3B7EA1']
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Member count validation
+            st.write("#### Member Count Validation")
+            count_validation_df = pd.DataFrame({
+                'Status': ['Matches', 'Mismatches', 'Missing Count Field'],
+                'Count': [member_count_validation['match'], 
+                         member_count_validation['mismatch'],
+                         member_count_validation['missing_count']]
+            })
+            
+            # Add percentage
+            count_validation_df['Percentage'] = (count_validation_df['Count'] / total_circles * 100).round(1)
+            
+            # Create chart
+            fig = px.pie(
+                count_validation_df,
+                names='Status',
+                values='Count',
+                title='Member Count Validation',
+                color_discrete_sequence=['#175E54', '#8C1515', '#D2C295']
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Show problematic circles if any
+            if problematic_circles:
+                st.write("#### Problematic Circles")
+                problem_df = pd.DataFrame(problematic_circles, columns=['Circle ID', 'Issue'])
+                st.dataframe(problem_df, use_container_width=True)
+            else:
+                st.success("✅ No member list format issues detected!")
+                
+            # Check feature flag consistency
+            if format_types['string'] > 0 or format_types['dict'] > 0 or format_types['other'] > 0:
+                if get_flag('use_standardized_member_lists'):
+                    st.info("ℹ️ 'use_standardized_member_lists' flag is enabled but non-standard formats still exist. These are likely being normalized at access time.")
+                else:
+                    st.warning("⚠️ Non-standard member list formats exist but 'use_standardized_member_lists' flag is disabled!")
+        
+        with val_tab3:
+            st.write("#### Max Additions Validation")
+            
+            if not manager:
+                st.warning("⚠️ CircleMetadataManager is not available. Run the matching process first.")
+                return
+            
+            # Analyze max_additions values
+            max_add_stats = {
+                'present': 0,
+                'missing': 0,
+                'zero': 0,
+                'negative': 0,
+                'by_value': {}
+            }
+            
+            max_add_problems = []
+            
+            # Analyze each circle
+            for circle_id, circle_data in manager.circles.items():
+                if 'max_additions' in circle_data:
+                    max_add_stats['present'] += 1
+                    max_add = circle_data['max_additions']
+                    
+                    # Count by value
+                    max_add_stats['by_value'][max_add] = max_add_stats['by_value'].get(max_add, 0) + 1
+                    
+                    # Check special cases
+                    if max_add == 0:
+                        max_add_stats['zero'] += 1
+                    elif max_add < 0:
+                        max_add_stats['negative'] += 1
+                        max_add_problems.append((circle_id, f'negative max_additions: {max_add}'))
+                else:
+                    max_add_stats['missing'] += 1
+                    max_add_problems.append((circle_id, 'missing max_additions field'))
+            
+            # Create metrics
+            cols = st.columns(3)
+            total_circles = len(manager.circles)
+            cols[0].metric("Total Circles", total_circles)
+            cols[1].metric("Circles with Max Additions", max_add_stats['present'])
+            cols[2].metric("Circles Closed to New Members", max_add_stats['zero'],
+                      help="Circles with max_additions=0")
+            
+            # Create histogram of max_additions values
+            if max_add_stats['by_value']:
+                st.write("#### Distribution of Max Additions Values")
+                max_add_items = sorted(max_add_stats['by_value'].items())
+                max_add_df = pd.DataFrame(max_add_items, columns=['Max Additions', 'Count'])
+                
+                # Create chart
+                fig = px.bar(
+                    max_add_df,
+                    x='Max Additions',
+                    y='Count',
+                    title='Max Additions Distribution',
+                    color_discrete_sequence=['#8C1515']
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Calculate closed percentage
+                closed_pct = (max_add_stats['zero'] / max_add_stats['present']) * 100 if max_add_stats['present'] > 0 else 0
+                st.write(f"🔍 {max_add_stats['zero']} out of {max_add_stats['present']} ({closed_pct:.1f}%) circles are closed to new members.")
+            
+            # Show problems
+            if max_add_problems:
+                st.write("#### Problematic Max Additions Values")
+                problem_df = pd.DataFrame(max_add_problems, columns=['Circle ID', 'Issue'])
+                st.dataframe(problem_df, use_container_width=True)
+            else:
+                st.success("✅ No max_additions issues detected!")
+        
+        with val_tab4:
+            st.write("#### Host Status Validation")
+            
+            if not manager:
+                st.warning("⚠️ CircleMetadataManager is not available. Run the matching process first.")
+                return
+            
+            # Analyze host status values
+            host_stats = {
+                'ALWAYS': 0,
+                'SOMETIMES': 0,
+                'NEVER': 0,
+                'missing': 0,
+                'non_standard': 0
+            }
+            
+            non_standard_values = {}
+            host_problems = []
+            
+            # Analyze each circle
+            for circle_id, circle_data in manager.circles.items():
+                if 'host_status' in circle_data:
+                    status = circle_data['host_status']
+                    if status in ['ALWAYS', 'SOMETIMES', 'NEVER']:
+                        host_stats[status] += 1
+                    else:
+                        host_stats['non_standard'] += 1
+                        non_standard_values[status] = non_standard_values.get(status, 0) + 1
+                        host_problems.append((circle_id, f'non-standard host status: {status}'))
+                else:
+                    host_stats['missing'] += 1
+                    host_problems.append((circle_id, 'missing host_status field'))
+            
+            # Create metrics
+            cols = st.columns(3)
+            total_circles = len(manager.circles)
+            cols[0].metric("Total Circles", total_circles)
+            cols[1].metric("With Standard Host Status", host_stats['ALWAYS'] + host_stats['SOMETIMES'] + host_stats['NEVER'])
+            cols[2].metric("Issues", host_stats['missing'] + host_stats['non_standard'], 
+                       delta=host_stats['missing'] + host_stats['non_standard'], delta_color="inverse")
+            
+            # Create host status distribution chart
+            host_df = pd.DataFrame({
+                'Host Status': list(host_stats.keys()),
+                'Count': list(host_stats.values())
+            })
+            
+            # Create chart
+            fig = px.bar(
+                host_df,
+                x='Host Status',
+                y='Count',
+                title='Host Status Distribution',
+                color='Host Status',
+                color_discrete_sequence=['#175E54', '#8C1515', '#B83A4B', '#820000', '#D2C295']
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Show non-standard values if any
+            if non_standard_values:
+                st.write("#### Non-Standard Host Status Values")
+                non_std_items = sorted(non_standard_values.items(), key=lambda x: x[1], reverse=True)
+                non_std_df = pd.DataFrame(non_std_items, columns=['Value', 'Count'])
+                st.dataframe(non_std_df, use_container_width=True)
+            
+            # Show problematic circles if any
+            if host_problems:
+                st.write("#### Circles with Host Status Issues")
+                problem_df = pd.DataFrame(host_problems, columns=['Circle ID', 'Issue'])
+                st.dataframe(problem_df, use_container_width=True)
+            else:
+                st.success("✅ All circles have standard host status values!")
+            
+            # Show original vs normalized host status mapping if debug flag is enabled
+            if get_flag('debug_data_standardization'):
+                from utils.data_standardization import get_host_standardization_mapping
+                
+                st.write("#### Host Status Normalization Mapping")
+                mapping = get_host_standardization_mapping()
+                
+                # Create a dataframe for the mapping
+                mapping_items = [(k, v) for k, v in mapping.items()]
+                mapping_df = pd.DataFrame(mapping_items, columns=['Original Value', 'Normalized Value'])
+                
+                # Sort by normalized value, then original
+                mapping_df = mapping_df.sort_values(['Normalized Value', 'Original Value'])
+                
+                # Display as a table
+                st.dataframe(mapping_df, use_container_width=True)
+            
+            # Check feature flag consistency
+            if host_stats['non_standard'] > 0:
+                if get_flag('use_standardized_host_status'):
+                    st.info("ℹ️ 'use_standardized_host_status' flag is enabled but non-standard values still exist. These are likely being normalized at access time.")
+                else:
+                    st.warning("⚠️ Non-standard host status values exist but 'use_standardized_host_status' flag is disabled!")
     else:
         # Metadata validation is disabled
         st.info("Enable metadata validation in the Feature Flags section to see validation results.")
@@ -4574,8 +4840,22 @@ def render_visualizations():
     
     st.subheader("Matching Visualizations")
     
-    # Get the data
-    circles_df = st.session_state.matched_circles.copy()
+    # Get the data with CircleMetadataManager if available
+    from utils.circle_metadata_manager import get_manager_from_session_state
+    
+    # Try to get the circle manager first
+    manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+    
+    # Get circle data - from manager or directly from session state
+    if manager:
+        print("\n🔍 VISUALIZATIONS DEBUG (Using CircleMetadataManager):")
+        circles_df = manager.get_circles_dataframe()
+        print(f"  Retrieved {len(circles_df)} circles from CircleMetadataManager")
+    else:
+        print("\n🔍 VISUALIZATIONS DEBUG (Using session state directly):")
+        circles_df = st.session_state.matched_circles.copy()
+        
+    # Get participant data from session state
     results_df = st.session_state.results.copy()
     
     # Filter out participants with null Encoded IDs
@@ -4748,6 +5028,13 @@ def render_visualizations():
                 # Try to get the circle manager
                 manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
                 
+                # Add debug logging for consistency
+                if manager:
+                    print("\n🔍 TIME PREFERENCE DEBUG (Using CircleMetadataManager)")
+                else:
+                    print("\n🔍 TIME PREFERENCE DEBUG (Using session state directly)")
+
+                
                 # Function to check if assigned time matches preferences
                 def check_time_match(row):
                     circle_id = row['proposed_NEW_circles_id']
@@ -4846,6 +5133,13 @@ def render_visualizations():
                 # Try to get the circle manager if not already obtained
                 if 'manager' not in locals() or manager is None:
                     manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+                    
+                # Add debug logging for consistency
+                if manager:
+                    print("\n🔍 LOCATION PREFERENCE DEBUG (Using CircleMetadataManager)")
+                else:
+                    print("\n🔍 LOCATION PREFERENCE DEBUG (Using session state directly)")
+
                 
                 # Function to check if assigned location matches preferences
                 def check_location_match(row):
