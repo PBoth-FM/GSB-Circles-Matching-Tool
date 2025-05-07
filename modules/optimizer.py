@@ -1543,6 +1543,60 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         if debug_mode:
                             print(f"Preserving viable existing circle {circle_id} with {len(members)} members")
     
+    # Step 1.5: Split large circles (11+ members) into smaller circles
+    print("\n🔄 CHECKING FOR LARGE CIRCLES (11+ MEMBERS) TO SPLIT")
+    
+    # Import our circle splitting module
+    from modules.circle_splitter import split_large_circles
+    
+    # Convert our existing_circles dict to a format suitable for the splitter
+    existing_circles_list = []
+    for circle_id, circle_data in existing_circles.items():
+        circle_dict = circle_data.copy()
+        circle_dict['circle_id'] = circle_id
+        existing_circles_list.append(circle_dict)
+    
+    if existing_circles_list:
+        # Run the circle splitting function
+        updated_circles_df, split_summary = split_large_circles(existing_circles_list, region_df)
+        
+        # Store the split summary in session state for UI reporting
+        import streamlit as st
+        st.session_state.split_circle_summary = split_summary
+        
+        if split_summary['total_circles_successfully_split'] > 0:
+            print(f"✅ Successfully split {split_summary['total_circles_successfully_split']} large circles into {split_summary['total_new_circles_created']} new circles")
+            
+            # Update our existing_circles dictionary with the split circles
+            existing_circles.clear()
+            
+            # Convert DataFrame back to dictionary format
+            for _, circle in updated_circles_df.iterrows():
+                circle_id = circle['circle_id']
+                circle_dict = circle.to_dict()
+                
+                # Remove circle_id from the dict since it's used as the key
+                if 'circle_id' in circle_dict:
+                    del circle_dict['circle_id']
+                
+                existing_circles[circle_id] = circle_dict
+                
+            print(f"✅ Updated existing_circles dictionary with {len(existing_circles)} circles after splitting")
+        else:
+            print("ℹ️ No circles were split (either none had 11+ members or couldn't meet host requirements)")
+    else:
+        print("ℹ️ No existing circles to check for splitting")
+        
+        # Initialize empty summary if no splitting was done
+        import streamlit as st
+        st.session_state.split_circle_summary = {
+            'total_circles_eligible_for_splitting': 0,
+            'total_circles_successfully_split': 0,
+            'total_new_circles_created': 0,
+            'circles_unable_to_split': [],
+            'split_details': []
+        }
+    
     # Step 2: Process participants in existing viable circles
     processed_ids = set()
     for circle_id, circle_data in existing_circles.items():

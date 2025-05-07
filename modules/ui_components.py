@@ -3965,6 +3965,54 @@ def render_debug_tab():
                 st.write(str(value)[:1000] + "..." if len(str(value)) > 1000 else str(value))
 
 
+def render_split_circle_summary():
+    """Render a summary of split circles"""
+    if 'split_circle_summary' not in st.session_state:
+        return
+    
+    split_summary = st.session_state.split_circle_summary
+    
+    # Only show this section if there were circles eligible for splitting
+    if split_summary['total_circles_eligible_for_splitting'] == 0:
+        return
+    
+    st.subheader("Circle Splitting Summary")
+    
+    # Create metrics for split circles
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.metric("Circles Split", f"{split_summary['total_circles_successfully_split']} of {split_summary['total_circles_eligible_for_splitting']} eligible")
+    
+    with col2:
+        st.metric("New Circles Created", split_summary['total_new_circles_created'])
+    
+    # Show details of each split
+    if split_summary['split_details']:
+        with st.expander("View Split Circle Details", expanded=False):
+            for split in split_summary['split_details']:
+                original_id = split['original_circle_id']
+                new_ids = split['new_circle_ids']
+                
+                st.write(f"**Original Circle**: {original_id} with {split['member_count']} members")
+                st.write(f"**Split Into**: {len(new_ids)} circles")
+                
+                # List new circle IDs
+                for i, new_id in enumerate(new_ids):
+                    st.write(f"- {new_id}")
+                
+                st.markdown("---")
+    
+    # Show circles that couldn't be split due to host requirements
+    if split_summary['circles_unable_to_split']:
+        with st.expander("Circles Unable to Split", expanded=False):
+            st.write("The following circles had 11+ members but couldn't be split because they didn't meet host requirements:")
+            
+            for circle in split_summary['circles_unable_to_split']:
+                st.write(f"**{circle['circle_id']}** with {circle['member_count']} members")
+                st.write(f"Reason: {circle['reason']}")
+                st.markdown("---")
+
 def render_results_overview():
     """Render the results overview section"""
     if ('matched_circles' not in st.session_state or 
@@ -3974,6 +4022,9 @@ def render_results_overview():
         return
     
     st.subheader("Matching Results Overview")
+    
+    # Add the split circle summary right after the main header
+    render_split_circle_summary()
     
     # Get the data
     matched_df = st.session_state.matched_circles
