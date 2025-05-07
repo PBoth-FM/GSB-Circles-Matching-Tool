@@ -1329,6 +1329,32 @@ def test_circle_splitting():
         test_circles = []
         test_participants = participants_data.copy()
         
+        # Import circle metadata manager for consistent member access
+        from utils.circle_metadata_manager import CircleMetadataManager
+        
+        # Create a new metadata manager or get it from session state if it exists
+        if 'circle_metadata_manager' in st.session_state:
+            metadata_manager = st.session_state.circle_metadata_manager
+            st.write("Using existing CircleMetadataManager from session state")
+        else:
+            metadata_manager = CircleMetadataManager()
+            # Initialize from current data
+            metadata_manager.initialize_from_optimizer(circles_data.to_dict('records'), participants_data)
+            st.write("Created new CircleMetadataManager")
+        
+        # Function to get member IDs for a circle from participants data
+        def get_circle_members_from_participants(circle_id, participants_df):
+            """Extract member IDs for a circle directly from participants data"""
+            # Look for columns that might contain circle assignment info
+            circle_cols = ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']
+            for col_name in circle_cols:
+                if col_name in participants_df.columns:
+                    circle_members = participants_df[participants_df[col_name] == circle_id]
+                    if not circle_members.empty:
+                        if 'Encoded ID' in circle_members.columns:
+                            return circle_members['Encoded ID'].tolist()
+            return []
+            
         # Hardcode specific test circles
         test_circle_ids = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
         st.write(f"Looking for test circles: {', '.join(test_circle_ids)}")
@@ -1339,17 +1365,33 @@ def test_circle_splitting():
             if not matches.empty:
                 test_circle = matches.iloc[0].to_dict()
                 
-                # Standardize the members field if present
-                if 'members' in test_circle:
-                    # Import at point of use to avoid circular imports
-                    from utils.data_standardization import normalize_member_list
-                    original_members = test_circle['members']
-                    test_circle['members'] = normalize_member_list(original_members)
-                    
-                    # Log what happened for debugging
-                    st.write(f"Found circle {circle_id} with {test_circle.get('member_count', 0)} members")
-                    if hasattr(original_members, '__len__'):
-                        st.write(f"Standardized {len(original_members) if isinstance(original_members, list) else 'non-list'} members to {len(test_circle['members'])} member IDs")
+                # Try multiple methods to get member IDs - a more robust approach
+                # 1. Try the CircleMetadataManager
+                members_from_manager = metadata_manager.get_circle_members(circle_id)
+                
+                # 2. If that doesn't work, try getting from participants data directly
+                members_from_participants = get_circle_members_from_participants(circle_id, test_participants)
+                
+                # 3. As a last resort, use the standard normalization
+                from utils.data_standardization import normalize_member_list
+                members_from_normalization = normalize_member_list(test_circle.get('members', []))
+                
+                # Log what we found with each method
+                st.write(f"Found circle {circle_id} with {test_circle.get('member_count', 0)} members")
+                st.write(f"- Method 1 (MetadataManager): {len(members_from_manager)} members")
+                st.write(f"- Method 2 (Participants): {len(members_from_participants)} members")
+                st.write(f"- Method 3 (Normalization): {len(members_from_normalization)} members")
+                
+                # Use the method that found the most members
+                if len(members_from_manager) >= max(len(members_from_participants), len(members_from_normalization)):
+                    test_circle['members'] = members_from_manager
+                    st.write(f"Using method 1 for {circle_id}: {len(members_from_manager)} members")
+                elif len(members_from_participants) >= len(members_from_normalization):
+                    test_circle['members'] = members_from_participants
+                    st.write(f"Using method 2 for {circle_id}: {len(members_from_participants)} members")
+                else:
+                    test_circle['members'] = members_from_normalization
+                    st.write(f"Using method 3 for {circle_id}: {len(members_from_normalization)} members")
                 
                 test_circles.append(test_circle)
             else:
