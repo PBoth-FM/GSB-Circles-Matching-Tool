@@ -1557,22 +1557,56 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     # Convert our existing_circles dict to a format suitable for the splitter
     existing_circles_list = []
+    large_circle_count = 0
     for circle_id, circle_data in existing_circles.items():
         # Debug logging for large circles
-        member_count = len(circle_data.get('members', []))
+        member_count = 0
+        # Make sure we correctly handle members field that might be a list or a string representation 
+        if isinstance(circle_data.get('members', []), list):
+            member_count = len(circle_data.get('members', []))
+        elif isinstance(circle_data.get('members', ''), str) and circle_data.get('members', '').startswith('['):
+            try:
+                member_list = eval(circle_data.get('members', '[]'))
+                member_count = len(member_list)
+            except Exception as e:
+                print(f"⚠️ Failed to parse members for {circle_id}: {str(e)}")
+                if ',' in circle_data.get('members', ''):
+                    # Fallback: Count commas for rudimentary member count
+                    member_count = circle_data.get('members', '').count(',') + 1
+                else:
+                    member_count = 1 if circle_data.get('members') else 0
+        elif 'member_count' in circle_data:
+            member_count = circle_data['member_count']
+            
         if member_count >= 11:
+            large_circle_count += 1
             print(f"🔎 Found large circle for splitting: {circle_id} with {member_count} members")
         
+        # Ensure we have member_count field for consistency
         circle_dict = circle_data.copy()
         circle_dict['circle_id'] = circle_id
+        if 'member_count' not in circle_dict:
+            circle_dict['member_count'] = member_count
         existing_circles_list.append(circle_dict)
     
-    # Find potential large circles
-    large_circles = [c['circle_id'] for c in existing_circles_list 
-                    if len(c.get('members', [])) >= 11]
-    print(f"🔎 Found {len(large_circles)} potential large circles to split: {large_circles}")
+    print(f"🔎 Found {large_circle_count} potential large circles to split in existing_circles_list with {len(existing_circles_list)} total circles")
+    print(f"🔎 First 3 circles in list: {[c['circle_id'] for c in existing_circles_list[:3]]}")
     
-    if existing_circles_list and split_large_circles is not None:
+    # Force verification of large circles with 11+ members
+    large_circles = []
+    for circle in existing_circles_list:
+        # Check multiple ways to determine the member count
+        if 'member_count' in circle and circle['member_count'] >= 11:
+            large_circles.append(circle['circle_id'])
+        elif 'members' in circle:
+            if isinstance(circle['members'], list) and len(circle['members']) >= 11:
+                large_circles.append(circle['circle_id'])
+            elif isinstance(circle['members'], str) and circle['members'].count(',') >= 10:  # 11 members = 10 commas
+                large_circles.append(circle['circle_id'])
+    
+    print(f"🔎 Verified {len(large_circles)} large circles to split: {large_circles}")
+    
+    if existing_circles_list and split_large_circles is not None and large_circle_count > 0:
         # Run the circle splitting function
         updated_circles_df, split_summary = split_large_circles(existing_circles_list, region_df)
         

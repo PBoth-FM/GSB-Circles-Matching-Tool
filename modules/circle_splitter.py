@@ -256,6 +256,23 @@ def get_circle_members(circle, participants_data):
         elif 'Host?' in participant:
             host_status = str(participant['Host?']).lower()
         
+        # Try to apply standardization if possible
+        try:
+            from utils.data_standardization import normalize_host_status
+            normalized_status = normalize_host_status(host_status)
+            
+            # Map to the format needed for splitting
+            if normalized_status == 'ALWAYS':
+                host_status = 'always host'
+            elif normalized_status == 'SOMETIMES':
+                host_status = 'sometimes host'
+            else:
+                host_status = 'not host'
+            
+            print(f"🔍 CIRCLE SPLITTER: Standardized host status from '{str(participant.get('host'))}' to '{host_status}'")
+        except Exception as e:
+            print(f"⚠️ CIRCLE SPLITTER: Couldn't standardize host status: {str(e)}")
+        
         # Determine co-leader status
         is_co_leader = False
         co_leader_fields = ['Current Co-Leader', 'Co-Leader', 'Is Co-Leader', 'co_leader']

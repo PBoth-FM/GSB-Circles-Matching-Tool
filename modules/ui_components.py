@@ -4412,22 +4412,25 @@ def render_circle_table():
                                   f"new_members={row.get('new_members', 'N/A')}, "
                                   f"always_hosts={row.get('always_hosts', 'N/A')}")
             
-            # Add styling to highlight split circles
-            if 'Split Status' in display_df.columns and display_df['Split Status'].any():
-                # Create a styled dataframe with highlighted rows for split circles
-                def highlight_split_circles(row):
-                    if row['Split Status']:
-                        return ['background-color: #e6f3ff'] * len(row)
-                    return [''] * len(row)
+            # Add styling to highlight split circles and large circles that should be split
+            def highlight_circles(row):
+                # Check if it's a split circle
+                if 'Split Status' in row and row['Split Status']:
+                    return ['background-color: #e6f3ff'] * len(row)  # Light blue for split circles
                 
-                # Apply the styling function
-                styled_df = display_df.style.apply(highlight_split_circles, axis=1)
+                # Check if it's a large circle (11+ members) that should have been split
+                if 'Member Count' in row and isinstance(row['Member Count'], (int, float)) and row['Member Count'] >= 11:
+                    # This is a large circle that wasn't split - highlight in a different color
+                    print(f"🔍 Found large circle with {row['Member Count']} members that wasn't split: {row.get('Circle Id', 'unknown')}")
+                    return ['background-color: #ffec99'] * len(row)  # Light yellow for large circles
                 
-                # Show the styled table
-                st.dataframe(styled_df, use_container_width=True)
-            else:
-                # Show the regular table if no split circles
-                st.dataframe(display_df, use_container_width=True)
+                return [''] * len(row)
+            
+            # Apply the styling function
+            styled_df = display_df.style.apply(highlight_circles, axis=1)
+            
+            # Show the styled table
+            st.dataframe(styled_df, use_container_width=True)
             
             # Add an export option with unique key
             if st.button("Export Circle Data to CSV", key="details_export_circle_data_button"):
