@@ -1338,7 +1338,19 @@ def test_circle_splitting():
             matches = circles_data[circles_data['circle_id'] == circle_id]
             if not matches.empty:
                 test_circle = matches.iloc[0].to_dict()
-                st.write(f"Found circle {circle_id} with {test_circle.get('member_count', 0)} members")
+                
+                # Standardize the members field if present
+                if 'members' in test_circle:
+                    # Import at point of use to avoid circular imports
+                    from utils.data_standardization import normalize_member_list
+                    original_members = test_circle['members']
+                    test_circle['members'] = normalize_member_list(original_members)
+                    
+                    # Log what happened for debugging
+                    st.write(f"Found circle {circle_id} with {test_circle.get('member_count', 0)} members")
+                    if hasattr(original_members, '__len__'):
+                        st.write(f"Standardized {len(original_members) if isinstance(original_members, list) else 'non-list'} members to {len(test_circle['members'])} member IDs")
+                
                 test_circles.append(test_circle)
             else:
                 st.warning(f"Test circle {circle_id} not found in matched circles")

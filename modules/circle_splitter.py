@@ -55,9 +55,17 @@ def split_large_circles(circles_data, participants_data):
         
         # Get member IDs
         members = circle.get('members', [])
-        if isinstance(members, str):
-            # Handle case where members might be a comma-separated string
-            members = [m.strip() for m in members.split(',') if m.strip()]
+        
+        # Add detailed debugging for member data structure
+        print(f"🔍 DEBUG: Circle {circle_id} members type: {type(members)}")
+        print(f"🔍 DEBUG: Circle {circle_id} members sample: {str(members)[:200]}...")
+        
+        # Enhanced member handling using standardization module
+        if not isinstance(members, list) or (members and not isinstance(members[0], str)):
+            # Import standardization functionality
+            from utils.data_standardization import normalize_member_list
+            members = normalize_member_list(members)
+            print(f"🔍 DEBUG: After normalization, circle {circle_id} has {len(members)} members")
         
         # Count members
         member_count = len(members) if members else circle.get('member_count', 0)
@@ -157,11 +165,17 @@ def get_member_roles(participants_data, member_ids):
     
     # Skip if no participant data
     if participants_data is None or len(member_ids) == 0:
+        print(f"🔍 DEBUG: No participants or member_ids for role analysis")
         return roles
+    
+    # Log member_ids for debugging
+    print(f"🔍 DEBUG: get_member_roles - Analyzing {len(member_ids)} members")
+    print(f"🔍 DEBUG: get_member_roles - First few members: {str(member_ids[:5])}")
     
     # Ensure we have an Encoded ID column
     id_col = "Encoded ID"
     if id_col not in participants_data.columns:
+        print(f"⚠️ WARNING: Could not find '{id_col}' column in participants data")
         return roles
     
     # Look for host column with different possible names
