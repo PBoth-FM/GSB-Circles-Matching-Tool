@@ -847,6 +847,54 @@ def process_uploaded_file(uploaded_file):
                         # Use the standardized match rate
                         st.metric("Match Success Rate", f"{match_stats['match_rate']:.1f}%")
                 
+                # Create size histogram before the composition table
+                st.subheader("Circle Size Distribution")
+                if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and 'member_count' in st.session_state.matched_circles.columns:
+                    circles_df = st.session_state.matched_circles
+                    
+                    # Calculate size counts 
+                    size_counts = circles_df['member_count'].value_counts().sort_index()
+                    
+                    # Create DataFrame for plotting
+                    size_df = pd.DataFrame({
+                        'Circle Size': size_counts.index,
+                        'Number of Circles': size_counts.values
+                    })
+                    
+                    # Create histogram using plotly with Stanford cardinal red color
+                    fig = px.bar(
+                        size_df,
+                        x='Circle Size',
+                        y='Number of Circles',
+                        title='Distribution of Circle Sizes',
+                        text='Number of Circles',  # Display count values on bars
+                        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+                    )
+                    
+                    # Customize layout
+                    fig.update_traces(textposition='outside')
+                    fig.update_layout(
+                        xaxis=dict(
+                            title="Number of Members",
+                            tickmode='linear',
+                            dtick=1  # Force integer labels
+                        ),
+                        yaxis_title="Number of Circles"
+                    )
+                    
+                    # Show the plot
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Show summary statistics
+                    avg_size = circles_df['member_count'].mean()
+                    median_size = circles_df['member_count'].median()
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Average Circle Size", f"{avg_size:.1f}")
+                    with col2:
+                        st.metric("Median Circle Size", f"{median_size:.0f}")
+
                 st.subheader("Circle Composition")
                 
                 # Display circle table with specified columns
