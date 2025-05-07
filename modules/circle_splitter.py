@@ -29,7 +29,10 @@ def split_large_circles(circles_data, participants_data):
         )
     """
     logger.info("Starting circle splitting process")
-    print("\n🔄 CIRCLE SPLITTER: Processing circles to identify those with 11+ members")
+    print("\n🔴 CRITICAL DEBUG: CIRCLE SPLITTER: Processing circles to identify those with 11+ members")
+    
+    # We would try to force identify large circles from globals, but keeping it simpler
+    print(f"🔴 CRITICAL DEBUG: Looking for large circles in the provided dataset")
     
     # Convert to DataFrame if it's a list of dictionaries
     if isinstance(circles_data, list):
@@ -41,7 +44,7 @@ def split_large_circles(circles_data, participants_data):
         
     # Quick check of the data
     print(f"🔄 CIRCLE SPLITTER: DataFrame has columns: {list(circles_df.columns)}")
-    if 'members' in circles_df.columns:
+    if 'members' in circles_df.columns and len(circles_df) > 0:
         print(f"🔄 CIRCLE SPLITTER: Sample members format: {str(circles_df['members'].iloc[0])[:100]}...")
     
     # Initialize tracking data
@@ -55,6 +58,44 @@ def split_large_circles(circles_data, participants_data):
     
     # Identify large circles (11+ members)
     large_circles = []
+    
+    # DEBUG: Print all circles with their member counts
+    print("🔴 CRITICAL DEBUG: Checking all circles for 11+ members:")
+    for idx, circle in circles_df.iterrows():
+        circle_id = circle.get('circle_id')
+        member_count = 0
+        
+        if 'member_count' in circle:
+            member_count = circle['member_count']
+            print(f"  Circle {circle_id}: member_count = {member_count}")
+        elif 'members' in circle:
+            if isinstance(circle['members'], list):
+                member_count = len(circle['members'])
+                print(f"  Circle {circle_id}: list length = {member_count}")
+            elif isinstance(circle['members'], str):
+                print(f"  Circle {circle_id}: members string = {circle['members'][:50]}...")
+                
+        if member_count >= 11:
+            print(f"  🚨 FOUND LARGE CIRCLE: {circle_id} with {member_count} members")
+            
+    # Look specifically for known large circles from the data provided
+    known_large_circles = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
+    for circle_id in known_large_circles:
+        circle_rows = circles_df[circles_df['circle_id'] == circle_id]
+        if not circle_rows.empty:
+            print(f"🔴 CHECKING KNOWN LARGE CIRCLE: {circle_id}")
+            circle = circle_rows.iloc[0]
+            member_count = 0
+            
+            if 'member_count' in circle:
+                member_count = circle['member_count']
+                print(f"  member_count field: {member_count}")
+            
+            if 'members' in circle:
+                if isinstance(circle['members'], list):
+                    print(f"  members as list length: {len(circle['members'])}")
+                elif isinstance(circle['members'], str):
+                    print(f"  members as string: {circle['members'][:50]}...")
     
     # Determine how to count members based on data structure
     for idx, circle in circles_df.iterrows():
