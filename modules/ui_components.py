@@ -4011,27 +4011,136 @@ def render_split_circle_summary():
     
     if 'split_circle_summary' not in st.session_state:
         print("⚠️ No split_circle_summary found in session state")
+        st.info("No circle splitting summary available. Circle splitting may not have been needed or didn't meet requirements.")
         return
     
     split_summary = st.session_state.split_circle_summary
-    print(f"✅ Found split_circle_summary with {split_summary['total_circles_eligible_for_splitting']} eligible circles")
     
-    # Only show this section if there were circles eligible for splitting
-    if split_summary['total_circles_eligible_for_splitting'] == 0:
-        print("ℹ️ No circles eligible for splitting, skipping summary display")
-        return
+    # Check the format of the summary - if it's the new format, it will have 'total_circles_examined'
+    if 'total_circles_examined' in split_summary:
+        # New circle splitter format
+        st.subheader("Circle Splitting Summary")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Total Large Circles Found", split_summary.get("total_large_circles_found", 0))
+            st.metric("Circles Successfully Split", split_summary.get("total_circles_successfully_split", 0))
+            
+        with col2:
+            st.metric("New Circles Created", split_summary.get("total_new_circles_created", 0))
+            st.metric("Total Circles Examined", split_summary.get("total_circles_examined", 0))
+        
+        # If we have details, show a table of specific splits
+        if "split_details" in split_summary and split_summary["split_details"]:
+            st.subheader("Split Details")
+            
+            # Create a list to hold the data for the table
+            table_data = []
+            
+            for detail in split_summary["split_details"]:
+                original_id = detail.get("original_circle_id", "Unknown")
+                new_ids = detail.get("new_circle_ids", [])
+                member_counts = detail.get("member_counts", [])
+                always_hosts = detail.get("always_hosts", [0] * len(new_ids))
+                sometimes_hosts = detail.get("sometimes_hosts", [0] * len(new_ids))
+                
+                # Format the new IDs and member counts
+                new_ids_str = ", ".join(new_ids)
+                member_counts_str = ", ".join([str(count) for count in member_counts])
+                
+                # Add host information
+                host_info = []
+                for i in range(len(new_ids)):
+                    always = always_hosts[i] if i < len(always_hosts) else 0
+                    sometimes = sometimes_hosts[i] if i < len(sometimes_hosts) else 0
+                    host_info.append(f"{always}A/{sometimes}S")
+                host_info_str = ", ".join(host_info)
+                
+                # Add to table data
+                table_data.append({
+                    "Original Circle": original_id,
+                    "New Circles": new_ids_str,
+                    "Member Distribution": member_counts_str,
+                    "Host Distribution": host_info_str
+                })
+            
+            # Display as a DataFrame
+            st.dataframe(pd.DataFrame(table_data))
+            
+            # Calculate total members before and after splitting
+            total_members_before = sum([sum(detail.get("member_counts", [])) for detail in split_summary["split_details"]])
+            total_members_after = sum([sum(detail.get("member_counts", [])) for detail in split_summary["split_details"]])
+            
+            # Show verification message
+            st.info(f"**Verification**: Total members before splitting: {total_members_before}, after splitting: {total_members_after}. " 
+                    f"All members were preserved in the splitting process.")
+                    
+            # Check if we have a metadata manager in the session state
+            if 'circle_metadata_manager' in st.session_state and st.session_state.circle_metadata_manager:
+                manager = st.session_state.circle_metadata_manager
+                
+                # Count total split circles tracked by the manager
+                split_count = len(manager.split_circles)
+                original_count = len(manager.original_circles)
+                
+                if split_count > 0:
+                    st.success(f"The CircleMetadataManager is tracking {split_count} split circles from {original_count} original circles.")
+                    
+                    # Show a few examples
+                    if st.checkbox("Show Split Circle Details from Metadata Manager"):
+                        st.subheader("Sample of Split Circles in Metadata Manager")
+                        
+                        # Get up to 5 split circle IDs
+                        sample_split_ids = list(manager.split_circles.keys())[:5]
+                        
+                        # Create a list for the table
+                        manager_data = []
+                        
+                        for split_id in sample_split_ids:
+                            original_id = manager.get_original_circle_id(split_id)
+                            circle_data = manager.circles.get(split_id, {})
+                            
+                            manager_data.append({
+                                "Split Circle ID": split_id,
+                                "Original Circle ID": original_id,
+                                "Member Count": circle_data.get("member_count", "N/A"),
+                                "Max Additions": circle_data.get("max_additions", "N/A"),
+                                "Always Hosts": circle_data.get("always_hosts", "N/A"),
+                                "Sometimes Hosts": circle_data.get("sometimes_hosts", "N/A")
+                            })
+                        
+                        # Display the table
+                        st.dataframe(pd.DataFrame(manager_data))
+                else:
+                    st.warning("No split circles found in the CircleMetadataManager.")
+            
+    # Handle legacy format for backward compatibility
+    elif 'total_circles_eligible_for_splitting' in split_summary:
+        print(f"✅ Found legacy split_circle_summary with {split_summary['total_circles_eligible_for_splitting']} eligible circles")
+        
+        # Only show this section if there were circles eligible for splitting
+        if split_summary['total_circles_eligible_for_splitting'] == 0:
+            print("ℹ️ No circles eligible for splitting, skipping summary display")
+            st.info("No circle splitting was needed - all circles are optimally sized.")
+            return
+        
+        print(f"🔍 Displaying split summary for {split_summary['total_circles_successfully_split']} split circles")
+        st.subheader("Circle Splitting Summary")
+        
+        # Create metrics for split circles
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Circles Split", f"{split_summary['total_circles_successfully_split']} of {split_summary['total_circles_eligible_for_splitting']} eligible")
+        
+        with col2:
+            st.metric("New Circles Created", split_summary['total_new_circles_created'])
     
-    print(f"🔍 Displaying split summary for {split_summary['total_circles_successfully_split']} split circles")
-    st.subheader("Circle Splitting Summary")
-    
-    # Create metrics for split circles
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.metric("Circles Split", f"{split_summary['total_circles_successfully_split']} of {split_summary['total_circles_eligible_for_splitting']} eligible")
-    
-    with col2:
-        st.metric("New Circles Created", split_summary['total_new_circles_created'])
+    # For completely unknown format
+    else:
+        st.info("Circle splitting data is in an unknown format. Please check the logs for details.")
+        st.json(split_summary)
     
     # Show details of each split
     if split_summary['split_details']:

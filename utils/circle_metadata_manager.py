@@ -17,6 +17,8 @@ class CircleMetadataManager:
         self.results_df = None  # Reference to participant results DataFrame
         self._initialized = False
         self.logger = self._setup_logger()
+        self.split_circles = {}  # Dictionary of split circle IDs with original circle ID as value
+        self.original_circles = {}  # Dictionary of original circle IDs with list of split circle IDs as value
     
     def _setup_logger(self):
         """Setup a logger for the metadata manager"""
@@ -466,6 +468,33 @@ class CircleMetadataManager:
             if 'subregion' not in circle or not circle['subregion']:
                 circle['subregion'] = self._extract_subregion_from_id(circle_id)
             
+            # Check if this is a split circle and update the tracking dictionaries
+            if 'SPLIT' in circle_id:
+                # Identify and track the relationship between original and split circles
+                if 'original_circle_id' in circle and circle['original_circle_id']:
+                    original_id = circle['original_circle_id']
+                    self.split_circles[circle_id] = original_id
+                    
+                    # Add to original circles tracking if it doesn't exist
+                    if original_id not in self.original_circles:
+                        self.original_circles[original_id] = []
+                    
+                    # Add this split circle to the original's list if not already there
+                    if circle_id not in self.original_circles[original_id]:
+                        self.original_circles[original_id].append(circle_id)
+                        
+                # Ensure the split circle is marked as such
+                circle['is_split_circle'] = True
+                
+                # Set max_additions if not already set (split circles can grow to 8 members max)
+                if 'max_additions' not in circle:
+                    # If we have member count, calculate based on that
+                    if 'member_count' in circle and isinstance(circle['member_count'], int):
+                        circle['max_additions'] = max(0, 8 - circle['member_count'])
+                    else:
+                        # Default to allowing 3 new members
+                        circle['max_additions'] = 3
+            
             # Ensure member_count matches actual members count if available
             if 'members' in circle and isinstance(circle['members'], list):
                 actual_count = len(circle['members'])
@@ -526,6 +555,169 @@ class CircleMetadataManager:
         
         self.logger.info("Circle validation complete")
     
+    def add_or_update_circle(self, circle_id: str, circle_data: dict) -> None:
+        """
+        Add a new circle or update an existing one.
+        
+        Args:
+            circle_id: The ID of the circle to add or update
+            circle_data: Dictionary containing circle metadata
+        """
+        if not circle_id:
+            self.logger.error("Cannot add circle with empty ID")
+            return
+            
+        # If this is a new circle, add it
+        if circle_id not in self.circles:
+            self.circles[circle_id] = circle_data.copy()
+            self.logger.info(f"Added new circle {circle_id}")
+        else:
+            # Otherwise update the existing circle
+            # Start with a copy of existing data
+            existing_data = self.circles[circle_id].copy()
+            
+            # Apply updates from new data
+            for key, value in circle_data.items():
+                existing_data[key] = value
+                
+            # Store updated data
+            self.circles[circle_id] = existing_data
+            self.logger.info(f"Updated circle {circle_id}")
+            
+        # Check if this is a split circle and update tracking
+        if 'is_split_circle' in circle_data and circle_data['is_split_circle']:
+            print(f"🔄 Adding/updating split circle {circle_id}")
+            
+            # Track the split circle
+            if 'original_circle_id' in circle_data and circle_data['original_circle_id']:
+                original_id = circle_data['original_circle_id']
+                self.split_circles[circle_id] = original_id
+                
+                # Add to original circles tracking if it doesn't exist
+                if original_id not in self.original_circles:
+                    self.original_circles[original_id] = []
+                
+                # Add this split circle to the original's list if not already there
+                if circle_id not in self.original_circles[original_id]:
+                    self.original_circles[original_id].append(circle_id)
+                    
+                print(f"✅ Updated split circle tracking for {circle_id} (original: {original_id})")
+            else:
+                print(f"⚠️ Split circle {circle_id} does not have original_circle_id")
+                
+        # Normalize the data to ensure consistency
+        self.normalize_metadata()
+    
+    def remove_circle(self, circle_id: str) -> bool:
+        """
+        Remove a circle from the manager.
+        
+        Args:
+            circle_id: The ID of the circle to remove
+            
+        Returns:
+            bool: True if the circle was removed, False if it was not found
+        """
+        if circle_id not in self.circles:
+            self.logger.warning(f"Cannot remove non-existent circle {circle_id}")
+            return False
+            
+        # Check if this is a split circle
+        if circle_id in self.split_circles:
+            original_id = self.split_circles[circle_id]
+            
+            # Remove from the original's list
+            if original_id in self.original_circles and circle_id in self.original_circles[original_id]:
+                self.original_circles[original_id].remove(circle_id)
+                
+                # If this was the last split circle, remove the original from tracking
+                if not self.original_circles[original_id]:
+                    del self.original_circles[original_id]
+                    
+            # Remove from split circles tracking
+            del self.split_circles[circle_id]
+            
+        # Check if this is an original circle with splits
+        if circle_id in self.original_circles:
+            # Usually we want to remove all split circles associated with this original
+            split_ids = self.original_circles[circle_id].copy()
+            
+            for split_id in split_ids:
+                if split_id in self.circles:
+                    del self.circles[split_id]
+                if split_id in self.split_circles:
+                    del self.split_circles[split_id]
+                    
+            # Remove from original circles tracking
+            del self.original_circles[circle_id]
+            
+        # Remove the circle itself
+        del self.circles[circle_id]
+        self.logger.info(f"Removed circle {circle_id}")
+        return True
+    
+    def has_circle(self, circle_id: str) -> bool:
+        """
+        Check if a circle exists in the manager.
+        
+        Args:
+            circle_id: The ID of the circle to check
+            
+        Returns:
+            bool: True if the circle exists, False otherwise
+        """
+        return circle_id in self.circles
+    
+    def is_split_circle(self, circle_id: str) -> bool:
+        """
+        Check if a circle is a split circle.
+        
+        Args:
+            circle_id: The ID of the circle to check
+            
+        Returns:
+            bool: True if the circle is a split circle, False otherwise
+        """
+        return circle_id in self.split_circles
+        
+    def get_original_circle_id(self, split_circle_id: str) -> str:
+        """
+        Get the original circle ID for a split circle.
+        
+        Args:
+            split_circle_id: The ID of the split circle
+            
+        Returns:
+            str: The original circle ID, or None if not a split circle
+        """
+        return self.split_circles.get(split_circle_id, None)
+        
+    def get_split_circle_ids(self, original_circle_id: str) -> list:
+        """
+        Get the split circle IDs for an original circle.
+        
+        Args:
+            original_circle_id: The ID of the original circle
+            
+        Returns:
+            list: List of split circle IDs, or empty list if not an original circle
+        """
+        return self.original_circles.get(original_circle_id, [])
+    
+    def get_manager_from_session_state(session_state):
+        """
+        Get the CircleMetadataManager from the session state.
+        
+        Args:
+            session_state: The session state object
+            
+        Returns:
+            CircleMetadataManager or None
+        """
+        if hasattr(session_state, 'circle_metadata_manager') and session_state.circle_metadata_manager:
+            return session_state.circle_metadata_manager
+        return None
+            
     def validate_max_additions(self) -> None:
         """Ensure max_additions is consistent with actual new members"""
         inconsistencies = 0
