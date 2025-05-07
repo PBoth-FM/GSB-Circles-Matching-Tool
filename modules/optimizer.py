@@ -1606,13 +1606,35 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     
     print(f"🔎 Verified {len(large_circles)} large circles to split: {large_circles}")
     
-    if existing_circles_list and split_large_circles is not None and large_circle_count > 0:
+    # Force initialize the split_circle_summary in session state to ensure it always exists
+    import streamlit as st
+    if 'split_circle_summary' not in st.session_state:
+        st.session_state.split_circle_summary = {
+            'total_circles_eligible_for_splitting': 0,
+            'total_circles_successfully_split': 0,
+            'total_new_circles_created': 0,
+            'circles_unable_to_split': [],
+            'split_details': []
+        }
+    
+    if existing_circles_list and split_large_circles is not None and len(large_circles) > 0:
+        print(f"🔴 CRITICAL DEBUG: Found {len(large_circles)} large circles with 11+ members. Executing split_large_circles function.")
+        
         # Run the circle splitting function
         updated_circles_df, split_summary = split_large_circles(existing_circles_list, region_df)
         
         # Store the split summary in session state for UI reporting
-        import streamlit as st
         st.session_state.split_circle_summary = split_summary
+        
+        # Additional debug info about the result
+        print(f"\n🔍 SPLIT CIRCLE SUMMARY:")
+        print(f"  Circles eligible for splitting: {split_summary.get('total_circles_eligible_for_splitting', 0)}")
+        print(f"  Circles successfully split: {split_summary.get('total_circles_successfully_split', 0)}")
+        print(f"  New circles created: {split_summary.get('total_new_circles_created', 0)}")
+        
+        # Format detailed information
+        for detail in split_summary.get('split_details', []):
+            print(f"  Original circle {detail.get('original_circle_id')} split into: {', '.join(detail.get('new_circle_ids', []))}")
         
         if split_summary['total_circles_successfully_split'] > 0:
             print(f"✅ Successfully split {split_summary['total_circles_successfully_split']} large circles into {split_summary['total_new_circles_created']} new circles")

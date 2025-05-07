@@ -7,6 +7,43 @@ from plotly.subplots import make_subplots
 import io
 import base64
 
+def render_split_circle_summary():
+    """Render the summary of split circles"""
+    if 'split_circle_summary' not in st.session_state:
+        st.info("No circle splitting summary available. Circle splitting may not have been needed or didn't meet requirements.")
+        return
+    
+    summary = st.session_state.split_circle_summary
+    
+    st.subheader("Circle Splitting Summary")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Circles Eligible for Splitting", summary.get('total_circles_eligible_for_splitting', 0))
+    
+    with col2:
+        st.metric("Circles Successfully Split", summary.get('total_circles_successfully_split', 0))
+        
+    with col3:
+        st.metric("New Circles Created", summary.get('total_new_circles_created', 0))
+    
+    # Display split details
+    if summary.get('split_details'):
+        st.subheader("Split Details")
+        for detail in summary['split_details']:
+            with st.expander(f"Split Circle: {detail.get('original_circle_id', 'Unknown')}"):
+                st.write(f"**Original Circle:** {detail.get('original_circle_id')}")
+                st.write(f"**Original Member Count:** {detail.get('member_count', 0)}")
+                st.write(f"**Number of Splits:** {detail.get('num_splits', 0)}")
+                st.write(f"**New Circle IDs:** {', '.join(detail.get('new_circle_ids', []))}")
+    
+    # Display circles that couldn't be split
+    if summary.get('circles_unable_to_split'):
+        st.subheader("Circles Unable to Split")
+        for circle in summary['circles_unable_to_split']:
+            st.write(f"- **{circle.get('circle_id')}**: {circle.get('reason', 'Unknown reason')}")
+
 def calculate_total_diversity_score(matched_circles_df, results_df):
     """
     Calculate the total diversity score by summing all individual category diversity scores from the detailed tabs.
@@ -792,8 +829,8 @@ def render_details_tab():
         st.warning("No matching results available. Please run the matching algorithm first.")
         return
     
-    # Create tabs for different views
-    detail_tab1, detail_tab2, detail_tab3 = st.tabs(["Overview", "Circles", "Participants"])
+    # Create tabs for different views, adding Split Circles tab
+    detail_tab1, detail_tab2, detail_tab3, detail_tab4 = st.tabs(["Overview", "Circles", "Participants", "Split Circles"])
     
     with detail_tab1:
         render_results_overview()
@@ -803,6 +840,9 @@ def render_details_tab():
     
     with detail_tab3:
         render_participant_details()
+        
+    with detail_tab4:
+        render_split_circle_summary()
 
 
 def render_demographics_tab():
