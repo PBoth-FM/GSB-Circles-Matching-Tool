@@ -293,41 +293,47 @@ def run_matching_algorithm(data, config):
         # First check if we have circle data to split
         if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
             # Import our integration module
-            from modules.optimizer_integration import apply_circle_splitting_before_optimization
+            from modules.optimizer_integration import preprocess_circles_for_optimization
             
-            # Apply the splitting
-            updated_circles, split_summary = apply_circle_splitting_before_optimization(
-                processed_data=data,
-                circles_data=st.session_state.matched_circles
+            # Apply preprocessing, which includes circle splitting
+            updated_circles, preprocessing_summary = preprocess_circles_for_optimization(
+                circles_data=st.session_state.matched_circles,
+                participants_data=data
             )
             
-            # If splitting was successful, update the circles in session state
-            if updated_circles is not None and split_summary.get('status', '') != 'error':
+            # If preprocessing was successful, update the circles in session state
+            if updated_circles is not None:
                 # Store the updated circles back to session state
                 st.session_state.matched_circles = updated_circles
-                print(f"✅ Updated matched_circles in session state with {len(updated_circles)} circles including split circles")
+                print(f"✅ Updated matched_circles in session state with {len(updated_circles)} circles after preprocessing")
                 
-                # Print summary for debugging
-                split_count = split_summary.get('total_circles_successfully_split', 0)
-                new_circles = split_summary.get('total_new_circles_created', 0)
-                
-                if split_count > 0:
-                    print(f"✅ Successfully split {split_count} large circles into {new_circles} new circles")
+                # Check if we have a split summary
+                if "split_circle_summary" in preprocessing_summary:
+                    split_summary = preprocessing_summary["split_circle_summary"]
                     
-                    # Show details of the splits
-                    for detail in split_summary.get('split_details', []):
-                        original_id = detail.get('original_circle_id', 'unknown')
-                        new_ids = detail.get('new_circle_ids', [])
-                        print(f"  Split {original_id} into: {', '.join(new_ids)}")
+                    # Print summary for debugging
+                    split_count = split_summary.get('total_circles_successfully_split', 0)
+                    new_circles = split_summary.get('total_new_circles_created', 0)
+                    
+                    if split_count > 0:
+                        print(f"✅ Successfully split {split_count} large circles into {new_circles} new circles")
+                        
+                        # Show details of the splits
+                        for detail in split_summary.get('split_details', []):
+                            original_id = detail.get('original_circle_id', 'unknown')
+                            new_ids = detail.get('new_circle_ids', [])
+                            print(f"  Split {original_id} into: {', '.join(new_ids)}")
+                    else:
+                        print("ℹ️ No circles were split in this run")
                 else:
-                    print("ℹ️ No circles were split in this run")
+                    print("ℹ️ No circle splitting summary available")
         else:
             print("ℹ️ No circles data available yet - likely first optimization run")
     except Exception as e:
-        print(f"⚠️ Error during circle splitting: {str(e)}")
+        print(f"⚠️ Error during preprocessing/circle splitting: {str(e)}")
         import traceback
         print(traceback.format_exc())
-        print("  Continuing with optimization without circle splitting")
+        print("  Continuing with optimization without preprocessing/circle splitting")
     
     # CRITICAL FIX: Check for Seattle specific participants that should match with IP-SEA-01
     # This fix was determined after analyzing the core compatibility issue 

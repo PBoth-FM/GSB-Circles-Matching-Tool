@@ -5,13 +5,8 @@ into smaller circles (at least 5 members each).
 
 import pandas as pd
 import numpy as np
-import logging
 import random
-from collections import defaultdict
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from typing import Dict, List, Tuple, Any, Union, Optional
 
 def split_large_circles(circles_data, participants_data):
     """
@@ -27,200 +22,119 @@ def split_large_circles(circles_data, participants_data):
             split_summary: Dictionary containing statistics and details about the splitting process
         )
     """
-    print("=========================================")
-    print("🔴 CIRCLE SPLITTER FUNCTION ENTRY POINT REACHED")
-    print("=========================================")
-    logger.info("Starting circle splitting process")
-    print("\n🔴 CRITICAL DEBUG: CIRCLE SPLITTER: Processing circles to identify those with 11+ members")
-    
-    # Initialize statistics
+    # Initialize summary stats
     split_summary = {
         "total_circles_examined": 0,
         "total_large_circles_found": 0,
         "total_circles_successfully_split": 0,
         "total_new_circles_created": 0,
         "split_details": [],
-        "status": "success"
+        "circles_unable_to_split": []
     }
     
-    # Standardize input format - convert to DataFrame if it's a list
-    if isinstance(circles_data, list):
-        # Create DataFrame from list of dictionaries
-        print("🔴 CIRCLE SPLITTER: Converting list of dictionaries to DataFrame")
-        circles_df = pd.DataFrame(circles_data)
+    # Convert circles_data to list of dictionaries if it's a DataFrame
+    if isinstance(circles_data, pd.DataFrame):
+        circles_list = circles_data.to_dict('records')
     else:
-        # Already a DataFrame, make a copy to avoid modifying the original
-        circles_df = circles_data.copy()
+        circles_list = circles_data
     
-    # Ensure participant_data is a DataFrame
-    if not isinstance(participants_data, pd.DataFrame):
-        print("⚠️ CIRCLE SPLITTER: participants_data must be a DataFrame")
-        split_summary["status"] = "error"
-        split_summary["error_message"] = "participants_data must be a DataFrame"
-        return circles_data, split_summary
+    # Create a new list for updated circles
+    updated_circles = []
     
-    print(f"🔴 CIRCLE SPLITTER: Processing {len(circles_df)} circles")
-    split_summary["total_circles_examined"] = len(circles_df)
-    
-    # Find circles with 11+ members
-    large_circles = []
-    for _, circle in circles_df.iterrows():
-        circle_id = circle.get('circle_id', None)
+    # Identify large circles (11+ members)
+    for circle in circles_list:
+        split_summary["total_circles_examined"] += 1
         
-        # Check for member_count field or calculate from members list
-        if 'member_count' in circle:
-            member_count = circle['member_count']
-        elif 'members' in circle and isinstance(circle['members'], list):
-            member_count = len(circle['members'])
-        else:
-            member_count = 0
-            
-        # Skip circles without an ID or with fewer than 11 members
-        if not circle_id or member_count < 11:
-            continue
-            
-        print(f"🔴 CIRCLE SPLITTER: Found large circle {circle_id} with {member_count} members")
-        large_circles.append(circle_id)
-    
-    # Update statistics
-    split_summary["total_large_circles_found"] = len(large_circles)
-    print(f"🔴 CIRCLE SPLITTER: Found {len(large_circles)} large circles to split")
-    
-    if not large_circles:
-        print("🔴 CIRCLE SPLITTER: No large circles found that need splitting")
-        return circles_df, split_summary
-    
-    # For each large circle, split into smaller circles
-    new_circles = []
-    circles_to_remove = []
-    
-    for large_circle_id in large_circles:
-        print(f"\n🔴 CIRCLE SPLITTER: Processing large circle {large_circle_id}")
+        # Get circle ID and member count
+        circle_id = circle.get('circle_id', '')
         
-        # Get the circle data
-        circle_row = circles_df[circles_df['circle_id'] == large_circle_id].iloc[0]
-        
-        # Extract circle metadata
-        circle_members = []
-        if 'members' in circle_row and isinstance(circle_row['members'], list):
-            circle_members = circle_row['members']
-        else:
-            # Try to find members from participants data
-            print(f"🔴 CIRCLE SPLITTER: Finding members of {large_circle_id} from participants data")
-            
-            # Determine which column contains circle assignments
-            circle_id_col = None
-            possible_columns = ['Circle', 'circle_id', 'current_circle_id', 'Current_Circle_ID']
-            
-            for col in possible_columns:
-                if col in participants_data.columns:
-                    circle_id_col = col
-                    break
-            
-            if circle_id_col:
-                # Get all participants assigned to this circle
-                circle_members = participants_data[participants_data[circle_id_col] == large_circle_id]['Encoded ID'].tolist()
-                print(f"🔴 CIRCLE SPLITTER: Found {len(circle_members)} members in {large_circle_id} from participants data")
-            else:
-                print(f"⚠️ CIRCLE SPLITTER: Could not find circle ID column in participants data")
-                continue
-        
-        # Only proceed if we found members
-        if not circle_members:
-            print(f"⚠️ CIRCLE SPLITTER: No members found for circle {large_circle_id}")
+        # Skip circles without IDs
+        if not circle_id:
+            updated_circles.append(circle)
             continue
         
-        # Extract circle properties
-        circle_region = circle_row.get('region', '')
-        circle_subregion = circle_row.get('subregion', '')
-        meeting_time = circle_row.get('meeting_time', '')
-        is_in_person = large_circle_id.startswith('IP-')
-        format_prefix = 'IP-' if is_in_person else 'V-'
+        # Get member IDs
+        members = circle.get('members', [])
+        if isinstance(members, str):
+            # Handle case where members might be a comma-separated string
+            members = [m.strip() for m in members.split(',') if m.strip()]
         
-        # Get circle number (the last part after the last dash)
-        circle_parts = large_circle_id.split('-')
-        if len(circle_parts) > 1:
-            circle_number = circle_parts[-1]
-        else:
-            circle_number = '00'  # Default if we can't extract
+        # Count members
+        member_count = len(members) if members else circle.get('member_count', 0)
         
-        # Analyze members to identify hosts and co-leaders
-        member_roles = get_member_roles(participants_data, circle_members)
+        # Skip if not a large circle (11+ members)
+        if member_count < 11:
+            updated_circles.append(circle)
+            continue
+            
+        print(f"🔍 Found large circle {circle_id} with {member_count} members")
+        split_summary["total_large_circles_found"] += 1
         
-        # Split circle into smaller ones with balanced host distribution
+        # Get member roles to ensure proper host distribution
+        member_roles = get_member_roles(participants_data, members)
+        
+        # Extract format prefix and region from circle ID
+        format_prefix = circle_id.split('-')[0] if '-' in circle_id else "IP"
+        
+        parts = circle_id.split('-')
+        region = parts[1] if len(parts) > 1 else ""
+        
+        # Extract circle number
+        circle_number = ""
+        if len(parts) > 2:
+            # Handle numeric and alphanumeric circle numbers
+            circle_number = parts[2]
+        
+        # Try to split the circle
         split_result = split_circle_with_balanced_hosts(
-            circle_id=large_circle_id,
-            members=circle_members,
+            circle_id=circle_id,
+            members=members,
             member_roles=member_roles,
             format_prefix=format_prefix,
-            region=circle_region,
+            region=region,
             circle_number=circle_number
         )
         
-        if not split_result['success']:
-            print(f"⚠️ CIRCLE SPLITTER: Failed to split circle {large_circle_id}: {split_result['error']}")
-            continue
+        if split_result["success"]:
+            # Successfully split the circle
+            split_summary["total_circles_successfully_split"] += 1
+            split_summary["total_new_circles_created"] += len(split_result["new_circles"])
             
-        # Mark original circle for removal
-        circles_to_remove.append(large_circle_id)
-        
-        # Create new circle entries for each split
-        new_circle_ids = []
-        for idx, split_data in enumerate(split_result['splits']):
-            suffix = chr(65 + idx)  # A, B, C, etc.
-            new_circle_id = f"{format_prefix}{circle_region}-SPLIT-{circle_number}-{suffix}"
-            new_circle_ids.append(new_circle_id)
+            # Add each new circle to the updated list
+            for new_circle in split_result["new_circles"]:
+                updated_circles.append(new_circle)
+                
+            # Add details to the summary
+            split_detail = {
+                "original_circle_id": circle_id,
+                "member_count": member_count,
+                "new_circle_ids": [c["circle_id"] for c in split_result["new_circles"]],
+                "member_counts": [len(c["members"]) for c in split_result["new_circles"]],
+                "always_hosts": split_result.get("always_hosts", []),
+                "sometimes_hosts": split_result.get("sometimes_hosts", []),
+                "region": region,
+                "subregion": circle.get("subregion", ""),
+                "meeting_time": circle.get("meeting_time", ""),
+                "members": [c["members"] for c in split_result["new_circles"]]
+            }
+            split_summary["split_details"].append(split_detail)
             
-            # Create new circle data (inheriting properties from original)
-            new_circle = circle_row.to_dict()
-            new_circle['circle_id'] = new_circle_id
-            new_circle['members'] = split_data['members']
-            new_circle['member_count'] = len(split_data['members'])
-            new_circle['always_hosts'] = split_data['always_hosts']
-            new_circle['sometimes_hosts'] = split_data['sometimes_hosts']
-            new_circle['co_leaders'] = split_data.get('co_leaders', 0)
-            new_circle['is_split_circle'] = True
-            new_circle['original_circle_id'] = large_circle_id
+            print(f"✅ Successfully split {circle_id} into {len(split_result['new_circles'])} circles")
             
-            # Set maximum additions (split circles can grow to 8 members)
-            max_new_members = max(0, 8 - new_circle['member_count'])
-            new_circle['max_additions'] = max_new_members
+        else:
+            # Unable to split the circle
+            updated_circles.append(circle)
             
-            print(f"🔴 CIRCLE SPLITTER: Created new circle {new_circle_id} with {new_circle['member_count']} members, {new_circle['always_hosts']} always hosts, {new_circle['sometimes_hosts']} sometimes hosts, can add {max_new_members} more")
+            # Add to circles unable to split
+            split_summary["circles_unable_to_split"].append({
+                "circle_id": circle_id,
+                "member_count": member_count,
+                "reason": split_result.get("reason", "Unknown reason")
+            })
             
-            new_circles.append(new_circle)
-        
-        # Update summary with details of this split
-        split_summary["split_details"].append({
-            "original_circle_id": large_circle_id,
-            "new_circle_ids": new_circle_ids,
-            "member_counts": [len(split['members']) for split in split_result['splits']],
-            "always_hosts": [split['always_hosts'] for split in split_result['splits']],
-            "sometimes_hosts": [split['sometimes_hosts'] for split in split_result['splits']]
-        })
-        
-        # Update statistics
-        split_summary["total_circles_successfully_split"] += 1
-        split_summary["total_new_circles_created"] += len(new_circle_ids)
-        
-        print(f"🔴 CIRCLE SPLITTER: Successfully split circle {large_circle_id} into {len(new_circle_ids)} new circles: {', '.join(new_circle_ids)}")
+            print(f"❌ Could not split {circle_id}: {split_result.get('reason', 'Unknown reason')}")
     
-    # Remove original large circles and add new split circles
-    if circles_to_remove:
-        # Filter out the original large circles
-        circles_df = circles_df[~circles_df['circle_id'].isin(circles_to_remove)]
-        
-        # Convert new circles to DataFrame and concatenate
-        new_circles_df = pd.DataFrame(new_circles)
-        updated_circles = pd.concat([circles_df, new_circles_df], ignore_index=True)
-        
-        print(f"🔴 CIRCLE SPLITTER: Final result: Removed {len(circles_to_remove)} large circles, added {len(new_circles)} split circles")
-        
-        return updated_circles, split_summary
-    else:
-        # No changes were made
-        print("🔴 CIRCLE SPLITTER: No circles were split")
-        return circles_df, split_summary
+    return updated_circles, split_summary
 
 def get_member_roles(participants_data, member_ids):
     """
@@ -233,64 +147,60 @@ def get_member_roles(participants_data, member_ids):
     Returns:
         dict: Dictionary with member roles information
     """
+    # Initialize role categories
     roles = {
-        'always_hosts': [],
-        'sometimes_hosts': [],
-        'never_hosts': [],
-        'co_leaders': []
+        "always_host": [],
+        "sometimes_host": [],
+        "never_host": [],
+        "co_leader": []
     }
     
-    # Find the right host column (standardized or original)
-    host_column = None
-    possible_columns = ['host', 'Host', 'Host Status', 'host_status']
-    
-    for col in possible_columns:
-        if col in participants_data.columns:
-            host_column = col
-            break
-    
-    # Find the co-leader column if it exists
-    coleader_column = None
-    possible_columns = ['co_leader', 'Co-Leader', 'Is Co-Leader']
-    
-    for col in possible_columns:
-        if col in participants_data.columns:
-            coleader_column = col
-            break
-    
-    if not host_column:
-        print("⚠️ CIRCLE SPLITTER: Could not find host column in participants data")
+    # Skip if no participant data
+    if participants_data is None or len(member_ids) == 0:
         return roles
+    
+    # Ensure we have an Encoded ID column
+    id_col = "Encoded ID"
+    if id_col not in participants_data.columns:
+        return roles
+    
+    # Look for host column with different possible names
+    host_col = None
+    for col_name in ["host", "Host", "willing_to_host"]:
+        if col_name in participants_data.columns:
+            host_col = col_name
+            break
+    
+    # Look for co-leader column
+    co_leader_col = None
+    for col_name in ["co_leader", "Co_Leader", "co-leader", "Co-Leader", "co_lead", "Co_Lead"]:
+        if col_name in participants_data.columns:
+            co_leader_col = col_name
+            break
     
     # Process each member
     for member_id in member_ids:
-        # Find member in participants data
-        member_rows = participants_data[participants_data['Encoded ID'] == member_id]
+        # Find this member in the DataFrame
+        member_rows = participants_data[participants_data[id_col] == member_id]
         
-        if len(member_rows) == 0:
-            print(f"⚠️ CIRCLE SPLITTER: Member {member_id} not found in participants data")
-            continue
+        if not member_rows.empty:
+            # Process host status
+            if host_col:
+                host_status = str(member_rows.iloc[0][host_col]).lower()
+                
+                if "always" in host_status or host_status == "yes":
+                    roles["always_host"].append(member_id)
+                elif "sometimes" in host_status or host_status == "maybe":
+                    roles["sometimes_host"].append(member_id)
+                else:
+                    roles["never_host"].append(member_id)
             
-        member_row = member_rows.iloc[0]
-        
-        # Get host status
-        host_status = str(member_row[host_column]).lower() if host_column in member_row else ''
-        
-        # Categorize host status
-        if 'always' in host_status or 'yes' in host_status:
-            roles['always_hosts'].append(member_id)
-        elif 'sometimes' in host_status or 'maybe' in host_status:
-            roles['sometimes_hosts'].append(member_id)
-        else:
-            roles['never_hosts'].append(member_id)
-        
-        # Check if member is a co-leader
-        if coleader_column and coleader_column in member_row:
-            coleader_value = str(member_row[coleader_column]).lower()
-            if coleader_value in ['yes', 'true', '1']:
-                roles['co_leaders'].append(member_id)
-    
-    print(f"🔴 CIRCLE SPLITTER: Member role analysis - {len(roles['always_hosts'])} always hosts, {len(roles['sometimes_hosts'])} sometimes hosts, {len(roles['never_hosts'])} never hosts, {len(roles['co_leaders'])} co-leaders")
+            # Process co-leader status
+            if co_leader_col and not pd.isna(member_rows.iloc[0][co_leader_col]):
+                co_leader_status = str(member_rows.iloc[0][co_leader_col]).lower()
+                
+                if co_leader_status == "yes" or co_leader_status == "true" or co_leader_status == "1":
+                    roles["co_leader"].append(member_id)
     
     return roles
 
@@ -311,171 +221,167 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     Returns:
         dict: Result of splitting containing success status and split data
     """
-    # Count total members
-    total_members = len(members)
+    # Ensure we have at least 11 members
+    if len(members) < 11:
+        return {
+            "success": False,
+            "reason": f"Not enough members to split (need 11+, found {len(members)})"
+        }
     
-    # Determine optimal number of splits (each with at least 5 members)
-    max_splits = total_members // 5
-    if max_splits < 1:
-        return {'success': False, 'error': 'Not enough members to split into groups of at least 5'}
+    # Check if we have enough hosts
+    always_hosts = member_roles.get("always_host", [])
+    sometimes_hosts = member_roles.get("sometimes_host", [])
+    co_leaders = member_roles.get("co_leader", [])
     
-    # We don't want more than 3 splits (A, B, C) to avoid getting too many small circles
-    num_splits = min(max_splits, 3)
+    # Calculate minimum required hosts for splitting
+    min_splits = 2  # Minimum 2 splits for a large circle
     
-    # Calculate target size for each split
-    target_size = total_members // num_splits
+    # For a valid split, each new circle needs either:
+    # - At least 1 Always Host, or
+    # - At least 2 Sometimes Hosts
     
-    print(f"🔴 CIRCLE SPLITTER: Splitting circle {circle_id} with {total_members} members into {num_splits} groups of approximately {target_size} members each")
+    # Check if we have enough hosts for the required splits
+    always_host_count = len(always_hosts)
+    sometimes_host_count = len(sometimes_hosts)
     
-    # Extract member role lists
-    always_hosts = member_roles['always_hosts']
-    sometimes_hosts = member_roles['sometimes_hosts']
-    never_hosts = member_roles['never_hosts']
-    co_leaders = member_roles['co_leaders']
+    # Calculate how many circles we can create based on host distribution
+    possible_circles_from_always = always_host_count
+    possible_circles_from_sometimes = sometimes_host_count // 2
     
-    # Verify that we can meet the host requirements with the available hosts
-    total_always = len(always_hosts)
-    total_sometimes = len(sometimes_hosts)
+    max_possible_circles = possible_circles_from_always + possible_circles_from_sometimes
     
-    # Check if we have enough hosts to distribute
-    # Each split needs either 1 always host or 2 sometimes hosts
-    host_coverage = total_always + (total_sometimes // 2)
+    if max_possible_circles < min_splits:
+        return {
+            "success": False,
+            "reason": f"Not enough hosts for valid splitting. Need at least {min_splits} circles, " 
+                     f"but can only create {max_possible_circles} with available hosts."
+        }
     
-    if host_coverage < num_splits:
-        print(f"⚠️ CIRCLE SPLITTER: Not enough hosts to distribute. Need {num_splits} hosts, have {host_coverage} (always={total_always}, sometimes={total_sometimes//2})")
-        
-        # If we have at least one always host or two sometimes hosts, we can still do a single split
-        if total_always > 0 or total_sometimes >= 2:
-            print(f"🔴 CIRCLE SPLITTER: Adjusting to a single split with all hosts")
-            num_splits = 1
-        else:
-            return {'success': False, 'error': 'Not enough hosts to meet requirements for any split'}
+    # Determine how many splits to create
+    # Try to make all circles at least 5 members
+    member_count = len(members)
+    max_splits = member_count // 5
     
-    # Initialize splits with empty lists
-    splits = [{'members': [], 'always_hosts': 0, 'sometimes_hosts': 0, 'co_leaders': 0} for _ in range(num_splits)]
+    # Choose number of splits, capped by host availability
+    num_splits = min(max_splits, max_possible_circles)
     
-    # First, distribute always hosts as evenly as possible
-    for i, member_id in enumerate(always_hosts):
-        split_idx = i % num_splits
-        splits[split_idx]['members'].append(member_id)
-        splits[split_idx]['always_hosts'] += 1
+    # Shuffle members to randomize, but keep a copy of original order
+    shuffled_members = members.copy()
     
-    # Then, distribute sometimes hosts, ensuring each split has at least two if there's no always host
-    for i, member_id in enumerate(sometimes_hosts):
-        # Find the split with the fewest sometimes hosts, prioritizing those without always hosts
-        target_idx = find_optimal_split_for_sometimes_host(splits)
-        
-        splits[target_idx]['members'].append(member_id)
-        splits[target_idx]['sometimes_hosts'] += 1
+    # Split co-leaders evenly
+    random.shuffle(co_leaders)
     
-    # Next, distribute co-leaders evenly across splits, if not already distributed as hosts
-    for i, member_id in enumerate(co_leaders):
-        if member_id in always_hosts or member_id in sometimes_hosts:
-            # Skip co-leaders that are also hosts (they're already distributed)
+    # Create empty splits
+    splits = []
+    for i in range(num_splits):
+        splits.append({
+            "members": [],
+            "always_hosts": 0,
+            "sometimes_hosts": 0,
+            "co_leaders": 0
+        })
+    
+    # First, add always hosts, giving priority to circles without hosts
+    random.shuffle(always_hosts)
+    for host in always_hosts:
+        # Find the circle with the fewest always hosts
+        min_always_hosts = min(splits, key=lambda s: s["always_hosts"])
+        min_always_hosts["members"].append(host)
+        min_always_hosts["always_hosts"] += 1
+        shuffled_members.remove(host)
+    
+    # Next, add sometimes hosts, prioritizing circles without always hosts
+    random.shuffle(sometimes_hosts)
+    for host in sometimes_hosts:
+        if host not in shuffled_members:  # Skip if already assigned as an always host
             continue
             
-        # Find the split with the fewest co-leaders
-        target_idx = min(range(num_splits), key=lambda idx: splits[idx]['co_leaders'])
-        
-        if member_id not in splits[target_idx]['members']:
-            splits[target_idx]['members'].append(member_id)
-            splits[target_idx]['co_leaders'] += 1
-        
-    # Finally, distribute remaining members (never hosts that aren't co-leaders)
-    remaining_members = [m for m in never_hosts if m not in co_leaders]
+        # Find optimal split to add this sometimes host
+        target_split_index = find_optimal_split_for_sometimes_host(splits)
+        splits[target_split_index]["members"].append(host)
+        splits[target_split_index]["sometimes_hosts"] += 1
+        shuffled_members.remove(host)
     
-    # Shuffle the remaining members to ensure random distribution
-    random.shuffle(remaining_members)
-    
-    for i, member_id in enumerate(remaining_members):
-        # Find the split with the fewest members
-        target_idx = min(range(num_splits), key=lambda idx: len(splits[idx]['members']))
-        
-        if member_id not in splits[target_idx]['members']:
-            splits[target_idx]['members'].append(member_id)
-    
-    # Final verification step to ensure all members are assigned
-    assigned_members = [m for split in splits for m in split['members']]
-    if len(assigned_members) != total_members:
-        # Verify there are no duplicates
-        if len(assigned_members) != len(set(assigned_members)):
-            print(f"⚠️ CIRCLE SPLITTER: Warning - some members were assigned to multiple splits")
+    # Next, add co-leaders, distributed evenly
+    for leader in co_leaders:
+        if leader not in shuffled_members:  # Skip if already assigned
+            continue
             
-        missing_members = [m for m in members if m not in assigned_members]
-        if missing_members:
-            print(f"⚠️ CIRCLE SPLITTER: Warning - {len(missing_members)} members were not assigned to any split")
-            
-            # Assign missing members to the smallest split
-            for member_id in missing_members:
-                target_idx = min(range(num_splits), key=lambda idx: len(splits[idx]['members']))
-                splits[target_idx]['members'].append(member_id)
+        # Find the split with fewest co-leaders
+        min_leaders = min(splits, key=lambda s: s["co_leaders"])
+        min_leaders["members"].append(leader)
+        min_leaders["co_leaders"] += 1
+        shuffled_members.remove(leader)
     
-    # Final check to ensure host requirements are met
+    # Finally, distribute remaining members evenly
+    random.shuffle(shuffled_members)
+    
+    # Calculate target size for each circle
+    total_remaining = len(shuffled_members)
+    base_size = total_remaining // num_splits
+    extra = total_remaining % num_splits
+    
+    # Assign extra members to some circles
+    for i in range(num_splits):
+        target_size = base_size + (1 if i < extra else 0)
+        
+        # Add remaining members up to target size
+        while len(splits[i]["members"]) < target_size and shuffled_members:
+            splits[i]["members"].append(shuffled_members.pop(0))
+    
+    # Verify all splits meet minimum requirements
+    for split in splits:
+        if split["always_hosts"] == 0 and split["sometimes_hosts"] < 2:
+            return {
+                "success": False,
+                "reason": "Could not create balanced splits that meet host requirements"
+            }
+    
+    # Create the new circle objects
+    new_circles = []
+    always_hosts_counts = []
+    sometimes_hosts_counts = []
+    
     for i, split in enumerate(splits):
-        always_count = split['always_hosts']
-        sometimes_count = split['sometimes_hosts']
+        # Generate new circle ID with suffix A, B, C, etc.
+        suffix = chr(65 + i)  # A, B, C, ...
         
-        if always_count == 0 and sometimes_count < 2:
-            print(f"⚠️ CIRCLE SPLITTER: Split {i} does not meet host requirements")
-            
-            # Try to move an always host from another split if possible
-            if total_always > 0:
-                for j, other_split in enumerate(splits):
-                    if j != i and other_split['always_hosts'] > 0:
-                        # Find an always host to move
-                        for member in other_split['members']:
-                            if member in always_hosts:
-                                # Move the host
-                                other_split['members'].remove(member)
-                                other_split['always_hosts'] -= 1
-                                split['members'].append(member)
-                                split['always_hosts'] += 1
-                                print(f"🔴 CIRCLE SPLITTER: Moved always host {member} from split {j} to split {i}")
-                                break
-                        break
-            
-            # If we still don't have enough hosts, try to move sometimes hosts
-            if split['always_hosts'] == 0 and split['sometimes_hosts'] < 2:
-                # Find another split with excess sometimes hosts
-                for j, other_split in enumerate(splits):
-                    if j != i and other_split['sometimes_hosts'] > 2:
-                        # Count how many we can take
-                        to_take = min(2 - split['sometimes_hosts'], other_split['sometimes_hosts'] - 2)
-                        
-                        if to_take > 0:
-                            # Find sometimes hosts to move
-                            moved = 0
-                            for member in list(other_split['members']):  # Create a copy to avoid modification during iteration
-                                if member in sometimes_hosts and moved < to_take:
-                                    # Move the host
-                                    other_split['members'].remove(member)
-                                    other_split['sometimes_hosts'] -= 1
-                                    split['members'].append(member)
-                                    split['sometimes_hosts'] += 1
-                                    moved += 1
-                                    print(f"🔴 CIRCLE SPLITTER: Moved sometimes host {member} from split {j} to split {i}")
-                            
-                            if moved > 0:
-                                break
+        # If original circle_id has a SPLIT section, it's already been split, so we handle differently
+        if "SPLIT" in circle_id:
+            # For already split circles being split again, we append another level
+            # Example: IP-NAP-SPLIT-01-A becomes IP-NAP-SPLIT-01-A-A, IP-NAP-SPLIT-01-A-B, etc.
+            new_circle_id = f"{circle_id}-{suffix}"
+        else:
+            # For first-time splits
+            # Example: IP-NAP-01 becomes IP-NAP-SPLIT-01-A, IP-NAP-SPLIT-01-B, etc.
+            new_circle_id = f"{format_prefix}-{region}-SPLIT-{circle_number}-{suffix}"
+        
+        # Create the new circle object with all necessary metadata
+        new_circle = {
+            "circle_id": new_circle_id,
+            "members": split["members"],
+            "member_count": len(split["members"]),
+            "always_hosts": split["always_hosts"],
+            "sometimes_hosts": split["sometimes_hosts"],
+            "max_additions": max(0, 8 - len(split["members"])),  # Can grow to 8 members max
+            "is_split_circle": True,
+            "original_circle_id": circle_id,
+            # Inherit other metadata from original circle
+            "region": region,
+            # These would be inherited from the original circle's data
+            # through the CircleMetadataManager
+        }
+        
+        new_circles.append(new_circle)
+        always_hosts_counts.append(split["always_hosts"])
+        sometimes_hosts_counts.append(split["sometimes_hosts"])
     
-    # Final verification of host requirements
-    all_requirements_met = True
-    for i, split in enumerate(splits):
-        host_requirement_met = split['always_hosts'] > 0 or split['sometimes_hosts'] >= 2
-        if not host_requirement_met:
-            print(f"⚠️ CIRCLE SPLITTER: Split {i} still does not meet host requirements after adjustment")
-            all_requirements_met = False
-    
-    if not all_requirements_met:
-        return {'success': False, 'error': 'Could not satisfy host requirements for all splits'}
-    
-    # Print summary of each split
-    for i, split in enumerate(splits):
-        print(f"🔴 CIRCLE SPLITTER: Split {i}: {len(split['members'])} members, {split['always_hosts']} always hosts, {split['sometimes_hosts']} sometimes hosts, {split['co_leaders']} co-leaders")
-    
+    # Return the result
     return {
-        'success': True,
-        'splits': splits
+        "success": True,
+        "new_circles": new_circles,
+        "always_hosts": always_hosts_counts,
+        "sometimes_hosts": sometimes_hosts_counts
     }
 
 def find_optimal_split_for_sometimes_host(splits):
@@ -489,13 +395,12 @@ def find_optimal_split_for_sometimes_host(splits):
     Returns:
         int: Index of the optimal split
     """
-    # First priority: splits with no always hosts and insufficient sometimes hosts
-    needy_splits = [i for i, split in enumerate(splits) 
-                    if split['always_hosts'] == 0 and split['sometimes_hosts'] < 2]
+    # First, prioritize splits with no always hosts
+    no_always_host_splits = [i for i, s in enumerate(splits) if s["always_hosts"] == 0]
     
-    if needy_splits:
-        # Among the needy splits, choose the one with the fewest sometimes hosts
-        return min(needy_splits, key=lambda idx: splits[idx]['sometimes_hosts'])
+    if no_always_host_splits:
+        # Among splits with no always hosts, find the one with the fewest sometimes hosts
+        return min(no_always_host_splits, key=lambda i: splits[i]["sometimes_hosts"])
     
-    # Second priority: the split with the fewest sometimes hosts overall
-    return min(range(len(splits)), key=lambda idx: splits[idx]['sometimes_hosts'])
+    # If all splits have always hosts, just find the one with the fewest sometimes hosts
+    return min(range(len(splits)), key=lambda i: splits[i]["sometimes_hosts"])

@@ -1,119 +1,161 @@
 """
-Integration module to connect the circle splitter with the optimization process.
-This module ensures circle splitting happens before optimization, allowing new
-participants to be assigned to split circles.
+Optimizer integration module for coordinating the circle splitting process with optimization.
+
+This module serves as a bridge between the circle splitting process and the optimization
+algorithm. It ensures that circle splitting happens before optimization, allowing split
+circles to participate in the optimization process for receiving new members.
 """
 
 import pandas as pd
 import streamlit as st
-import logging
-import traceback
+from typing import Dict, List, Tuple, Any, Optional
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Import circle splitting functionality
+from modules.circle_splitter import split_large_circles
+from utils.circle_metadata_manager import get_manager_from_session_state, initialize_or_update_manager
 
-def apply_circle_splitting_before_optimization(processed_data, circles_data=None):
+def preprocess_circles_for_optimization(circles_data, participants_data):
     """
-    Apply circle splitting logic before optimization occurs.
+    Preprocess circles before optimization, including splitting large circles.
+    
+    This function serves as the central coordinator for preprocessing steps that
+    should happen before the optimization algorithm runs. It ensures that large
+    circles are split before optimization so that new participants can be assigned
+    to the split circles during the optimization process.
     
     Args:
-        processed_data: DataFrame with processed participant data
-        circles_data: Optional DataFrame with existing circles data
+        circles_data: DataFrame or list of dictionaries containing circle information
+        participants_data: DataFrame containing participant information
         
     Returns:
-        updated_circles: DataFrame with circles after splitting
-        split_summary: Dictionary with summary of the splitting process
+        tuple: (
+            updated_circles: DataFrame or list with preprocessed circle data,
+            preprocessing_summary: Dictionary with details about processing steps
+        )
     """
-    logger.info("Starting circle splitting integration before optimization")
-    print("🔄 INTEGRATION: Applying circle splitting before optimization")
+    preprocessing_summary = {
+        "steps_performed": [],
+        "split_circle_summary": None
+    }
     
-    try:
-        # Import circle splitter here to avoid circular imports
-        from modules.circle_splitter import split_large_circles
-        
-        # If no circles_data is provided, try to get it from session state
-        if circles_data is None:
-            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                circles_data = st.session_state.matched_circles
-                print(f"🔄 INTEGRATION: Using {len(circles_data)} circles from session state")
-            else:
-                # No circles data available yet - we might be in the first run
-                print("ℹ️ INTEGRATION: No circles data found in session state")
-                return None, {"status": "no_circles_data"}
-        
-        # Apply the circle splitting function
-        print(f"🔄 INTEGRATION: Splitting circles with {len(processed_data)} participants")
-        updated_circles, split_summary = split_large_circles(circles_data, processed_data)
-        
-        # Log the results
-        print(f"🔄 INTEGRATION: Splitting complete. {split_summary['total_circles_successfully_split']} circles split into {split_summary['total_new_circles_created']} new circles")
-        
-        # Store results in session state for debugging
+    # Step 1: Split large circles
+    print("🔄 PREPROCESSING: Starting circle splitting process")
+    updated_circles, split_summary = split_large_circles(circles_data, participants_data)
+    preprocessing_summary["steps_performed"].append("split_large_circles")
+    preprocessing_summary["split_circle_summary"] = split_summary
+    
+    # Store the split summary in session state for the UI to use
+    if "split_circle_summary" not in st.session_state or st.session_state.split_circle_summary != split_summary:
         st.session_state.split_circle_summary = split_summary
-        
-        # Update circle manager if it exists
-        update_circle_manager_with_splits(updated_circles, split_summary)
-        
-        return updated_circles, split_summary
-        
-    except Exception as e:
-        logger.error(f"Error during circle splitting integration: {str(e)}")
-        print(f"❌ INTEGRATION ERROR: {str(e)}")
-        print(traceback.format_exc())
-        
-        # Return the original data without splitting
-        return circles_data, {"status": "error", "error_message": str(e)}
+        print("✅ Stored split circle summary in session state")
+    
+    # Additional preprocessing steps can be added here
+    
+    # Return the processed circles
+    return updated_circles, preprocessing_summary
 
-def update_circle_manager_with_splits(updated_circles, split_summary):
+def postprocess_optimization_results(optimization_results, circles_data, participants_data, preprocessing_summary):
     """
-    Update the CircleMetadataManager with split circle information.
+    Postprocess optimization results to ensure split circles are properly represented.
+    
+    This function ensures that split circles maintain appropriate properties after the
+    optimization process, such as inheriting metadata from their original circles and
+    being properly tracked in the CircleMetadataManager.
     
     Args:
-        updated_circles: DataFrame with updated circles after splitting
-        split_summary: Dictionary with summary of the splitting process
+        optimization_results: Results from the optimization algorithm
+        circles_data: Original circle data before preprocessing
+        participants_data: Participant data
+        preprocessing_summary: Summary from the preprocessing step
+        
+    Returns:
+        tuple: (
+            final_results: Updated optimization results,
+            postprocessing_summary: Summary of postprocessing steps
+        )
     """
-    try:
-        # Import manager here to avoid circular imports
-        from utils.circle_metadata_manager import get_manager_from_session_state
-        
-        # Get the manager from session state
-        manager = get_manager_from_session_state(st.session_state)
-        
-        if manager:
-            print("🔄 INTEGRATION: Updating CircleMetadataManager with split circles")
-            
-            # Filter for just the split circles
-            if isinstance(updated_circles, pd.DataFrame):
-                split_circles = updated_circles[updated_circles['circle_id'].str.contains('SPLIT')]
-                
-                # For each split circle, add or update it in the manager
-                for _, circle in split_circles.iterrows():
-                    circle_id = circle['circle_id']
-                    
-                    # Convert Series to dict for storage in the manager
-                    circle_dict = circle.to_dict()
-                    
-                    # Set additional metadata
-                    circle_dict['is_split_circle'] = True
-                    circle_dict['metadata_source'] = 'circle_splitter'
-                    
-                    # Add the circle data to the manager
-                    manager.add_or_update_circle(circle_id, circle_dict)
-                    
-                    print(f"✅ INTEGRATION: Added/updated split circle {circle_id} in CircleMetadataManager")
-                
-                # Remove the original large circles that were split
-                for detail in split_summary.get('split_details', []):
-                    original_id = detail.get('original_circle_id')
-                    if original_id and manager.has_circle(original_id):
-                        manager.remove_circle(original_id)
-                        print(f"✅ INTEGRATION: Removed original large circle {original_id} from CircleMetadataManager")
-            
-            print(f"✅ INTEGRATION: CircleMetadataManager updated with {len(split_summary.get('split_details', []))} split circle details")
-        else:
-            print("⚠️ INTEGRATION: CircleMetadataManager not found in session state")
+    postprocessing_summary = {
+        "steps_performed": []
+    }
     
-    except Exception as e:
-        logger.error(f"Error updating CircleMetadataManager with splits: {str(e)}")
-        print(f"❌ INTEGRATION ERROR: Failed to update CircleMetadataManager: {str(e)}")
+    # Check if we performed circle splitting
+    if "split_circle_summary" in preprocessing_summary and preprocessing_summary["split_circle_summary"]:
+        split_summary = preprocessing_summary["split_circle_summary"]
+        
+        # Only postprocess if we actually split any circles
+        if split_summary["total_circles_successfully_split"] > 0:
+            print(f"🔄 POSTPROCESSING: Handling {split_summary['total_circles_successfully_split']} split circles")
+            
+            # Update the CircleMetadataManager to reflect split circles
+            update_metadata_manager_with_splits(split_summary)
+            postprocessing_summary["steps_performed"].append("update_metadata_manager")
+    
+    # Additional postprocessing steps can be added here
+    
+    # For now, just return the original results
+    return optimization_results, postprocessing_summary
+
+def update_metadata_manager_with_splits(split_summary):
+    """
+    Update the CircleMetadataManager to properly track split circles.
+    
+    This ensures the CircleMetadataManager is aware of all split circles and
+    maintains the relationships between original circles and their splits.
+    
+    Args:
+        split_summary: Summary dictionary from the circle splitting process
+    """
+    # Get the metadata manager from session state
+    manager = get_manager_from_session_state(st.session_state)
+    if not manager:
+        print("⚠️ POSTPROCESSING: No CircleMetadataManager found in session state")
+        return
+    
+    print(f"🔄 Updating CircleMetadataManager with {len(split_summary.get('split_details', []))} split circles")
+    
+    # Process each split circle
+    for split_detail in split_summary.get("split_details", []):
+        original_circle_id = split_detail.get("original_circle_id")
+        new_circle_ids = split_detail.get("new_circle_ids", [])
+        
+        # Check if the original circle exists and should be removed
+        # Typically, we might want to keep it for historical reference
+        if manager.has_circle(original_circle_id):
+            manager.remove_circle(original_circle_id)
+            print(f"✅ Removed original circle {original_circle_id} from CircleMetadataManager")
+        
+        # Add each new split circle to the manager
+        for i, new_circle_id in enumerate(new_circle_ids):
+            if i < len(split_detail.get("member_counts", [])):
+                member_count = split_detail["member_counts"][i]
+            else:
+                member_count = 0
+                
+            if i < len(split_detail.get("members", [])):
+                members = split_detail["members"][i]
+            else:
+                members = []
+                
+            # Prepare data for the split circle
+            circle_data = {
+                "circle_id": new_circle_id,
+                "member_count": member_count,
+                "members": members,
+                "is_split_circle": True,
+                "original_circle_id": original_circle_id,
+                # Inherit metadata from the original circle
+                "region": split_detail.get("region", ""),
+                "subregion": split_detail.get("subregion", ""),
+                "meeting_time": split_detail.get("meeting_time", ""),
+                # Add host information
+                "always_hosts": split_detail.get("always_hosts", [0])[i] if i < len(split_detail.get("always_hosts", [])) else 0,
+                "sometimes_hosts": split_detail.get("sometimes_hosts", [0])[i] if i < len(split_detail.get("sometimes_hosts", [])) else 0,
+                # Set max_additions (split circles can grow to 8 members max)
+                "max_additions": max(0, 8 - member_count)
+            }
+            
+            # Add to metadata manager
+            manager.add_or_update_circle(new_circle_id, circle_data)
+            print(f"✅ Added split circle {new_circle_id} to CircleMetadataManager")
+    
+    print(f"✅ CircleMetadataManager now tracking {len(manager.split_circles)} split circles")
