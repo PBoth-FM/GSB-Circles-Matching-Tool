@@ -1322,6 +1322,9 @@ def test_circle_splitting():
         st.write(f"Found {len(circles_data)} circles in session state")
         st.write(f"Found {len(participants_data)} participants in session state")
         
+        # Import circle splitting functionality
+        from modules.circle_splitter import split_large_circles
+        
         # Create test circles with the right structure
         test_circles = []
         test_participants = participants_data.copy()
@@ -1362,10 +1365,14 @@ def test_circle_splitting():
         
         updated_circles, split_summary = split_large_circles(test_circles_df, test_participants)
         
+        # Store the split summary in session state for UI components to use
+        st.session_state.split_circle_summary = split_summary
+        
         # Display results
         st.subheader("Split Circle Results")
         st.write(f"Original circles: {len(test_circles)}")
-        st.write(f"Circles eligible for splitting: {split_summary['total_circles_eligible_for_splitting']}")
+        st.write(f"Total circles examined: {split_summary['total_circles_examined']}")
+        st.write(f"Large circles found: {split_summary['total_large_circles_found']}")
         st.write(f"Circles successfully split: {split_summary['total_circles_successfully_split']}")
         st.write(f"New circles created: {split_summary['total_new_circles_created']}")
         
@@ -1375,9 +1382,15 @@ def test_circle_splitting():
             for detail in split_summary['split_details']:
                 st.write(f"Original circle: {detail['original_circle_id']}")
                 st.write(f"Member count: {detail['member_count']}")
-                st.write(f"Split into {detail['num_splits']} circles:")
-                for new_id in detail['new_circle_ids']:
-                    st.write(f"  - {new_id}")
+                st.write(f"Split into {len(detail['new_circle_ids'])} circles:")
+                for i, new_id in enumerate(detail['new_circle_ids']):
+                    member_count = detail['member_counts'][i] if i < len(detail['member_counts']) else "?"
+                    st.write(f"  - {new_id} with {member_count} members")
+                    # Show host distribution if available
+                    if 'always_hosts' in detail and 'sometimes_hosts' in detail:
+                        always = detail['always_hosts'][i] if i < len(detail['always_hosts']) else 0
+                        sometimes = detail['sometimes_hosts'][i] if i < len(detail['sometimes_hosts']) else 0
+                        st.write(f"    Always Hosts: {always}, Sometimes Hosts: {sometimes}")
                 st.write("---")
         else:
             st.warning("No circles were split.")
@@ -1390,19 +1403,36 @@ def test_circle_splitting():
                 st.write(f"Reason: {circle['reason']}")
                 st.write("---")
                 
-        # Display the updated circles DataFrame
-        if not updated_circles.empty:
+        # Display the updated circles DataFrame (check if DataFrame or list)
+        if isinstance(updated_circles, pd.DataFrame) and not updated_circles.empty:
             st.subheader("Updated Circles")
             st.dataframe(updated_circles)
             
             # Count split circles
             split_circles = updated_circles[updated_circles['circle_id'].str.contains('SPLIT')]
             st.write(f"Found {len(split_circles)} split circles in the updated dataset")
+        elif isinstance(updated_circles, list) and len(updated_circles) > 0:
+            st.subheader("Updated Circles")
+            # Convert list to DataFrame for display
+            updated_df = pd.DataFrame(updated_circles)
+            st.dataframe(updated_df)
+            
+            # Count split circles
+            split_circle_count = sum(1 for c in updated_circles if 'SPLIT' in c.get('circle_id', ''))
+            st.write(f"Found {split_circle_count} split circles in the updated dataset")
+        else:
+            st.warning("No updated circles returned.")
+            
+        # Use our standardized render function to display the summary
+        st.subheader("Standardized Circle Split Summary")
+        from modules.ui_components import render_split_circle_summary
+        render_split_circle_summary()
     
     except Exception as e:
         st.error(f"Error during circle splitting test: {str(e)}")
         st.write("Exception details:")
         import traceback
+        st.code(traceback.format_exc())
         st.code(traceback.format_exc())
         print("🔴 CRITICAL ERROR IN CIRCLE SPLITTING TEST:")
         print(traceback.format_exc())
