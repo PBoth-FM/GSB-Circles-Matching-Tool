@@ -1547,16 +1547,32 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     print("\n🔄 CHECKING FOR LARGE CIRCLES (11+ MEMBERS) TO SPLIT")
     
     # Import our circle splitting module
-    from modules.circle_splitter import split_large_circles
+    try:
+        from modules.circle_splitter import split_large_circles
+        print("✅ Successfully imported circle_splitter module")
+    except Exception as e:
+        print(f"❌ ERROR importing circle_splitter module: {str(e)}")
+        # If we fail to import, we'll skip the splitting step
+        split_large_circles = None
     
     # Convert our existing_circles dict to a format suitable for the splitter
     existing_circles_list = []
     for circle_id, circle_data in existing_circles.items():
+        # Debug logging for large circles
+        member_count = len(circle_data.get('members', []))
+        if member_count >= 11:
+            print(f"🔎 Found large circle for splitting: {circle_id} with {member_count} members")
+        
         circle_dict = circle_data.copy()
         circle_dict['circle_id'] = circle_id
         existing_circles_list.append(circle_dict)
     
-    if existing_circles_list:
+    # Find potential large circles
+    large_circles = [c['circle_id'] for c in existing_circles_list 
+                    if len(c.get('members', [])) >= 11]
+    print(f"🔎 Found {len(large_circles)} potential large circles to split: {large_circles}")
+    
+    if existing_circles_list and split_large_circles is not None:
         # Run the circle splitting function
         updated_circles_df, split_summary = split_large_circles(existing_circles_list, region_df)
         

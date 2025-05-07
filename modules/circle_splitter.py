@@ -29,12 +29,20 @@ def split_large_circles(circles_data, participants_data):
         )
     """
     logger.info("Starting circle splitting process")
+    print("\n🔄 CIRCLE SPLITTER: Processing circles to identify those with 11+ members")
     
     # Convert to DataFrame if it's a list of dictionaries
     if isinstance(circles_data, list):
+        print(f"🔄 CIRCLE SPLITTER: Received {len(circles_data)} circles as list")
         circles_df = pd.DataFrame(circles_data)
     else:
+        print(f"🔄 CIRCLE SPLITTER: Received DataFrame with {len(circles_data)} circles")
         circles_df = circles_data.copy()
+        
+    # Quick check of the data
+    print(f"🔄 CIRCLE SPLITTER: DataFrame has columns: {list(circles_df.columns)}")
+    if 'members' in circles_df.columns:
+        print(f"🔄 CIRCLE SPLITTER: Sample members format: {str(circles_df['members'].iloc[0])[:100]}...")
     
     # Initialize tracking data
     split_summary = {
@@ -60,16 +68,25 @@ def split_large_circles(circles_data, participants_data):
         member_count = 0
         if 'member_count' in circle:
             member_count = circle['member_count']
+            print(f"🔍 CIRCLE SPLITTER: Found member_count {member_count} for circle {circle_id}")
         elif 'members' in circle:
             if isinstance(circle['members'], list):
                 member_count = len(circle['members'])
+                print(f"🔍 CIRCLE SPLITTER: Counted {member_count} members from list for circle {circle_id}")
             elif isinstance(circle['members'], str) and circle['members'].startswith('['):
                 # Handle string representation of list
                 try:
-                    member_count = len(eval(circle['members']))
-                except:
+                    member_list = eval(circle['members'])
+                    member_count = len(member_list)
+                    print(f"🔍 CIRCLE SPLITTER: Parsed string list with {member_count} members for circle {circle_id}")
+                except Exception as e:
                     # If eval fails, count commas + 1 as a fallback
                     member_count = circle['members'].count(',') + 1 if ',' in circle['members'] else 1
+                    print(f"🔍 CIRCLE SPLITTER: Used fallback count of {member_count} for circle {circle_id} due to error: {str(e)}")
+            else:
+                print(f"⚠️ CIRCLE SPLITTER: Unexpected members format for circle {circle_id}: {type(circle['members'])}")
+        else:
+            print(f"⚠️ CIRCLE SPLITTER: No member count or members list found for circle {circle_id}")
         
         if member_count >= 11:
             logger.info(f"Circle {circle_id} has {member_count} members - eligible for splitting")
@@ -193,6 +210,8 @@ def get_circle_members(circle, participants_data):
     Returns:
         list: Members with their details (id, host status, co-leader status)
     """
+    circle_id = circle.get('circle_id', 'unknown')
+    print(f"🔍 CIRCLE SPLITTER: Getting members for circle {circle_id}")
     members_list = []
     
     # Extract member IDs from circle
@@ -200,12 +219,19 @@ def get_circle_members(circle, participants_data):
     if 'members' in circle:
         if isinstance(circle['members'], list):
             member_ids = circle['members']
+            print(f"🔍 CIRCLE SPLITTER: Found {len(member_ids)} members as list for circle {circle_id}")
         elif isinstance(circle['members'], str) and circle['members'].startswith('['):
             try:
                 member_ids = eval(circle['members'])
-            except:
+                print(f"🔍 CIRCLE SPLITTER: Parsed {len(member_ids)} members from string list for circle {circle_id}")
+            except Exception as e:
                 # Fallback: parse comma-separated string
                 member_ids = [m.strip(" '\"") for m in circle['members'].strip('[]').split(',')]
+                print(f"🔍 CIRCLE SPLITTER: Used fallback parsing for {len(member_ids)} members for circle {circle_id}")
+        else:
+            print(f"⚠️ CIRCLE SPLITTER: Unexpected members format in get_circle_members: {type(circle['members'])}")
+    else:
+        print(f"⚠️ CIRCLE SPLITTER: No members field found for circle {circle_id}")
     
     # Get detailed information for each member
     for member_id in member_ids:

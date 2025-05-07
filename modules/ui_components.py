@@ -3967,15 +3967,21 @@ def render_debug_tab():
 
 def render_split_circle_summary():
     """Render a summary of split circles"""
+    print("\n🔍 CHECKING FOR SPLIT CIRCLE SUMMARY DATA")
+    
     if 'split_circle_summary' not in st.session_state:
+        print("⚠️ No split_circle_summary found in session state")
         return
     
     split_summary = st.session_state.split_circle_summary
+    print(f"✅ Found split_circle_summary with {split_summary['total_circles_eligible_for_splitting']} eligible circles")
     
     # Only show this section if there were circles eligible for splitting
     if split_summary['total_circles_eligible_for_splitting'] == 0:
+        print("ℹ️ No circles eligible for splitting, skipping summary display")
         return
     
+    print(f"🔍 Displaying split summary for {split_summary['total_circles_successfully_split']} split circles")
     st.subheader("Circle Splitting Summary")
     
     # Create metrics for split circles
