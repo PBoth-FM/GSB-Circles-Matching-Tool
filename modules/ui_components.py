@@ -4336,6 +4336,45 @@ def render_circle_table():
         if available_cols:
             display_df = circles_df[available_cols].copy()
             
+            # Add a column to indicate if this is a split circle
+            if 'circle_id' in circles_df.columns:
+                is_split_circle = circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)
+                circles_df['is_split_circle'] = is_split_circle
+                
+                # Add original circle ID if this is a split circle
+                if 'original_circle_id' in circles_df.columns:
+                    # Only include this column if we have split circles
+                    if is_split_circle.any():
+                        display_cols.append('original_circle_id')
+                        if 'original_circle_id' not in available_cols:
+                            available_cols.append('original_circle_id')
+                            display_df = circles_df[available_cols].copy()
+                
+                # Add split indicator column for display
+                circles_df['split_status'] = ''
+                split_circles = circles_df[is_split_circle]
+                
+                if not split_circles.empty:
+                    # Mark split circles
+                    for idx in split_circles.index:
+                        circle_id = circles_df.loc[idx, 'circle_id']
+                        if 'split_letter' in circles_df.columns:
+                            split_letter = circles_df.loc[idx, 'split_letter']
+                            circles_df.loc[idx, 'split_status'] = f"Split {split_letter}"
+                        else:
+                            # Extract split letter from circle ID
+                            if "-SPLIT-" in circle_id:
+                                split_letter = circle_id[-1]  # Last character is the split letter
+                                circles_df.loc[idx, 'split_status'] = f"Split {split_letter}"
+                            else:
+                                circles_df.loc[idx, 'split_status'] = "Split"
+                
+                # Add split status column to display
+                display_cols.append('split_status')
+                if 'split_status' not in available_cols:
+                    available_cols.append('split_status')
+                    display_df = circles_df[available_cols].copy()
+            
             # Rename columns for display
             display_df.columns = [col.replace('_', ' ').title() for col in available_cols]
             
@@ -4367,8 +4406,22 @@ def render_circle_table():
                                   f"new_members={row.get('new_members', 'N/A')}, "
                                   f"always_hosts={row.get('always_hosts', 'N/A')}")
             
-            # Show the table
-            st.dataframe(display_df, use_container_width=True)
+            # Add styling to highlight split circles
+            if 'Split Status' in display_df.columns and display_df['Split Status'].any():
+                # Create a styled dataframe with highlighted rows for split circles
+                def highlight_split_circles(row):
+                    if row['Split Status']:
+                        return ['background-color: #e6f3ff'] * len(row)
+                    return [''] * len(row)
+                
+                # Apply the styling function
+                styled_df = display_df.style.apply(highlight_split_circles, axis=1)
+                
+                # Show the styled table
+                st.dataframe(styled_df, use_container_width=True)
+            else:
+                # Show the regular table if no split circles
+                st.dataframe(display_df, use_container_width=True)
             
             # Add an export option with unique key
             if st.button("Export Circle Data to CSV", key="details_export_circle_data_button"):
@@ -4531,6 +4584,23 @@ def render_circle_details():
             "Always Hosts": circle_row.get('always_hosts', 'Unknown'),
             "Sometimes Hosts": circle_row.get('sometimes_hosts', 'Unknown'),
         }
+        
+        # Add split circle information if applicable
+        circle_id = selected_circle
+        if 'SPLIT' in circle_id:
+            st.info("This circle was created by splitting a large circle with 11+ members.")
+            
+            # Add original circle information if available
+            if 'original_circle_id' in circle_row:
+                metadata["Original Circle"] = circle_row.get('original_circle_id', 'Unknown')
+                
+            # Add split letter if available
+            if 'split_letter' in circle_row:
+                metadata["Split Group"] = circle_row.get('split_letter', 'Unknown')
+            elif '-SPLIT-' in circle_id:
+                # Extract split letter from the end of the ID
+                split_letter = circle_id[-1]
+                metadata["Split Group"] = split_letter
         
         for key, value in metadata.items():
             st.write(f"**{key}:** {value}")
