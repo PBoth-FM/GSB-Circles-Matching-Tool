@@ -7,6 +7,10 @@ import os
 from modules.data_loader import load_data, validate_data
 from modules.data_processor import process_data, normalize_data
 from modules.optimizer import run_matching_algorithm
+try:
+    from modules.circle_splitter import split_large_circles
+except Exception as e:
+    print(f"Error importing circle_splitter: {str(e)}")
 from modules.ui_components import (
     render_match_tab, 
     render_details_tab, 
@@ -72,7 +76,15 @@ def main():
     
     # Create tabs for navigation, moved Demographics after Match per user request
     # Removed East Bay Debug tab to focus on Seattle testing
-    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Demographics", "Details", "Debug"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Match", "Demographics", "Details", "Debug", "Split Test"])
+    
+    # Add circle splitting test tab for debugging
+    with tab5:
+        st.subheader("Circle Splitting Test")
+        st.write("This tab is for testing the circle splitting functionality directly.")
+        
+        if st.button("Test Circle Splitting"):
+            test_circle_splitting()
     
     with tab1:
         # Use our custom match tab function instead of the imported one
@@ -1293,6 +1305,108 @@ def process_uploaded_file(uploaded_file):
             st.exception(e)
 
 # Define callback for the Match tab
+def test_circle_splitting():
+    """Test function to directly test the circle splitting functionality"""
+    st.info("Running direct test of circle splitting functionality...")
+    
+    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
+        st.error("No data available. Please upload a CSV file and run the matching algorithm first.")
+        return
+    
+    try:
+        # Get the matched circles from session state
+        circles_data = st.session_state.matched_circles
+        participants_data = st.session_state.processed_data
+        
+        # Debug log what we found
+        st.write(f"Found {len(circles_data)} circles in session state")
+        st.write(f"Found {len(participants_data)} participants in session state")
+        
+        # Create test circles with the right structure
+        test_circles = []
+        test_participants = participants_data.copy()
+        
+        # Hardcode specific test circles
+        test_circle_ids = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
+        st.write(f"Looking for test circles: {', '.join(test_circle_ids)}")
+        
+        # Extract specific circles for testing
+        for circle_id in test_circle_ids:
+            matches = circles_data[circles_data['circle_id'] == circle_id]
+            if not matches.empty:
+                test_circle = matches.iloc[0].to_dict()
+                st.write(f"Found circle {circle_id} with {test_circle.get('member_count', 0)} members")
+                test_circles.append(test_circle)
+            else:
+                st.warning(f"Test circle {circle_id} not found in matched circles")
+        
+        # If no test circles found, create synthetic ones with a clear note
+        if not test_circles:
+            st.warning("No test circles found in data. Creating a synthetic test circle.")
+            # Create a synthetic circle with 11+ members
+            member_ids = test_participants['Encoded ID'].iloc[:12].tolist()
+            test_circles.append({
+                'circle_id': 'IP-TST-01',
+                'members': member_ids,
+                'member_count': len(member_ids),
+                'always_hosts': 1,
+                'sometimes_hosts': 2
+            })
+        
+        # Convert to DataFrame for processing
+        test_circles_df = pd.DataFrame(test_circles)
+        
+        # Run the circle splitting function directly
+        st.write("Running circle splitting function...")
+        print("🔴 TEST: Running direct circle splitting test")
+        
+        updated_circles, split_summary = split_large_circles(test_circles_df, test_participants)
+        
+        # Display results
+        st.subheader("Split Circle Results")
+        st.write(f"Original circles: {len(test_circles)}")
+        st.write(f"Circles eligible for splitting: {split_summary['total_circles_eligible_for_splitting']}")
+        st.write(f"Circles successfully split: {split_summary['total_circles_successfully_split']}")
+        st.write(f"New circles created: {split_summary['total_new_circles_created']}")
+        
+        # Display details of each split
+        if split_summary['split_details']:
+            st.subheader("Split Details")
+            for detail in split_summary['split_details']:
+                st.write(f"Original circle: {detail['original_circle_id']}")
+                st.write(f"Member count: {detail['member_count']}")
+                st.write(f"Split into {detail['num_splits']} circles:")
+                for new_id in detail['new_circle_ids']:
+                    st.write(f"  - {new_id}")
+                st.write("---")
+        else:
+            st.warning("No circles were split.")
+            
+        # Display circles that couldn't be split
+        if split_summary['circles_unable_to_split']:
+            st.subheader("Circles Unable to Split")
+            for circle in split_summary['circles_unable_to_split']:
+                st.write(f"Circle {circle['circle_id']} ({circle['member_count']} members)")
+                st.write(f"Reason: {circle['reason']}")
+                st.write("---")
+                
+        # Display the updated circles DataFrame
+        if not updated_circles.empty:
+            st.subheader("Updated Circles")
+            st.dataframe(updated_circles)
+            
+            # Count split circles
+            split_circles = updated_circles[updated_circles['circle_id'].str.contains('SPLIT')]
+            st.write(f"Found {len(split_circles)} split circles in the updated dataset")
+    
+    except Exception as e:
+        st.error(f"Error during circle splitting test: {str(e)}")
+        st.write("Exception details:")
+        import traceback
+        st.code(traceback.format_exc())
+        print("🔴 CRITICAL ERROR IN CIRCLE SPLITTING TEST:")
+        print(traceback.format_exc())
+
 def match_tab_callback():
     st.subheader("Upload Participant Data")
     
