@@ -421,11 +421,37 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
             
             try:
                 # Get member roles to ensure proper host distribution
-                member_roles = get_member_roles(participants_data, members)
+                # Use test_mode and circle_id for enhanced debugging with test circles
+                member_roles = get_member_roles(
+                    participants_data=participants_data, 
+                    member_ids=members,
+                    test_mode=test_mode,
+                    test_circle_id=circle_id if is_test_circle else None
+                )
                 
                 # FOR TEST CIRCLES ONLY: If this is a test circle and we don't have enough hosts,
-                # force-assign host roles for testing
+                # Check directly with the ParticipantDataManager for improved host detection
                 if is_test_circle and (len(member_roles["always_host"]) < 1 and len(member_roles["sometimes_host"]) < 2):
+                    print(f"🧪 TEST CIRCLE {circle_id}: Not enough hosts detected, trying enhanced detection")
+                    
+                    # Try using enhanced detection with ParticipantDataManager directly
+                    if participant_manager:
+                        host_counts = {'always': 0, 'sometimes': 0, 'never': 0}
+                        host_details = []
+                        
+                        # Log each member's host status with debug mode
+                        for member_id in members:
+                            if not member_id or pd.isna(member_id):
+                                continue
+                                
+                            host_status = participant_manager.get_participant_host_status(member_id, debug_mode=True)
+                            host_counts[host_status if host_status else 'never'] += 1
+                            host_details.append(f"{member_id}: {host_status}")
+                        
+                        print(f"🧪 ENHANCED HOST DETECTION: {host_counts['always']} always, {host_counts['sometimes']} sometimes")
+                        print(f"🧪 HOST DETAILS: {host_details[:5]}...")
+                    
+                    # If we still don't have enough hosts after enhanced detection, force assign for testing
                     print(f"🧪 TEST CIRCLE {circle_id}: Not enough hosts detected, forcing host assignment for testing")
                     
                     # Gather all members from roles to ensure we don't double-count
@@ -593,13 +619,15 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
     # Return updated circles, split summary, and updated participant assignments
     return updated_circles, split_summary, participants_data
 
-def get_member_roles(participants_data, member_ids):
+def get_member_roles(participants_data, member_ids, test_mode=False, test_circle_id=None):
     """
     Analyze the roles of members in a circle.
     
     Args:
         participants_data: DataFrame with participant information
         member_ids: List of member IDs
+        test_mode: If True, enables extra validation and debugging for host status
+        test_circle_id: The ID of the circle being processed (for debugging)
         
     Returns:
         dict: Dictionary with member roles information
@@ -614,6 +642,13 @@ def get_member_roles(participants_data, member_ids):
         "never_host": [],
         "co_leader": []
     }
+    
+    # Enhanced debugging in test mode
+    is_test_circle = test_circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01'] if test_circle_id else False
+    
+    if test_mode and is_test_circle:
+        print(f"\n🧪🧪🧪 DETAILED HOST DEBUG FOR TEST CIRCLE {test_circle_id} 🧪🧪🧪")
+        print(f"  Processing {len(member_ids)} members")
     
     # Try using ParticipantDataManager if available (preferred approach)
     participant_manager = None
@@ -631,12 +666,48 @@ def get_member_roles(participants_data, member_ids):
                 member_id = str(member_id)  # Ensure consistent string format
                 
                 try:
-                    # Get host status directly from manager
-                    host_status = participant_manager.get_participant_host_status(member_id)
+                    # Get participant data for detailed inspection in test mode
+                    participant_data = None
+                    if test_mode and is_test_circle:
+                        participant_data = participant_manager.get_participant_by_id(member_id)
+                        if participant_data:
+                            # Log all columns related to host status for debugging
+                            host_related_data = {}
+                            for col in participant_data:
+                                if 'host' in col.lower():
+                                    host_related_data[col] = participant_data[col]
+                            print(f"  Member {member_id} host data: {host_related_data}")
+                    
+                    # Get host status directly from manager with debug mode for test circles
+                    host_status = participant_manager.get_participant_host_status(
+                        member_id, 
+                        debug_mode=(test_mode and is_test_circle)
+                    )
+                    
+                    if test_mode and is_test_circle:
+                        print(f"  Member {member_id} normalized host_status: '{host_status}'")
                     
                     # More detailed debug for host detection issues
                     if not host_status:
                         print(f"⚠️ No host status found for member {member_id}, defaulting to 'never'")
+                        
+                        # In test mode for test circles, try direct access to raw host column as fallback
+                        if test_mode and is_test_circle and participant_data:
+                            # Try direct access to the raw host column
+                            if 'host' in participant_data and participant_data['host']:
+                                raw_host = str(participant_data['host']).lower()
+                                print(f"  🔍 FALLBACK: Raw 'host' value for {member_id}: '{raw_host}'")
+                                
+                                # Apply our normalization directly
+                                if 'always' in raw_host:
+                                    print(f"  ✅ FALLBACK: Member {member_id} identified as ALWAYS host from raw data")
+                                    roles["always_host"].append(member_id)
+                                    continue
+                                elif 'sometimes' in raw_host:
+                                    print(f"  ✅ FALLBACK: Member {member_id} identified as SOMETIMES host from raw data")
+                                    roles["sometimes_host"].append(member_id)
+                                    continue
+                        
                         missing_members += 1
                         roles["never_host"].append(member_id)
                         continue

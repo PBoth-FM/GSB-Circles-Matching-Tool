@@ -290,39 +290,93 @@ class ParticipantDataManager:
         # Return as dictionary
         return matches.iloc[0].to_dict()
     
-    def get_participant_host_status(self, participant_id: str) -> str:
+    def get_participant_host_status(self, participant_id: str, debug_mode=False) -> str:
         """
         Get the host status for a specific participant
         
         Args:
             participant_id: ID of the participant
+            debug_mode: If True, prints additional debug information
             
         Returns:
             Host status ("always", "sometimes", "never") or empty string if not found
         """
         participant_data = self.get_participant_by_id(participant_id)
         if not participant_data:
+            if debug_mode:
+                print(f"⚠️ Participant {participant_id} not found in data")
             return ""
+        
+        # Dictionary to map raw host values to standardized values
+        # Based on the provided normalization mapping
+        HOST_VALUE_MAP = {
+            # ALWAYS mappings
+            "always": "always",
+            "always host": "always",
+            # SOMETIMES mappings
+            "sometimes": "sometimes",
+            "sometimes host": "sometimes",
+            # NEVER mappings
+            "n/a": "never",
+            "never": "never",
+            "never host": "never",
+        }
             
         # Try standardized host status first
-        if 'host_status_standardized' in participant_data:
-            status = participant_data['host_status_standardized']
-            if status and not pd.isna(status):
-                return status
+        for col in ['host_status_standardized', 'Standardized Host']:
+            if col in participant_data and not pd.isna(participant_data[col]):
+                status = participant_data[col]
+                if status:
+                    normalized = str(status).lower()
+                    if debug_mode:
+                        print(f"🔍 Found standardized host status for {participant_id} in '{col}': '{normalized}'")
+                    # Map standardized statuses correctly
+                    if normalized == "always":
+                        return "always"
+                    elif normalized == "sometimes":
+                        return "sometimes"
+                    elif normalized == "never":
+                        return "never"
+                    else:
+                        # For any other values, use our mapping
+                        if normalized in HOST_VALUE_MAP:
+                            return HOST_VALUE_MAP[normalized]
                 
-        # Fall back to regular host status
-        for col in ['host', 'Host', 'HostingPreference', 'Host Status', 'Standardized Host']:
-            if col in participant_data and participant_data[col] and not pd.isna(participant_data[col]):
-                status = str(participant_data[col]).lower()
+        # Fall back to raw 'host' column (column 29)
+        if 'host' in participant_data and not pd.isna(participant_data['host']):
+            raw_host = str(participant_data['host']).lower().strip()
+            if debug_mode:
+                print(f"🔍 Using raw 'host' value for {participant_id}: '{raw_host}'")
+            
+            # Use our direct mapping for exact matches
+            if raw_host in HOST_VALUE_MAP:
+                return HOST_VALUE_MAP[raw_host]
+            
+            # For partial matches or other variations
+            if 'always' in raw_host:
+                return 'always'
+            elif 'sometimes' in raw_host:
+                return 'sometimes'
+            elif 'never' in raw_host or 'n/a' in raw_host:
+                return 'never'
+                
+        # Try other host status columns
+        for col in ['Host', 'HostingPreference', 'Host Status']:
+            if col in participant_data and not pd.isna(participant_data[col]):
+                status = str(participant_data[col]).lower().strip()
+                if debug_mode:
+                    print(f"🔍 Checking host status in '{col}' for {participant_id}: '{status}'")
                 
                 # Map to standard values
-                if 'always' in status or 'yes' in status:
+                if 'always' in status or status == 'yes' or status == '1':
                     return 'always'
-                elif 'sometimes' in status or 'maybe' in status:
+                elif 'sometimes' in status or status == 'maybe' or status == '0.5':
                     return 'sometimes'
-                elif 'never' in status or 'no' in status:
+                elif 'never' in status or 'n/a' in status or status == 'no' or status == '0':
                     return 'never'
-                
+        
+        if debug_mode:
+            print(f"⚠️ No host status found for {participant_id} in any column")
         return ""
     
     def is_participant_co_leader(self, participant_id: str) -> bool:
