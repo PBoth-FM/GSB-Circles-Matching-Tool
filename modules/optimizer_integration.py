@@ -35,11 +35,13 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
     """
     preprocessing_summary = {
         "steps_performed": [],
-        "split_circle_summary": None
+        "split_circle_summary": None,
+        "eligible_split_circles": 0
     }
     
     # Step 1: Split large circles
-    print("🔄 PREPROCESSING: Starting circle splitting process")
+    print("\n🔄 PREPROCESSING: Starting circle splitting process")
+    print("  Splitting circles with 11+ members before optimization to make split circles available for new members")
     updated_circles, split_summary = split_large_circles(circles_data, participants_data)
     preprocessing_summary["steps_performed"].append("split_large_circles")
     preprocessing_summary["split_circle_summary"] = split_summary
@@ -55,7 +57,137 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
         update_metadata_manager_with_splits(split_summary)
         preprocessing_summary["steps_performed"].append("update_metadata_manager_with_splits")
     
-    # Additional preprocessing steps can be added here
+    # Step 3: Ensure the split circles have max_additions = 8 (minus current member count)
+    # Get the metadata manager to work with
+    manager = get_manager_from_session_state(st.session_state)
+    if manager and hasattr(manager, 'split_circles') and manager.split_circles:
+        print(f"\n🔄 PREPROCESSING: Setting max_additions for {len(manager.split_circles)} split circles")
+        
+        # Get all split circle IDs
+        split_circle_ids = list(manager.split_circles.keys())
+        eligible_count = 0
+        
+        # Ensure each split circle has max_additions set to allow up to 8 members
+        for split_id in split_circle_ids:
+            if split_id in manager.circles:
+                circle_data = manager.circles[split_id]
+                member_count = circle_data.get('member_count', 0)
+                
+                # Calculate max_additions to allow growth to 8 members
+                max_additions = max(0, 8 - member_count)
+                circle_data['max_additions'] = max_additions
+                
+                # Set is_eligible to True if there's room for more members
+                circle_data['is_eligible'] = max_additions > 0
+                
+                # Update the circle data in the manager
+                manager.circles[split_id] = circle_data
+                
+                # Log eligibility
+                if max_additions > 0:
+                    eligible_count += 1
+                    print(f"  ✅ Split circle {split_id} can take up to {max_additions} new members")
+                else:
+                    print(f"  ℹ️ Split circle {split_id} is already at capacity with {member_count} members")
+        
+        preprocessing_summary["eligible_split_circles"] = eligible_count
+        print(f"✅ {eligible_count} of {len(split_circle_ids)} split circles are eligible for new members")
+        
+        # Step 4: Ensure the updated circle data is reflected in the updated_circles
+        # This section applies updates to the circles in the format expected by the optimizer
+        if updated_circles is not None:
+            print("\n🔄 PREPROCESSING: Applying split circle updates to circles data")
+            
+            # Handle DataFrame or list format
+            if isinstance(updated_circles, pd.DataFrame):
+                # DataFrame format - update using the index
+                for split_id in split_circle_ids:
+                    if split_id in updated_circles['circle_id'].values:
+                        circle_idx = updated_circles.index[updated_circles['circle_id'] == split_id].tolist()[0]
+                        
+                        # Update max_additions
+                        circle_data = manager.circles.get(split_id, {})
+                        updated_circles.at[circle_idx, 'max_additions'] = circle_data.get('max_additions', 0)
+                        
+                        # Update active status to ensure it's considered
+                        updated_circles.at[circle_idx, 'active'] = True
+                        
+                        # Update split status flag
+                        updated_circles.at[circle_idx, 'is_split_circle'] = True
+                        
+                        # Log the update
+                        print(f"  ✅ Updated DataFame entry for {split_id} with max_additions={circle_data.get('max_additions', 0)}")
+            else:
+                # List format - update by iterating
+                for i, circle in enumerate(updated_circles):
+                    if circle.get('circle_id') in split_circle_ids:
+                        # Get updated data from manager
+                        split_id = circle.get('circle_id')
+                        circle_data = manager.circles.get(split_id, {})
+                        
+                        # Update max_additions
+                        updated_circles[i]['max_additions'] = circle_data.get('max_additions', 0)
+                        
+                        # Update active status to ensure it's considered
+                        updated_circles[i]['active'] = True
+                        
+                        # Update split status flag
+                        updated_circles[i]['is_split_circle'] = True
+                        
+                        # Log the update
+                        print(f"  ✅ Updated list entry for {split_id} with max_additions={circle_data.get('max_additions', 0)}")
+    
+    # Step 5: Pre-optimization validation to verify split circles are prepared correctly
+    print("\n🔍 PREPROCESSING: Validating split circle preparation")
+    
+    # Record validation results
+    validation_results = {
+        "original_circles_inactive": True,
+        "split_circles_active": True,
+        "split_circles_have_correct_max_additions": True,
+        "problems_found": []
+    }
+    
+    # Check if we've split any circles
+    if manager and hasattr(manager, 'original_circles') and manager.original_circles:
+        # Validate original circles are inactive
+        for orig_id in manager.original_circles:
+            circle_data = manager.circles.get(orig_id, {})
+            if circle_data.get('active', True) or not circle_data.get('replaced_by_splits', False):
+                validation_results["original_circles_inactive"] = False
+                validation_results["problems_found"].append(f"Original circle {orig_id} not properly marked inactive")
+                print(f"  ⚠️ Original circle {orig_id} is not properly marked inactive")
+        
+        # Validate split circles are active and have correct max_additions
+        for split_id in manager.split_circles:
+            circle_data = manager.circles.get(split_id, {})
+            
+            # Check active status
+            if not circle_data.get('active', False):
+                validation_results["split_circles_active"] = False
+                validation_results["problems_found"].append(f"Split circle {split_id} not marked active")
+                print(f"  ⚠️ Split circle {split_id} is not marked active")
+            
+            # Check max_additions is correctly set
+            member_count = circle_data.get('member_count', 0)
+            expected_max_additions = max(0, 8 - member_count)
+            actual_max_additions = circle_data.get('max_additions', -1)
+            
+            if actual_max_additions != expected_max_additions:
+                validation_results["split_circles_have_correct_max_additions"] = False
+                validation_results["problems_found"].append(
+                    f"Split circle {split_id} has incorrect max_additions: {actual_max_additions}, expected: {expected_max_additions}"
+                )
+                print(f"  ⚠️ Split circle {split_id} has incorrect max_additions: {actual_max_additions}, expected: {expected_max_additions}")
+    
+    # Add validation results to the summary
+    preprocessing_summary["validation_results"] = validation_results
+    
+    # Log validation summary
+    if validation_results["problems_found"]:
+        print(f"⚠️ Found {len(validation_results['problems_found'])} issues with split circle preparation")
+    else:
+        print("✅ Split circle preparation validation successful - all checks passed")
     
     # Return the processed circles
     return updated_circles, preprocessing_summary
@@ -81,33 +213,164 @@ def postprocess_optimization_results(optimization_results, circles_data, partici
         )
     """
     postprocessing_summary = {
-        "steps_performed": []
+        "steps_performed": [],
+        "circles_receiving_members": 0,
+        "split_circles_receiving_members": 0
     }
+    
+    print("\n🔄 POSTPROCESSING: Starting optimization results post-processing")
+    
+    # Get the metadata manager for reference
+    manager = get_manager_from_session_state(st.session_state)
+    
+    # Check if we have valid results
+    if optimization_results is None:
+        print("⚠️ POSTPROCESSING: No optimization results to process")
+        return optimization_results, postprocessing_summary
     
     # Check if we performed circle splitting
     if "split_circle_summary" in preprocessing_summary and preprocessing_summary["split_circle_summary"]:
         split_summary = preprocessing_summary["split_circle_summary"]
         
         # Only postprocess if we actually split any circles
-        if split_summary["total_circles_successfully_split"] > 0:
-            print(f"🔄 POSTPROCESSING: Handling {split_summary['total_circles_successfully_split']} split circles")
+        if split_summary.get("total_circles_successfully_split", 0) > 0:
+            print(f"🔄 POSTPROCESSING: Handling {split_summary.get('total_circles_successfully_split', 0)} split circles")
             
-            # The metadata manager has already been updated in the preprocessing step,
-            # so we just need to verify the changes are reflected in the results
-            
-            # Check for any split circles in optimization results
+            # Get all split circle IDs from the summary
             split_circle_ids = []
             for detail in split_summary.get("split_details", []):
                 split_circle_ids.extend(detail.get("new_circle_ids", []))
             
             if split_circle_ids:
-                print(f"✅ POSTPROCESSING: Verified {len(split_circle_ids)} split circles exist")
-                postprocessing_summary["steps_performed"].append("verify_split_circles")
+                print(f"🔍 POSTPROCESSING: Looking for {len(split_circle_ids)} split circles in optimization results")
+                postprocessing_summary["steps_performed"].append("process_split_circles")
                 postprocessing_summary["split_circle_ids"] = split_circle_ids
+                
+                # Count how many split circles received new members
+                split_circles_receiving_members = 0
+                
+                # Process all results
+                if isinstance(optimization_results, list):
+                    # Count circles receiving members
+                    circles_receiving_members = sum(1 for result in optimization_results if result.get("new_members", []))
+                    
+                    # Count split circles receiving members
+                    for result in optimization_results:
+                        if result.get("circle_id") in split_circle_ids and result.get("new_members", []):
+                            split_circles_receiving_members += 1
+                            print(f"  ✅ Split circle {result.get('circle_id')} received {len(result.get('new_members', []))} new members")
+                
+                elif isinstance(optimization_results, pd.DataFrame):
+                    # Count circles receiving members (assuming there's a new_members column)
+                    if "new_members" in optimization_results.columns:
+                        circles_receiving_members = sum(1 for _, row in optimization_results.iterrows() 
+                                                    if row.get("new_members") and len(row.get("new_members", [])) > 0)
+                    
+                        # Count split circles receiving members
+                        for _, row in optimization_results.iterrows():
+                            if row.get("circle_id") in split_circle_ids and row.get("new_members") and len(row.get("new_members", [])) > 0:
+                                split_circles_receiving_members += 1
+                                print(f"  ✅ Split circle {row.get('circle_id')} received {len(row.get('new_members', []))} new members")
+                else:
+                    circles_receiving_members = 0
+                    print("⚠️ POSTPROCESSING: Unrecognized optimization results format")
+                
+                # Store stats in summary
+                postprocessing_summary["circles_receiving_members"] = circles_receiving_members
+                postprocessing_summary["split_circles_receiving_members"] = split_circles_receiving_members
+                
+                # Log findings
+                print(f"✅ POSTPROCESSING: {split_circles_receiving_members} of {len(split_circle_ids)} split circles received new members")
+                print(f"✅ POSTPROCESSING: {circles_receiving_members} total circles received new members")
+                
+                # Update the metadata manager if needed
+                if split_circles_receiving_members > 0 and manager is not None:
+                    print("\n🔄 POSTPROCESSING: Updating metadata manager with split circle member allocations")
+                    
+                    # Iterate through the results looking for split circles that got new members
+                    if isinstance(optimization_results, list):
+                        for result in optimization_results:
+                            circle_id = result.get("circle_id")
+                            new_members = result.get("new_members", [])
+                            
+                            if circle_id in split_circle_ids and new_members:
+                                # Update metadata manager with new member information
+                                if circle_id in manager.circles:
+                                    circle_data = manager.circles[circle_id]
+                                    
+                                    # Update member count
+                                    current_members = circle_data.get("members", [])
+                                    total_members = len(current_members) + len(new_members)
+                                    circle_data["member_count"] = total_members
+                                    
+                                    # Update eligible status based on new count
+                                    circle_data["is_eligible"] = total_members < 8
+                                    
+                                    # Update manager
+                                    manager.circles[circle_id] = circle_data
+                                    print(f"  ✅ Updated split circle {circle_id} metadata: now {total_members} members")
+                    
+                    elif isinstance(optimization_results, pd.DataFrame):
+                        for _, row in optimization_results.iterrows():
+                            circle_id = row.get("circle_id")
+                            new_members = row.get("new_members", [])
+                            
+                            if circle_id in split_circle_ids and new_members and len(new_members) > 0:
+                                # Update metadata manager with new member information
+                                if circle_id in manager.circles:
+                                    circle_data = manager.circles[circle_id]
+                                    
+                                    # Update member count
+                                    current_members = circle_data.get("members", [])
+                                    total_members = len(current_members) + len(new_members)
+                                    circle_data["member_count"] = total_members
+                                    
+                                    # Update eligible status based on new count
+                                    circle_data["is_eligible"] = total_members < 8
+                                    
+                                    # Update manager
+                                    manager.circles[circle_id] = circle_data
+                                    print(f"  ✅ Updated split circle {circle_id} metadata: now {total_members} members")
     
-    # Additional postprocessing steps can be added here
+    # Check for any unmatched compatible new members that could have gone to split circles
+    # This is a validation step to ensure the optimizer properly considered split circles
+    print("\n🔍 POSTPROCESSING: Validating optimizer allocation to split circles")
     
-    # For now, just return the original results
+    # Simple validation to check if any eligible split circles could take more members
+    if manager and hasattr(manager, 'split_circles') and manager.split_circles:
+        eligible_split_circles = {
+            circle_id: manager.circles[circle_id].get('max_additions', 0)
+            for circle_id in manager.split_circles.keys()
+            if circle_id in manager.circles and manager.circles[circle_id].get('max_additions', 0) > 0
+        }
+        
+        if eligible_split_circles:
+            # Log the eligible split circles
+            print(f"  Found {len(eligible_split_circles)} eligible split circles with capacity:")
+            for circle_id, capacity in eligible_split_circles.items():
+                print(f"  - {circle_id}: {capacity} open slots")
+            
+            # Get unmatched participants from the results
+            unmatched_participant_ids = []
+            
+            # Check optimization results format
+            if isinstance(optimization_results, list) and any(r.get("unmatched_participant_ids") for r in optimization_results):
+                # Get info from the first result that has unmatched_participant_ids
+                for result in optimization_results:
+                    if "unmatched_participant_ids" in result:
+                        unmatched_participant_ids = result.get("unmatched_participant_ids", [])
+                        break
+            elif isinstance(optimization_results, dict) and "unmatched_participant_ids" in optimization_results:
+                unmatched_participant_ids = optimization_results.get("unmatched_participant_ids", [])
+            
+            if unmatched_participant_ids:
+                print(f"  Found {len(unmatched_participant_ids)} unmatched participants")
+                postprocessing_summary["unmatched_participant_count"] = len(unmatched_participant_ids)
+            else:
+                print("  No unmatched participants found")
+                postprocessing_summary["unmatched_participant_count"] = 0
+    
+    # Return the processed results
     return optimization_results, postprocessing_summary
 
 def update_metadata_manager_with_splits(split_summary):
