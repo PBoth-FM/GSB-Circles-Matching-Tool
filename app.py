@@ -1305,6 +1305,65 @@ def process_uploaded_file(uploaded_file):
             st.exception(e)
 
 # Define callback for the Match tab
+def rebuild_circle_member_lists(circles_df, participants_df):
+    """
+    Reconstruct complete member lists for all circles directly from participant data.
+    This function addresses the disconnect between member_count and actual members lists.
+    
+    Args:
+        circles_df: DataFrame containing circle data
+        participants_df: DataFrame containing participant data with circle assignments
+        
+    Returns:
+        Updated DataFrame with rebuilt member lists for each circle
+    """
+    # Create a deep copy to avoid modifying the original
+    updated_circles = circles_df.copy()
+    
+    # Find the column that contains circle assignments
+    circle_col = None
+    for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
+        if col in participants_df.columns:
+            circle_col = col
+            break
+    
+    if not circle_col:
+        print("⚠️ WARNING: Could not find circle assignment column in participants data")
+        return updated_circles  # No column found to rebuild memberships
+    
+    # Track which circles were updated
+    circles_updated = 0
+    
+    # For each circle, find all participants assigned to it
+    for idx, circle in updated_circles.iterrows():
+        circle_id = circle.get('circle_id')
+        if not circle_id:
+            continue
+        
+        # Find all participants assigned to this circle
+        circle_members = participants_df[participants_df[circle_col] == circle_id]
+        if 'Encoded ID' in participants_df.columns and not circle_members.empty:
+            # Get the member IDs and update the circle
+            member_ids = circle_members['Encoded ID'].tolist()
+            
+            # Filter out any None or NaN values
+            member_ids = [str(m) for m in member_ids if m is not None and not pd.isna(m)]
+            
+            # Update the circle
+            updated_circles.at[idx, 'members'] = member_ids
+            
+            # Only update member_count if it doesn't match the actual count
+            if 'member_count' in updated_circles.columns:
+                current_count = updated_circles.at[idx, 'member_count']
+                if current_count != len(member_ids):
+                    print(f"🔍 Fixed member count mismatch for {circle_id}: {current_count} → {len(member_ids)}")
+                updated_circles.at[idx, 'member_count'] = len(member_ids)
+            
+            circles_updated += 1
+    
+    print(f"✅ Successfully rebuilt member lists for {circles_updated} circles")
+    return updated_circles
+
 def test_circle_splitting():
     """Test function to directly test the circle splitting functionality"""
     st.info("Running direct test of circle splitting functionality...")
@@ -1322,14 +1381,45 @@ def test_circle_splitting():
         st.write(f"Found {len(circles_data)} circles in session state")
         st.write(f"Found {len(participants_data)} participants in session state")
         
+        # Show available columns in participants data - to see how circles are assigned
+        st.write("Available columns in participants data:")
+        st.write(participants_data.columns.tolist())
+        
+        # Attempt to identify which column contains circle assignments
+        circle_col = None
+        for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
+            if col in participants_data.columns:
+                circle_col = col
+                st.write(f"Found circle assignment column: '{circle_col}'")
+                # Show how many participants have circle assignments
+                assigned_count = participants_data[~participants_data[circle_col].isna()].shape[0]
+                st.write(f"Participants with circle assignments: {assigned_count} of {len(participants_data)}")
+                # Show sample of different circle IDs in use
+                sample_circles = participants_data[circle_col].dropna().unique()[:5]
+                st.write(f"Sample circle IDs: {sample_circles.tolist()}")
+                break
+        
+        if not circle_col:
+            st.warning("Could not identify which column contains circle assignments")
+            # Show all columns to help identify the right one
+            st.write("Please review available columns to identify circle assignments:")
+            for col in participants_data.columns:
+                unique_values = participants_data[col].dropna().unique()
+                if len(unique_values) < 200:  # Only show if it has a reasonable number of values
+                    st.write(f"- {col}: {unique_values[:5]}")
+        
         # Import circle splitting functionality
         from modules.circle_splitter import split_large_circles
         
-        # Create test circles with the right structure
+        # Rebuild circle member lists from participant data - NEW APPROACH
+        st.subheader("Rebuilding Circle Member Lists")
+        rebuilt_circles = rebuild_circle_member_lists(circles_data, participants_data)
+        
+        # Create test circles from the rebuilt data
         test_circles = []
         test_participants = participants_data.copy()
         
-        # Import circle metadata manager for consistent member access
+        # Import circle metadata manager for consistent member access (for comparison only)
         from utils.circle_metadata_manager import CircleMetadataManager
         
         # Create a new metadata manager or get it from session state if it exists
@@ -1341,19 +1431,6 @@ def test_circle_splitting():
             # Initialize from current data
             metadata_manager.initialize_from_optimizer(circles_data.to_dict('records'), participants_data)
             st.write("Created new CircleMetadataManager")
-        
-        # Function to get member IDs for a circle from participants data
-        def get_circle_members_from_participants(circle_id, participants_df):
-            """Extract member IDs for a circle directly from participants data"""
-            # Look for columns that might contain circle assignment info
-            circle_cols = ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']
-            for col_name in circle_cols:
-                if col_name in participants_df.columns:
-                    circle_members = participants_df[participants_df[col_name] == circle_id]
-                    if not circle_members.empty:
-                        if 'Encoded ID' in circle_members.columns:
-                            return circle_members['Encoded ID'].tolist()
-            return []
             
         # Hardcode specific test circles
         test_circle_ids = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
@@ -1361,39 +1438,56 @@ def test_circle_splitting():
         
         # Extract specific circles for testing
         for circle_id in test_circle_ids:
-            matches = circles_data[circles_data['circle_id'] == circle_id]
+            # Look for the circle in our rebuilt data
+            matches = rebuilt_circles[rebuilt_circles['circle_id'] == circle_id]
             if not matches.empty:
                 test_circle = matches.iloc[0].to_dict()
                 
-                # Try multiple methods to get member IDs - a more robust approach
-                # 1. Try the CircleMetadataManager
+                # Get rebuilt members
+                members_from_rebuild = test_circle.get('members', [])
+                if isinstance(members_from_rebuild, list):
+                    members_length = len(members_from_rebuild)
+                else:
+                    members_length = 0
+                    st.warning(f"Unexpected type for members_from_rebuild: {type(members_from_rebuild)}")
+                
+                # Just for comparison, also try the other methods
                 members_from_manager = metadata_manager.get_circle_members(circle_id)
                 
-                # 2. If that doesn't work, try getting from participants data directly
-                members_from_participants = get_circle_members_from_participants(circle_id, test_participants)
-                
-                # 3. As a last resort, use the standard normalization
+                # Original normalization for comparison
                 from utils.data_standardization import normalize_member_list
-                members_from_normalization = normalize_member_list(test_circle.get('members', []))
+                original_circle = circles_data[circles_data['circle_id'] == circle_id].iloc[0].to_dict()
+                members_from_normalization = normalize_member_list(original_circle.get('members', []))
                 
                 # Log what we found with each method
                 st.write(f"Found circle {circle_id} with {test_circle.get('member_count', 0)} members")
                 st.write(f"- Method 1 (MetadataManager): {len(members_from_manager)} members")
-                st.write(f"- Method 2 (Participants): {len(members_from_participants)} members")
+                st.write(f"- Method 2 (Rebuilt): {members_length} members")
                 st.write(f"- Method 3 (Normalization): {len(members_from_normalization)} members")
                 
-                # Use the method that found the most members
-                if len(members_from_manager) >= max(len(members_from_participants), len(members_from_normalization)):
-                    test_circle['members'] = members_from_manager
-                    st.write(f"Using method 1 for {circle_id}: {len(members_from_manager)} members")
-                elif len(members_from_participants) >= len(members_from_normalization):
-                    test_circle['members'] = members_from_participants
-                    st.write(f"Using method 2 for {circle_id}: {len(members_from_participants)} members")
-                else:
-                    test_circle['members'] = members_from_normalization
-                    st.write(f"Using method 3 for {circle_id}: {len(members_from_normalization)} members")
+                # Analyze differences - NEW
+                if members_length != test_circle.get('member_count', 0):
+                    st.warning(f"Member count mismatch: {members_length} vs {test_circle.get('member_count', 0)}")
                 
+                if len(members_from_manager) > 0 and members_length > 0:
+                    # Show differences between member lists
+                    manager_set = set(members_from_manager)
+                    rebuild_set = set(members_from_rebuild) if isinstance(members_from_rebuild, list) else set()
+                    
+                    # Members in manager but not in rebuild
+                    missing_from_rebuild = manager_set - rebuild_set
+                    if missing_from_rebuild:
+                        st.write(f"Members in manager but not in rebuild: {missing_from_rebuild}")
+                    
+                    # Members in rebuild but not in manager
+                    missing_from_manager = rebuild_set - manager_set
+                    if missing_from_manager:
+                        st.write(f"Members in rebuild but not in manager: {missing_from_manager}")
+                
+                # Always use our rebuilt member list for testing
                 test_circles.append(test_circle)
+                st.write(f"Using rebuilt member list for {circle_id}: {members_length} members")
+                
             else:
                 st.warning(f"Test circle {circle_id} not found in matched circles")
         

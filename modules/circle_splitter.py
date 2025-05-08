@@ -8,6 +8,73 @@ import numpy as np
 import random
 from typing import Dict, List, Tuple, Any, Union, Optional
 
+def rebuild_circle_member_lists(circles_data, participants_data):
+    """
+    Reconstruct complete member lists for all circles directly from participant data.
+    This function addresses the disconnect between member_count and actual members lists.
+    
+    Args:
+        circles_data: DataFrame or list of dictionaries containing circle data
+        participants_data: DataFrame containing participant data with circle assignments
+        
+    Returns:
+        List or DataFrame with rebuilt member lists for each circle
+    """
+    # Convert to DataFrame if needed for consistent processing
+    input_was_list = not isinstance(circles_data, pd.DataFrame)
+    if input_was_list:
+        circles_df = pd.DataFrame(circles_data)
+    else:
+        circles_df = circles_data.copy()
+    
+    # Find the column that contains circle assignments
+    circle_col = None
+    for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
+        if col in participants_data.columns:
+            circle_col = col
+            break
+    
+    if not circle_col:
+        print("⚠️ WARNING: Could not find circle assignment column in participants data")
+        return circles_data  # Return original data if we can't find assignments
+    
+    # Track which circles were updated
+    circles_updated = 0
+    
+    # For each circle, find all participants assigned to it
+    for idx, circle in circles_df.iterrows():
+        circle_id = circle.get('circle_id')
+        if not circle_id:
+            continue
+        
+        # Find all participants assigned to this circle
+        circle_members = participants_data[participants_data[circle_col] == circle_id]
+        if 'Encoded ID' in participants_data.columns and not circle_members.empty:
+            # Get the member IDs and update the circle
+            member_ids = circle_members['Encoded ID'].tolist()
+            
+            # Filter out any None or NaN values
+            member_ids = [str(m) for m in member_ids if m is not None and not pd.isna(m)]
+            
+            # Update the circle
+            circles_df.at[idx, 'members'] = member_ids
+            
+            # Only update member_count if it doesn't match the actual count
+            if 'member_count' in circles_df.columns:
+                current_count = circles_df.at[idx, 'member_count']
+                if current_count != len(member_ids):
+                    print(f"🔍 Fixed member count mismatch for {circle_id}: {current_count} → {len(member_ids)}")
+                circles_df.at[idx, 'member_count'] = len(member_ids)
+            
+            circles_updated += 1
+    
+    print(f"✅ Successfully rebuilt member lists for {circles_updated} circles")
+    
+    # Return in the same format as the input
+    if input_was_list:
+        return circles_df.to_dict('records')
+    return circles_df
+
 def split_large_circles(circles_data, participants_data):
     """
     Identifies circles with 11+ members and splits them into smaller circles.
@@ -32,15 +99,20 @@ def split_large_circles(circles_data, participants_data):
         "circles_unable_to_split": []
     }
     
-    # Convert circles_data to list of dictionaries if it's a DataFrame
-    if isinstance(circles_data, pd.DataFrame):
-        circles_list = circles_data.to_dict('records')
+    print("🔍 STEP 1: Rebuilding circle member lists from participant data")
+    # First, ensure all circles have proper member lists by rebuilding them
+    circles_with_members = rebuild_circle_member_lists(circles_data, participants_data)
+    
+    # Convert to list of dictionaries if it's a DataFrame
+    if isinstance(circles_with_members, pd.DataFrame):
+        circles_list = circles_with_members.to_dict('records')
     else:
-        circles_list = circles_data
+        circles_list = circles_with_members
     
     # Create a new list for updated circles
     updated_circles = []
     
+    print("🔍 STEP 2: Identifying and splitting large circles")
     # Identify large circles (11+ members)
     for circle in circles_list:
         split_summary["total_circles_examined"] += 1
@@ -53,85 +125,18 @@ def split_large_circles(circles_data, participants_data):
             updated_circles.append(circle)
             continue
         
-        # More robust member extraction approach
-        from utils.data_standardization import normalize_member_list
-
-        # Get member IDs - Try multiple methods
-        members = []
+        # Get member list - should now be properly populated
+        members = circle.get('members', [])
         
-        # Method 1: Direct access to the members field
-        raw_members = circle.get('members', [])
-        members = normalize_member_list(raw_members)
+        # Log details about the members
+        print(f"🔍 Circle {circle_id}: {len(members)} members, member_count={circle.get('member_count', 0)}")
+        if members and len(members) > 0:
+            print(f"🔍 Sample members: {str(members[:3])}...")
+        else:
+            print(f"⚠️ No members found for circle {circle_id}")
         
-        # Add detailed debugging for member data structure
-        print(f"🔍 DEBUG: Circle {circle_id} members type: {type(raw_members)}")
-        print(f"🔍 DEBUG: Circle {circle_id} raw members sample: {str(raw_members)[:200]}...")
-        print(f"🔍 DEBUG: Circle {circle_id} normalized members: {len(members)} found")
-        
-        # Method 2: If no members found but we have member_count, try to rebuild from participants data
-        if not members and circle.get('member_count', 0) >= 11 and participants_data is not None:
-            try:
-                # Try using a direct lookup in participants data
-                circle_col = None
-                for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
-                    if col in participants_data.columns:
-                        circle_col = col
-                        break
-                
-                if circle_col:
-                    circle_members = participants_data[participants_data[circle_col] == circle_id]
-                    if 'Encoded ID' in participants_data.columns and not circle_members.empty:
-                        participant_members = circle_members['Encoded ID'].tolist()
-                        if participant_members:
-                            members = participant_members
-                            print(f"🔍 DEBUG: Rebuilt member list for {circle_id} from participants data: {len(members)} found")
-            except Exception as e:
-                print(f"⚠️ Error rebuilding members from participants: {str(e)}")
-        
-        # Method 3: If still no members but we have CircleMetadataManager in the app, use it
-        if not members and circle.get('member_count', 0) >= 11:
-            try:
-                from utils.circle_metadata_manager import CircleMetadataManager
-                # Use singleton pattern to get or create the manager
-                manager = CircleMetadataManager()
-                
-                # Try to load from the manager
-                manager_members = manager.get_circle_members(circle_id)
-                if manager_members:
-                    members = manager_members
-                    print(f"🔍 DEBUG: Got members for {circle_id} from CircleMetadataManager: {len(members)} found")
-            except Exception as e:
-                print(f"⚠️ Error getting members from CircleMetadataManager: {str(e)}")
-        
-        # Method 4: Last resort - create synthetic extraction approach for dictionary style members
-        if not members and isinstance(raw_members, dict) and circle.get('member_count', 0) >= 11:
-            try:
-                # Access member IDs from dictionary directly if embedded in complex structure
-                print(f"🔍 DEBUG: Attempting direct extraction from complex structure for {circle_id}")
-                
-                # Check for common ID field names in the dictionary
-                for id_field in ['id', 'ID', 'encoded_id', 'Encoded ID', 'participant_id']:
-                    if id_field in raw_members:
-                        members = [str(raw_members[id_field])]
-                        print(f"🔍 DEBUG: Found ID field '{id_field}' in complex structure")
-                        break
-                
-                # If that doesn't work but we have expected number of members from member_count,
-                # construct a synthetic member ID list for testing purposes (will be replaced later)
-                if not members and participants_data is not None and 'Encoded ID' in participants_data.columns:
-                    expected_count = circle.get('member_count', 0)
-                    synthetic_members = participants_data['Encoded ID'].iloc[:expected_count].tolist()
-                    if synthetic_members:
-                        members = synthetic_members
-                        print(f"🔍 DEBUG: Created member list for {circle_id} with {len(members)} synthetic members")
-            except Exception as e:
-                print(f"⚠️ Error in direct dictionary extraction: {str(e)}")
-            
-        # Final count of members (use what we found or fall back to member_count)
-        member_count = len(members) if members else circle.get('member_count', 0)
-        
-        # Store the extracted members back in the circle
-        circle['members'] = members
+        # Count members - use actual list length
+        member_count = len(members)
         
         # Skip if not a large circle (11+ members)
         if member_count < 11:
