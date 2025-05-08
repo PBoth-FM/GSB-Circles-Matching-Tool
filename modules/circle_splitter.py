@@ -650,11 +650,45 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     
     # IMPROVED FUNCTION: Find optimal split based on both host needs and size balancing
     def find_optimal_split(member_id, is_always_host=False, is_sometimes_host=False, is_co_leader=False):
-        # Calculate a score for each split combining:
-        # 1. Host needs (always hosts or sometimes hosts)
-        # 2. Current size vs. target size
-        # 3. Co-leader distribution
+        """
+        Determines the optimal split for a member based on their host status and the current composition of splits.
         
+        The key improvements ensure:
+        1. Always Hosts go to the first split 
+        2. Sometimes Hosts go to the second split when possible
+        3. Size balancing only happens after host requirements are met
+        """
+        # For debugging
+        print(f"🔍 DEBUG: Finding optimal split for member {member_id} - always_host: {is_always_host}, sometimes_host: {is_sometimes_host}")
+        
+        # FIXED DISTRIBUTION STRATEGY:
+        # - First split (index 0) should get Always Hosts
+        # - Second split (index 1) should get Sometimes Hosts
+        # - Remaining splits follow general balancing rules
+        
+        # Special case for "Always Host" - always assign to first split until it has at least one
+        if is_always_host:
+            # If first split has no Always Host yet, assign there
+            if splits[0]["always_hosts"] == 0:
+                print(f"  → Assigning Always Host {member_id} to first split (index 0)")
+                return 0
+                
+            # If we're dealing with multiple Always Hosts, distribute evenly starting with split 0
+            # Find the split with fewest Always Hosts
+            min_always_hosts = min(split["always_hosts"] for split in splits)
+            for i, split in enumerate(splits):
+                if split["always_hosts"] == min_always_hosts:
+                    print(f"  → Distributing additional Always Host {member_id} to split {i}")
+                    return i
+        
+        # Special case for "Sometimes Host" - ensure second split gets enough Sometimes Hosts
+        if is_sometimes_host:
+            # If this is a 2-split scenario and the second split needs more Sometimes Hosts
+            if len(splits) >= 2 and splits[1]["sometimes_hosts"] < 2 and splits[1]["always_hosts"] == 0:
+                print(f"  → Assigning Sometimes Host {member_id} to second split (index 1)")
+                return 1
+        
+        # Regular balancing logic for other cases
         best_score = float('-inf')
         best_index = 0
         
@@ -663,19 +697,26 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
             
             # Host factors
             if is_always_host:
-                # Prefer circles with no always hosts
-                if split["always_hosts"] == 0:
-                    score += 50
-                else:
-                    score -= split["always_hosts"] * 10
+                # We already handled the primary case above
+                # Prefer circles with fewer always hosts for additional always hosts
+                score -= split["always_hosts"] * 10
             
             if is_sometimes_host:
-                # Prefer circles with no always hosts and fewer sometimes hosts
-                if split["always_hosts"] == 0:
-                    score += 30
-                    
-                # Penalize for existing sometimes hosts
-                score -= split["sometimes_hosts"] * 5
+                # We already handled the critical case above
+                # For remaining sometimes hosts:
+                
+                # Strongly avoid putting sometimes hosts in splits that already have always hosts
+                if split["always_hosts"] > 0:
+                    score -= 100  # Strong penalty
+                
+                # For splits without always hosts, prefer those with fewer sometimes hosts
+                else:
+                    # If a split has 0-1 sometimes hosts and no always hosts, it needs more sometimes hosts
+                    if split["sometimes_hosts"] < 2:
+                        score += 50
+                    # Otherwise penalize for existing sometimes hosts
+                    else:
+                        score -= split["sometimes_hosts"] * 5
             
             if is_co_leader:
                 # Prefer even distribution of co-leaders
@@ -695,7 +736,8 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
             if score > best_score:
                 best_score = score
                 best_index = i
-        
+                
+        print(f"  → Assigning member {member_id} to split {best_index} based on general balancing")
         return best_index
     
     # Process member assignment strategy:
@@ -752,19 +794,119 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         assigned_members.append(member)
         print(f"  - Regular member {member} assigned to split {smallest_index}")
     
-    # VALIDATION: Check if all members were assigned
+    # ENHANCED VALIDATION: Check if all members were assigned with detailed diagnostics
     if len(assigned_members) != original_member_count:
         print(f"⚠️ WARNING: Member count mismatch! Original: {original_member_count}, Assigned: {len(assigned_members)}")
         
-        # Find missing members
+        # Find missing members with detailed debugging
         missing = set(members) - set(assigned_members)
         if missing:
-            print(f"⚠️ WARNING: Missing members: {missing}")
+            print(f"⚠️ WARNING: {len(missing)} missing members: {missing}")
+            
+            # Debug specific information about missing members
+            for missing_id in missing:
+                print(f"🔍 MEMBER DEBUG: Missing member {missing_id} was not assigned")
+                
+                # Check if this member was in the original member lists
+                if missing_id in always_hosts:
+                    print(f"  → This member is an Always Host but was not assigned")
+                elif missing_id in sometimes_hosts:
+                    print(f"  → This member is a Sometimes Host but was not assigned")
+                elif missing_id in co_leaders:
+                    print(f"  → This member is a Co-Leader but was not assigned")
+                
+                # Check if member is still in unassigned_members (shouldn't be possible)
+                if missing_id in unassigned_members:
+                    print(f"  → CRITICAL ERROR: Member is still in unassigned_members list")
+                
+                # Check if this member was identified in participants_data
+                try:
+                    if participants_data is not None:
+                        # Find ID column
+                        id_col = None
+                        for col in ['Encoded ID', 'encoded_id', 'participant_id']:
+                            if col in participants_data.columns:
+                                id_col = col
+                                break
+                        
+                        if id_col:
+                            # Find the participant row
+                            participant_mask = participants_data[id_col] == missing_id
+                            if any(participant_mask):
+                                print(f"  → Member exists in participants_data")
+                                
+                                # Get name if available (for debugging only)
+                                name_data = []
+                                for name_col in ['Last Family Name', 'First Given Name']:
+                                    if name_col in participants_data.columns:
+                                        value = participants_data.loc[participant_mask, name_col].iloc[0]
+                                        if not pd.isna(value):
+                                            name_data.append(str(value))
+                                
+                                if name_data:
+                                    print(f"  → Participant name: {' '.join(name_data)}")
+                            else:
+                                print(f"  → Member NOT found in participants_data using ID column '{id_col}'")
+                except Exception as e:
+                    print(f"  → ERROR checking participant data: {str(e)}")
+                
+                # Add to unassigned_members to ensure we don't lose them
+                print(f"  → RECOVERY ACTION: Adding missing member back to unassigned_members list")
+                unassigned_members.append(missing_id)
+            
+            # Attempt recovery by assigning missing members
+            if unassigned_members:
+                print(f"🔄 RECOVERY: Attempting to assign {len(unassigned_members)} previously missing members")
+                
+                # Distribute these members evenly across splits
+                for member_id in unassigned_members:
+                    # Find smallest split relative to target
+                    smallest_index = min(range(num_splits), 
+                                       key=lambda i: len(splits[i]["members"]) / target_sizes[i])
+                    
+                    # Add member to the split
+                    splits[smallest_index]["members"].append(member_id)
+                    assigned_members.append(member_id)
+                    print(f"  → Recovered missing member {member_id} assigned to split {smallest_index}")
+                
+                # Clear unassigned list after recovery
+                unassigned_members = []
         
-        # Find extra members
+        # Find extra members (shouldn't happen but check anyway)
         extra = set(assigned_members) - set(members)
         if extra:
-            print(f"⚠️ WARNING: Extra members: {extra}")
+            print(f"⚠️ WARNING: {len(extra)} extra members that weren't in original list: {extra}")
+            
+            # Debug extra members (where did they come from?)
+            for extra_id in extra:
+                print(f"🔍 MEMBER DEBUG: Extra member {extra_id} was assigned but wasn't in original members list")
+                
+                # Check which split they were assigned to
+                for i, split in enumerate(splits):
+                    if extra_id in split["members"]:
+                        print(f"  → This member was assigned to split {i}")
+                        # Remove to clean up - only if there are enough remaining members
+                        if len(split["members"]) > 5:
+                            split["members"].remove(extra_id)
+                            print(f"  → Removed extra member from split {i} (still has {len(split['members'])} members)")
+                            # Update assigned_members to keep counts consistent
+                            if extra_id in assigned_members:
+                                assigned_members.remove(extra_id)
+    
+    # Re-check counts after recovery attempts
+    if len(assigned_members) != original_member_count:
+        print(f"⚠️ CRITICAL: Member count still mismatched after recovery! Original: {original_member_count}, Assigned: {len(assigned_members)}")
+        
+        # Log all member counts per split for diagnosis
+        total_members_in_splits = 0
+        for i, split in enumerate(splits):
+            split_count = len(split["members"])
+            total_members_in_splits += split_count
+            print(f"🔍 Split {i} has {split_count} members")
+            
+        print(f"🔍 Total members across all splits: {total_members_in_splits}")
+    else:
+        print(f"✅ All {original_member_count} members successfully assigned to {num_splits} splits")
     
     # Verify each split has a valid host composition (at least 1 always or 2 sometimes)
     valid_splits = True
@@ -794,6 +936,69 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
                 "reason": f"Split {i} has only {len(split['members'])} members (minimum 5 required)"
             }
     
+    # Get original region/subregion data from the first participant
+    original_region = region  # Default to the region from circle ID
+    original_subregion = None
+    
+    # Function to get region/subregion from participant data
+    def get_region_subregion_from_participant(participant_id):
+        """Extract region and subregion from a participant in the participants dataframe"""
+        nonlocal original_region, original_subregion
+        
+        try:
+            if participant_id and participants_data is not None:
+                # Find ID column
+                id_col = None
+                for col in ['Encoded ID', 'encoded_id', 'participant_id']:
+                    if col in participants_data.columns:
+                        id_col = col
+                        break
+                
+                if id_col is None:
+                    print(f"⚠️ WARNING: Could not find ID column in participants data")
+                    return
+                
+                # Find region/subregion columns
+                region_col = None
+                subregion_col = None
+                
+                # Check for region columns
+                for col in ['Current Region', 'Region', 'region']:
+                    if col in participants_data.columns:
+                        region_col = col
+                        break
+                
+                # Check for subregion columns
+                for col in ['Current Subregion', 'Subregion', 'subregion']:
+                    if col in participants_data.columns:
+                        subregion_col = col
+                        break
+                
+                # Find the participant row
+                participant_mask = participants_data[id_col] == participant_id
+                if any(participant_mask):
+                    # Get region if available
+                    if region_col and region_col in participants_data.columns:
+                        region_value = participants_data.loc[participant_mask, region_col].iloc[0]
+                        if region_value and not pd.isna(region_value) and str(region_value).strip():
+                            original_region = str(region_value).strip()
+                            print(f"✅ Found region '{original_region}' for participant {participant_id}")
+                    
+                    # Get subregion if available
+                    if subregion_col and subregion_col in participants_data.columns:
+                        subregion_value = participants_data.loc[participant_mask, subregion_col].iloc[0]
+                        if subregion_value and not pd.isna(subregion_value) and str(subregion_value).strip():
+                            original_subregion = str(subregion_value).strip()
+                            print(f"✅ Found subregion '{original_subregion}' for participant {participant_id}")
+        except Exception as e:
+            print(f"⚠️ WARNING: Error getting region/subregion for participant {participant_id}: {str(e)}")
+    
+    # Get first participant from the first split to determine region/subregion
+    if splits and splits[0]["members"] and len(splits[0]["members"]) > 0:
+        first_participant = splits[0]["members"][0]
+        get_region_subregion_from_participant(first_participant)
+        print(f"🔍 Region/Subregion from first participant {first_participant}: {original_region}/{original_subregion}")
+    
     # Create the new circles based on the original circle's metadata
     # Use naming convention: [FORMAT]-[REGION]-SPLIT-[OLD NUMBER]-A/B/C
     new_circles = []
@@ -811,16 +1016,23 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
             "members": split["members"],
             "member_count": len(split["members"]),
             "format": format_prefix,
-            "region": region,
+            "region": original_region,  # Use region from participant data
+            "subregion": original_subregion,  # Use subregion from participant data
             "is_split_circle": True,
             "split_source": circle_id,
             "split_index": i,
+            "split_letter": suffix,  # Store the split letter for reference
             "max_additions": max(0, 8 - len(split["members"])),  # Allow growth up to 8 total
             "eligible_for_new_members": True,  # Split circles should be eligible for new members
-            "count_always_hosts": split["always_hosts"],
-            "count_sometimes_hosts": split["sometimes_hosts"],
+            "always_hosts": split["always_hosts"],  # Rename to match metadata manager expectations
+            "sometimes_hosts": split["sometimes_hosts"],  # Rename to match metadata manager expectations
             "count_co_leaders": split["co_leaders"]
         }
+        
+        # Add debugging for member count
+        print(f"🔍 Split {suffix} has {len(split['members'])} members, {split['always_hosts']} always hosts, {split['sometimes_hosts']} sometimes hosts")
+        if len(split["members"]) > 0:
+            print(f"  - First few members: {split['members'][:3]}")
         
         new_circles.append(new_circle)
     
