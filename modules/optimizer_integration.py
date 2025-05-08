@@ -218,7 +218,9 @@ def update_metadata_manager_with_splits(split_summary):
                 "always_hosts": always_hosts,
                 "sometimes_hosts": sometimes_hosts,
                 # Set max_additions (split circles can grow to 8 members max)
-                "max_additions": max(0, 8 - member_count)
+                "max_additions": max(0, 8 - member_count),
+                # CRITICAL FIX: Explicitly mark as eligible for optimization if there's room
+                "is_eligible": member_count < 8
             }
             
             # Copy any other useful metadata from the original circle
