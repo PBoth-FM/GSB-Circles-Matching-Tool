@@ -1954,9 +1954,17 @@ def test_circle_splitting():
                         always_ids = detail.get('always_host_ids', [])[i] if i < len(detail.get('always_host_ids', [])) else []
                         sometimes_ids = detail.get('sometimes_host_ids', [])[i] if i < len(detail.get('sometimes_host_ids', [])) else []
                         
+                        # Ensure host counts are integers
+                        always_count = int(always_count) if isinstance(always_count, (int, float, str)) and str(always_count).strip() else 0
+                        sometimes_count = int(sometimes_count) if isinstance(sometimes_count, (int, float, str)) and str(sometimes_count).strip() else 0
+                        
                         # Calculate actual host counts from host_ids arrays
                         actual_always_count = len(always_ids) if always_ids else always_count
                         actual_sometimes_count = len(sometimes_ids) if sometimes_ids else sometimes_count
+                        
+                        # Ensure the final counts are also integers
+                        actual_always_count = int(actual_always_count) if isinstance(actual_always_count, (int, float, str)) and str(actual_always_count).strip() else 0
+                        actual_sometimes_count = int(actual_sometimes_count) if isinstance(actual_sometimes_count, (int, float, str)) and str(actual_sometimes_count).strip() else 0
                         
                         # Display enhanced host information with counts
                         if actual_always_count > 0 or actual_sometimes_count > 0:
