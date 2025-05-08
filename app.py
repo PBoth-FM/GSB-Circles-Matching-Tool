@@ -1544,7 +1544,16 @@ def process_uploaded_file(uploaded_file):
 from utils.circle_rebuilder import rebuild_circle_member_lists
 
 def test_circle_splitting():
-    """Test function to directly test the circle splitting functionality"""
+    """
+    Test function to directly test the circle splitting functionality.
+    
+    This function provides comprehensive testing of the circle splitting algorithm:
+    1. Identifies large circles (11+ members) in the data
+    2. Tests the region code extraction for proper naming conventions
+    3. Verifies host status detection and balanced distribution
+    4. Ensures all split circles maintain minimum size requirements (5+ members)
+    5. Confirms original circles are properly deactivated
+    """
     st.info("Running direct test of circle splitting functionality...")
     
     if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:

@@ -1605,8 +1605,14 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         # Use letters for suffixes: A, B, C, etc.
         suffix = chr(65 + i)  # ASCII 65 = 'A', 66 = 'B', etc.
         
-        # Create new circle ID
-        new_circle_id = f"{format_prefix}-{region}-SPLIT-{circle_number}-{suffix}"
+        # Create new circle ID with the proper region code
+        # In case region_code wasn't set at the top level, extract it here too
+        circle_region_code = region_code if 'region_code' in locals() else extract_region_code(circle_id=circle_id, region_name=region)
+        
+        # Debug the region code extraction
+        print(f"🔍 CIRCLE ID CREATION: Using region code '{circle_region_code}' (from original: '{region}')")
+        
+        new_circle_id = f"{format_prefix}-{circle_region_code}-SPLIT-{circle_number}-{suffix}"
         
         # Create new circle with metadata from original
         new_circle = {
