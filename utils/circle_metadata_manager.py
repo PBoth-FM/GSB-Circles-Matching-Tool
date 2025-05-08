@@ -921,17 +921,36 @@ class CircleMetadataManager:
                 
             # Ensure all split circles have proper metadata
             for i, new_id in enumerate(new_circle_ids):
-                if new_id not in self.circles and 'members' in detail and i < len(detail.get('members', [])):
-                    # Create new circle entry if it doesn't exist
-                    self.circles[new_id] = {
-                        'circle_id': new_id,
-                        'is_split_circle': True,
-                        'original_circle_id': original_id,
-                        'is_active': True,
-                        'members': detail['members'][i],
-                        'member_count': len(detail['members'][i]) if i < len(detail.get('member_counts', [])) else 0,
-                        'max_additions': 8 - len(detail['members'][i]) if i < len(detail.get('member_counts', [])) else 0
-                    }
+                # Add null check to ensure detail and detail['members'] exist and are valid
+                if new_id not in self.circles and detail is not None and 'members' in detail and i < len(detail.get('members', [])):
+                    # Get members with null safety
+                    members_list = detail.get('members', [])
+                    if i < len(members_list) and members_list[i] is not None:
+                        member_list = members_list[i]
+                        # Calculate member count safely
+                        member_count = len(member_list) if isinstance(member_list, list) else 0
+                        # Create new circle entry if it doesn't exist
+                        self.circles[new_id] = {
+                            'circle_id': new_id,
+                            'is_split_circle': True,
+                            'original_circle_id': original_id,
+                            'is_active': True,
+                            'members': member_list,
+                            'member_count': member_count,
+                            'max_additions': max(0, 8 - member_count)  # Ensure we don't get negative max_additions
+                        }
+                    else:
+                        # Create entry with empty members if data is incomplete
+                        self.logger.warning(f"Incomplete member data for split circle {new_id} at index {i}")
+                        self.circles[new_id] = {
+                            'circle_id': new_id,
+                            'is_split_circle': True,
+                            'original_circle_id': original_id,
+                            'is_active': True,
+                            'members': [],
+                            'member_count': 0,
+                            'max_additions': 8  # Empty circle can take 8 members
+                        }
                     
                     # Copy metadata from original circle
                     if original_id in self.circles:
@@ -940,11 +959,24 @@ class CircleMetadataManager:
                                 self.circles[new_id][key] = self.circles[original_id][key]
                                 
                     # Add host information if available in the split summary
-                    if 'always_hosts' in detail and i < len(detail['always_hosts']):
+                    # Add null checks for 'always_hosts' access
+                    if 'always_hosts' in detail and detail.get('always_hosts') is not None and i < len(detail.get('always_hosts', [])):
                         self.circles[new_id]['always_hosts'] = detail['always_hosts'][i]
+                    else:
+                        # Default to 0 if no host data available
+                        self.circles[new_id]['always_hosts'] = 0
                         
-                    if 'sometimes_hosts' in detail and i < len(detail['sometimes_hosts']):
+                    # Add null checks for 'sometimes_hosts' access
+                    if 'sometimes_hosts' in detail and detail.get('sometimes_hosts') is not None and i < len(detail.get('sometimes_hosts', [])):
                         self.circles[new_id]['sometimes_hosts'] = detail['sometimes_hosts'][i]
+                    else:
+                        # Default to 0 if no host data available
+                        self.circles[new_id]['sometimes_hosts'] = 0
+                        
+                    # Add logging for debugging
+                    self.logger.info(f"Added split circle {new_id} with {self.circles[new_id].get('member_count', 0)} members, " +
+                                      f"{self.circles[new_id].get('always_hosts', 0)} always hosts, " +
+                                      f"{self.circles[new_id].get('sometimes_hosts', 0)} sometimes hosts")
     
     def _validate_metadata_consistency(self):
         """
