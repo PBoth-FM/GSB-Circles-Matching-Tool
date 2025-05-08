@@ -938,68 +938,18 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
                 "reason": f"Split {i} has only {len(split['members'])} members (minimum 5 required)"
             }
     
-    # Get original region/subregion data from the first participant
+    # Get original region/subregion data from the participants
     original_region = region  # Default to the region from circle ID
-    original_subregion = None
+    original_subregion = ""
     
-    # Function to get region/subregion from participant data
-    def get_region_subregion_from_participant(participant_id):
-        """Extract region and subregion from a participant in the participants dataframe"""
-        nonlocal original_region, original_subregion
-        
-        try:
-            if participant_id and participants_data is not None:
-                # Find ID column
-                id_col = None
-                for col in ['Encoded ID', 'encoded_id', 'participant_id']:
-                    if col in participants_data.columns:
-                        id_col = col
-                        break
-                
-                if id_col is None:
-                    print(f"⚠️ WARNING: Could not find ID column in participants data")
-                    return
-                
-                # Find region/subregion columns
-                region_col = None
-                subregion_col = None
-                
-                # Check for region columns
-                for col in ['Current Region', 'Region', 'region']:
-                    if col in participants_data.columns:
-                        region_col = col
-                        break
-                
-                # Check for subregion columns
-                for col in ['Current Subregion', 'Subregion', 'subregion']:
-                    if col in participants_data.columns:
-                        subregion_col = col
-                        break
-                
-                # Find the participant row
-                participant_mask = participants_data[id_col] == participant_id
-                if any(participant_mask):
-                    # Get region if available
-                    if region_col and region_col in participants_data.columns:
-                        region_value = participants_data.loc[participant_mask, region_col].iloc[0]
-                        if region_value and not pd.isna(region_value) and str(region_value).strip():
-                            original_region = str(region_value).strip()
-                            print(f"✅ Found region '{original_region}' for participant {participant_id}")
-                    
-                    # Get subregion if available
-                    if subregion_col and subregion_col in participants_data.columns:
-                        subregion_value = participants_data.loc[participant_mask, subregion_col].iloc[0]
-                        if subregion_value and not pd.isna(subregion_value) and str(subregion_value).strip():
-                            original_subregion = str(subregion_value).strip()
-                            print(f"✅ Found subregion '{original_subregion}' for participant {participant_id}")
-        except Exception as e:
-            print(f"⚠️ WARNING: Error getting region/subregion for participant {participant_id}: {str(e)}")
-    
-    # Get first participant from the first split to determine region/subregion
-    if splits and splits[0]["members"] and len(splits[0]["members"]) > 0:
-        first_participant = splits[0]["members"][0]
-        get_region_subregion_from_participant(first_participant)
-        print(f"🔍 Region/Subregion from first participant {first_participant}: {original_region}/{original_subregion}")
+    # Use our common utility function to get region/subregion from first participant in member list
+    if members and len(members) > 0:
+        r, s = get_region_subregion_from_participants(participants_data, members)
+        if r:
+            original_region = r
+        if s:
+            original_subregion = s
+        print(f"🔍 Region/Subregion from participants: {original_region}/{original_subregion}")
     
     # Create the new circles based on the original circle's metadata
     # Use naming convention: [FORMAT]-[REGION]-SPLIT-[OLD NUMBER]-A/B/C
