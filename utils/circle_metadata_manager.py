@@ -47,6 +47,15 @@ class CircleMetadataManager:
         if optimizer_circles is None:
             self.logger.error("Cannot initialize with None optimizer_circles")
             return self
+            
+        # Check for ParticipantDataManager in session state
+        import streamlit as st
+        self.participant_manager = None
+        if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
+            self.participant_manager = st.session_state.participant_data_manager
+            self.logger.info("Using ParticipantDataManager from session state")
+        else:
+            self.logger.warning("No ParticipantDataManager found in session state")
         
         # Ensure we have a list of dictionaries to work with
         processed_circles = []
@@ -237,7 +246,7 @@ class CircleMetadataManager:
         sometimes_hosts = 0
         
         # Add special circle debugging for our test circles
-        test_circle_ids = ['IP-BOS-04', 'IP-BOS-05']
+        test_circle_ids = ['IP-BOS-04', 'IP-BOS-05', 'IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
         is_test_circle = circle_id in test_circle_ids if circle_id else False
         
         # ENHANCED DEBUG: More descriptive debug information
@@ -247,9 +256,55 @@ class CircleMetadataManager:
         if is_test_circle:
             print(f"\n🔍🔍🔍 SPECIAL TEST CIRCLE HOST DEBUG FOR {circle_id} 🔍🔍🔍")
             print(f"  {debug_prefix} Found {len(member_ids)} members in member_ids list")
-            if len(member_ids) <= 10:  # Only print full list if it's reasonably short
+            if len(member_ids) <= 15:  # Only print full list if it's reasonably short
                 print(f"  {debug_prefix} Member IDs: {member_ids}")
         
+        # First try using ParticipantDataManager if available
+        if hasattr(self, 'participant_manager') and self.participant_manager is not None:
+            if is_test_circle:
+                print(f"  {debug_prefix} Using ParticipantDataManager for host status detection")
+                
+            # Process each member using the manager
+            host_statuses = []
+            all_host_statuses = []
+            
+            for member_id in member_ids:
+                try:
+                    # Get host status directly from manager (which handles standardization)
+                    host_status = self.participant_manager.get_participant_host_status(member_id)
+                    all_host_statuses.append(f"{member_id}: {host_status}")
+                    
+                    # Count by category
+                    if host_status == "always":
+                        always_hosts += 1
+                        host_statuses.append(f"{member_id}: ALWAYS")
+                    elif host_status == "sometimes":
+                        sometimes_hosts += 1
+                        host_statuses.append(f"{member_id}: SOMETIMES")
+                    else:
+                        host_statuses.append(f"{member_id}: NEVER")
+                        
+                except Exception as e:
+                    if is_test_circle:
+                        print(f"  {debug_prefix} ⚠️ Error getting host status for member {member_id}: {str(e)}")
+            
+            if is_test_circle:
+                print(f"  {debug_prefix} 📊 Host distribution via ParticipantDataManager:")
+                print(f"    - Always Hosts: {always_hosts}")
+                print(f"    - Sometimes Hosts: {sometimes_hosts}")
+                if len(host_statuses) <= 15:
+                    print(f"    - Member host statuses: {', '.join(host_statuses)}")
+                
+            # Only fall back to results_df if manager failed to find hosts
+            if always_hosts > 0 or sometimes_hosts > 0:
+                return always_hosts, sometimes_hosts
+            else:
+                if is_test_circle:
+                    print(f"  {debug_prefix} ⚠️ ParticipantDataManager found no hosts, falling back to results_df")
+        elif is_test_circle:
+            print(f"  {debug_prefix} No ParticipantDataManager available, using results_df")
+        
+        # Fall back to traditional approach with results_df
         if self.results_df is None:
             if is_test_circle:
                 print(f"  {debug_prefix} ⚠️ ERROR: results_df is None, cannot count hosts")
