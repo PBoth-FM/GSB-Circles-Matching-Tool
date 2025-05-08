@@ -748,17 +748,58 @@ class CircleMetadataManager:
         Returns:
             List of dictionaries with enhanced circle data
         """
-        # Extract circle data
+        # Extract circle data with detailed logging
         circle_data = []
+        total_circles = len(self.circles)
+        inactive_circles = 0
+        active_circles = 0
+        split_circles = 0
+        
+        print(f"\n🔍 ENHANCED CIRCLE DATA RETRIEVAL: Processing {total_circles} circles")
+        
         for circle_id, circle in self.circles.items():
+            # Debug info for specific test circles
+            if circle_id in ['IP-SHA-01', 'IP-NAP-01', 'IP-ATL-1']:
+                print(f"🔍 CIRCLE STATUS CHECK - {circle_id}:")
+                print(f"  replaced_by_splits: {circle.get('replaced_by_splits', False)}")
+                print(f"  active: {circle.get('active', True)}")
+                print(f"  is_split_circle: {circle.get('is_split_circle', False)}")
+                if circle.get('is_split_circle', False):
+                    print(f"  original_circle_id: {circle.get('original_circle_id', 'unknown')}")
+                elif circle.get('replaced_by_splits', False):
+                    print(f"  split_into: {circle.get('split_into', [])}")
+                
+                print(f"  members: {len(circle.get('members', []))} members")
+                print(f"  member_count: {circle.get('member_count', 0)}")
+            
+            # Count circle types
+            if circle.get('replaced_by_splits', False):
+                inactive_circles += 1
+            else:
+                active_circles += 1
+                
+            if circle.get('is_split_circle', False):
+                split_circles += 1
+            
             # Skip inactive circles unless requested to include them
             if not include_inactive and circle.get('replaced_by_splits', False):
                 continue
                 
-            # Get the enhanced circle data
-            enhanced_data = self.get_circle_data(circle_id)
-            if enhanced_data:
-                circle_data.append(enhanced_data)
+            # Get the enhanced circle data - first verify the circle exists
+            if circle_id in self.circles:
+                enhanced_data = self.get_circle_data(circle_id)
+                if enhanced_data:
+                    # CRITICAL FIX: Ensure member_count is accurate using the members list length
+                    if 'members' in enhanced_data and isinstance(enhanced_data['members'], list):
+                        actual_member_count = len(enhanced_data['members'])
+                        if enhanced_data.get('member_count', 0) != actual_member_count:
+                            print(f"⚠️ Member count mismatch for {circle_id}: stored={enhanced_data.get('member_count', 0)}, actual={actual_member_count}")
+                            enhanced_data['member_count'] = actual_member_count
+                    
+                    circle_data.append(enhanced_data)
+        
+        print(f"✅ Processed {total_circles} circles: {active_circles} active, {inactive_circles} inactive, {split_circles} split")
+        print(f"✅ Returning {len(circle_data)} circles after filtering")
         
         return circle_data
     
