@@ -567,6 +567,25 @@ def run_matching_algorithm(data, config, existing_circles=None):
     processed_participants = set()   # Track participants already assigned
     direct_circles_list = []         # Track circle metadata
     direct_results = []              # Track direct assignments
+    
+    # First check if we have pre-split circles that should be prioritized
+    # This is where we integrate with the circles_to_use parameter
+    existing_circle_ids = []
+    if circles_to_use is not None:
+        # If circles_to_use is a DataFrame, extract the circle_id column
+        if isinstance(circles_to_use, pd.DataFrame):
+            if 'circle_id' in circles_to_use.columns:
+                existing_circle_ids = circles_to_use['circle_id'].tolist()
+                print(f"🔄 Using {len(existing_circle_ids)} existing circles from circles_to_use parameter")
+                # Log the first few circle IDs for debugging
+                print(f"   Sample circle IDs: {existing_circle_ids[:5]}...")
+        # If it's a list of dictionaries, extract the circle_id field
+        elif isinstance(circles_to_use, list) and len(circles_to_use) > 0:
+            if isinstance(circles_to_use[0], dict) and 'circle_id' in circles_to_use[0]:
+                existing_circle_ids = [c.get('circle_id') for c in circles_to_use if c.get('circle_id')]
+                print(f"🔄 Using {len(existing_circle_ids)} existing circles from circles_to_use list")
+                # Log the first few circle IDs for debugging
+                print(f"   Sample circle IDs: {existing_circle_ids[:5] if len(existing_circle_ids) > 5 else existing_circle_ids}...")
 
     # Only proceed if we found the current circle column and are in preserve mode
     if current_circle_col and existing_circle_handling == 'preserve':
@@ -575,6 +594,12 @@ def run_matching_algorithm(data, config, existing_circles=None):
         
         if debug_mode:
             print(f"DIRECT CONTINUATION: Found {len(continuing_df)} CURRENT-CONTINUING participants with circle IDs")
+            
+        # Check for split circles in the existing circles
+        split_circles = [id for id in existing_circle_ids if '-SPLIT-' in id]
+        original_circles = [id.split('-SPLIT-')[0] for id in split_circles]
+        if split_circles:
+            print(f"🔄 Found {len(split_circles)} split circles, derived from {len(set(original_circles))} original circles")
         
         if not continuing_df.empty:
             # Group participants by their current circle ID
@@ -591,6 +616,23 @@ def run_matching_algorithm(data, config, existing_circles=None):
                     
                 # Convert to string and standardize
                 circle_id = str(circle_id).strip()
+                
+                # Check if this is an original circle that has been split
+                skip_circle = False
+                
+                # If we have existing circle IDs from circles_to_use
+                if existing_circle_ids:
+                    # Skip original circles that have already been split
+                    original_circle_id = circle_id
+                    derived_split_ids = [cid for cid in existing_circle_ids if cid.startswith(f"{original_circle_id}-SPLIT-")]
+                    
+                    if derived_split_ids:
+                        print(f"🔄 Skipping original circle {original_circle_id} since it has been split into: {', '.join(derived_split_ids[:3])}...")
+                        skip_circle = True
+                
+                # Skip this circle if it's been split
+                if skip_circle:
+                    continue
                 
                 if debug_mode:
                     print(f"DIRECT CONTINUATION: Processing circle {circle_id} with {len(group)} members")
