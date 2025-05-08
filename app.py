@@ -2174,12 +2174,43 @@ def test_circle_splitting():
         st.subheader("Standardized Circle Split Summary")
         from modules.ui_components import render_split_circle_summary
         render_split_circle_summary(key_prefix="split_test_tab")
+        
+        # INTEGRATION: Store updated circles in matched_circles for the main workflow
+        # This ensures that when we return to the Match tab, the split circles are used
+        if isinstance(updated_circles, (pd.DataFrame, list)) and (
+            (isinstance(updated_circles, pd.DataFrame) and not updated_circles.empty) or
+            (isinstance(updated_circles, list) and len(updated_circles) > 0)
+        ):
+            st.success("Successfully updated circles with split results!")
+            
+            # Store the circles data back into the main matched_circles session state
+            st.session_state.matched_circles = updated_circles
+            
+            # Also store the participants data if it was updated
+            if updated_participants is not None:
+                st.session_state.processed_data = updated_participants
+                
+            # Store other state information for proper integration
+            st.session_state.preprocessing_summary = {
+                "steps_performed": ["split_large_circles"],
+                "split_circle_summary": split_summary
+            }
+            
+            # Give the user info about returning to the Match tab
+            st.info("The split circles have been saved and will be used in the Match tab.")
+            
+            # Add a button to return to Match tab
+            if st.button("Return to Match Tab"):
+                # Use st.experimental_set_query_params to set the active tab
+                import streamlit as st
+                st.experimental_set_query_params(tab="Match")
+                # Force a rerun to show the Match tab
+                st.rerun()
     
     except Exception as e:
         st.error(f"Error during circle splitting test: {str(e)}")
         st.write("Exception details:")
         import traceback
-        st.code(traceback.format_exc())
         st.code(traceback.format_exc())
         print("🔴 CRITICAL ERROR IN CIRCLE SPLITTING TEST:")
         print(traceback.format_exc())
