@@ -366,17 +366,28 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     Returns:
         dict: Result of splitting containing success status and split data
     """
+    # ENHANCED DEBUGGING - Log original member count
+    original_member_count = len(members)
+    print(f"🔍 DEBUG: Starting split of circle {circle_id} with {original_member_count} members")
+    print(f"🔍 DEBUG: Member IDs: {members}")
+    
     # Ensure we have at least 11 members
-    if len(members) < 11:
+    if original_member_count < 11:
         return {
             "success": False,
-            "reason": f"Not enough members to split (need 11+, found {len(members)})"
+            "reason": f"Not enough members to split (need 11+, found {original_member_count})"
         }
     
     # Check if we have enough hosts
     always_hosts = member_roles.get("always_host", [])
     sometimes_hosts = member_roles.get("sometimes_host", [])
     co_leaders = member_roles.get("co_leader", [])
+    never_hosts = member_roles.get("never_host", [])
+    
+    print(f"🔍 DEBUG: Role counts - Always Hosts: {len(always_hosts)}, " 
+          f"Sometimes Hosts: {len(sometimes_hosts)}, "
+          f"Co-Leaders: {len(co_leaders)}, "
+          f"Never Hosts: {len(never_hosts)}")
     
     # Calculate minimum required hosts for splitting
     min_splits = 2  # Minimum 2 splits for a large circle
@@ -402,19 +413,38 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
                      f"but can only create {max_possible_circles} with available hosts."
         }
     
-    # Determine how many splits to create
-    # Try to make all circles at least 5 members
-    member_count = len(members)
-    max_splits = member_count // 5
+    # IMPROVED: Determine optimal number of splits based on member count
+    # Try to make all circles roughly equal size with minimum 5 members
+    member_count = original_member_count
     
-    # Choose number of splits, capped by host availability
+    # Calculate ideal number of splits for relatively equal distribution
+    # For 11 members: 2 splits (5-6)
+    # For 12-15 members: 2-3 splits
+    # For 16+ members: 3+ splits
+    
+    # Start with simple calculation: divide by target size (5-8)
+    target_min_size = 5
+    max_splits = member_count // target_min_size
+    
+    # Simple heuristic: prefer smaller number of larger circles
+    # If member_count is just over a multiple of 5, use fewer splits
+    if member_count % target_min_size <= 2 and max_splits > 2:
+        max_splits -= 1
+    
+    # Hard cap at 3 splits to prevent too many small circles
+    max_splits = min(max_splits, 3)
+    
+    # Choose number of splits, capped by host availability and minimum 2 splits
     num_splits = min(max_splits, max_possible_circles)
+    num_splits = max(num_splits, 2)  # Ensure at least 2 splits
     
-    # Shuffle members to randomize, but keep a copy of original order
-    shuffled_members = members.copy()
+    print(f"🔍 DEBUG: Creating {num_splits} splits for {member_count} members")
     
-    # Split co-leaders evenly
-    random.shuffle(co_leaders)
+    # Create a copy of members to track assignments
+    unassigned_members = members.copy()
+    
+    # Track member assignments for verification
+    assigned_members = []
     
     # Create empty splits
     splits = []
@@ -426,61 +456,280 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
             "co_leaders": 0
         })
     
-    # First, add always hosts, giving priority to circles without hosts
+    # IMPROVED: Calculate ideal target size for each circle before any assignments
+    ideal_size = member_count // num_splits
+    remainder = member_count % num_splits
+    
+    target_sizes = [ideal_size + (1 if i < remainder else 0) for i in range(num_splits)]
+    print(f"🔍 DEBUG: Target sizes for splits: {target_sizes}")
+    
+    # IMPROVED FUNCTION: Find optimal split based on both host needs and size balancing
+    def find_optimal_split(member_id, is_always_host=False, is_sometimes_host=False, is_co_leader=False):
+        # Calculate a score for each split combining:
+        # 1. Host needs (always hosts or sometimes hosts)
+        # 2. Current size vs. target size
+        # 3. Co-leader distribution
+        
+        best_score = float('-inf')
+        best_index = 0
+        
+        for i, split in enumerate(splits):
+            score = 0
+            
+            # Host factors
+            if is_always_host:
+                # Prefer circles with no always hosts
+                if split["always_hosts"] == 0:
+                    score += 50
+                else:
+                    score -= split["always_hosts"] * 10
+            
+            if is_sometimes_host:
+                # Prefer circles with no always hosts and fewer sometimes hosts
+                if split["always_hosts"] == 0:
+                    score += 30
+                    
+                # Penalize for existing sometimes hosts
+                score -= split["sometimes_hosts"] * 5
+            
+            if is_co_leader:
+                # Prefer even distribution of co-leaders
+                score -= split["co_leaders"] * 8
+            
+            # Size factor - how close to target size?
+            # Strongly prefer smaller circles until they reach target size
+            remaining_capacity = target_sizes[i] - len(split["members"])
+            
+            if remaining_capacity > 0:
+                # Proportional bonus for having space remaining
+                score += 20 * (remaining_capacity / target_sizes[i])
+            else:
+                # Heavy penalty for exceeding target
+                score -= 50 * abs(remaining_capacity)
+            
+            if score > best_score:
+                best_score = score
+                best_index = i
+        
+        return best_index
+    
+    # Process member assignment strategy:
+    # 1. First pass: Distribute hosts with balanced approach
+    # 2. Second pass: Distribute remaining members to balance sizes
+    
+    # First, handle always hosts
+    print(f"🔍 DEBUG: Assigning {len(always_hosts)} Always Hosts")
     random.shuffle(always_hosts)
     for host in always_hosts:
-        # Find the circle with the fewest always hosts
-        min_always_hosts = min(splits, key=lambda s: s["always_hosts"])
-        min_always_hosts["members"].append(host)
-        min_always_hosts["always_hosts"] += 1
-        shuffled_members.remove(host)
+        if host in unassigned_members:
+            target_split_index = find_optimal_split(host, is_always_host=True)
+            splits[target_split_index]["members"].append(host)
+            splits[target_split_index]["always_hosts"] += 1
+            assigned_members.append(host)
+            unassigned_members.remove(host)
+            print(f"  - Always Host {host} assigned to split {target_split_index}")
     
-    # Next, add sometimes hosts, prioritizing circles without always hosts
+    # Next, handle sometimes hosts
+    print(f"🔍 DEBUG: Assigning {len(sometimes_hosts)} Sometimes Hosts")
     random.shuffle(sometimes_hosts)
     for host in sometimes_hosts:
-        if host not in shuffled_members:  # Skip if already assigned as an always host
-            continue
-            
-        # Find optimal split to add this sometimes host
-        target_split_index = find_optimal_split_for_sometimes_host(splits)
-        splits[target_split_index]["members"].append(host)
-        splits[target_split_index]["sometimes_hosts"] += 1
-        shuffled_members.remove(host)
+        if host in unassigned_members:
+            target_split_index = find_optimal_split(host, is_sometimes_host=True)
+            splits[target_split_index]["members"].append(host)
+            splits[target_split_index]["sometimes_hosts"] += 1
+            assigned_members.append(host)
+            unassigned_members.remove(host)
+            print(f"  - Sometimes Host {host} assigned to split {target_split_index}")
     
-    # Next, add co-leaders, distributed evenly
+    # Next, handle co-leaders
+    print(f"🔍 DEBUG: Assigning {len(co_leaders)} Co-Leaders")
+    random.shuffle(co_leaders)
     for leader in co_leaders:
-        if leader not in shuffled_members:  # Skip if already assigned
-            continue
-            
-        # Find the split with fewest co-leaders
-        min_leaders = min(splits, key=lambda s: s["co_leaders"])
-        min_leaders["members"].append(leader)
-        min_leaders["co_leaders"] += 1
-        shuffled_members.remove(leader)
+        if leader in unassigned_members:
+            target_split_index = find_optimal_split(leader, is_co_leader=True)
+            splits[target_split_index]["members"].append(leader)
+            splits[target_split_index]["co_leaders"] += 1
+            assigned_members.append(leader)
+            unassigned_members.remove(leader)
+            print(f"  - Co-Leader {leader} assigned to split {target_split_index}")
     
-    # Finally, distribute remaining members evenly
-    random.shuffle(shuffled_members)
+    # Finally, distribute remaining members to balance sizes
+    print(f"🔍 DEBUG: Assigning {len(unassigned_members)} remaining members")
+    random.shuffle(unassigned_members)
     
-    # Calculate target size for each circle
-    total_remaining = len(shuffled_members)
-    base_size = total_remaining // num_splits
-    extra = total_remaining % num_splits
-    
-    # Assign extra members to some circles
-    for i in range(num_splits):
-        target_size = base_size + (1 if i < extra else 0)
+    # Assign remaining members prioritizing the smaller circles
+    for member in unassigned_members:
+        # Find the split furthest from its target size (smallest relative to target)
+        smallest_index = min(range(num_splits), 
+                           key=lambda i: len(splits[i]["members"]) / target_sizes[i])
         
-        # Add remaining members up to target size
-        while len(splits[i]["members"]) < target_size and shuffled_members:
-            splits[i]["members"].append(shuffled_members.pop(0))
+        splits[smallest_index]["members"].append(member)
+        assigned_members.append(member)
+        print(f"  - Regular member {member} assigned to split {smallest_index}")
+    
+    # VALIDATION: Check if all members were assigned
+    if len(assigned_members) != original_member_count:
+        print(f"⚠️ WARNING: Member count mismatch! Original: {original_member_count}, Assigned: {len(assigned_members)}")
+        
+        # Find missing members
+        missing_members = set(members) - set(assigned_members)
+        if missing_members:
+            print(f"⚠️ Missing members: {missing_members}")
+        
+        # Find extra members
+        extra_members = set(assigned_members) - set(members)
+        if extra_members:
+            print(f"⚠️ Extra members: {extra_members}")
+    
+    # VALIDATION: Check split sizes
+    for i, split in enumerate(splits):
+        print(f"🔍 Split {i}: {len(split['members'])} members " +
+              f"(Always: {split['always_hosts']}, Sometimes: {split['sometimes_hosts']}, " +
+              f"Co-Leaders: {split['co_leaders']})")
+    
+    # VALIDATION: Check for extreme imbalance
+    split_sizes = [len(s["members"]) for s in splits]
+    min_size = min(split_sizes)
+    max_size = max(split_sizes)
+    
+    # Flag extreme imbalance (e.g., 1-2 members in one circle, 8+ in another)
+    if max_size > 2 * min_size or min_size < 4:
+        print(f"⚠️ WARNING: Extreme imbalance in split sizes: {split_sizes}")
+        
+        # Try to rebalance if extreme imbalance
+        if min_size < 4 and max_size > 6:
+            print("🔄 Attempting to rebalance split sizes...")
+            
+            # Find smallest and largest splits
+            smallest_index = split_sizes.index(min_size)
+            largest_index = split_sizes.index(max_size)
+            
+            # Move members from largest to smallest until balanced
+            members_to_move = (max_size - min_size) // 2
+            members_to_move = min(members_to_move, max_size - 5)  # Don't go below 5 in the largest
+            
+            for _ in range(members_to_move):
+                # Prefer moving non-hosts if possible
+                non_hosts = [m for m in splits[largest_index]["members"] 
+                           if m not in always_hosts and m not in sometimes_hosts]
+                
+                if non_hosts:
+                    member_to_move = random.choice(non_hosts)
+                else:
+                    # If all are hosts, just move someone
+                    member_to_move = splits[largest_index]["members"][-1]
+                
+                # Remove from largest
+                splits[largest_index]["members"].remove(member_to_move)
+                
+                # Update role counts if needed
+                if member_to_move in always_hosts:
+                    splits[largest_index]["always_hosts"] -= 1
+                if member_to_move in sometimes_hosts:
+                    splits[largest_index]["sometimes_hosts"] -= 1
+                if member_to_move in co_leaders:
+                    splits[largest_index]["co_leaders"] -= 1
+                
+                # Add to smallest
+                splits[smallest_index]["members"].append(member_to_move)
+                
+                # Update role counts
+                if member_to_move in always_hosts:
+                    splits[smallest_index]["always_hosts"] += 1
+                if member_to_move in sometimes_hosts:
+                    splits[smallest_index]["sometimes_hosts"] += 1
+                if member_to_move in co_leaders:
+                    splits[smallest_index]["co_leaders"] += 1
+            
+            # Update split sizes after rebalancing
+            split_sizes = [len(s["members"]) for s in splits]
+            print(f"🔄 After rebalancing: {split_sizes}")
     
     # Verify all splits meet minimum requirements
-    for split in splits:
+    for i, split in enumerate(splits):
+        if split["always_hosts"] == 0 and split["sometimes_hosts"] < 2:
+            # If this split doesn't meet host requirements, see if we can fix it
+            print(f"⚠️ Split {i} doesn't meet host requirements: " +
+                  f"Always Hosts: {split['always_hosts']}, " +
+                  f"Sometimes Hosts: {split['sometimes_hosts']}")
+            
+            # Check if we can redistribute a host
+            donor_splits = [s for j, s in enumerate(splits) 
+                          if j != i and (s["always_hosts"] > 1 or s["sometimes_hosts"] > 2)]
+            
+            if donor_splits:
+                donor = donor_splits[0]
+                donor_index = splits.index(donor)
+                
+                if donor["always_hosts"] > 1:
+                    # Move an always host
+                    always_host_members = [m for m in donor["members"] if m in always_hosts]
+                    member_to_move = always_host_members[0]
+                    
+                    # Remove from donor
+                    donor["members"].remove(member_to_move)
+                    donor["always_hosts"] -= 1
+                    
+                    # Add to split
+                    split["members"].append(member_to_move)
+                    split["always_hosts"] += 1
+                    
+                    print(f"🔄 Moved Always Host {member_to_move} from split {donor_index} to split {i}")
+                    
+                elif donor["sometimes_hosts"] > 2:
+                    # Move sometimes hosts
+                    sometimes_host_members = [m for m in donor["members"] if m in sometimes_hosts]
+                    
+                    # Need to move 2 sometimes hosts if we have none
+                    need_to_move = 2 - split["sometimes_hosts"]
+                    
+                    for _ in range(min(need_to_move, len(sometimes_host_members))):
+                        member_to_move = sometimes_host_members.pop(0)
+                        
+                        # Remove from donor
+                        donor["members"].remove(member_to_move)
+                        donor["sometimes_hosts"] -= 1
+                        
+                        # Add to split
+                        split["members"].append(member_to_move)
+                        split["sometimes_hosts"] += 1
+                        
+                        print(f"🔄 Moved Sometimes Host {member_to_move} from split {donor_index} to split {i}")
+            else:
+                # Can't fix this split, so fail
+                return {
+                    "success": False,
+                    "reason": f"Could not create balanced splits that meet host requirements for split {i}"
+                }
+    
+    # Final verification after rebalancing
+    for i, split in enumerate(splits):
         if split["always_hosts"] == 0 and split["sometimes_hosts"] < 2:
             return {
                 "success": False,
-                "reason": "Could not create balanced splits that meet host requirements"
+                "reason": f"Split {i} still doesn't meet host requirements after rebalancing"
             }
+    
+    # VALIDATION: Summary of assignments
+    total_assigned = sum(len(s["members"]) for s in splits)
+    print(f"🔍 Summary: {total_assigned} members assigned to {num_splits} splits")
+    if total_assigned != original_member_count:
+        print(f"⚠️ ERROR: Total assigned members ({total_assigned}) != original members ({original_member_count})")
+        # Make one final attempt to fix if we found a mismatch
+        if total_assigned < original_member_count:
+            missing_count = original_member_count - total_assigned
+            print(f"⚠️ Missing {missing_count} members! Attempting to recover...")
+            
+            # Find the missing members
+            all_assigned = [m for s in splits for m in s["members"]]
+            missing = set(members) - set(all_assigned)
+            print(f"⚠️ Missing member IDs: {missing}")
+            
+            # Add them to the smallest split
+            smallest_index = min(range(num_splits), key=lambda i: len(splits[i]["members"]))
+            for member in missing:
+                splits[smallest_index]["members"].append(member)
+                print(f"  - Recovered missing member {member} to split {smallest_index}")
     
     # Create the new circle objects
     new_circles = []
@@ -521,6 +770,13 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         always_hosts_counts.append(split["always_hosts"])
         sometimes_hosts_counts.append(split["sometimes_hosts"])
     
+    # VALIDATION: Final member count check
+    total_members_in_new_circles = sum(len(c["members"]) for c in new_circles)
+    if total_members_in_new_circles != original_member_count:
+        print(f"⚠️ CRITICAL ERROR: Final member count mismatch! Original: {original_member_count}, New total: {total_members_in_new_circles}")
+    else:
+        print(f"✅ Successful split: all {original_member_count} members properly distributed")
+    
     # Return the result
     return {
         "success": True,
@@ -529,10 +785,13 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         "sometimes_hosts": sometimes_hosts_counts
     }
 
+# This function is replaced by the improved find_optimal_split function in the split_circle_with_balanced_hosts function
+# It's kept here only for compatibility with old code that might call it
 def find_optimal_split_for_sometimes_host(splits):
     """
     Find the optimal split to add a sometimes host to.
     Prioritize splits without always hosts and with fewer sometimes hosts.
+    This is a legacy function, replaced by the improved find_optimal_split function.
     
     Args:
         splits: List of split data dictionaries
@@ -540,7 +799,30 @@ def find_optimal_split_for_sometimes_host(splits):
     Returns:
         int: Index of the optimal split
     """
-    # First, prioritize splits with no always hosts
+    print("⚠️ WARNING: Using legacy find_optimal_split_for_sometimes_host function")
+    
+    # First, consider size balance (most important factor)
+    split_sizes = [len(s["members"]) for s in splits]
+    min_size = min(split_sizes)
+    
+    # If there's a clear smallest split, choose it
+    smallest_splits = [i for i, size in enumerate(split_sizes) if size == min_size]
+    
+    if smallest_splits:
+        if len(smallest_splits) == 1:
+            return smallest_splits[0]
+        
+        # If multiple smallest splits, prioritize those without always hosts
+        no_always_host_splits = [i for i in smallest_splits if splits[i]["always_hosts"] == 0]
+        
+        if no_always_host_splits:
+            # Among splits with no always hosts, find the one with the fewest sometimes hosts
+            return min(no_always_host_splits, key=lambda i: splits[i]["sometimes_hosts"])
+        
+        # If all smallest splits have always hosts, pick the one with fewest sometimes hosts
+        return min(smallest_splits, key=lambda i: splits[i]["sometimes_hosts"])
+    
+    # Fallback to original logic
     no_always_host_splits = [i for i, s in enumerate(splits) if s["always_hosts"] == 0]
     
     if no_always_host_splits:
