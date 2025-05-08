@@ -577,6 +577,14 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
                 split_summary["total_circles_successfully_split"] += 1
                 split_summary["total_new_circles_created"] += len(split_result["new_circles"])
                 
+                # Create deactivated version of the original circle
+                deactivated_circle = circle.copy()
+                deactivated_circle["active"] = False  # Mark original circle as inactive
+                deactivated_circle["deactivation_reason"] = "Split into smaller circles"
+                deactivated_circle["can_add_new"] = False  # Prevent optimizer from adding new members
+                deactivated_circle["split_circle_ids"] = [c["circle_id"] for c in split_result["new_circles"]]
+                updated_circles.append(deactivated_circle)
+                
                 # Add each new circle to the updated list
                 for new_circle in split_result["new_circles"]:
                     updated_circles.append(new_circle)
