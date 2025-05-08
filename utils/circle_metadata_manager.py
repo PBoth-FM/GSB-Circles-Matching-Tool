@@ -728,31 +728,8 @@ class CircleMetadataManager:
         """
         import pandas as pd
         
-        # Extract circle data
-        circle_data = []
-        for circle_id, circle in self.circles.items():
-            # Skip inactive circles unless requested to include them
-            if not include_inactive and circle.get('replaced_by_splits', False):
-                continue
-                
-            # Make a copy of the circle data
-            circle_copy = circle.copy()
-            
-            # Ensure circle_id is included in the data
-            circle_copy['circle_id'] = circle_id
-            
-            # Add a split status field for UI display
-            if circle_id in self.split_circles:
-                # For split circles, add the split letter
-                split_letter = circle_copy.get('split_letter', circle_id[-1] if circle_id[-1].isalpha() else "")
-                circle_copy['split_status'] = f"Split {split_letter}"
-            elif circle.get('replaced_by_splits', False):
-                # For circles that were split into multiple
-                circle_copy['split_status'] = "Original (Split)"
-            else:
-                circle_copy['split_status'] = ""
-            
-            circle_data.append(circle_copy)
+        # Get all circles with enhanced metadata
+        circle_data = self.get_all_circles_enhanced(include_inactive)
         
         # Create DataFrame
         if circle_data:
@@ -761,9 +738,33 @@ class CircleMetadataManager:
         # Return empty DataFrame if no data
         return pd.DataFrame()
     
+    def get_all_circles_enhanced(self, include_inactive=False):
+        """
+        Get all circle data with enhanced metadata for display.
+        
+        Args:
+            include_inactive: Whether to include circles that have been replaced by splits
+            
+        Returns:
+            List of dictionaries with enhanced circle data
+        """
+        # Extract circle data
+        circle_data = []
+        for circle_id, circle in self.circles.items():
+            # Skip inactive circles unless requested to include them
+            if not include_inactive and circle.get('replaced_by_splits', False):
+                continue
+                
+            # Get the enhanced circle data
+            enhanced_data = self.get_circle_data(circle_id)
+            if enhanced_data:
+                circle_data.append(enhanced_data)
+        
+        return circle_data
+    
     def get_circle_data(self, circle_id):
         """
-        Get the data for a specific circle.
+        Get the data for a specific circle with enhanced metadata.
         
         Args:
             circle_id: The ID of the circle to get data for
@@ -772,8 +773,10 @@ class CircleMetadataManager:
             Dictionary with circle data or None if not found
         """
         if circle_id in self.circles:
-            # Make a copy of the data with circle_id included
+            # Make a copy of the data
             circle_data = self.circles[circle_id].copy()
+            
+            # Ensure circle_id is included in the data
             circle_data['circle_id'] = circle_id
             
             # Add a split status field for UI display
@@ -786,8 +789,22 @@ class CircleMetadataManager:
                 circle_data['split_status'] = "Original (Split)"
             else:
                 circle_data['split_status'] = ""
+            
+            # Perform dynamic recalculation of metrics when results_df is available
+            if self.results_df is not None:
+                # Ensure member_count matches members list
+                if 'members' in circle_data and isinstance(circle_data['members'], list):
+                    circle_data['member_count'] = len(circle_data['members'])
+                
+                # Recalculate host counts if we have member data
+                if 'members' in circle_data and circle_data['members']:
+                    # Pass circle_id for debugging info
+                    always_hosts, sometimes_hosts = self._count_hosts_from_members(circle_data['members'], circle_id)
+                    circle_data['always_hosts'] = always_hosts
+                    circle_data['sometimes_hosts'] = sometimes_hosts
                 
             return circle_data
+        
         return None
     
     def get_manager_from_session_state(session_state):
@@ -932,63 +949,11 @@ class CircleMetadataManager:
         print(summary)
         self.logger.info(summary)
     
-    def get_all_circles(self) -> List[Dict[str, Any]]:
-        """Get all circle data as a list of dictionaries with dynamic recalculation"""
-        updated_circles = []
-        
-        # Process each circle with dynamic recalculation
-        for circle_id in self.circles.keys():
-            updated_circle = self.get_circle_data(circle_id)
-            updated_circles.append(updated_circle)
-        
-        return updated_circles
+    # This is now handled by get_all_circles_enhanced
     
-    def get_circle_data(self, circle_id: str) -> Dict[str, Any]:
-        """Get data for a specific circle with dynamic recalculation of key metrics"""
-        # Get base data
-        base_data = self.circles.get(circle_id, {})
-        
-        # Only proceed with dynamic calculations if we have access to results_df
-        if self.results_df is not None and circle_id is not None:
-            # Always do a fresh count of member_count from the raw results DataFrame
-            # This ensures accurate member counts regardless of what was stored
-            try:
-                # Calculate member count based on Encoded ID and circle ID
-                if 'proposed_NEW_circles_id' in self.results_df.columns:
-                    # For new assignments, check proposed_NEW_circles_id
-                    members_in_circle = self.results_df[self.results_df['proposed_NEW_circles_id'] == circle_id]
-                    member_count = len(members_in_circle)
-                    
-                    # Also check if any members have this as current circle
-                    current_circle_cols = [col for col in self.results_df.columns if 'current' in col.lower() and 'circle' in col.lower()]
-                    if current_circle_cols:
-                        current_col = current_circle_cols[0]
-                        # Handle the case where the column might contain non-string values
-                        current_members = self.results_df[self.results_df[current_col].astype(str) == circle_id]
-                        # Only count current members not already counted in proposed
-                        if not members_in_circle.empty and not current_members.empty:
-                            current_only = current_members[~current_members['Encoded ID'].isin(members_in_circle['Encoded ID'])]
-                            member_count += len(current_only)
-                    
-                    # Print verification for test circles
-                    if circle_id in ['IP-BOS-04', 'IP-BOS-05']:
-                        print(f"\n🔍 REAL-TIME MEMBER COUNT FOR {circle_id}:")
-                        print(f"  Direct calculated member count: {member_count}")
-                        print(f"  Previously stored member count: {base_data.get('member_count', 'Not stored')}")
-                        
-                    # Update member_count in the returned data
-                    base_data['member_count'] = member_count
-                
-                # Dynamic recalculation - no hardcoded values
-                # Let Streamlit UI handle max_additions via normal processing
-            except Exception as e:
-                print(f"⚠️ Error during dynamic member count calculation for {circle_id}: {str(e)}")
-        
-        return base_data
+    # This method has been merged with the new get_circle_data implementation above
     
-    def get_circles_dataframe(self) -> pd.DataFrame:
-        """Get all circle data as a pandas DataFrame"""
-        return pd.DataFrame(self.get_all_circles())
+    # This is now handled by the enhanced get_circles_dataframe method
     
     def update_circle(self, circle_id: str, **kwargs) -> None:
         """Update specific fields for a circle"""
@@ -1078,14 +1043,10 @@ class CircleMetadataManager:
 
 # Helper functions for compatibility with existing code
 def get_manager_from_session_state(state):
-    """Get the circle manager from session state or create a new one"""
-    if 'circle_manager' in state:
-        return state.circle_manager
-    
-    # Create a new manager if not found (as a fallback)
-    logger = logging.getLogger('circle_metadata_manager')
-    logger.warning("Creating new CircleMetadataManager because none was found in session state")
-    return CircleMetadataManager()
+    """Get the circle manager from session state or create a new one 
+    (this function is kept for backward compatibility, use CircleMetadataManager.get_manager_from_session_state instead)
+    """
+    return CircleMetadataManager.get_manager_from_session_state(state)
 
 
 def initialize_or_update_manager(state, optimizer_circles=None, results_df=None):
