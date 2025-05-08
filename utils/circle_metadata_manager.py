@@ -914,10 +914,12 @@ class CircleMetadataManager:
             for new_id in new_circle_ids:
                 self.split_circles[new_id] = original_id
                 
-            # Mark original circle as inactive if it exists
+            # Mark original circle as inactive if it exists, but ensure split circles remain active
             if original_id in self.circles:
-                self.circles[original_id]['is_active'] = False
+                self.logger.info(f"Marking original circle {original_id} as inactive (replaced by splits)")
+                self.circles[original_id]['is_active'] = False  # Original is inactive
                 self.circles[original_id]['replaced_by_splits'] = True
+                self.circles[original_id]['split_into'] = new_circle_ids  # Store which circles it was split into
                 
             # Ensure all split circles have proper metadata
             for i, new_id in enumerate(new_circle_ids):
@@ -929,15 +931,18 @@ class CircleMetadataManager:
                         member_list = members_list[i]
                         # Calculate member count safely
                         member_count = len(member_list) if isinstance(member_list, list) else 0
-                        # Create new circle entry if it doesn't exist
+                        # Create new circle entry if it doesn't exist with explicit eligibility flags
                         self.circles[new_id] = {
                             'circle_id': new_id,
                             'is_split_circle': True,
                             'original_circle_id': original_id,
-                            'is_active': True,
+                            'is_active': True,  # Split circles are active
+                            'eligible_for_new_members': True,  # Split circles are eligible for new members
                             'members': member_list,
                             'member_count': member_count,
-                            'max_additions': max(0, 8 - member_count)  # Ensure we don't get negative max_additions
+                            'max_additions': max(0, 8 - member_count),  # Allow growth up to 8 total
+                            'split_letter': new_id[-1] if new_id[-1].isalpha() else "",  # Store split letter (A, B, C)
+                            'split_index': i  # Store split index (0, 1, 2)
                         }
                     else:
                         # Create entry with empty members if data is incomplete
@@ -946,10 +951,13 @@ class CircleMetadataManager:
                             'circle_id': new_id,
                             'is_split_circle': True,
                             'original_circle_id': original_id,
-                            'is_active': True,
+                            'is_active': True,  # Split circles are active
+                            'eligible_for_new_members': True,  # Split circles are eligible
                             'members': [],
                             'member_count': 0,
-                            'max_additions': 8  # Empty circle can take 8 members
+                            'max_additions': 8,  # Empty circle can take 8 members
+                            'split_letter': new_id[-1] if new_id[-1].isalpha() else "",  # Store split letter (A, B, C)
+                            'split_index': i  # Store split index (0, 1, 2)
                         }
                     
                     # Copy metadata from original circle
@@ -1045,6 +1053,11 @@ class CircleMetadataManager:
                 # All circles (including split circles) have a max of 8 members total
                 circle_data['max_additions'] = max(0, 8 - circle_data['member_count'])
                 
+                # For split circles, explicitly set eligibility flag
+                if circle_data.get('is_split_circle', False):
+                    circle_data['eligible_for_new_members'] = circle_data['member_count'] < 8
+                    self.logger.info(f"Split circle {circle_id} eligibility set to {circle_data['eligible_for_new_members']} (member_count={circle_data['member_count']})")
+                
             # Fix host counts - critical for circle eligibility
             if self.results_df is not None and 'members' in circle_data and circle_data['members']:
                 # Get host counts from results DataFrame
@@ -1106,8 +1119,20 @@ class CircleMetadataManager:
                 split_circles += 1
             
             # Skip inactive circles unless requested to include them
+            # Original circles that have been split should be skipped
             if not include_inactive and circle.get('replaced_by_splits', False):
+                # Debug information for specific circles
+                if circle_id in ['IP-SHA-01', 'IP-NAP-01', 'IP-ATL-1']:
+                    print(f"⚠️ Skipping original circle {circle_id} that has been replaced by splits")
                 continue
+                
+            # Always include split circles regardless of their active status
+            # They should never be marked as inactive or replaced_by_splits
+            if circle.get('is_split_circle', False):
+                # Debug information for specific circles
+                if circle_id in ['IP-SHA-01-SPLIT-01-A', 'IP-SHA-01-SPLIT-01-B', 'IP-NAP-01-SPLIT-01-A', 'IP-NAP-01-SPLIT-01-B']:
+                    print(f"✅ Including split circle {circle_id} from original {circle.get('original_circle_id', 'unknown')}")
+                # No continue, we want to include these
                 
             # Get the enhanced circle data - first verify the circle exists
             if circle_id in self.circles:

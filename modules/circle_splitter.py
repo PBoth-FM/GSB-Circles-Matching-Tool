@@ -653,40 +653,37 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         """
         Determines the optimal split for a member based on their host status and the current composition of splits.
         
-        The key improvements ensure:
-        1. Always Hosts go to the first split 
-        2. Sometimes Hosts go to the second split when possible
-        3. Size balancing only happens after host requirements are met
+        UPDATED DISTRIBUTION STRATEGY:
+        1. First split (A) should get all Always Hosts
+        2. Second split (B) should get both Sometimes Hosts
+        3. Remaining members are balanced for circle size
+        
+        This implements the exact requirement from the client to have Always Hosts
+        in one circle and both Sometimes Hosts in the other.
         """
         # For debugging
         print(f"🔍 DEBUG: Finding optimal split for member {member_id} - always_host: {is_always_host}, sometimes_host: {is_sometimes_host}")
         
         # FIXED DISTRIBUTION STRATEGY:
-        # - First split (index 0) should get Always Hosts
-        # - Second split (index 1) should get Sometimes Hosts
+        # - First split (A) gets ALL Always Hosts (critical change)
+        # - Second split (B) gets ALL Sometimes Hosts (critical change)
         # - Remaining splits follow general balancing rules
         
-        # Special case for "Always Host" - always assign to first split until it has at least one
+        # Case 1: Always Host - ALWAYS assign to first split (A) - no exceptions
         if is_always_host:
-            # If first split has no Always Host yet, assign there
-            if splits[0]["always_hosts"] == 0:
-                print(f"  → Assigning Always Host {member_id} to first split (index 0)")
-                return 0
-                
-            # If we're dealing with multiple Always Hosts, distribute evenly starting with split 0
-            # Find the split with fewest Always Hosts
-            min_always_hosts = min(split["always_hosts"] for split in splits)
-            for i, split in enumerate(splits):
-                if split["always_hosts"] == min_always_hosts:
-                    print(f"  → Distributing additional Always Host {member_id} to split {i}")
-                    return i
-        
-        # Special case for "Sometimes Host" - ensure second split gets enough Sometimes Hosts
+            print(f"  → Assigning Always Host {member_id} to first split (index 0/A)")
+            return 0
+            
+        # Case 2: Sometimes Host - ALWAYS assign to second split (B) - no exceptions
         if is_sometimes_host:
-            # If this is a 2-split scenario and the second split needs more Sometimes Hosts
-            if len(splits) >= 2 and splits[1]["sometimes_hosts"] < 2 and splits[1]["always_hosts"] == 0:
-                print(f"  → Assigning Sometimes Host {member_id} to second split (index 1)")
+            # Only if we have at least 2 splits
+            if len(splits) >= 2:
+                print(f"  → Assigning Sometimes Host {member_id} to second split (index 1/B)")
                 return 1
+            else:
+                # Fallback if only 1 split (unlikely but safety check)
+                print(f"  → No second split available, assigning Sometimes Host {member_id} to first split")
+                return 0
         
         # Regular balancing logic for other cases
         best_score = float('-inf')
