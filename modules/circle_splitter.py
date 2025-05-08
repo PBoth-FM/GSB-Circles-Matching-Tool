@@ -67,7 +67,7 @@ def rebuild_circle_member_lists(circles_data, participants_data):
     # For each circle, find all participants assigned to it
     for idx, circle in circles_df.iterrows():
         try:
-            circle_id = circle.get('circle_id')
+            circle_id = circle.get('circle_id', '')
             if not circle_id:
                 print(f"⚠️ WARNING: Circle at index {idx} has no circle_id, skipping")
                 continue
@@ -272,6 +272,12 @@ def split_large_circles(circles_data, participants_data):
             print(f"🔍 Found large circle {circle_id} with {member_count} members")
             split_summary["total_large_circles_found"] += 1
             
+            # Initialize split_result with a default failure state
+            split_result = {
+                "success": False,
+                "reason": "Not processed yet"
+            }
+            
             try:
                 # Get member roles to ensure proper host distribution
                 member_roles = get_member_roles(participants_data, members)
@@ -289,22 +295,14 @@ def split_large_circles(circles_data, participants_data):
                     circle_number = parts[2]
                 
                 # Try to split the circle
-                try:
-                    split_result = split_circle_with_balanced_hosts(
-                        circle_id=circle_id,
-                        members=members,
-                        member_roles=member_roles,
-                        format_prefix=format_prefix,
-                        region=region,
-                        circle_number=circle_number
-                    )
-                except Exception as e:
-                    print(f"⚠️ ERROR in split_circle_with_balanced_hosts for {circle_id}: {str(e)}")
-                    # Return a failure result as fallback
-                    split_result = {
-                        "success": False,
-                        "reason": f"Error during splitting process: {str(e)}"
-                    }
+                split_result = split_circle_with_balanced_hosts(
+                    circle_id=circle_id,
+                    members=members,
+                    member_roles=member_roles,
+                    format_prefix=format_prefix,
+                    region=region,
+                    circle_number=circle_number
+                )
             except Exception as e:
                 print(f"⚠️ ERROR preparing for circle split of {circle_id}: {str(e)}")
                 # Skip splitting and keep original circle
@@ -312,48 +310,56 @@ def split_large_circles(circles_data, participants_data):
                 split_summary["circles_unable_to_split"].append({
                     "circle_id": circle_id,
                     "member_count": member_count,
-                    "reason": f"Error preparing for split: {str(e)}"
+                    "reason": f"Error during split: {str(e)}"
                 })
                 continue
-        
-        if split_result["success"]:
-            # Successfully split the circle
-            split_summary["total_circles_successfully_split"] += 1
-            split_summary["total_new_circles_created"] += len(split_result["new_circles"])
             
-            # Add each new circle to the updated list
-            for new_circle in split_result["new_circles"]:
-                updated_circles.append(new_circle)
+            # Process the split result
+            if split_result["success"]:
+                # Successfully split the circle
+                split_summary["total_circles_successfully_split"] += 1
+                split_summary["total_new_circles_created"] += len(split_result["new_circles"])
                 
-            # Add details to the summary
-            split_detail = {
-                "original_circle_id": circle_id,
-                "member_count": member_count,
-                "new_circle_ids": [c["circle_id"] for c in split_result["new_circles"]],
-                "member_counts": [len(c["members"]) for c in split_result["new_circles"]],
-                "always_hosts": split_result.get("always_hosts", []),
-                "sometimes_hosts": split_result.get("sometimes_hosts", []),
-                "region": region,
-                "subregion": circle.get("subregion", ""),
-                "meeting_time": circle.get("meeting_time", ""),
-                "members": [c["members"] for c in split_result["new_circles"]]
-            }
-            split_summary["split_details"].append(split_detail)
-            
-            print(f"✅ Successfully split {circle_id} into {len(split_result['new_circles'])} circles")
-            
-        else:
-            # Unable to split the circle
-            updated_circles.append(circle)
-            
-            # Add to circles unable to split
-            split_summary["circles_unable_to_split"].append({
-                "circle_id": circle_id,
-                "member_count": member_count,
-                "reason": split_result.get("reason", "Unknown reason")
-            })
-            
-            print(f"❌ Could not split {circle_id}: {split_result.get('reason', 'Unknown reason')}")
+                # Add each new circle to the updated list
+                for new_circle in split_result["new_circles"]:
+                    updated_circles.append(new_circle)
+                    
+                # Add details to the summary
+                split_detail = {
+                    "original_circle_id": circle_id,
+                    "member_count": member_count,
+                    "new_circle_ids": [c["circle_id"] for c in split_result["new_circles"]],
+                    "member_counts": [len(c["members"]) for c in split_result["new_circles"]],
+                    "always_hosts": split_result.get("always_hosts", []),
+                    "sometimes_hosts": split_result.get("sometimes_hosts", []),
+                    "region": region,
+                    "subregion": circle.get("subregion", ""),
+                    "meeting_time": circle.get("meeting_time", ""),
+                    "members": [c["members"] for c in split_result["new_circles"]]
+                }
+                split_summary["split_details"].append(split_detail)
+                
+                print(f"✅ Successfully split {circle_id} into {len(split_result['new_circles'])} circles")
+            else:
+                # Unable to split the circle
+                updated_circles.append(circle)
+                
+                # Add to circles unable to split
+                split_summary["circles_unable_to_split"].append({
+                    "circle_id": circle_id,
+                    "member_count": member_count,
+                    "reason": split_result.get("reason", "Unknown reason")
+                })
+                
+                print(f"❌ Could not split {circle_id}: {split_result.get('reason', 'Unknown reason')}")
+        except Exception as e:
+            print(f"⚠️ CRITICAL ERROR processing circle: {str(e)}")
+            # If we get a critical error, keep the original circle and continue
+            try:
+                updated_circles.append(circle)
+            except Exception:
+                pass  # If we can't even add the circle, just skip it
+            continue
     
     return updated_circles, split_summary
 
@@ -677,221 +683,84 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         print(f"⚠️ WARNING: Member count mismatch! Original: {original_member_count}, Assigned: {len(assigned_members)}")
         
         # Find missing members
-        missing_members = set(members) - set(assigned_members)
-        if missing_members:
-            print(f"⚠️ Missing members: {missing_members}")
+        missing = set(members) - set(assigned_members)
+        if missing:
+            print(f"⚠️ WARNING: Missing members: {missing}")
         
         # Find extra members
-        extra_members = set(assigned_members) - set(members)
-        if extra_members:
-            print(f"⚠️ Extra members: {extra_members}")
+        extra = set(assigned_members) - set(members)
+        if extra:
+            print(f"⚠️ WARNING: Extra members: {extra}")
     
-    # VALIDATION: Check split sizes
+    # Verify each split has a valid host composition (at least 1 always or 2 sometimes)
+    valid_splits = True
     for i, split in enumerate(splits):
-        print(f"🔍 Split {i}: {len(split['members'])} members " +
-              f"(Always: {split['always_hosts']}, Sometimes: {split['sometimes_hosts']}, " +
-              f"Co-Leaders: {split['co_leaders']})")
-    
-    # VALIDATION: Check for extreme imbalance
-    split_sizes = [len(s["members"]) for s in splits]
-    min_size = min(split_sizes)
-    max_size = max(split_sizes)
-    
-    # Flag extreme imbalance (e.g., 1-2 members in one circle, 8+ in another)
-    if max_size > 2 * min_size or min_size < 4:
-        print(f"⚠️ WARNING: Extreme imbalance in split sizes: {split_sizes}")
+        has_valid_hosts = (
+            split["always_hosts"] >= 1 or 
+            split["sometimes_hosts"] >= 2
+        )
         
-        # Try to rebalance if extreme imbalance
-        if min_size < 4 and max_size > 6:
-            print("🔄 Attempting to rebalance split sizes...")
-            
-            # Find smallest and largest splits
-            smallest_index = split_sizes.index(min_size)
-            largest_index = split_sizes.index(max_size)
-            
-            # Move members from largest to smallest until balanced
-            members_to_move = (max_size - min_size) // 2
-            members_to_move = min(members_to_move, max_size - 5)  # Don't go below 5 in the largest
-            
-            for _ in range(members_to_move):
-                # Prefer moving non-hosts if possible
-                non_hosts = [m for m in splits[largest_index]["members"] 
-                           if m not in always_hosts and m not in sometimes_hosts]
-                
-                if non_hosts:
-                    member_to_move = random.choice(non_hosts)
-                else:
-                    # If all are hosts, just move someone
-                    member_to_move = splits[largest_index]["members"][-1]
-                
-                # Remove from largest
-                splits[largest_index]["members"].remove(member_to_move)
-                
-                # Update role counts if needed
-                if member_to_move in always_hosts:
-                    splits[largest_index]["always_hosts"] -= 1
-                if member_to_move in sometimes_hosts:
-                    splits[largest_index]["sometimes_hosts"] -= 1
-                if member_to_move in co_leaders:
-                    splits[largest_index]["co_leaders"] -= 1
-                
-                # Add to smallest
-                splits[smallest_index]["members"].append(member_to_move)
-                
-                # Update role counts
-                if member_to_move in always_hosts:
-                    splits[smallest_index]["always_hosts"] += 1
-                if member_to_move in sometimes_hosts:
-                    splits[smallest_index]["sometimes_hosts"] += 1
-                if member_to_move in co_leaders:
-                    splits[smallest_index]["co_leaders"] += 1
-            
-            # Update split sizes after rebalancing
-            split_sizes = [len(s["members"]) for s in splits]
-            print(f"🔄 After rebalancing: {split_sizes}")
+        if not has_valid_hosts:
+            print(f"⚠️ WARNING: Split {i} does not have valid host composition")
+            print(f"    Always Hosts: {split['always_hosts']}, Sometimes Hosts: {split['sometimes_hosts']}")
+            valid_splits = False
     
-    # Verify all splits meet minimum requirements
-    for i, split in enumerate(splits):
-        if split["always_hosts"] == 0 and split["sometimes_hosts"] < 2:
-            # If this split doesn't meet host requirements, see if we can fix it
-            print(f"⚠️ Split {i} doesn't meet host requirements: " +
-                  f"Always Hosts: {split['always_hosts']}, " +
-                  f"Sometimes Hosts: {split['sometimes_hosts']}")
-            
-            # Check if we can redistribute a host
-            donor_splits = [s for j, s in enumerate(splits) 
-                          if j != i and (s["always_hosts"] > 1 or s["sometimes_hosts"] > 2)]
-            
-            if donor_splits:
-                donor = donor_splits[0]
-                donor_index = splits.index(donor)
-                
-                if donor["always_hosts"] > 1:
-                    # Move an always host
-                    always_host_members = [m for m in donor["members"] if m in always_hosts]
-                    member_to_move = always_host_members[0]
-                    
-                    # Remove from donor
-                    donor["members"].remove(member_to_move)
-                    donor["always_hosts"] -= 1
-                    
-                    # Add to split
-                    split["members"].append(member_to_move)
-                    split["always_hosts"] += 1
-                    
-                    print(f"🔄 Moved Always Host {member_to_move} from split {donor_index} to split {i}")
-                    
-                elif donor["sometimes_hosts"] > 2:
-                    # Move sometimes hosts
-                    sometimes_host_members = [m for m in donor["members"] if m in sometimes_hosts]
-                    
-                    # Need to move 2 sometimes hosts if we have none
-                    need_to_move = 2 - split["sometimes_hosts"]
-                    
-                    for _ in range(min(need_to_move, len(sometimes_host_members))):
-                        member_to_move = sometimes_host_members.pop(0)
-                        
-                        # Remove from donor
-                        donor["members"].remove(member_to_move)
-                        donor["sometimes_hosts"] -= 1
-                        
-                        # Add to split
-                        split["members"].append(member_to_move)
-                        split["sometimes_hosts"] += 1
-                        
-                        print(f"🔄 Moved Sometimes Host {member_to_move} from split {donor_index} to split {i}")
-            else:
-                # Can't fix this split, so fail
-                return {
-                    "success": False,
-                    "reason": f"Could not create balanced splits that meet host requirements for split {i}"
-                }
+    if not valid_splits:
+        return {
+            "success": False,
+            "reason": "Unable to create splits with valid host composition"
+        }
     
-    # Final verification after rebalancing
+    # Verify all splits have at least 5 members
     for i, split in enumerate(splits):
-        if split["always_hosts"] == 0 and split["sometimes_hosts"] < 2:
+        if len(split["members"]) < 5:
+            print(f"⚠️ WARNING: Split {i} has fewer than 5 members: {len(split['members'])}")
             return {
                 "success": False,
-                "reason": f"Split {i} still doesn't meet host requirements after rebalancing"
+                "reason": f"Split {i} has only {len(split['members'])} members (minimum 5 required)"
             }
     
-    # VALIDATION: Summary of assignments
-    total_assigned = sum(len(s["members"]) for s in splits)
-    print(f"🔍 Summary: {total_assigned} members assigned to {num_splits} splits")
-    if total_assigned != original_member_count:
-        print(f"⚠️ ERROR: Total assigned members ({total_assigned}) != original members ({original_member_count})")
-        # Make one final attempt to fix if we found a mismatch
-        if total_assigned < original_member_count:
-            missing_count = original_member_count - total_assigned
-            print(f"⚠️ Missing {missing_count} members! Attempting to recover...")
-            
-            # Find the missing members
-            all_assigned = [m for s in splits for m in s["members"]]
-            missing = set(members) - set(all_assigned)
-            print(f"⚠️ Missing member IDs: {missing}")
-            
-            # Add them to the smallest split
-            smallest_index = min(range(num_splits), key=lambda i: len(splits[i]["members"]))
-            for member in missing:
-                splits[smallest_index]["members"].append(member)
-                print(f"  - Recovered missing member {member} to split {smallest_index}")
-    
-    # Create the new circle objects
+    # Create the new circles based on the original circle's metadata
+    # Use naming convention: [FORMAT]-[REGION]-SPLIT-[OLD NUMBER]-A/B/C
     new_circles = []
-    always_hosts_counts = []
-    sometimes_hosts_counts = []
-    
     for i, split in enumerate(splits):
-        # Generate new circle ID with suffix A, B, C, etc.
-        suffix = chr(65 + i)  # A, B, C, ...
+        # Use letters for suffixes: A, B, C, etc.
+        suffix = chr(65 + i)  # ASCII 65 = 'A', 66 = 'B', etc.
         
-        # If original circle_id has a SPLIT section, it's already been split, so we handle differently
-        if "SPLIT" in circle_id:
-            # For already split circles being split again, we append another level
-            # Example: IP-NAP-SPLIT-01-A becomes IP-NAP-SPLIT-01-A-A, IP-NAP-SPLIT-01-A-B, etc.
-            new_circle_id = f"{circle_id}-{suffix}"
-        else:
-            # For first-time splits
-            # Example: IP-NAP-01 becomes IP-NAP-SPLIT-01-A, IP-NAP-SPLIT-01-B, etc.
-            new_circle_id = f"{format_prefix}-{region}-SPLIT-{circle_number}-{suffix}"
+        # Create new circle ID
+        new_circle_id = f"{format_prefix}-{region}-SPLIT-{circle_number}-{suffix}"
         
-        # Create the new circle object with all necessary metadata
+        # Create new circle with metadata from original
         new_circle = {
             "circle_id": new_circle_id,
+            "original_circle_id": circle_id,
             "members": split["members"],
             "member_count": len(split["members"]),
-            "always_hosts": split["always_hosts"],
-            "sometimes_hosts": split["sometimes_hosts"],
-            "max_additions": max(0, 8 - len(split["members"])),  # Can grow to 8 members max
-            "is_split_circle": True,
-            "original_circle_id": circle_id,
-            # Inherit other metadata from original circle
+            "format": format_prefix,
             "region": region,
-            # These would be inherited from the original circle's data
-            # through the CircleMetadataManager
+            "is_split_circle": True,
+            "split_source": circle_id,
+            "split_index": i,
+            "max_additions": max(0, 8 - len(split["members"])),  # Allow growth up to 8 total
+            "eligible_for_new_members": True,  # Split circles should be eligible for new members
+            "count_always_hosts": split["always_hosts"],
+            "count_sometimes_hosts": split["sometimes_hosts"],
+            "count_co_leaders": split["co_leaders"]
         }
         
         new_circles.append(new_circle)
-        always_hosts_counts.append(split["always_hosts"])
-        sometimes_hosts_counts.append(split["sometimes_hosts"])
     
-    # VALIDATION: Final member count check
-    total_members_in_new_circles = sum(len(c["members"]) for c in new_circles)
-    if total_members_in_new_circles != original_member_count:
-        print(f"⚠️ CRITICAL ERROR: Final member count mismatch! Original: {original_member_count}, New total: {total_members_in_new_circles}")
-    else:
-        print(f"✅ Successful split: all {original_member_count} members properly distributed")
-    
-    # Return the result
+    # Return success result with new circles
     return {
         "success": True,
+        "original_circle_id": circle_id,
         "new_circles": new_circles,
-        "always_hosts": always_hosts_counts,
-        "sometimes_hosts": sometimes_hosts_counts
+        "always_hosts": always_hosts,
+        "sometimes_hosts": sometimes_hosts,
+        "co_leaders": co_leaders
     }
 
 # This function is replaced by the improved find_optimal_split function in the split_circle_with_balanced_hosts function
-# It's kept here only for compatibility with old code that might call it
 def find_optimal_split_for_sometimes_host(splits):
     """
     Find the optimal split to add a sometimes host to.
@@ -904,35 +773,27 @@ def find_optimal_split_for_sometimes_host(splits):
     Returns:
         int: Index of the optimal split
     """
-    print("⚠️ WARNING: Using legacy find_optimal_split_for_sometimes_host function")
+    best_split_index = 0
+    best_score = float('inf')  # Lower score is better
     
-    # First, consider size balance (most important factor)
-    split_sizes = [len(s["members"]) for s in splits]
-    min_size = min(split_sizes)
-    
-    # If there's a clear smallest split, choose it
-    smallest_splits = [i for i, size in enumerate(split_sizes) if size == min_size]
-    
-    if smallest_splits:
-        if len(smallest_splits) == 1:
-            return smallest_splits[0]
+    for i, split in enumerate(splits):
+        # Calculate a score based on host composition
+        # We want to prioritize:
+        # 1. Splits without always hosts
+        # 2. Splits with fewer sometimes hosts
         
-        # If multiple smallest splits, prioritize those without always hosts
-        no_always_host_splits = [i for i in smallest_splits if splits[i]["always_hosts"] == 0]
+        # Start with the number of sometimes hosts as the base score
+        score = split['sometimes_hosts']
         
-        if no_always_host_splits:
-            # Among splits with no always hosts, find the one with the fewest sometimes hosts
-            return min(no_always_host_splits, key=lambda i: splits[i]["sometimes_hosts"])
+        # Add a large penalty if the split already has an always host
+        if split['always_hosts'] > 0:
+            score += 100
         
-        # If all smallest splits have always hosts, pick the one with fewest sometimes hosts
-        return min(smallest_splits, key=lambda i: splits[i]["sometimes_hosts"])
+        # Choose the split with the lowest score
+        if score < best_score:
+            best_score = score
+            best_split_index = i
     
-    # Fallback to original logic
-    no_always_host_splits = [i for i, s in enumerate(splits) if s["always_hosts"] == 0]
-    
-    if no_always_host_splits:
-        # Among splits with no always hosts, find the one with the fewest sometimes hosts
-        return min(no_always_host_splits, key=lambda i: splits[i]["sometimes_hosts"])
-    
-    # If all splits have always hosts, just find the one with the fewest sometimes hosts
-    return min(range(len(splits)), key=lambda i: splits[i]["sometimes_hosts"])
+    return best_split_index
+
+# Additional utility functions can be added here as needed
