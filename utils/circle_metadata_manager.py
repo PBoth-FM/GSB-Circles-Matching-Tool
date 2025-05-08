@@ -949,7 +949,21 @@ class CircleMetadataManager:
         print(summary)
         self.logger.info(summary)
     
-    # This is now handled by get_all_circles_enhanced
+    def get_all_circles(self, include_inactive=False) -> List[Dict[str, Any]]:
+        """
+        Get all circle data as a list of dictionaries with dynamic recalculation
+        
+        This method is maintained for backward compatibility, but uses
+        the enhanced implementation internally.
+        
+        Args:
+            include_inactive: Whether to include circles that have been replaced by splits
+            
+        Returns:
+            List of dictionaries with circle data
+        """
+        # Use the enhanced implementation
+        return self.get_all_circles_enhanced(include_inactive)
     
     # This method has been merged with the new get_circle_data implementation above
     
