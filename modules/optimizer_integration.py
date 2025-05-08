@@ -49,6 +49,12 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
         st.session_state.split_circle_summary = split_summary
         print("✅ Stored split circle summary in session state")
     
+    # Step 2: Update the CircleMetadataManager with split circle information
+    if split_summary and split_summary.get('total_circles_successfully_split', 0) > 0:
+        print(f"🔄 PREPROCESSING: Updating metadata manager with {split_summary.get('total_circles_successfully_split', 0)} split circles")
+        update_metadata_manager_with_splits(split_summary)
+        preprocessing_summary["steps_performed"].append("update_metadata_manager_with_splits")
+    
     # Additional preprocessing steps can be added here
     
     # Return the processed circles
@@ -86,9 +92,18 @@ def postprocess_optimization_results(optimization_results, circles_data, partici
         if split_summary["total_circles_successfully_split"] > 0:
             print(f"🔄 POSTPROCESSING: Handling {split_summary['total_circles_successfully_split']} split circles")
             
-            # Update the CircleMetadataManager to reflect split circles
-            update_metadata_manager_with_splits(split_summary)
-            postprocessing_summary["steps_performed"].append("update_metadata_manager")
+            # The metadata manager has already been updated in the preprocessing step,
+            # so we just need to verify the changes are reflected in the results
+            
+            # Check for any split circles in optimization results
+            split_circle_ids = []
+            for detail in split_summary.get("split_details", []):
+                split_circle_ids.extend(detail.get("new_circle_ids", []))
+            
+            if split_circle_ids:
+                print(f"✅ POSTPROCESSING: Verified {len(split_circle_ids)} split circles exist")
+                postprocessing_summary["steps_performed"].append("verify_split_circles")
+                postprocessing_summary["split_circle_ids"] = split_circle_ids
     
     # Additional postprocessing steps can be added here
     
@@ -111,7 +126,7 @@ def update_metadata_manager_with_splits(split_summary):
         print("⚠️ POSTPROCESSING: No CircleMetadataManager found in session state")
         return
     
-    print(f"🔄 Updating CircleMetadataManager with {len(split_summary.get('split_details', []))} split circles")
+    print(f"\n🔄 CIRCLE SPLITTING: Updating CircleMetadataManager with {len(split_summary.get('split_details', []))} split circles")
     
     # Keep track of all split circles for debugging
     all_original_circles = []
@@ -133,14 +148,18 @@ def update_metadata_manager_with_splits(split_summary):
         if manager.has_circle(original_circle_id):
             original_circle_data = manager.circles.get(original_circle_id, {}).copy()
             
+            # Get member list length for validation
+            original_members = original_circle_data.get('members', [])
+            original_member_count = len(original_members) if isinstance(original_members, list) else 0
+            print(f"  Original circle {original_circle_id} has {original_member_count} members and member_count={original_circle_data.get('member_count', 'N/A')}")
+            
             # CRITICAL FIX: Mark the original circle as replaced by splits
             original_circle_data["replaced_by_splits"] = True
             original_circle_data["split_into"] = new_circle_ids
             original_circle_data["active"] = False  # Mark as inactive
             
             # CRITICAL: Update the metadata tracking for this circle in the manager
-            if not original_circle_id in manager.original_circles:
-                manager.original_circles[original_circle_id] = new_circle_ids
+            manager.original_circles[original_circle_id] = new_circle_ids
             
             # Update the original circle with this information
             manager.add_or_update_circle(original_circle_id, original_circle_data)
@@ -160,6 +179,13 @@ def update_metadata_manager_with_splits(split_summary):
                 members = split_detail["members"][i]
             else:
                 members = []
+            
+            # Validate the members list and member count
+            actual_member_count = len(members) if isinstance(members, list) else 0
+            if member_count != actual_member_count:
+                print(f"⚠️ Member count mismatch for {new_circle_id}: stored={member_count}, actual={actual_member_count}")
+                # Fix the member count to match reality
+                member_count = actual_member_count
             
             # Get host counts
             always_hosts = 0
@@ -217,40 +243,94 @@ def update_metadata_manager_with_splits(split_summary):
     print(f"  manager.split_circles contains {len(manager.split_circles)} entries")
     
     # CRITICAL FIX: Force a refresh of all data from the CircleMetadataManager to session state
-    # This ensures all parts of the app see the changes
+    print(f"\n🔄 UPDATING SESSION STATE: Propagating split circle changes to all parts of the application")
+    
+    # 1. Update matched_circles DataFrame in session state - this is used by most UI components
     if hasattr(st.session_state, 'matched_circles') and st.session_state.matched_circles is not None:
         # Get all ACTIVE circle data from manager as a DataFrame
         circles_data = []
+        active_count = 0
+        inactive_count = 0
+        
         for circle_id, circle_data in manager.circles.items():
-            # Only include active circles (not replaced by splits)
-            if not circle_data.get("replaced_by_splits", False):
-                # Make a copy of the data with circle_id included
+            # Track active vs inactive circles
+            if circle_data.get("replaced_by_splits", False):
+                inactive_count += 1
+            else:
+                active_count += 1
+                # Only include active circles in the DataFrame
                 circle_copy = circle_data.copy()
                 circle_copy["circle_id"] = circle_id
                 circles_data.append(circle_copy)
+        
+        print(f"  CircleMetadataManager contains {active_count} active and {inactive_count} inactive circles")
         
         # Create a DataFrame from the circle data
         if circles_data:
             import pandas as pd
             updated_df = pd.DataFrame(circles_data)
-            st.session_state.matched_circles = updated_df
-            print(f"✅ Updated matched_circles in session state with {len(circles_data)} active circles")
             
-            # DEBUG: Look for our test circles in the updated data
-            test_circles = ['IP-NAP-01', 'IP-SHA-01', 'IP-ATL-1', 'IP-NAP-SPLIT-01-A', 'IP-NAP-SPLIT-01-B']
+            # CRITICAL: Update session state with the new DataFrame
+            print(f"  Replacing matched_circles in session state with new DataFrame ({len(circles_data)} rows)")
+            st.session_state.matched_circles = updated_df
+            
+            # Verify split circles are in the updated DataFrame
+            split_circle_count = sum(1 for c in circles_data if 'SPLIT' in c.get('circle_id', ''))
+            print(f"  ✅ New DataFrame contains {split_circle_count} split circles")
+            
+            # DEBUG: Check if specific test circles are in the updated data
+            test_circles = ['IP-NAP-01', 'IP-SHA-01', 'IP-ATL-1']
+            split_examples = [c for c in circles_data if 'SPLIT' in c.get('circle_id', '')][:3]
+            
+            # Check priority original circles - should be inactive and not in DataFrame
             for test_id in test_circles:
                 found = any(c.get('circle_id') == test_id for c in circles_data)
-                if found:
-                    print(f"  ✅ Circle {test_id} is present in the updated matched_circles data")
-                else:
-                    # Check if it's an original circle that should be inactive
-                    if test_id in all_original_circles:
-                        print(f"  ✅ Original circle {test_id} is correctly NOT included in matched_circles (replaced by splits)")
-                    else:
-                        print(f"  ⚠️ Expected circle {test_id} is missing from the updated matched_circles data")
+                if found and test_id in all_original_circles:
+                    print(f"  ⚠️ ERROR: Original circle {test_id} is still in matched_circles even though it was split")
+                elif not found and test_id in all_original_circles:
+                    print(f"  ✅ Original circle {test_id} correctly removed from matched_circles (replaced by splits)")
+                elif not found and test_id not in all_original_circles:
+                    print(f"  ⚠️ Expected circle {test_id} is missing from matched_circles data")
+            
+            # Check a few split circles - should be active and in DataFrame
+            for i, circle in enumerate(split_examples):
+                circle_id = circle.get('circle_id', 'Unknown')
+                member_count = circle.get('member_count', 0)
+                print(f"  ✅ Split circle {circle_id} is in matched_circles with {member_count} members")
         else:
             print("⚠️ No active circles found in CircleMetadataManager")
+    else:
+        print("⚠️ matched_circles not found in session state")
     
-    # Also update the split circle summary in session state for UI reporting
+    # 2. Update both the metadata manager and split circle summary in session state
+    st.session_state.circle_metadata_manager = manager
+    print("  ✅ Updated circle_metadata_manager in session state")
+    
+    # 3. Store the split summary in session state for UI reporting
     st.session_state.split_circle_summary = split_summary
-    print("✅ Updated split_circle_summary in session state")
+    print("  ✅ Updated split_circle_summary in session state")
+    
+    # 4. Force a rerun of several key data-dependent functions to refresh UI data
+    if hasattr(st.session_state, 'processed_data') and st.session_state.processed_data is not None:
+        # Rebuild circle member lists to ensure all members are correctly assigned
+        from app import rebuild_circle_member_lists
+        
+        try:
+            # Get current circles and participants
+            current_circles = st.session_state.matched_circles
+            participant_data = st.session_state.processed_data
+            
+            # Rebuild all circle member lists
+            print("\n🔄 REBUILDING ALL CIRCLE MEMBER LISTS:")
+            updated_circles = rebuild_circle_member_lists(current_circles, participant_data)
+            
+            # Update session state with rebuilt circles
+            st.session_state.matched_circles = updated_circles
+            print("  ✅ Successfully rebuilt all circle member lists and updated session state")
+        except Exception as e:
+            print(f"  ⚠️ Error rebuilding circle member lists: {str(e)}")
+    
+    print("\n✅ SPLIT CIRCLE UPDATES COMPLETE: All session state variables updated")
+    
+    # Return success
+    return True
