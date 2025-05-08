@@ -32,13 +32,14 @@ class CircleMetadataManager:
         return logger
     
     def initialize_from_optimizer(self, optimizer_circles, 
-                               results_df) -> 'CircleMetadataManager':
+                               results_df, participant_manager=None) -> 'CircleMetadataManager':
         """
         Initialize circle metadata from optimizer results and store reference to results DataFrame
         
         Args:
             optimizer_circles: List of circle dictionaries from optimizer
             results_df: DataFrame with participant results
+            participant_manager: Optional ParticipantDataManager instance to use
             
         Returns:
             Self for method chaining
@@ -48,14 +49,31 @@ class CircleMetadataManager:
             self.logger.error("Cannot initialize with None optimizer_circles")
             return self
             
-        # Check for ParticipantDataManager in session state
+        # Set up participant manager - use provided instance, session state, or create new one
         import streamlit as st
-        self.participant_manager = None
-        if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
-            self.participant_manager = st.session_state.participant_data_manager
-            self.logger.info("Using ParticipantDataManager from session state")
-        else:
-            self.logger.warning("No ParticipantDataManager found in session state")
+        self.participant_manager = participant_manager
+        
+        # If not provided directly, try to get from session state
+        if self.participant_manager is None and hasattr(st, 'session_state'):
+            if 'participant_data_manager' in st.session_state:
+                self.participant_manager = st.session_state.participant_data_manager
+                self.logger.info("Using ParticipantDataManager from session state")
+            else:
+                self.logger.info("No ParticipantDataManager found in session state")
+        
+        # If still None and we have results_df, create a new instance
+        if self.participant_manager is None and results_df is not None:
+            from utils.participant_data_manager import ParticipantDataManager
+            self.logger.info("Creating new ParticipantDataManager instance from results_df")
+            self.participant_manager = ParticipantDataManager().initialize_from_dataframe(results_df)
+            
+            # Store in session state if available
+            if hasattr(st, 'session_state'):
+                st.session_state.participant_data_manager = self.participant_manager
+                self.logger.info("Stored ParticipantDataManager in session state")
+                
+        if self.participant_manager is None:
+            self.logger.warning("No ParticipantDataManager available for member data access")
         
         # Ensure we have a list of dictionaries to work with
         processed_circles = []
@@ -1680,19 +1698,43 @@ def initialize_or_update_manager(state, optimizer_circles=None, results_df=None)
         print(f"  ⚠️ ERROR: optimizer_circles is empty. Cannot initialize manager.")
         return None
     
+    # Get or create participant data manager
+    print(f"  🔄 Checking for ParticipantDataManager in session state")
+    participant_manager = None
+    if 'participant_data_manager' in state:
+        participant_manager = state.participant_data_manager
+        print(f"  ✅ Found existing ParticipantDataManager in session state")
+    elif results_df is not None:
+        from utils.participant_data_manager import ParticipantDataManager
+        print(f"  🔄 Creating new ParticipantDataManager")
+        participant_manager = ParticipantDataManager().initialize_from_dataframe(results_df)
+        # Don't auto-store it since CircleMetadataManager will handle this
+        print(f"  ✅ Created new ParticipantDataManager")
+    else:
+        print(f"  ⚠️ No results data available, cannot create ParticipantDataManager")
+    
     # If we have circle data, initialize/update the manager
     try:
         # Create or retrieve manager
         if 'circle_manager' in state:
             print(f"  ⚙️ Updating existing CircleMetadataManager")
             manager = state.circle_manager
+            # Make sure participant_manager is set
+            if participant_manager is not None:
+                manager.participant_manager = participant_manager
+                print(f"  ✅ Connected ParticipantDataManager to existing CircleMetadataManager")
             manager.update_all_circles(optimizer_circles)
             manager.results_df = results_df
             manager.normalize_metadata()
             manager.validate_circles()
         else:
             print(f"  ⚙️ Creating new CircleMetadataManager")
-            manager = CircleMetadataManager().initialize_from_optimizer(optimizer_circles, results_df)
+            manager = CircleMetadataManager().initialize_from_optimizer(
+                optimizer_circles, 
+                results_df, 
+                participant_manager
+            )
+            print(f"  ✅ Created new CircleMetadataManager with participant manager")
         
         # Store in session state
         state.circle_manager = manager
