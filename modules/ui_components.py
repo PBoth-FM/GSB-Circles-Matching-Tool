@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import io
 import base64
+import random
 
 def render_split_circle_summary(key_prefix=None):
     """
@@ -4117,9 +4118,10 @@ def render_split_circle_summary(key_prefix="overview"):
                     st.success(f"The CircleMetadataManager is tracking {split_count} split circles from {original_count} original circles.")
                     
                     # Show a few examples
-                    # Use a dynamic prefix based on where it's called from 
-                    # to ensure unique keys for each rendering context
-                    checkbox_key = f"metadata_manager_split_details_{id(manager)}"
+                    # Use a dynamic prefix based on where it's called from plus a unique identifier
+                    # Combine the key_prefix with a random number to ensure uniqueness
+                    unique_id = f"{key_prefix}_{id(manager)}_{random.randint(10000, 99999)}"
+                    checkbox_key = f"metadata_manager_split_details_{unique_id}"
                     if st.checkbox("Show Split Circle Details from Metadata Manager", key=checkbox_key):
                         st.subheader("Sample of Split Circles in Metadata Manager")
                         
