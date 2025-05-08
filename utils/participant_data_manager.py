@@ -308,12 +308,20 @@ class ParticipantDataManager:
             return ""
         
         # Dictionary to map raw host values to standardized values
-        # Based on the provided normalization mapping
+        # ENHANCED: Comprehensive mapping of all possible host values
         HOST_VALUE_MAP = {
             # ALWAYS mappings
             "always": "always",
             "always host": "always",
             "always_host": "always",
+            "alwayshost": "always",
+            "yes, always": "always",
+            "yes-always": "always",
+            "yes always": "always",
+            "always willing": "always",
+            "a": "always",
+            "yes-a": "always",
+            "yes (a)": "always",
             "yes": "always",
             "1": "always",
             "1.0": "always",
@@ -321,13 +329,29 @@ class ParticipantDataManager:
             "sometimes": "sometimes",
             "sometimes host": "sometimes", 
             "sometimes_host": "sometimes",
+            "sometimeshost": "sometimes",
+            "yes, sometimes": "sometimes",
+            "yes-sometimes": "sometimes",
+            "yes sometimes": "sometimes",
+            "sometimes willing": "sometimes",
+            "s": "sometimes",
+            "yes-s": "sometimes",
+            "yes (s)": "sometimes",
             "maybe": "sometimes",
             "0.5": "sometimes",
             # NEVER mappings
             "n/a": "never",
+            "na": "never",
             "never": "never",
             "never host": "never",
             "never_host": "never",
+            "neverhost": "never",
+            "not available": "never",
+            "not willing": "never",
+            "cannot host": "never",
+            "n": "never",
+            "no-n": "never",
+            "no (n)": "never",
             "no": "never",
             "0": "never",
             "0.0": "never",
@@ -344,7 +368,7 @@ class ParticipantDataManager:
                 print(f"  Host-related columns found: {host_related_columns}")
             
         # Try standardized host status first
-        for col in ['host_status_standardized', 'Standardized Host']:
+        for col in ['host_status_standardized', 'Standardized Host', 'proposed_NEW_host_status']:
             if col in participant_data and not pd.isna(participant_data[col]):
                 status = participant_data[col]
                 if status:
@@ -395,7 +419,9 @@ class ParticipantDataManager:
                 pass
                 
         # Try other host status columns with more specific naming
-        for col in ['Host', 'HostingPreference', 'Host Status', 'willing_to_host']:
+        for col in ['Host', 'HostingPreference', 'Host Status', 'willing_to_host', 
+                   'Current Host Status', 'Future Host Status', 'Host_Status', 
+                   'Can Host', 'Hosting', 'Proposed Host']:
             if col in participant_data and not pd.isna(participant_data[col]):
                 status = str(participant_data[col]).lower().strip()
                 if debug_mode:
@@ -428,12 +454,22 @@ class ParticipantDataManager:
         
         # Enhanced debugger for test cases
         if debug_mode:
-            important_columns = ['Encoded ID', 'host', 'willing_to_host', 'Host', 'HostingPreference']
-            found_columns = {}
-            for col in important_columns:
-                if col in participant_data:
-                    found_columns[col] = participant_data[col]
-            print(f"  ⚠️ No conclusive host status. Important columns: {found_columns}")
+            print(f"  🔍 DETAILED FALLBACK HOST DEBUG for participant {participant_id}")
+            # Find all host-related columns in the data
+            host_related_columns = {}
+            for col in participant_data:
+                if ('host' in col.lower() or 
+                    'willing' in col.lower() or 
+                    'can_host' in col.lower() or 
+                    'preference' in col.lower()):
+                    host_related_columns[col] = participant_data[col]
+            
+            if host_related_columns:
+                print(f"  ⚠️ No conclusive host status despite finding these host-related columns:")
+                for col, value in host_related_columns.items():
+                    print(f"    - {col}: {value}")
+            else:
+                print(f"  ⚠️ NO host-related columns found in participant data!")
             
         # Final fallback - default to never
         if debug_mode:
