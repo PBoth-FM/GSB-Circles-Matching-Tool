@@ -962,8 +962,15 @@ class CircleMetadataManager:
         Returns:
             List of dictionaries with circle data
         """
-        # Use the enhanced implementation
-        return self.get_all_circles_enhanced(include_inactive)
+        # Use the enhanced implementation with explicit parameter
+        circles = self.get_all_circles_enhanced(include_inactive)
+        
+        # Add additional logging for debugging
+        active_count = len([c for c in circles if not c.get('replaced_by_splits', False)])
+        inactive_count = len([c for c in circles if c.get('replaced_by_splits', False)])
+        self.logger.debug(f"get_all_circles returning {len(circles)} circles: {active_count} active, {inactive_count} inactive")
+        
+        return circles
     
     # This method has been merged with the new get_circle_data implementation above
     
