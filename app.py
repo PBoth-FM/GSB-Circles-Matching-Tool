@@ -1643,6 +1643,45 @@ def test_circle_splitting():
             manager = st.session_state.participant_data_manager
             manager.initialize_from_dataframe(test_participants)
             print(f"✅ Updated ParticipantDataManager with {len(test_participants)} participants")
+            
+        # Add specific test circles from our data to focus debugging
+        # This step is critical for diagnostic purposes - let's check IP-SHA-01 specifically
+        st.subheader("Test Circle Analysis")
+        test_circle_ids = ['IP-SHA-01', 'IP-ATL-1', 'IP-NAP-01']
+        
+        # Check for test circles in our data
+        found_test_circles = []
+        for circle_id in test_circle_ids:
+            # Check first in participants data
+            if circle_col:
+                direct_count = len(participants_data[participants_data[circle_col] == circle_id])
+                if direct_count > 0:
+                    st.write(f"✓ Found test circle {circle_id} with {direct_count} members in participants data")
+                    found_test_circles.append(circle_id)
+                    
+                    # Show host distribution for this circle
+                    members = manager.get_participant_ids_by_circle(circle_id)
+                    if members:
+                        st.write(f"   Members detected by ParticipantDataManager: {len(members)}")
+                        
+                        # Analyze host status for these members
+                        host_counts = {'always': 0, 'sometimes': 0, 'never': 0}
+                        for member_id in members:
+                            host_status = manager.get_participant_host_status(member_id, debug_mode=True)
+                            host_counts[host_status if host_status else 'never'] += 1
+                        
+                        st.write(f"   Host distribution: Always: {host_counts['always']}, Sometimes: {host_counts['sometimes']}, Never: {host_counts['never']}")
+                else:
+                    st.write(f"✗ Test circle {circle_id} not found in participants data")
+            
+            # Also check in circles data
+            circle_exists = any(c.get('circle_id') == circle_id for c in test_circles)
+            if circle_exists:
+                if circle_id not in found_test_circles:
+                    found_test_circles.append(circle_id)
+                st.write(f"✓ Found test circle {circle_id} in test_circles list")
+            else:
+                st.write(f"✗ Test circle {circle_id} not found in test_circles list")
         
         # Step 1: Split circles directly using updated approach with ParticipantDataManager
         try:
