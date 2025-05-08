@@ -66,70 +66,89 @@ def rebuild_circle_member_lists(circles_data, participants_data):
     
     # For each circle, find all participants assigned to it
     for idx, circle in circles_df.iterrows():
-        circle_id = circle.get('circle_id')
-        if not circle_id:
-            continue
-        
-        # Get members using both approaches
-        members_list = []
-        
-        # Method 1: Check CONTINUING participants using Current_Circle_ID
-        if current_circle_col:
-            # Select CONTINUING participants in this circle
-            if 'Status' in participants_data.columns:
-                continuing_members = participants_data[
-                    (participants_data[current_circle_col] == circle_id) & 
-                    (participants_data['Status'] == 'CONTINUING')
-                ]
-            else:
-                continuing_members = participants_data[participants_data[current_circle_col] == circle_id]
+        try:
+            circle_id = circle.get('circle_id')
+            if not circle_id:
+                print(f"⚠️ WARNING: Circle at index {idx} has no circle_id, skipping")
+                continue
             
-            if 'Encoded ID' in participants_data.columns and not continuing_members.empty:
-                continuing_ids = continuing_members['Encoded ID'].dropna().tolist()
-                # Add to our member list
-                members_list.extend(continuing_ids)
-                print(f"👥 Circle {circle_id}: Found {len(continuing_ids)} CONTINUING members")
-        
-        # Method 2: Check general assignments using the other circle column
-        if circle_col:
-            general_members = participants_data[participants_data[circle_col] == circle_id]
-            if 'Encoded ID' in participants_data.columns and not general_members.empty:
-                general_ids = general_members['Encoded ID'].dropna().tolist()
-                # Only add IDs not already in the list
-                new_ids = [id for id in general_ids if id not in members_list]
-                if new_ids:
-                    members_list.extend(new_ids)
-                    print(f"👥 Circle {circle_id}: Found {len(new_ids)} additional members from '{circle_col}'")
-        
-        # If we found any members, update the circle
-        if members_list:
-            # Filter out any None or NaN values and convert to strings
-            member_ids = [str(m) for m in members_list if m is not None and not pd.isna(m)]
+            # Get members using both approaches
+            members_list = []
             
-            # Debug for specific test circles
-            if circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
-                print(f"🔍 TEST CIRCLE {circle_id}: Found {len(member_ids)} total members")
-                if len(member_ids) > 0:
-                    print(f"🔍 First few members: {member_ids[:3]}")
+            try:
+                # Method 1: Check CONTINUING participants using Current_Circle_ID
+                if current_circle_col:
+                    try:
+                        # Select CONTINUING participants in this circle
+                        if 'Status' in participants_data.columns:
+                            continuing_members = participants_data[
+                                (participants_data[current_circle_col] == circle_id) & 
+                                (participants_data['Status'] == 'CONTINUING')
+                            ]
+                        else:
+                            continuing_members = participants_data[participants_data[current_circle_col] == circle_id]
+                        
+                        if 'Encoded ID' in participants_data.columns and not continuing_members.empty:
+                            continuing_ids = continuing_members['Encoded ID'].dropna().tolist()
+                            # Add to our member list
+                            members_list.extend(continuing_ids)
+                            print(f"👥 Circle {circle_id}: Found {len(continuing_ids)} CONTINUING members")
+                    except Exception as e:
+                        print(f"⚠️ ERROR processing CONTINUING members for {circle_id}: {str(e)}")
                 
-                # Check for member count mismatch
-                if 'member_count' in circles_df.columns:
-                    current_count = circles_df.at[idx, 'member_count']
-                    if current_count != len(member_ids):
-                        print(f"⚠️ Member count mismatch for {circle_id}: stored={current_count}, found={len(member_ids)}")
+                # Method 2: Check general assignments using the other circle column
+                if circle_col:
+                    try:
+                        general_members = participants_data[participants_data[circle_col] == circle_id]
+                        if 'Encoded ID' in participants_data.columns and not general_members.empty:
+                            general_ids = general_members['Encoded ID'].dropna().tolist()
+                            # Only add IDs not already in the list
+                            new_ids = [id for id in general_ids if id not in members_list]
+                            if new_ids:
+                                members_list.extend(new_ids)
+                                print(f"👥 Circle {circle_id}: Found {len(new_ids)} additional members from '{circle_col}'")
+                    except Exception as e:
+                        print(f"⚠️ ERROR processing general members for {circle_id}: {str(e)}")
+            except Exception as e:
+                print(f"⚠️ ERROR finding members for circle {circle_id}: {str(e)}")
+                # Continue to next circle if we can't process members for this one
+                continue
             
-            # Update the circle
-            circles_df.at[idx, 'members'] = member_ids
-            
-            # Only update member_count if it doesn't match the actual count
-            if 'member_count' in circles_df.columns:
-                current_count = circles_df.at[idx, 'member_count']
-                if current_count != len(member_ids):
-                    print(f"🔍 Fixed member count mismatch for {circle_id}: {current_count} → {len(member_ids)}")
-                circles_df.at[idx, 'member_count'] = len(member_ids)
-            
-            circles_updated += 1
-            all_circle_members += len(member_ids)
+            # If we found any members, update the circle
+            if members_list:
+                try:
+                    # Filter out any None or NaN values and convert to strings
+                    member_ids = [str(m) for m in members_list if m is not None and not pd.isna(m)]
+                    
+                    # Debug for specific test circles
+                    if circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
+                        print(f"🔍 TEST CIRCLE {circle_id}: Found {len(member_ids)} total members")
+                        if len(member_ids) > 0:
+                            print(f"🔍 First few members: {member_ids[:3]}")
+                        
+                        # Check for member count mismatch
+                        if 'member_count' in circles_df.columns:
+                            current_count = circles_df.at[idx, 'member_count']
+                            if current_count != len(member_ids):
+                                print(f"⚠️ Member count mismatch for {circle_id}: stored={current_count}, found={len(member_ids)}")
+                    
+                    # Update the circle
+                    circles_df.at[idx, 'members'] = member_ids
+                    
+                    # Only update member_count if it doesn't match the actual count
+                    if 'member_count' in circles_df.columns:
+                        current_count = circles_df.at[idx, 'member_count']
+                        if current_count != len(member_ids):
+                            print(f"🔍 Fixed member count mismatch for {circle_id}: {current_count} → {len(member_ids)}")
+                        circles_df.at[idx, 'member_count'] = len(member_ids)
+                    
+                    circles_updated += 1
+                    all_circle_members += len(member_ids)
+                except Exception as e:
+                    print(f"⚠️ ERROR updating circle {circle_id} with members: {str(e)}")
+        except Exception as e:
+            print(f"⚠️ ERROR processing circle at index {idx}: {str(e)}")
+            continue
     
     print(f"✅ Successfully rebuilt member lists for {circles_updated} circles with a total of {all_circle_members} members")
     
@@ -163,14 +182,31 @@ def split_large_circles(circles_data, participants_data):
     }
     
     print("🔍 STEP 1: Rebuilding circle member lists from participant data")
-    # First, ensure all circles have proper member lists by rebuilding them
-    circles_with_members = rebuild_circle_member_lists(circles_data, participants_data)
-    
-    # Convert to list of dictionaries if it's a DataFrame
-    if isinstance(circles_with_members, pd.DataFrame):
-        circles_list = circles_with_members.to_dict('records')
-    else:
-        circles_list = circles_with_members
+    try:
+        # First, ensure all circles have proper member lists by rebuilding them
+        circles_with_members = rebuild_circle_member_lists(circles_data, participants_data)
+        
+        # Convert to list of dictionaries if it's a DataFrame
+        if isinstance(circles_with_members, pd.DataFrame):
+            circles_list = circles_with_members.to_dict('records')
+        else:
+            circles_list = circles_with_members
+            
+        # Validate the result
+        if not circles_list or len(circles_list) == 0:
+            print("⚠️ WARNING: Circle rebuilding returned empty result!")
+            # Return original data as fallback
+            if isinstance(circles_data, pd.DataFrame):
+                circles_list = circles_data.to_dict('records')
+            else:
+                circles_list = circles_data
+    except Exception as e:
+        print(f"⚠️ ERROR in rebuilding circle member lists: {str(e)}")
+        # Fall back to original data
+        if isinstance(circles_data, pd.DataFrame):
+            circles_list = circles_data.to_dict('records')
+        else:
+            circles_list = circles_data
     
     # Create a new list for updated circles
     updated_circles = []
@@ -178,61 +214,107 @@ def split_large_circles(circles_data, participants_data):
     print("🔍 STEP 2: Identifying and splitting large circles")
     # Identify large circles (11+ members)
     for circle in circles_list:
-        split_summary["total_circles_examined"] += 1
-        
-        # Get circle ID and member count
-        circle_id = circle.get('circle_id', '')
-        
-        # Skip circles without IDs
-        if not circle_id:
-            updated_circles.append(circle)
-            continue
-        
-        # Get member list - should now be properly populated
-        members = circle.get('members', [])
-        
-        # Log details about the members
-        print(f"🔍 Circle {circle_id}: {len(members)} members, member_count={circle.get('member_count', 0)}")
-        if members and len(members) > 0:
-            print(f"🔍 Sample members: {str(members[:3])}...")
-        else:
-            print(f"⚠️ No members found for circle {circle_id}")
-        
-        # Count members - use actual list length
-        member_count = len(members)
-        
-        # Skip if not a large circle (11+ members)
-        if member_count < 11:
-            updated_circles.append(circle)
-            continue
+        try:
+            split_summary["total_circles_examined"] += 1
             
-        print(f"🔍 Found large circle {circle_id} with {member_count} members")
-        split_summary["total_large_circles_found"] += 1
-        
-        # Get member roles to ensure proper host distribution
-        member_roles = get_member_roles(participants_data, members)
-        
-        # Extract format prefix and region from circle ID
-        format_prefix = circle_id.split('-')[0] if '-' in circle_id else "IP"
-        
-        parts = circle_id.split('-')
-        region = parts[1] if len(parts) > 1 else ""
-        
-        # Extract circle number
-        circle_number = ""
-        if len(parts) > 2:
-            # Handle numeric and alphanumeric circle numbers
-            circle_number = parts[2]
-        
-        # Try to split the circle
-        split_result = split_circle_with_balanced_hosts(
-            circle_id=circle_id,
-            members=members,
-            member_roles=member_roles,
-            format_prefix=format_prefix,
-            region=region,
-            circle_number=circle_number
-        )
+            # Get circle ID and member count
+            circle_id = circle.get('circle_id', '')
+            
+            # Skip circles without IDs
+            if not circle_id:
+                print(f"⚠️ WARNING: Circle without ID found, skipping")
+                updated_circles.append(circle)
+                continue
+            
+            # Get member list - should now be properly populated
+            members = circle.get('members', [])
+            
+            # Ensure members is a valid list
+            if members is None:
+                print(f"⚠️ WARNING: Circle {circle_id} has None for members list")
+                members = []
+            elif not isinstance(members, list):
+                try:
+                    # Try to convert to list if possible
+                    print(f"⚠️ WARNING: Circle {circle_id} members is not a list, attempting conversion")
+                    if isinstance(members, str):
+                        # Handle string representation of list
+                        if members.startswith('[') and members.endswith(']'):
+                            try:
+                                import ast
+                                members = ast.literal_eval(members)
+                            except Exception as e:
+                                print(f"⚠️ WARNING: Failed to parse member string as list: {str(e)}")
+                                members = []
+                        else:
+                            members = [members]  # Single string item
+                    else:
+                        members = [members]  # Wrap in list
+                except Exception as e:
+                    print(f"⚠️ ERROR converting members to list for {circle_id}: {str(e)}")
+                    members = []
+            
+            # Log details about the members
+            print(f"🔍 Circle {circle_id}: {len(members)} members, member_count={circle.get('member_count', 0)}")
+            if members and len(members) > 0:
+                print(f"🔍 Sample members: {str(members[:3])}...")
+            else:
+                print(f"⚠️ No members found for circle {circle_id}")
+            
+            # Count members - use actual list length
+            member_count = len(members)
+            
+            # Skip if not a large circle (11+ members)
+            if member_count < 11:
+                updated_circles.append(circle)
+                continue
+                
+            print(f"🔍 Found large circle {circle_id} with {member_count} members")
+            split_summary["total_large_circles_found"] += 1
+            
+            try:
+                # Get member roles to ensure proper host distribution
+                member_roles = get_member_roles(participants_data, members)
+                
+                # Extract format prefix and region from circle ID
+                format_prefix = circle_id.split('-')[0] if '-' in circle_id else "IP"
+                
+                parts = circle_id.split('-')
+                region = parts[1] if len(parts) > 1 else ""
+                
+                # Extract circle number
+                circle_number = ""
+                if len(parts) > 2:
+                    # Handle numeric and alphanumeric circle numbers
+                    circle_number = parts[2]
+                
+                # Try to split the circle
+                try:
+                    split_result = split_circle_with_balanced_hosts(
+                        circle_id=circle_id,
+                        members=members,
+                        member_roles=member_roles,
+                        format_prefix=format_prefix,
+                        region=region,
+                        circle_number=circle_number
+                    )
+                except Exception as e:
+                    print(f"⚠️ ERROR in split_circle_with_balanced_hosts for {circle_id}: {str(e)}")
+                    # Return a failure result as fallback
+                    split_result = {
+                        "success": False,
+                        "reason": f"Error during splitting process: {str(e)}"
+                    }
+            except Exception as e:
+                print(f"⚠️ ERROR preparing for circle split of {circle_id}: {str(e)}")
+                # Skip splitting and keep original circle
+                updated_circles.append(circle)
+                split_summary["circles_unable_to_split"].append({
+                    "circle_id": circle_id,
+                    "member_count": member_count,
+                    "reason": f"Error preparing for split: {str(e)}"
+                })
+                continue
         
         if split_result["success"]:
             # Successfully split the circle
@@ -325,27 +407,50 @@ def get_member_roles(participants_data, member_ids):
     
     # Process each member
     for member_id in member_ids:
-        # Find this member in the DataFrame
-        member_rows = participants_data[participants_data[id_col] == member_id]
-        
-        if not member_rows.empty:
-            # Process host status
-            if host_col:
-                host_status = str(member_rows.iloc[0][host_col]).lower()
-                
-                if "always" in host_status or host_status == "yes":
-                    roles["always_host"].append(member_id)
-                elif "sometimes" in host_status or host_status == "maybe":
-                    roles["sometimes_host"].append(member_id)
-                else:
-                    roles["never_host"].append(member_id)
+        try:
+            # Find this member in the DataFrame
+            member_rows = participants_data[participants_data[id_col] == member_id]
             
-            # Process co-leader status
-            if co_leader_col and not pd.isna(member_rows.iloc[0][co_leader_col]):
-                co_leader_status = str(member_rows.iloc[0][co_leader_col]).lower()
+            if not member_rows.empty:
+                # Process host status
+                if host_col:
+                    try:
+                        host_value = member_rows.iloc[0][host_col]
+                        # Handle potential NaN values
+                        if pd.isna(host_value):
+                            print(f"⚠️ WARNING: NaN host value for member {member_id}")
+                            roles["never_host"].append(member_id)
+                            continue
+                            
+                        host_status = str(host_value).lower()
+                        
+                        if "always" in host_status or host_status == "yes":
+                            roles["always_host"].append(member_id)
+                        elif "sometimes" in host_status or host_status == "maybe":
+                            roles["sometimes_host"].append(member_id)
+                        else:
+                            roles["never_host"].append(member_id)
+                    except Exception as e:
+                        print(f"⚠️ WARNING: Error processing host status for member {member_id}: {str(e)}")
+                        roles["never_host"].append(member_id)  # Default to never host on error
+                else:
+                    # No host column, default to never host
+                    roles["never_host"].append(member_id)
                 
-                if co_leader_status == "yes" or co_leader_status == "true" or co_leader_status == "1":
-                    roles["co_leader"].append(member_id)
+                # Process co-leader status
+                if co_leader_col:
+                    try:
+                        if not pd.isna(member_rows.iloc[0][co_leader_col]):
+                            co_leader_status = str(member_rows.iloc[0][co_leader_col]).lower()
+                            
+                            if co_leader_status == "yes" or co_leader_status == "true" or co_leader_status == "1":
+                                roles["co_leader"].append(member_id)
+                    except Exception as e:
+                        print(f"⚠️ WARNING: Error processing co-leader status for member {member_id}: {str(e)}")
+        except Exception as e:
+            print(f"⚠️ WARNING: Error processing member {member_id}: {str(e)}")
+            # Default to never host on error
+            roles["never_host"].append(member_id)
     
     return roles
 
