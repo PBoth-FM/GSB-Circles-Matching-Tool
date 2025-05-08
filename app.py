@@ -1687,45 +1687,61 @@ def test_circle_splitting():
                     members_length = 0
                     st.warning(f"Unexpected type for members_from_rebuild: {type(members_from_rebuild)}")
                 
-                # Get members from other data sources for comparison
-                members_from_manager = metadata_manager.get_circle_members(circle_id)
+                # Try to get members using different methods, with error handling
+                try:
+                    # Method 1: Using metadata manager (may fail if circle not in manager)
+                    members_from_manager = metadata_manager.get_circle_members(circle_id)
+                    manager_length = len(members_from_manager)
+                except Exception as e:
+                    print(f"⚠️ Error getting members from metadata manager: {str(e)}")
+                    members_from_manager = []
+                    manager_length = 0
                 
-                # Original normalization for comparison
-                from utils.data_standardization import normalize_member_list
-                circle_matches = circles_data[circles_data['circle_id'] == circle_id]
-                if not circle_matches.empty:
-                    original_circle = circle_matches.iloc[0].to_dict()
-                    members_from_normalization = normalize_member_list(original_circle.get('members', []))
+                try:
+                    # Method 2: Direct normalization from the original circle data
+                    from utils.data_standardization import normalize_member_list
+                    circle_matches = circles_data[circles_data['circle_id'] == circle_id]
+                    if not circle_matches.empty:
+                        original_circle = circle_matches.iloc[0].to_dict()
+                        members_from_normalization = normalize_member_list(original_circle.get('members', []))
+                        norm_length = len(members_from_normalization)
+                    else:
+                        members_from_normalization = []
+                        norm_length = 0
+                except Exception as e:
+                    print(f"⚠️ Error normalizing members: {str(e)}")
+                    members_from_normalization = []
+                    norm_length = 0
+                
+                # Log what we found with each method
+                st.write(f"Found circle {circle_id} in DataFrame with {test_circle.get('member_count', 0)} members")
+                st.write(f"- Method 1 (MetadataManager): {manager_length} members")
+                st.write(f"- Method 2 (Rebuilt): {members_length} members")
+                st.write(f"- Method 3 (Normalization): {norm_length} members")
+                
+                # Compare against direct participant count
+                if circle_col:
+                    direct_count = len(participants_data[participants_data[circle_col] == circle_id])
+                    st.write(f"- Method 4 (Direct participant count): {direct_count} members")
                     
-                    # Log what we found with each method
-                    st.write(f"Found circle {circle_id} in DataFrame with {test_circle.get('member_count', 0)} members")
-                    st.write(f"- Method 1 (MetadataManager): {len(members_from_manager)} members")
-                    st.write(f"- Method 2 (Rebuilt): {members_length} members")
-                    st.write(f"- Method 3 (Normalization): {len(members_from_normalization)} members")
+                    if direct_count != members_length:
+                        st.warning(f"⚠️ Member count mismatch: {members_length} (rebuilt) vs {direct_count} (direct count)")
+                
+                # Analyze differences
+                if len(members_from_manager) > 0 and members_length > 0:
+                    # Show differences between member lists
+                    manager_set = set(members_from_manager)
+                    rebuild_set = set(members_from_rebuild) if isinstance(members_from_rebuild, list) else set()
                     
-                    # Compare against direct participant count
-                    if circle_col:
-                        direct_count = len(participants_data[participants_data[circle_col] == circle_id])
-                        st.write(f"- Method 4 (Direct participant count): {direct_count} members")
-                        
-                        if direct_count != members_length:
-                            st.warning(f"⚠️ Member count mismatch: {members_length} (rebuilt) vs {direct_count} (direct count)")
+                    # Members in manager but not in rebuild
+                    missing_from_rebuild = manager_set - rebuild_set
+                    if missing_from_rebuild:
+                        st.write(f"Members in manager but not in rebuild: {missing_from_rebuild}")
                     
-                    # Analyze differences
-                    if len(members_from_manager) > 0 and members_length > 0:
-                        # Show differences between member lists
-                        manager_set = set(members_from_manager)
-                        rebuild_set = set(members_from_rebuild) if isinstance(members_from_rebuild, list) else set()
-                        
-                        # Members in manager but not in rebuild
-                        missing_from_rebuild = manager_set - rebuild_set
-                        if missing_from_rebuild:
-                            st.write(f"Members in manager but not in rebuild: {missing_from_rebuild}")
-                        
-                        # Members in rebuild but not in manager
-                        missing_from_manager = rebuild_set - manager_set
-                        if missing_from_manager:
-                            st.write(f"Members in rebuild but not in manager: {missing_from_manager}")
+                    # Members in rebuild but not in manager
+                    missing_from_manager = rebuild_set - manager_set
+                    if missing_from_manager:
+                        st.write(f"Members in rebuild but not in manager: {missing_from_manager}")
                 
                 # Check if this circle is already in our test set
                 already_added = any(c.get('circle_id') == circle_id for c in test_circles)

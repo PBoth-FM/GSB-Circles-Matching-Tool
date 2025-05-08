@@ -1052,18 +1052,25 @@ class CircleMetadataManager:
     def get_circle_members(self, circle_id: str) -> List[str]:
         """Get member IDs for a specific circle"""
         circle = self.get_circle_data(circle_id)
+        if circle is None:
+            print(f"⚠️ WARNING: Circle {circle_id} not found in metadata manager")
+            return []
         members = circle.get('members', [])
         return self._ensure_list(members)
     
     def get_circle_member_data(self, circle_id: str) -> pd.DataFrame:
         """Get detailed data for all members of a circle"""
-        member_ids = self.get_circle_members(circle_id)
-        
-        if not member_ids or self.results_df is None:
+        try:
+            member_ids = self.get_circle_members(circle_id)
+            
+            if not member_ids or self.results_df is None:
+                return pd.DataFrame()
+            
+            # Return subset of results_df for the specified members
+            return self.results_df[self.results_df['Encoded ID'].isin(member_ids)]
+        except Exception as e:
+            print(f"⚠️ Error getting member data for circle {circle_id}: {str(e)}")
             return pd.DataFrame()
-        
-        # Return subset of results_df for the specified members
-        return self.results_df[self.results_df['Encoded ID'].isin(member_ids)]
     
     def _ensure_list(self, value: Any) -> List:
         """Ensure a value is a list using standardized normalization"""
