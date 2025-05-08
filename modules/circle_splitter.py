@@ -1672,96 +1672,137 @@ def get_region_subregion_from_participants(participants_data, member_ids):
     import streamlit as st
     from utils.participant_data_manager import ParticipantDataManager
     
+    # Check if member_ids is valid
+    if not member_ids or not isinstance(member_ids, (list, tuple)) or len(member_ids) == 0:
+        print("⚠️ No valid member IDs provided for region/subregion extraction")
+        return "", ""
+    
     # First try using ParticipantDataManager if available
     participant_manager = None
-    if hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
-        participant_manager = st.session_state.participant_data_manager
-        print("🔍 Using ParticipantDataManager for region/subregion extraction")
-        
-        if participant_manager and member_ids:
-            # Try each member ID until we find valid region data
-            for member_id in member_ids:
-                try:
-                    # Get participant data directly from manager
-                    participant = participant_manager.get_participant_by_id(member_id)
-                    if participant:
-                        # Extract region
-                        region = ""
-                        for field in ['Current Region', 'Region', 'region', 'current_region', 'Derived_Region']:
-                            if field in participant and participant[field] and not pd.isna(participant[field]):
-                                region = str(participant[field])
-                                break
-                                
-                        # Extract subregion
-                        subregion = ""
-                        for field in ['Current Subregion', 'Subregion', 'subregion', 'current_subregion']:
-                            if field in participant and participant[field] and not pd.isna(participant[field]):
-                                subregion = str(participant[field])
-                                break
-                                
-                        if region:
-                            print(f"✅ ParticipantDataManager: Found region '{region}' and subregion '{subregion}' for member {member_id}")
-                            return region, subregion
-                except Exception as e:
-                    print(f"⚠️ Error in ParticipantDataManager for member {member_id}: {str(e)}")
-                    continue
+    local_participants_data = participants_data
     
-    # Fall back to traditional approach if manager method failed or wasn't available
-    if participants_data is None or not member_ids:
-        print("⚠️ No participant data or member IDs available for region extraction")
-        return "", ""
-    
-    # Look for ID column
-    id_col = None
-    for col in ['Encoded ID', 'encoded_id', 'participant_id']:
-        if col in participants_data.columns:
-            id_col = col
-            break
-    
-    if not id_col:
-        print("⚠️ Could not find ID column in participants data")
-        return "", ""
-    
-    # Look for region and subregion columns
-    region_col = None
-    subregion_col = None
-    
-    for col in ['Current Region', 'Region', 'region', 'current_region']:
-        if col in participants_data.columns:
-            region_col = col
-            break
-    
-    for col in ['Current Subregion', 'Subregion', 'subregion', 'current_subregion']:
-        if col in participants_data.columns:
-            subregion_col = col
-            break
-    
-    if not region_col:
-        print("⚠️ Could not find region column in participants data")
-        return "", ""
-    
-    # Try to find the first member in the participant data
-    for member_id in member_ids:
-        try:
-            # Find this member in the DataFrame
-            member_mask = participants_data[id_col] == member_id
+    try:
+        if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
+            participant_manager = st.session_state.participant_data_manager
+            print("🔍 Using ParticipantDataManager for region/subregion extraction")
             
-            if any(member_mask):
-                member_row = participants_data.loc[member_mask].iloc[0]
+            # If participants_data wasn't provided, get it from the manager
+            if local_participants_data is None:
+                try:
+                    local_participants_data = participant_manager.get_all_participants()
+                    print(f"📊 Retrieved participants_data from ParticipantDataManager")
+                except Exception as p_err:
+                    print(f"⚠️ Failed to get participant data from manager: {str(p_err)}")
+            
+            # Try direct participant lookup first via manager (preferred)
+            if participant_manager:
+                # Try each member ID until we find valid region data
+                for member_id in member_ids:
+                    try:
+                        # Convert to string to ensure consistent comparison
+                        str_member_id = str(member_id)
+                        
+                        # Get participant data directly from manager
+                        participant = participant_manager.get_participant_by_id(str_member_id)
+                        if participant:
+                            # Extract region
+                            region = ""
+                            for field in ['Current Region', 'Region', 'region', 'current_region', 'Derived_Region']:
+                                if field in participant and participant[field] and not pd.isna(participant[field]):
+                                    region = str(participant[field])
+                                    break
+                                    
+                            # Extract subregion
+                            subregion = ""
+                            for field in ['Current Subregion', 'Subregion', 'subregion', 'current_subregion']:
+                                if field in participant and participant[field] and not pd.isna(participant[field]):
+                                    subregion = str(participant[field])
+                                    break
+                                    
+                            if region:
+                                print(f"✅ ParticipantDataManager: Found region '{region}' and subregion '{subregion}' for member {member_id}")
+                                return region, subregion
+                    except Exception as e:
+                        print(f"⚠️ Error in ParticipantDataManager for member {member_id}: {str(e)}")
+                        continue
+    except Exception as mgr_err:
+        print(f"⚠️ Error accessing ParticipantDataManager: {str(mgr_err)}")
+    
+    # Fall back to traditional DataFrame approach
+    # If we still don't have participants_data, we can't continue
+    if local_participants_data is None:
+        print("⚠️ No participant data available for region extraction")
+        return "", ""
+    
+    try:
+        # Check if DataFrame is valid
+        if not isinstance(local_participants_data, pd.DataFrame) or local_participants_data.empty:
+            print("⚠️ Participants data is empty or not a valid DataFrame")
+            return "", ""
+        
+        # Look for ID column
+        id_col = None
+        for col in ['Encoded ID', 'encoded_id', 'participant_id']:
+            if col in local_participants_data.columns:
+                id_col = col
+                break
+        
+        if not id_col:
+            print(f"⚠️ Could not find ID column in participants data. Available columns: {list(local_participants_data.columns)[:10]}")
+            return "", ""
+        
+        # Look for region and subregion columns
+        region_col = None
+        subregion_col = None
+        
+        for col in ['Current Region', 'Region', 'region', 'current_region']:
+            if col in local_participants_data.columns:
+                region_col = col
+                break
+        
+        for col in ['Current Subregion', 'Subregion', 'subregion', 'current_subregion']:
+            if col in local_participants_data.columns:
+                subregion_col = col
+                break
+        
+        if not region_col:
+            print(f"⚠️ Could not find region column in participants data. Available columns: {list(local_participants_data.columns)[:10]}")
+            return "", ""
+        
+        # Try to find the first member in the participant data
+        for member_id in member_ids:
+            try:
+                # Convert to string to ensure consistent comparison
+                str_member_id = str(member_id)
                 
-                # Extract region and subregion
-                region = str(member_row[region_col]) if not pd.isna(member_row[region_col]) else ""
+                # Find this member in the DataFrame - use string comparison
+                member_mask = local_participants_data[id_col].astype(str) == str_member_id
                 
-                # Only extract subregion if the column exists
-                subregion = ""
-                if subregion_col and subregion_col in participants_data.columns:
-                    subregion = str(member_row[subregion_col]) if not pd.isna(member_row[subregion_col]) else ""
-                
-                print(f"✅ Extracted region/subregion from participant {member_id}: {region}/{subregion}")
-                return region, subregion
-        except Exception as e:
-            print(f"⚠️ Error extracting region/subregion from participant {member_id}: {str(e)}")
-            continue
+                if any(member_mask):
+                    member_row = local_participants_data.loc[member_mask].iloc[0]
+                    
+                    # Extract region and subregion
+                    region = str(member_row[region_col]) if not pd.isna(member_row[region_col]) else ""
+                    
+                    # Only extract subregion if the column exists
+                    subregion = ""
+                    if subregion_col and subregion_col in local_participants_data.columns:
+                        subregion = str(member_row[subregion_col]) if not pd.isna(member_row[subregion_col]) else ""
+                    
+                    if region:
+                        print(f"✅ Extracted region/subregion from participant {member_id}: {region}/{subregion}")
+                        return region, subregion
+                    else:
+                        print(f"⚠️ Found participant {member_id} but region value is empty")
+            except Exception as e:
+                print(f"⚠️ Error extracting region/subregion from participant {member_id}: {str(e)}")
+                continue
+        
+        # If we couldn't find any of the members in the data
+        missing_ids = [str(m) for m in member_ids]
+        print(f"⚠️ No matching participants found in data for any of these IDs: {missing_ids}")
+    except Exception as df_err:
+        print(f"⚠️ Error processing participants DataFrame: {str(df_err)}")
     
     # If we couldn't find any valid participant data, return empty strings
     print("⚠️ Could not extract region/subregion from any participant")
