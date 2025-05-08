@@ -4591,10 +4591,14 @@ def render_circle_table():
                         # If we have a manager, use it to get consistent data
                         if manager:
                             circle_data = manager.get_circle_data(circle_id)
-                            print(f"  {circle_id} info (from manager): max_additions={circle_data.get('max_additions', 'N/A')}, "  
-                                  f"member_count={circle_data.get('member_count', 'N/A')}, "
-                                  f"new_members={circle_data.get('new_members', 'N/A')}, "
-                                  f"always_hosts={circle_data.get('always_hosts', 'N/A')}")
+                            # Add null check to handle case where circle_data is None
+                            if circle_data is not None:
+                                print(f"  {circle_id} info (from manager): max_additions={circle_data.get('max_additions', 'N/A')}, "  
+                                      f"member_count={circle_data.get('member_count', 'N/A')}, "
+                                      f"new_members={circle_data.get('new_members', 'N/A')}, "
+                                      f"always_hosts={circle_data.get('always_hosts', 'N/A')}")
+                            else:
+                                print(f"  ⚠️ {circle_id} not found in metadata manager")
                         else:
                             # Fall back to DataFrame lookup
                             row = circles_df[circles_df['circle_id'] == circle_id].iloc[0]
@@ -4759,9 +4763,19 @@ def render_circle_details():
     # Get the selected circle's data - using manager if available
     if manager:
         circle_data = manager.get_circle_data(selected_circle)
-        # For display consistency, we'll need a similar dict structure to what we'd get from DataFrame
-        circle_row = circle_data
-        print(f"  Using CircleMetadataManager to get data for {selected_circle}")
+        if circle_data is not None:
+            # For display consistency, we'll need a similar dict structure to what we'd get from DataFrame
+            circle_row = circle_data
+            print(f"  Using CircleMetadataManager to get data for {selected_circle}")
+        else:
+            # Fall back to DataFrame lookup if the manager doesn't have the circle data
+            print(f"  ⚠️ {selected_circle} not found in metadata manager, falling back to DataFrame")
+            try:
+                circle_row = circles_df[circles_df['circle_id'] == selected_circle].iloc[0]
+                print(f"  Using DataFrame to get data for {selected_circle}")
+            except:
+                st.error(f"Could not find data for circle {selected_circle}")
+                return
     else:
         # Fall back to DataFrame lookup
         try:
