@@ -752,9 +752,14 @@ class CircleMetadataManager:
         
         for circle_id, circle in self.circles.items():
             # Skip inactive circles (original circles that have been split) if not including them
-            # FIXED: This logic was excluding original circles that have been split, causing only split circles to show
-            # We should only skip if specifically marked as inactive
-            if not include_inactive and circle.get('active') is False:
+            # FIXED: Check for is_active=False OR replaced_by_splits=True to determine inactive status
+            is_inactive = (
+                circle.get('is_active') is False or  # explicitly inactive
+                circle.get('active') is False or     # legacy inactive flag
+                circle.get('replaced_by_splits', False)  # original circles that were split
+            )
+            
+            if not include_inactive and is_inactive:
                 continue
                 
             # Create a copy to avoid modifying the original
@@ -1095,11 +1100,29 @@ class CircleMetadataManager:
         print(f"\n🔍 ENHANCED CIRCLE DATA RETRIEVAL: Processing {total_circles} circles")
         
         for circle_id, circle in self.circles.items():
+            # Standardized inactive status checking
+            is_inactive = (
+                circle.get('is_active') is False or  # explicitly inactive
+                circle.get('active') is False or     # legacy inactive flag
+                circle.get('replaced_by_splits', False)  # original circles that were split
+            )
+            
+            # Skip inactive circles if not including them
+            if not include_inactive and is_inactive:
+                inactive_circles += 1
+                continue
+            else:
+                active_circles += 1
+                if circle.get('is_split_circle', False):
+                    split_circles += 1
+            
             # Debug info for specific test circles
             if circle_id in ['IP-SHA-01', 'IP-NAP-01', 'IP-ATL-1']:
                 print(f"🔍 CIRCLE STATUS CHECK - {circle_id}:")
                 print(f"  replaced_by_splits: {circle.get('replaced_by_splits', False)}")
                 print(f"  active: {circle.get('active', True)}")
+                print(f"  is_active: {circle.get('is_active', True)}")
+                print(f"  is_inactive (calculated): {is_inactive}")
                 print(f"  is_split_circle: {circle.get('is_split_circle', False)}")
                 if circle.get('is_split_circle', False):
                     print(f"  original_circle_id: {circle.get('original_circle_id', 'unknown')}")
@@ -1109,17 +1132,8 @@ class CircleMetadataManager:
                 print(f"  members: {len(circle.get('members', []))} members")
                 print(f"  member_count: {circle.get('member_count', 0)}")
             
-            # Count circle types
-            if circle.get('replaced_by_splits', False):
-                inactive_circles += 1
-            else:
-                active_circles += 1
-                
-            if circle.get('is_split_circle', False):
-                split_circles += 1
-            
-            # Skip inactive circles unless requested to include them
-            # Original circles that have been split should be skipped
+            # Skip inactive circles unless requested to include them - we've already counted them
+            # But we also need to check the replaced_by_splits flag
             if not include_inactive and circle.get('replaced_by_splits', False):
                 # Debug information for specific circles
                 if circle_id in ['IP-SHA-01', 'IP-NAP-01', 'IP-ATL-1']:
