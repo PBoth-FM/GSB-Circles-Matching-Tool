@@ -143,10 +143,51 @@ def normalize_member_list(members_value: Any) -> List[str]:
         if members_value in (None, [], "", {}):
             return []
     
-    # If it's already a list, validate the items
+    # If it's already a list, validate the items and handle each element
     if isinstance(members_value, list):
-        # Convert each element to string and filter out None/NaN
-        return [str(member) for member in members_value if not pd.isna(member)]
+        normalized_list = []
+        for item in members_value:
+            if pd.isna(item):
+                continue
+            # If the item is a dictionary that might contain an ID
+            if isinstance(item, dict):
+                for id_field in ['Encoded ID', 'encoded_id', 'id', 'ID', 'participant_id']:
+                    if id_field in item:
+                        member_id = item[id_field]
+                        if member_id and not pd.isna(member_id):
+                            normalized_list.append(str(member_id))
+                            break
+                # If no ID field found, try to use the whole dict as a string
+                else:
+                    try:
+                        normalized_list.append(str(item))
+                    except:
+                        pass
+            else:
+                # Regular string or numeric ID
+                normalized_list.append(str(item))
+        return normalized_list
+    
+    # Handle case of a single dictionary that might be a participant record
+    if isinstance(members_value, dict):
+        if 'Encoded ID' in members_value:
+            return [str(members_value['Encoded ID'])] if not pd.isna(members_value['Encoded ID']) else []
+        elif 'encoded_id' in members_value:
+            return [str(members_value['encoded_id'])] if not pd.isna(members_value['encoded_id']) else []
+        elif 'id' in members_value:
+            return [str(members_value['id'])] if not pd.isna(members_value['id']) else []
+        elif 'ID' in members_value:
+            return [str(members_value['ID'])] if not pd.isna(members_value['ID']) else []
+        else:
+            # If no ID field found in dict, try participant_id as a last resort
+            if 'participant_id' in members_value:
+                return [str(members_value['participant_id'])] if not pd.isna(members_value['participant_id']) else []
+            # Last resort: use the whole dict as a string representation
+            try:
+                return [str(members_value)]
+            except:
+                logger.warning("Could not convert dictionary to string representation")
+                return []
     
     # If it's a string that looks like a list representation, parse it
     if isinstance(members_value, str):
@@ -155,8 +196,8 @@ def normalize_member_list(members_value: Any) -> List[str]:
                 # Use ast.literal_eval for safe parsing of list literals
                 parsed_list = ast.literal_eval(members_value)
                 if isinstance(parsed_list, list):
-                    # Convert each element to string and filter out None/NaN
-                    return [str(member) for member in parsed_list if not pd.isna(member)]
+                    # Process the list recursively
+                    return normalize_member_list(parsed_list)
             except (ValueError, SyntaxError):
                 if debug:
                     logger.warning(f"Failed to parse string as list: '{members_value}'")
