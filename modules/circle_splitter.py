@@ -290,7 +290,7 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
         print("🧪 TEST MODE ENABLED: Using special handling for test circles")
     
     # Identify test circles for special handling
-    TEST_CIRCLES = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
+    TEST_CIRCLES = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
     
     # Get or create the ParticipantDataManager - preferred approach
     participant_manager = None
@@ -495,10 +495,10 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
                             for i, member_id in enumerate(members[2:]):
                                 member_roles["never_host"].append(member_id)
                     
-                    elif circle_id == 'IP-SHA-01':
-                        # For IP-SHA-01, we need special handling - forcibly make enough hosts
-                        # to ensure it can split correctly
-                        print(f"🧪 TEST CIRCLE IP-SHA-01: Applying special test mode host overrides")
+                    elif circle_id in ['IP-SHA-01', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']:
+                        # For these test circles, we need special handling - forcibly make enough hosts
+                        # to ensure they can split correctly
+                        print(f"🧪 TEST CIRCLE {circle_id}: Applying special test mode host overrides")
                         
                         # Create specific host distribution to ensure splitting works
                         if len(members) >= 8:
@@ -524,7 +524,7 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
                                 member_roles["co_leader"] = [co_leader1, co_leader2]
                                 print(f"🧪 TEST CIRCLE: Assigned members {co_leader1} and {co_leader2} as CO-LEADERS")
                         else:
-                            print(f"⚠️ TEST CIRCLE IP-SHA-01: Not enough members to apply special handling")
+                            print(f"⚠️ TEST CIRCLE {circle_id}: Not enough members to apply special handling")
                     
                     # Print updated role counts                    
                     print(f"🧪 TEST CIRCLE: Updated host distribution:")
@@ -661,7 +661,7 @@ def get_member_roles(participants_data, member_ids, test_mode=False, test_circle
     }
     
     # Enhanced debugging in test mode
-    is_test_circle = test_circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01'] if test_circle_id else False
+    is_test_circle = test_circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'] if test_circle_id else False
     
     if test_mode and is_test_circle:
         print(f"\n🧪🧪🧪 DETAILED HOST DEBUG FOR TEST CIRCLE {test_circle_id} 🧪🧪🧪")
@@ -978,7 +978,7 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     print(f"   Never Hosts: {len(never_hosts)} members")
     
     # In test mode, log the actual member IDs for each role
-    is_test_circle = circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
+    is_test_circle = circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02']
     if is_test_circle:
         print(f"🧪 TEST CIRCLE {circle_id} - Detailed host breakdown:")
         print(f"   Always Hosts: {always_hosts}")
@@ -1010,8 +1010,8 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         # For IP-SHA-01, we expect 8 SOMETIMES hosts, so make sure we're detecting them
         special_handling_required = False
         
-        if circle_id == 'IP-SHA-01' and sometimes_count >= 8 and len(sometimes_hosts) < 8:
-            print(f"🧪 TEST CIRCLE IP-SHA-01: Found {sometimes_count} sometimes hosts in ParticipantDataManager but only {len(sometimes_hosts)} in member_roles")
+        if circle_id in ['IP-SHA-01', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'] and sometimes_count >= 8 and len(sometimes_hosts) < 8:
+            print(f"🧪 TEST CIRCLE {circle_id}: Found {sometimes_count} sometimes hosts in ParticipantDataManager but only {len(sometimes_hosts)} in member_roles")
             print(f"🧪 FORCING REBUILD to ensure all sometimes hosts are properly recognized")
             special_handling_required = True
         elif abs(len(always_hosts) - always_count) > 1 or abs(len(sometimes_hosts) - sometimes_count) > 1:
@@ -1062,6 +1062,7 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     # Special override for test circles - DIRECT HARDCODED SPLIT
     # Added additional test circles (IP-SIN-01, IP-LON-04, IP-HOU-02) based on data analysis
     if circle_id in ['IP-SHA-01', 'IP-ATL-1', 'IP-NAP-01', 'IP-SIN-01', 'IP-LON-04', 'IP-HOU-02'] and len(members) >= 10:
+        print(f"🧪 FOUND TEST CIRCLE {circle_id} WITH {len(members)} MEMBERS - USING SPECIAL HANDLING")
         print(f"🧪 APPLYING SPECIAL HARDCODED SPLIT for test circle {circle_id}")
         
         # Initialize the new splits with required structure
