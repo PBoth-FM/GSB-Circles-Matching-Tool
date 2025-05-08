@@ -4088,7 +4088,7 @@ def render_split_circle_summary():
                     st.success(f"The CircleMetadataManager is tracking {split_count} split circles from {original_count} original circles.")
                     
                     # Show a few examples
-                    if st.checkbox("Show Split Circle Details from Metadata Manager"):
+                    if st.checkbox("Show Split Circle Details from Metadata Manager", key="metadata_manager_split_details"):
                         st.subheader("Sample of Split Circles in Metadata Manager")
                         
                         # Get up to 5 split circle IDs
