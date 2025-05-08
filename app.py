@@ -1892,7 +1892,7 @@ def test_circle_splitting():
         # Use our standardized render function to display the summary
         st.subheader("Standardized Circle Split Summary")
         from modules.ui_components import render_split_circle_summary
-        render_split_circle_summary()
+        render_split_circle_summary(key_prefix="split_test_tab")
     
     except Exception as e:
         st.error(f"Error during circle splitting test: {str(e)}")
