@@ -8,57 +8,18 @@ import io
 import base64
 import random
 
+# Function has been moved to a more comprehensive implementation at line ~4029
+# This is to avoid duplication and ensure consistent behavior
 def render_split_circle_summary(key_prefix=None):
     """
-    Render the summary of split circles
+    Render the summary of split circles - redirects to the main implementation
     
     Args:
         key_prefix (str, optional): Prefix for unique Streamlit component keys to avoid duplicates
     """
-    if 'split_circle_summary' not in st.session_state:
-        st.info("No circle splitting summary available. Circle splitting may not have been needed or didn't meet requirements.")
-        return
-    
-    summary = st.session_state.split_circle_summary
-    
-    st.subheader("Circle Splitting Summary")
-    
-    # Create a unique key suffix from prefix if provided
-    key_suffix = f"_{key_prefix}" if key_prefix else ""
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Circles Eligible for Splitting", summary.get('total_circles_eligible_for_splitting', 0), 
-                 key=f"metric_eligible{key_suffix}")
-    
-    with col2:
-        st.metric("Circles Successfully Split", summary.get('total_circles_successfully_split', 0), 
-                 key=f"metric_split{key_suffix}")
-        
-    with col3:
-        st.metric("New Circles Created", summary.get('total_new_circles_created', 0), 
-                 key=f"metric_created{key_suffix}")
-    
-    # Display split details
-    if summary.get('split_details'):
-        st.subheader("Split Details")
-        for i, detail in enumerate(summary['split_details']):
-            circle_id = detail.get('original_circle_id', 'Unknown')
-            with st.expander(f"Split Circle: {circle_id}", 
-                            key=f"expander_split_{circle_id}_{i}{key_suffix}"):
-                st.write(f"**Original Circle:** {circle_id}")
-                st.write(f"**Original Member Count:** {detail.get('member_count', 0)}")
-                st.write(f"**Number of Splits:** {detail.get('num_splits', 0)}")
-                st.write(f"**New Circle IDs:** {', '.join(detail.get('new_circle_ids', []))}")
-    
-    # Display circles that couldn't be split
-    if summary.get('circles_unable_to_split'):
-        st.subheader("Circles Unable to Split")
-        for i, circle in enumerate(summary['circles_unable_to_split']):
-            circle_id = circle.get('circle_id', 'Unknown')
-            st.write(f"- **{circle_id}**: {circle.get('reason', 'Unknown reason')}", 
-                    key=f"unable_split_{circle_id}_{i}{key_suffix}")
+    # Forward to the main implementation
+    from modules.ui_components import render_split_circle_summary as main_render_split_circle_summary
+    return main_render_split_circle_summary(key_prefix=key_prefix)
 
 def calculate_total_diversity_score(matched_circles_df, results_df):
     """
