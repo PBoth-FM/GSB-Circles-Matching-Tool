@@ -4317,81 +4317,68 @@ def render_results_overview():
 
 def render_circle_table():
     """Render the circle composition table"""
-    # ENHANCED: Use CircleMetadataManager if available, fall back to direct session state access
-    from utils.circle_metadata_manager import get_manager_from_session_state
-    
-    # Try to get the circle manager first
-    manager = get_manager_from_session_state(st.session_state)
+    # ENHANCED: Use rebuild_circle_member_lists to get the most accurate data
+    import pandas as pd
+    from app import rebuild_circle_member_lists
     
     # Check if we have data to display
-    if not manager and ('matched_circles' not in st.session_state or 
-                     st.session_state.matched_circles is None or
-                     (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+    if ('matched_circles' not in st.session_state or 
+        st.session_state.matched_circles is None or
+        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
         return
     
     st.subheader("Circle Composition")
     
-    # Get the data - from manager or directly from session state
-    if manager:
-        print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using CircleMetadataManager):")
-        # Use our new method to get a proper DataFrame of active circles including split circles
-        circles_df = manager.get_circles_dataframe(include_inactive=False)
-        print(f"  Retrieved {len(circles_df)} active circles from CircleMetadataManager")
-        
-        # Verify split circles are included
-        split_circles = [c for c in circles_df['circle_id'] if 'SPLIT' in c] if 'circle_id' in circles_df.columns else []
-        print(f"  Found {len(split_circles)} split circles in DataFrame")
-        if split_circles:
-            print(f"  Sample split circles: {split_circles[:3]}")
-            
-        # Debug the original circles that should have been split
-        original_circles = list(manager.original_circles.keys())
-        print(f"  Original circles that were split: {original_circles}")
-            
-        # Debug full metadata counts
-        print(f"  Total circles in manager: {len(manager.circles)}")
-        print(f"  Split circles tracked in manager: {len(manager.split_circles)}")
-        print(f"  Original circles tracked in manager: {len(manager.original_circles)}")
-
-        # Validate member counts
-        if 'member_count' in circles_df.columns:
-            zero_count = len(circles_df[circles_df['member_count'] == 0])
-            if zero_count > 0:
-                print(f"  ⚠️ WARNING: {zero_count} circles have zero member count")
-                
-                # Debug the first few problematic circles
-                problem_circles = circles_df[circles_df['member_count'] == 0]['circle_id'].tolist()[:5]
-                print(f"  Problem circles with zero members: {problem_circles}")
-                
-                # Try to fix these circles directly from the manager's internal data
-                for circle_id in problem_circles:
-                    if manager.has_circle(circle_id):
-                        circle_data = manager.get_circle_data(circle_id)
-                        members = circle_data.get('members', [])
-                        actual_count = len(members) if isinstance(members, list) else 0
-                        print(f"  Circle {circle_id} in manager has {actual_count} members but DataFrame shows 0")
-                        
-                        # Update the DataFrame with the correct count from manager's internal data
-                        idx = circles_df[circles_df['circle_id'] == circle_id].index
-                        if len(idx) > 0:
-                            circles_df.at[idx[0], 'member_count'] = actual_count
-                            print(f"  ✅ Fixed member count for {circle_id}: updated to {actual_count}")
-        
-        # Fix any other member count issues found
-        if 'member_count' in circles_df.columns and 'members' in circles_df.columns:
-            # Make sure member_count matches the actual length of the members list
-            for idx, row in circles_df.iterrows():
-                members = row['members'] 
-                if isinstance(members, list) and len(members) != row['member_count']:
-                    print(f"  ⚠️ Member count mismatch for {row['circle_id']}: stored={row['member_count']}, actual={len(members)}")
-                    circles_df.at[idx, 'member_count'] = len(members)
-        split_circles = circles_df[circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)]
-        print(f"  Found {len(split_circles)} split circles")
-        if not split_circles.empty:
-            print(f"  Split circle IDs: {split_circles['circle_id'].tolist()}")
+    print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG:")
+    
+    # Use the matched_circles from session state as the starting point
+    base_circles_df = st.session_state.matched_circles.copy()
+    
+    # Get the participant data
+    participants_df = st.session_state.processed_data if 'processed_data' in st.session_state else None
+    results_df = st.session_state.results if 'results' in st.session_state else None
+    
+    # Use the participant data that has the most information (results is preferred)
+    participants_data = results_df if results_df is not None else participants_df
+    
+    # If we have the necessary data, rebuild the circle member lists for accuracy
+    if participants_data is not None and not base_circles_df.empty:
+        print("  ✅ Using rebuild_circle_member_lists to get accurate circle data")
+        circles_df = rebuild_circle_member_lists(base_circles_df, participants_data)
+        print(f"  Rebuilt data for {len(circles_df)} circles")
     else:
-        print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using session state directly):")
-        circles_df = st.session_state.matched_circles.copy()
+        print("  ⚠️ Missing data to rebuild circles, using base circle data")
+        circles_df = base_circles_df
+    
+    # Filter to include only active circles (including active split circles)
+    print(f"  Total circles before filtering: {len(circles_df)}")
+    
+    # Check if 'is_active' column exists, if not, create it
+    if 'is_active' not in circles_df.columns:
+        circles_df['is_active'] = True
+        # Mark original circles that have been split as inactive
+        from utils.circle_metadata_manager import get_manager_from_session_state
+        manager = get_manager_from_session_state(st.session_state)
+        if manager:
+            original_circles = list(manager.original_circles.keys())
+            print(f"  Original circles that were split: {original_circles}")
+            for circle_id in original_circles:
+                if circle_id in circles_df['circle_id'].values:
+                    circles_df.loc[circles_df['circle_id'] == circle_id, 'is_active'] = False
+                    print(f"  Marked {circle_id} as inactive (was split)")
+    
+    # Filter to only show active circles
+    active_circles_df = circles_df[circles_df['is_active'] == True].copy()
+    print(f"  Active circles after filtering: {len(active_circles_df)}")
+    
+    # Count split circles
+    split_circles = active_circles_df[active_circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)]
+    print(f"  Found {len(split_circles)} active split circles")
+    if not split_circles.empty:
+        print(f"  Split circle IDs: {split_circles['circle_id'].tolist()}")
+    
+    # Final dataframe to display
+    circles_df = active_circles_df
     
     # Add special diagnostic section for test circles
     with st.expander("Circle Inspector (Debug Tool)"):
