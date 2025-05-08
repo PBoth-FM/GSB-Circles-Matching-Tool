@@ -1438,9 +1438,11 @@ def test_circle_splitting():
         # Import circle splitting functionality
         from modules.circle_splitter import split_large_circles
         
-        # Rebuild circle member lists from participant data - NEW APPROACH
+        # Rebuild circle member lists from participant data with ParticipantDataManager
         st.subheader("Rebuilding Circle Member Lists")
-        rebuilt_circles = rebuild_circle_member_lists(circles_data, participants_data)
+        print("🔄 Using ParticipantDataManager for rebuilding circle member lists")
+        # No need to pass participants_data explicitly - the function will use the manager
+        rebuilt_circles = rebuild_circle_member_lists(circles_data)
         
         # Create test circles from the rebuilt data
         test_circles = []
@@ -1623,14 +1625,39 @@ def test_circle_splitting():
         # Import the circle splitting function
         from modules.circle_splitter import split_large_circles
         
-        # Import metadata synchronization
+        # Import data management utilities
         from utils.circle_metadata_manager import get_manager_from_session_state
+        from utils.participant_data_manager import ParticipantDataManager
         
-        # Step 1: Split circles directly
-        updated_circles, split_summary, updated_participants = split_large_circles(test_circles_df, test_participants)
+        # Initialize ParticipantDataManager for consistent data access
+        print("🔄 Initializing ParticipantDataManager for test")
+        if 'participant_data_manager' not in st.session_state:
+            print("📦 Creating new ParticipantDataManager for test")
+            manager = ParticipantDataManager()
+            manager.initialize_from_dataframe(test_participants)
+            st.session_state.participant_data_manager = manager
+            print(f"✅ Created ParticipantDataManager with {len(test_participants)} participants")
+        else:
+            print("📦 Using existing ParticipantDataManager from session state")
+            # Update with latest test participant data
+            manager = st.session_state.participant_data_manager
+            manager.initialize_from_dataframe(test_participants)
+            print(f"✅ Updated ParticipantDataManager with {len(test_participants)} participants")
         
-        # Update participant assignments
-        test_participants = updated_participants
+        # Step 1: Split circles directly using updated approach with ParticipantDataManager
+        try:
+            st.write("Running circle splitting with ParticipantDataManager...")
+            # No need to pass test_participants as the function will use the manager from session state
+            updated_circles, split_summary, updated_participants = split_large_circles(test_circles_df)
+            
+            # Update participant assignments
+            test_participants = updated_participants
+        except Exception as e:
+            st.error(f"Error in circle splitting: {str(e)}")
+            # As fallback, run with explicit participants data
+            st.write("Falling back to direct DataFrame approach...")
+            updated_circles, split_summary, updated_participants = split_large_circles(test_circles_df, test_participants)
+            test_participants = updated_participants
         
         # Step 2: Use metadata synchronization to ensure consistent data
         print("🔄 TEST: Using metadata synchronization to ensure consistent data")

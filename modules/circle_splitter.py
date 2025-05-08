@@ -16,7 +16,7 @@ def rebuild_circle_member_lists(circles_data, participants_data=None):
     Args:
         circles_data: DataFrame or list of dictionaries containing circle data
         participants_data: DataFrame containing participant data with circle assignments
-                          (or None to use ParticipantDataManager)
+                          (or None to use ParticipantDataManager from session state)
         
     Returns:
         List or DataFrame with rebuilt member lists for each circle
@@ -24,11 +24,21 @@ def rebuild_circle_member_lists(circles_data, participants_data=None):
     import streamlit as st
     from utils.participant_data_manager import ParticipantDataManager
     
+    # Get the ParticipantDataManager instance - preferred approach
+    participant_manager = None
+    
     # Check if we have a ParticipantDataManager in session state
-    if participants_data is None and hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+    if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
         print("🔍 Using ParticipantDataManager for circle member reconstruction")
-        participants_data = st.session_state.participant_data_manager.get_all_participants()
-        print(f"✅ Retrieved {len(participants_data)} participants from ParticipantDataManager")
+        participant_manager = st.session_state.participant_data_manager
+        
+        # If participants_data was not provided, get it from the manager
+        if participants_data is None:
+            participants_data = participant_manager.get_all_participants()
+            print(f"📊 Retrieved {len(participants_data) if participants_data is not None else 0} participants from manager")
+    elif participants_data is None:
+        print("⚠️ No ParticipantDataManager found in session state and no participants_data provided")
+        return circles_data  # Return original data if we can't reconstruct
     
     # Safety check to ensure we have participant data
     if participants_data is None:
@@ -260,7 +270,7 @@ def split_large_circles(circles_data, participants_data=None):
     
     Args:
         circles_data: DataFrame or list of dictionaries containing circle information
-        participants_data: DataFrame containing participant information (optional if using manager)
+        participants_data: DataFrame containing participant information (optional if using ParticipantDataManager)
         
     Returns:
         tuple: (
@@ -272,11 +282,18 @@ def split_large_circles(circles_data, participants_data=None):
     import streamlit as st
     from utils.participant_data_manager import ParticipantDataManager
     
+    # Get or create the ParticipantDataManager - preferred approach
+    participant_manager = None
+    
     # Check if we have a ParticipantDataManager in session state
-    if participants_data is None and hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
-        print("🔍 Using ParticipantDataManager from session state")
-        participants_data = st.session_state.participant_data_manager.get_all_participants()
-        print(f"✅ Retrieved {len(participants_data)} participants from ParticipantDataManager")
+    if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
+        print("🔍 Using ParticipantDataManager for circle splitting")
+        participant_manager = st.session_state.participant_data_manager
+        
+        # If participants_data was not provided, get it from the manager
+        if participants_data is None:
+            participants_data = participant_manager.get_all_participants()
+            print(f"📊 Retrieved {len(participants_data) if participants_data is not None else 0} participants from manager")
     
     # Safety check to ensure we have participant data
     if participants_data is None:
