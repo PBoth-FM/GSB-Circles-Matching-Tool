@@ -15,8 +15,8 @@ def rebuild_circle_member_lists(circles_data, participants_data=None):
     
     Args:
         circles_data: DataFrame or list of dictionaries containing circle data
-        participants_data: DataFrame containing participant data with circle assignments
-                          (or None to use ParticipantDataManager from session state)
+        participants_data: Optional DataFrame containing participant data with circle assignments.
+                          If None, will attempt to use ParticipantDataManager from session state.
         
     Returns:
         List or DataFrame with rebuilt member lists for each circle

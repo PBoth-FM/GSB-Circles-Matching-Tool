@@ -1441,8 +1441,8 @@ def test_circle_splitting():
         # Rebuild circle member lists from participant data with ParticipantDataManager
         st.subheader("Rebuilding Circle Member Lists")
         print("🔄 Using ParticipantDataManager for rebuilding circle member lists")
-        # No need to pass participants_data explicitly - the function will use the manager
-        rebuilt_circles = rebuild_circle_member_lists(circles_data)
+        # Pass participants_data to be compatible with function signature
+        rebuilt_circles = rebuild_circle_member_lists(circles_data, participants_data)
         
         # Create test circles from the rebuilt data
         test_circles = []
