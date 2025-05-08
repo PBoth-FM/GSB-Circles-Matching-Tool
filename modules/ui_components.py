@@ -4323,10 +4323,10 @@ def render_results_overview():
 def render_circle_table():
     """Render the circle composition table"""
     # ENHANCED: Use CircleMetadataManager if available, fall back to direct session state access
-    from utils.circle_metadata_manager import get_manager_from_session_state
+    from utils.circle_metadata_manager import CircleMetadataManager
     
     # Try to get the circle manager first
-    manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
+    manager = CircleMetadataManager.get_manager_from_session_state(st.session_state)
     
     # Check if we have data to display
     if not manager and ('matched_circles' not in st.session_state or 
@@ -4339,8 +4339,15 @@ def render_circle_table():
     # Get the data - from manager or directly from session state
     if manager:
         print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using CircleMetadataManager):")
-        circles_df = manager.get_circles_dataframe()
-        print(f"  Retrieved {len(circles_df)} circles from CircleMetadataManager")
+        # Use our new method to get a proper DataFrame of active circles
+        circles_df = manager.get_circles_dataframe(include_inactive=False)
+        print(f"  Retrieved {len(circles_df)} active circles from CircleMetadataManager")
+        
+        # Debug the split circles specifically
+        split_circles = circles_df[circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)]
+        print(f"  Found {len(split_circles)} split circles")
+        if not split_circles.empty:
+            print(f"  Split circle IDs: {split_circles['circle_id'].tolist()}")
     else:
         print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using session state directly):")
         circles_df = st.session_state.matched_circles.copy()

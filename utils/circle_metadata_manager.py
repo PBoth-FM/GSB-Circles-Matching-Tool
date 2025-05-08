@@ -468,6 +468,14 @@ class CircleMetadataManager:
             if 'subregion' not in circle or not circle['subregion']:
                 circle['subregion'] = self._extract_subregion_from_id(circle_id)
             
+            # Mark as active by default if not already set
+            if 'active' not in circle:
+                # If this circle has been replaced by splits, it should be inactive
+                if circle.get('replaced_by_splits', False):
+                    circle['active'] = False
+                else:
+                    circle['active'] = True
+            
             # Check if this is a split circle and update the tracking dictionaries
             if 'SPLIT' in circle_id:
                 # Identify and track the relationship between original and split circles
@@ -485,6 +493,10 @@ class CircleMetadataManager:
                         
                 # Ensure the split circle is marked as such
                 circle['is_split_circle'] = True
+                
+                # Set split_letter if not already set (e.g., A, B, C)
+                if 'split_letter' not in circle and circle_id[-1].isalpha():
+                    circle['split_letter'] = circle_id[-1]
                 
                 # Set max_additions if not already set (split circles can grow to 8 members max)
                 if 'max_additions' not in circle:
@@ -703,6 +715,80 @@ class CircleMetadataManager:
             list: List of split circle IDs, or empty list if not an original circle
         """
         return self.original_circles.get(original_circle_id, [])
+    
+    def get_circles_dataframe(self, include_inactive=False):
+        """
+        Get all circles as a pandas DataFrame.
+        
+        Args:
+            include_inactive: Whether to include circles that have been replaced by splits
+            
+        Returns:
+            DataFrame containing all circle data
+        """
+        import pandas as pd
+        
+        # Extract circle data
+        circle_data = []
+        for circle_id, circle in self.circles.items():
+            # Skip inactive circles unless requested to include them
+            if not include_inactive and circle.get('replaced_by_splits', False):
+                continue
+                
+            # Make a copy of the circle data
+            circle_copy = circle.copy()
+            
+            # Ensure circle_id is included in the data
+            circle_copy['circle_id'] = circle_id
+            
+            # Add a split status field for UI display
+            if circle_id in self.split_circles:
+                # For split circles, add the split letter
+                split_letter = circle_copy.get('split_letter', circle_id[-1] if circle_id[-1].isalpha() else "")
+                circle_copy['split_status'] = f"Split {split_letter}"
+            elif circle.get('replaced_by_splits', False):
+                # For circles that were split into multiple
+                circle_copy['split_status'] = "Original (Split)"
+            else:
+                circle_copy['split_status'] = ""
+            
+            circle_data.append(circle_copy)
+        
+        # Create DataFrame
+        if circle_data:
+            return pd.DataFrame(circle_data)
+        
+        # Return empty DataFrame if no data
+        return pd.DataFrame()
+    
+    def get_circle_data(self, circle_id):
+        """
+        Get the data for a specific circle.
+        
+        Args:
+            circle_id: The ID of the circle to get data for
+            
+        Returns:
+            Dictionary with circle data or None if not found
+        """
+        if circle_id in self.circles:
+            # Make a copy of the data with circle_id included
+            circle_data = self.circles[circle_id].copy()
+            circle_data['circle_id'] = circle_id
+            
+            # Add a split status field for UI display
+            if circle_id in self.split_circles:
+                # For split circles, add the split letter
+                split_letter = circle_data.get('split_letter', circle_id[-1] if circle_id[-1].isalpha() else "")
+                circle_data['split_status'] = f"Split {split_letter}"
+            elif circle_data.get('replaced_by_splits', False):
+                # For circles that were split into multiple
+                circle_data['split_status'] = "Original (Split)"
+            else:
+                circle_data['split_status'] = ""
+                
+            return circle_data
+        return None
     
     def get_manager_from_session_state(session_state):
         """

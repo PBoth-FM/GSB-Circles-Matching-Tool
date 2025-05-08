@@ -118,14 +118,26 @@ def update_metadata_manager_with_splits(split_summary):
         original_circle_id = split_detail.get("original_circle_id")
         new_circle_ids = split_detail.get("new_circle_ids", [])
         
-        # Check if the original circle exists and should be removed
-        # Typically, we might want to keep it for historical reference
+        print(f"🔄 Processing split of {original_circle_id} into {len(new_circle_ids)} new circles: {new_circle_ids}")
+        
+        # Store original circle data before potential modifications
+        original_circle_data = {}
         if manager.has_circle(original_circle_id):
-            manager.remove_circle(original_circle_id)
-            print(f"✅ Removed original circle {original_circle_id} from CircleMetadataManager")
+            original_circle_data = manager.circles.get(original_circle_id, {}).copy()
+            
+            # CRITICAL FIX: Instead of removing the original circle completely,
+            # mark it as replaced by splits but keep it in the metadata for reference
+            original_circle_data["replaced_by_splits"] = True
+            original_circle_data["split_into"] = new_circle_ids
+            original_circle_data["active"] = False  # Mark as inactive
+            
+            # Update the original circle with this information
+            manager.add_or_update_circle(original_circle_id, original_circle_data)
+            print(f"✅ Updated original circle {original_circle_id} to mark as replaced by splits")
         
         # Add each new split circle to the manager
         for i, new_circle_id in enumerate(new_circle_ids):
+            # Get member counts and member lists
             if i < len(split_detail.get("member_counts", [])):
                 member_count = split_detail["member_counts"][i]
             else:
@@ -135,27 +147,69 @@ def update_metadata_manager_with_splits(split_summary):
                 members = split_detail["members"][i]
             else:
                 members = []
+            
+            # Get host counts
+            always_hosts = 0
+            if "always_hosts" in split_detail and i < len(split_detail["always_hosts"]):
+                always_hosts = split_detail["always_hosts"][i]
                 
-            # Prepare data for the split circle
+            sometimes_hosts = 0
+            if "sometimes_hosts" in split_detail and i < len(split_detail["sometimes_hosts"]):
+                sometimes_hosts = split_detail["sometimes_hosts"][i]
+            
+            # Inherit metadata from original circle when available
+            region = split_detail.get("region", original_circle_data.get("region", ""))
+            subregion = split_detail.get("subregion", original_circle_data.get("subregion", ""))
+            meeting_time = split_detail.get("meeting_time", original_circle_data.get("meeting_time", ""))
+            
+            # Prepare complete data for the split circle
             circle_data = {
                 "circle_id": new_circle_id,
                 "member_count": member_count,
                 "members": members,
                 "is_split_circle": True,
+                "active": True,  # Mark as active
                 "original_circle_id": original_circle_id,
+                "split_letter": new_circle_id[-1] if new_circle_id[-1].isalpha() else "",  # Extract A, B, C, etc.
                 # Inherit metadata from the original circle
-                "region": split_detail.get("region", ""),
-                "subregion": split_detail.get("subregion", ""),
-                "meeting_time": split_detail.get("meeting_time", ""),
+                "region": region,
+                "subregion": subregion,
+                "meeting_time": meeting_time,
                 # Add host information
-                "always_hosts": split_detail.get("always_hosts", [0])[i] if i < len(split_detail.get("always_hosts", [])) else 0,
-                "sometimes_hosts": split_detail.get("sometimes_hosts", [0])[i] if i < len(split_detail.get("sometimes_hosts", [])) else 0,
+                "always_hosts": always_hosts,
+                "sometimes_hosts": sometimes_hosts,
                 # Set max_additions (split circles can grow to 8 members max)
                 "max_additions": max(0, 8 - member_count)
             }
             
+            # Copy any other useful metadata from the original circle
+            for key in ["meeting_day", "meeting_frequency", "primary_language", "leader_name", "co_leader_name"]:
+                if key in original_circle_data:
+                    circle_data[key] = original_circle_data[key]
+            
             # Add to metadata manager
             manager.add_or_update_circle(new_circle_id, circle_data)
-            print(f"✅ Added split circle {new_circle_id} to CircleMetadataManager")
+            print(f"✅ Added split circle {new_circle_id} to CircleMetadataManager with {member_count} members")
     
     print(f"✅ CircleMetadataManager now tracking {len(manager.split_circles)} split circles")
+    
+    # CRITICAL FIX: Force a refresh of all data from the CircleMetadataManager to session state
+    if hasattr(st.session_state, 'matched_circles') and st.session_state.matched_circles is not None:
+        # Get all circle data from manager as a DataFrame
+        circles_data = []
+        for circle_id, circle_data in manager.circles.items():
+            # Only include active circles (not replaced by splits)
+            if not circle_data.get("replaced_by_splits", False):
+                # Make a copy of the data with circle_id included
+                circle_copy = circle_data.copy()
+                circle_copy["circle_id"] = circle_id
+                circles_data.append(circle_copy)
+        
+        # Create a DataFrame from the circle data
+        if circles_data:
+            import pandas as pd
+            updated_df = pd.DataFrame(circles_data)
+            st.session_state.matched_circles = updated_df
+            print(f"✅ Updated matched_circles in session state with {len(circles_data)} active circles")
+        else:
+            print("⚠️ No active circles found in CircleMetadataManager")
