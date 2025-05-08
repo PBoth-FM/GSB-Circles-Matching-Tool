@@ -1359,6 +1359,31 @@ def process_uploaded_file(uploaded_file):
                     results_df = get_valid_participants(results_df)
                     print(f"🔍 Unmatched table: Using {len(results_df)} valid participants with non-null Encoded IDs")
                     
+                    # Check if the required column exists and add it if it doesn't
+                    if 'proposed_NEW_circles_id' not in results_df.columns:
+                        print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results_df for unmatched table")
+                        
+                        # Check for alternative column names that might contain the same information
+                        potential_cols = [
+                            'circles_id', 'circle_id', 
+                            'proposed_circles_id', 'NEW_circles_id',
+                            'matched_circle_id', 'circle_assignment'
+                        ]
+                        
+                        found_alternative = False
+                        for col in potential_cols:
+                            if col in results_df.columns:
+                                print(f"✅ Found alternative column '{col}' - using this instead")
+                                # Copy the alternative column to the expected name
+                                results_df['proposed_NEW_circles_id'] = results_df[col]
+                                found_alternative = True
+                                break
+                                
+                        if not found_alternative:
+                            print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
+                            # Create the column with a default value of UNMATCHED
+                            results_df['proposed_NEW_circles_id'] = 'UNMATCHED'
+                    
                     if 'proposed_NEW_circles_id' in results_df.columns:
                         unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'].reset_index(drop=True)
                         

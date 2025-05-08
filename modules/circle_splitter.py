@@ -1427,27 +1427,40 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
                 if missing_id in unassigned_members:
                     print(f"  → CRITICAL ERROR: Member is still in unassigned_members list")
                 
+                # Get participants_data if it's not explicitly provided
+                local_participants_data = participants_data
+                if local_participants_data is None:
+                    try:
+                        # Try to get from ParticipantDataManager in session state
+                        import streamlit as st
+                        if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
+                            participant_manager = st.session_state.participant_data_manager
+                            local_participants_data = participant_manager.get_all_participants()
+                            print(f"📊 Retrieved participants_data from manager for member check")
+                    except Exception as p_err:
+                        print(f"⚠️ Failed to get participant data from manager: {str(p_err)}")
+                
                 # Check if this member was identified in participants_data
                 try:
-                    if participants_data is not None:
+                    if local_participants_data is not None:
                         # Find ID column
                         id_col = None
                         for col in ['Encoded ID', 'encoded_id', 'participant_id']:
-                            if col in participants_data.columns:
+                            if col in local_participants_data.columns:
                                 id_col = col
                                 break
                         
                         if id_col:
                             # Find the participant row
-                            participant_mask = participants_data[id_col] == missing_id
+                            participant_mask = local_participants_data[id_col] == missing_id
                             if any(participant_mask):
                                 print(f"  → Member exists in participants_data")
                                 
                                 # Get name if available (for debugging only)
                                 name_data = []
                                 for name_col in ['Last Family Name', 'First Given Name']:
-                                    if name_col in participants_data.columns:
-                                        value = participants_data.loc[participant_mask, name_col].iloc[0]
+                                    if name_col in local_participants_data.columns:
+                                        value = local_participants_data.loc[participant_mask, name_col].iloc[0]
                                         if not pd.isna(value):
                                             name_data.append(str(value))
                                 
@@ -1455,6 +1468,10 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
                                     print(f"  → Participant name: {' '.join(name_data)}")
                             else:
                                 print(f"  → Member NOT found in participants_data using ID column '{id_col}'")
+                        else:
+                            print(f"  → No ID column found in participants_data. Available columns: {list(local_participants_data.columns)[:10]}")
+                    else:
+                        print("  → No participants_data available for member lookup")
                 except Exception as e:
                     print(f"  → ERROR checking participant data: {str(e)}")
                 
