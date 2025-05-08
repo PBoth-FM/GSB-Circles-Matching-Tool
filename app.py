@@ -370,90 +370,31 @@ def run_optimization():
                 else:
                     print("  ⚠️ Failed to initialize CircleMetadataManager on second attempt")
             
-            # ENHANCED: Split large circles before calculating statistics
-            print("\n🔄 INTEGRATING CIRCLE SPLITTING: Checking for circles with 11+ members")
+            # NOTE: Circle splitting integration has been temporarily removed
+            # to establish a stable baseline for audit and incremental implementation
+            print("\n📝 AUDIT: Circle splitting integration point - functionality temporarily disabled")
+            
+            # Add audit logging to capture the current state before statistics calculation
             try:
-                # Import circle splitting function
-                from modules.circle_splitter import split_large_circles
-                
-                # Get circles from the session state
+                # Log basic information about circles in session state
                 circles_df = st.session_state.matched_circles
-                participants_df = st.session_state.processed_data
-                
-                # Run circle splitting
-                updated_circles, split_summary = split_large_circles(circles_df, participants_df)
-                
-                # Store split summary in session state
-                st.session_state.split_circle_summary = split_summary
-                
-                # Convert updated_circles to DataFrame if it's a list
-                if isinstance(updated_circles, list):
-                    updated_circles_df = pd.DataFrame(updated_circles)
-                else:
-                    updated_circles_df = updated_circles
-                
-                print(f"✅ Circle splitting complete: {split_summary['total_circles_successfully_split']} circles split into {split_summary['total_new_circles_created']} new circles")
-                
-                # Update the matched_circles in session state with the split results
-                st.session_state.matched_circles = updated_circles_df
-                
-                # Update the CircleMetadataManager with the split circles
-                if 'circle_manager' in st.session_state:
-                    print("🔄 Updating CircleMetadataManager with split circle data")
-                    from utils.circle_metadata_manager import initialize_or_update_manager
-                    manager = initialize_or_update_manager(
-                        st.session_state,
-                        optimizer_circles=updated_circles_df
-                    )
-                    if manager:
-                        print("✅ CircleMetadataManager updated with split circles")
-                    else:
-                        print("⚠️ Failed to update CircleMetadataManager with split circles")
-                
-                # Update participant assignments in results DataFrame
-                if split_summary['split_details'] and isinstance(results, pd.DataFrame):
-                    print("🔄 Updating participant assignments for split circles")
-                    
-                    # Determine which column contains circle assignments
-                    circle_col = None
-                    for col in ['proposed_NEW_circles_id', 'Current_Circle_ID', 'assigned_circle', 'circle_id']:
-                        if col in results.columns:
-                            circle_col = col
-                            break
-                    
-                    if circle_col:
-                        # For each split circle, update participant assignments
-                        updated_count = 0
-                        for detail in split_summary['split_details']:
-                            original_id = detail['original_circle_id']
-                            # Get members for each new circle
-                            for i, new_id in enumerate(detail['new_circle_ids']):
-                                if i < len(detail['members']):
-                                    # Get the member IDs for this new circle
-                                    member_ids = detail['members'][i]
-                                    
-                                    # Update assignments for these members
-                                    for member_id in member_ids:
-                                        # Find the member in the results DataFrame
-                                        if 'Encoded ID' in results.columns:
-                                            # Convert member_id to string for comparison
-                                            str_member_id = str(member_id)
-                                            # Update the circle assignment
-                                            mask = results['Encoded ID'].astype(str) == str_member_id
-                                            if any(mask):
-                                                results.loc[mask, circle_col] = new_id
-                                                updated_count += 1
+                if isinstance(circles_df, pd.DataFrame):
+                    large_circles = circles_df[circles_df['member_count'] >= 11]
+                    print(f"📊 AUDIT: Found {len(large_circles)} large circles (11+ members) in matched_circles")
+                    if not large_circles.empty:
+                        print(f"📊 AUDIT: Sample large circles: {large_circles['circle_id'].head(3).tolist()}")
                         
-                        print(f"✅ Updated {updated_count} participant assignments for split circles")
-                        
-                        # Update the results in session state
-                        st.session_state.results = results
-                    else:
-                        print("⚠️ Could not identify column for circle assignments in results DataFrame")
+                    # Check for consistency in metadata fields
+                    print(f"📊 AUDIT: Circle metadata field check")
+                    required_fields = ['member_count', 'always_hosts', 'sometimes_hosts', 'max_additions']
+                    for field in required_fields:
+                        if field in circles_df.columns:
+                            non_null = circles_df[~circles_df[field].isna()].shape[0]
+                            print(f"📊 AUDIT: Field '{field}' present with {non_null}/{len(circles_df)} non-null values")
+                        else:
+                            print(f"⚠️ AUDIT: Field '{field}' missing from circles DataFrame")
             except Exception as e:
-                print(f"⚠️ Error during circle splitting integration: {str(e)}")
-                import traceback
-                print(traceback.format_exc())
+                print(f"⚠️ AUDIT: Error during circle state logging: {str(e)}")
             
             # Calculate standard statistics with our helper function
             from utils.helpers import calculate_matching_statistics
