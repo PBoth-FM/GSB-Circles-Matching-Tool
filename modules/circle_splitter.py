@@ -339,17 +339,22 @@ def split_large_circles(circles_data, participants_data):
                 # Get member roles to ensure proper host distribution
                 member_roles = get_member_roles(participants_data, members)
                 
-                # Extract format prefix and region from circle ID
+                # Extract format prefix from circle ID
                 format_prefix = circle_id.split('-')[0] if '-' in circle_id else "IP"
                 
                 parts = circle_id.split('-')
-                region = parts[1] if len(parts) > 1 else ""
-                
-                # Extract circle number
                 circle_number = ""
                 if len(parts) > 2:
                     # Handle numeric and alphanumeric circle numbers
                     circle_number = parts[2]
+                
+                # Get region and subregion from first participant in the circle
+                region, subregion = get_region_subregion_from_participants(participants_data, members)
+                
+                # Fallback to ID extraction if participant data doesn't have the info
+                if not region:
+                    region = parts[1] if len(parts) > 1 else ""
+                    print(f"⚠️ Falling back to circle ID for region: {region}")
                 
                 # Try to split the circle
                 split_result = split_circle_with_balanced_hosts(
@@ -406,7 +411,7 @@ def split_large_circles(circles_data, participants_data):
                     "always_hosts": split_result.get("always_hosts", []),
                     "sometimes_hosts": split_result.get("sometimes_hosts", []),
                     "region": region,
-                    "subregion": circle.get("subregion", ""),
+                    "subregion": subregion,  # Use the extracted subregion from participants
                     "meeting_time": circle.get("meeting_time", ""),
                     "members": [c["members"] for c in split_result["new_circles"]]
                 }
@@ -1078,5 +1083,77 @@ def find_optimal_split_for_sometimes_host(splits):
             best_split_index = i
     
     return best_split_index
+
+
+def get_region_subregion_from_participants(participants_data, member_ids):
+    """
+    Extract region and subregion from the first participant in a circle.
+    
+    Args:
+        participants_data (DataFrame): DataFrame with participant information
+        member_ids (list): List of member IDs in the circle
+        
+    Returns:
+        tuple: (region, subregion) strings extracted from the first participant's data
+    """
+    if participants_data is None or not member_ids:
+        print("⚠️ No participant data or member IDs available for region extraction")
+        return "", ""
+    
+    # Look for ID column
+    id_col = None
+    for col in ['Encoded ID', 'encoded_id', 'participant_id']:
+        if col in participants_data.columns:
+            id_col = col
+            break
+    
+    if not id_col:
+        print("⚠️ Could not find ID column in participants data")
+        return "", ""
+    
+    # Look for region and subregion columns
+    region_col = None
+    subregion_col = None
+    
+    for col in ['Current Region', 'Region', 'region', 'current_region']:
+        if col in participants_data.columns:
+            region_col = col
+            break
+    
+    for col in ['Current Subregion', 'Subregion', 'subregion', 'current_subregion']:
+        if col in participants_data.columns:
+            subregion_col = col
+            break
+    
+    if not region_col:
+        print("⚠️ Could not find region column in participants data")
+        return "", ""
+    
+    # Try to find the first member in the participant data
+    for member_id in member_ids:
+        try:
+            # Find this member in the DataFrame
+            member_mask = participants_data[id_col] == member_id
+            
+            if any(member_mask):
+                member_row = participants_data.loc[member_mask].iloc[0]
+                
+                # Extract region and subregion
+                region = str(member_row[region_col]) if not pd.isna(member_row[region_col]) else ""
+                
+                # Only extract subregion if the column exists
+                subregion = ""
+                if subregion_col and subregion_col in participants_data.columns:
+                    subregion = str(member_row[subregion_col]) if not pd.isna(member_row[subregion_col]) else ""
+                
+                print(f"✅ Extracted region/subregion from participant {member_id}: {region}/{subregion}")
+                return region, subregion
+        except Exception as e:
+            print(f"⚠️ Error extracting region/subregion from participant {member_id}: {str(e)}")
+            continue
+    
+    # If we couldn't find any valid participant data, return empty strings
+    print("⚠️ Could not extract region/subregion from any participant")
+    return "", ""
 
 # Additional utility functions can be added here as needed
