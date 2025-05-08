@@ -138,11 +138,44 @@ def run_optimization():
         with st.spinner("Running matching algorithm..."):
             start_time = time.time()
             
+            # First, check for existing circles that need to be split
+            # This ensures split circles are created BEFORE optimization runs
+            print("🔄 STEP 1: Checking for large circles to split before optimization")
+            
+            # Only proceed with splitting if we have circle data loaded
+            existing_circles = None
+            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and len(st.session_state.matched_circles) > 0:
+                try:
+                    from modules.circle_splitter import split_large_circles
+                    
+                    print(f"Found {len(st.session_state.matched_circles)} existing circles to check for splitting")
+                    # Split large circles and get updated circles data
+                    updated_circles, split_summary = split_large_circles(
+                        st.session_state.matched_circles,
+                        st.session_state.processed_data
+                    )
+                    
+                    # Save the updated circles with splits to session state
+                    st.session_state.matched_circles = updated_circles
+                    st.session_state.split_circle_summary = split_summary
+                    
+                    # Log the splitting results
+                    print(f"✅ Split {split_summary.get('total_circles_successfully_split', 0)} large circles into {split_summary.get('total_new_circles_created', 0)} smaller circles")
+                    
+                    # Use the updated circles for optimization
+                    existing_circles = updated_circles
+                except Exception as e:
+                    print(f"⚠️ ERROR during circle splitting: {str(e)}")
+                    # Continue with optimization even if splitting fails
+            else:
+                print("No existing circles found to split")
+            
             # Use the original data without any test participants
             # Run the matching algorithm with enhanced return values for debugging
             results, matched_circles, unmatched_participants = run_matching_algorithm(
                 st.session_state.processed_data,
-                st.session_state.config
+                st.session_state.config,
+                existing_circles
             )
             
             # Add extensive diagnostic logging to understand data structure

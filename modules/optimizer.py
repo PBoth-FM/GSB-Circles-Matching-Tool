@@ -274,66 +274,78 @@ def generate_circle_metadata(circle_id, members_list, region=None, subregion=Non
     
     return metadata
 
-def run_matching_algorithm(data, config):
+def run_matching_algorithm(data, config, existing_circles=None):
     """
     Run the optimization algorithm to match participants into circles
     
     Args:
         data: DataFrame with processed participant data
         config: Dictionary with configuration parameters
+        existing_circles: Optional DataFrame or list of circles that have already been processed
+                         (e.g., circles that have been split). If provided, these will be used
+                         instead of circles from session state.
         
     Returns:
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
         Note: Circle eligibility logs are stored directly in st.session_state.circle_eligibility_logs
     """
     
-    # CRITICAL: Apply circle splitting before optimization happens
-    print("\n🔄 APPLYING CIRCLE SPLITTING BEFORE OPTIMIZATION")
-    try:
-        # First check if we have circle data to split
-        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-            # Import our integration module
-            from modules.optimizer_integration import preprocess_circles_for_optimization
-            
-            # Apply preprocessing, which includes circle splitting
-            updated_circles, preprocessing_summary = preprocess_circles_for_optimization(
-                circles_data=st.session_state.matched_circles,
-                participants_data=data
-            )
-            
-            # If preprocessing was successful, update the circles in session state
-            if updated_circles is not None:
-                # Store the updated circles back to session state
-                st.session_state.matched_circles = updated_circles
-                print(f"✅ Updated matched_circles in session state with {len(updated_circles)} circles after preprocessing")
+    # CRITICAL: Check for existing circles that were split before or use the passed existing_circles parameter
+    print("\n🔄 CHECKING FOR ALREADY SPLIT CIRCLES")
+    
+    # Use the existing_circles parameter if provided, otherwise check the session state
+    circles_to_use = None
+    
+    if existing_circles is not None:
+        print("🔄 Using pre-split circles passed as parameter")
+        circles_to_use = existing_circles
+    else:
+        try:
+            # First check if we have circle data to split
+            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+                # Import our integration module
+                from modules.optimizer_integration import preprocess_circles_for_optimization
                 
-                # Check if we have a split summary
-                if "split_circle_summary" in preprocessing_summary:
-                    split_summary = preprocessing_summary["split_circle_summary"]
+                # Apply preprocessing, which includes circle splitting
+                updated_circles, preprocessing_summary = preprocess_circles_for_optimization(
+                    circles_data=st.session_state.matched_circles,
+                    participants_data=data
+                )
+                
+                # If preprocessing was successful, update the circles in session state
+                if updated_circles is not None:
+                    # Store the updated circles back to session state
+                    st.session_state.matched_circles = updated_circles
+                    circles_to_use = updated_circles
+                    print(f"✅ Updated matched_circles in session state with {len(updated_circles)} circles after preprocessing")
                     
-                    # Print summary for debugging
-                    split_count = split_summary.get('total_circles_successfully_split', 0)
-                    new_circles = split_summary.get('total_new_circles_created', 0)
-                    
-                    if split_count > 0:
-                        print(f"✅ Successfully split {split_count} large circles into {new_circles} new circles")
+                    # Check if we have a split summary
+                    if "split_circle_summary" in preprocessing_summary:
+                        split_summary = preprocessing_summary["split_circle_summary"]
                         
-                        # Show details of the splits
-                        for detail in split_summary.get('split_details', []):
-                            original_id = detail.get('original_circle_id', 'unknown')
-                            new_ids = detail.get('new_circle_ids', [])
-                            print(f"  Split {original_id} into: {', '.join(new_ids)}")
+                        # Print summary for debugging
+                        split_count = split_summary.get('total_circles_successfully_split', 0)
+                        new_circles = split_summary.get('total_new_circles_created', 0)
+                        
+                        if split_count > 0:
+                            print(f"✅ Successfully split {split_count} large circles into {new_circles} new circles")
+                            
+                            # Show details of the splits
+                            for detail in split_summary.get('split_details', []):
+                                original_id = detail.get('original_circle_id', 'unknown')
+                                new_ids = detail.get('new_circle_ids', [])
+                                print(f"  Split {original_id} into: {', '.join(new_ids)}")
+                        else:
+                            print("ℹ️ No circles were split in this run")
                     else:
-                        print("ℹ️ No circles were split in this run")
-                else:
-                    print("ℹ️ No circle splitting summary available")
-        else:
-            print("ℹ️ No circles data available yet - likely first optimization run")
-    except Exception as e:
-        print(f"⚠️ Error during preprocessing/circle splitting: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
-        print("  Continuing with optimization without preprocessing/circle splitting")
+                        print("ℹ️ No circle splitting summary available")
+            else:
+                print("ℹ️ No circles data available yet - likely first optimization run")
+        except Exception as e:
+            print(f"⚠️ Error during preprocessing/circle splitting: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            print("  Continuing with optimization without preprocessing/circle splitting")
     
     # CRITICAL FIX: Check for Seattle specific participants that should match with IP-SEA-01
     # This fix was determined after analyzing the core compatibility issue 
