@@ -1793,8 +1793,30 @@ def test_circle_splitting():
         st.write("Running circle splitting function...")
         print("🔴 TEST: Running direct circle splitting test")
         
+        # Show test mode settings
+        st.subheader("Test Configuration")
+        test_mode = st.checkbox("Enable test mode (special handling for test circles)", value=True)
+        
         # Import the circle splitting function
-        from modules.circle_splitter import split_large_circles
+        from modules.circle_splitter import split_large_circles, extract_region_code
+        
+        # Test region code extraction utility
+        st.subheader("Region Code Extraction Test")
+        
+        # Create a two-column layout
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.write("Test from Circle ID:")
+            test_circle_id = st.text_input("Enter a circle ID to extract region code", "IP-SHA-01")
+            region_code_from_id = extract_region_code(circle_id=test_circle_id)
+            st.write(f"Extracted region code: '{region_code_from_id}'")
+        
+        with col2:
+            st.write("Test from Region Name:")
+            test_region_name = st.text_input("Enter a region name to extract code", "Shanghai")
+            region_code_from_name = extract_region_code(region_name=test_region_name)
+            st.write(f"Extracted region code: '{region_code_from_name}'")
         
         # Import data management utilities
         from utils.circle_metadata_manager import get_manager_from_session_state

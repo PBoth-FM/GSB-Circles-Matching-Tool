@@ -1631,6 +1631,8 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
             "format": format_prefix,
             "region": original_region,  # Use region from participant data
             "subregion": original_subregion,  # Use subregion from participant data
+            "active": True,  # Ensure split circles are active
+            "can_add_new": True,  # Allow optimizer to add new members
             "is_split_circle": True,
             "split_source": circle_id,
             "split_index": i,
