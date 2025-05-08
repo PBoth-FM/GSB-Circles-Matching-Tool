@@ -752,7 +752,9 @@ class CircleMetadataManager:
         
         for circle_id, circle in self.circles.items():
             # Skip inactive circles (original circles that have been split) if not including them
-            if not include_inactive and circle_id in self.original_circles and self.original_circles[circle_id]:
+            # FIXED: This logic was excluding original circles that have been split, causing only split circles to show
+            # We should only skip if specifically marked as inactive
+            if not include_inactive and circle.get('active') is False:
                 continue
                 
             # Create a copy to avoid modifying the original
