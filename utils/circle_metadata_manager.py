@@ -748,6 +748,271 @@ class CircleMetadataManager:
         Returns:
             List of dictionaries with enhanced circle data
         """
+        enhanced_circles = []
+        
+        for circle_id, circle in self.circles.items():
+            # Skip inactive circles (original circles that have been split) if not including them
+            if not include_inactive and circle_id in self.original_circles and self.original_circles[circle_id]:
+                continue
+                
+            # Create a copy to avoid modifying the original
+            enhanced_circle = circle.copy()
+            
+            # Calculate additional metrics
+            members_list = self._ensure_list(circle.get('members', []))
+            enhanced_circle['member_count'] = len(members_list)
+            
+            # Normalize host counts
+            if 'always_hosts' not in enhanced_circle or enhanced_circle['always_hosts'] is None:
+                enhanced_circle['always_hosts'] = 0
+            if 'sometimes_hosts' not in enhanced_circle or enhanced_circle['sometimes_hosts'] is None:
+                enhanced_circle['sometimes_hosts'] = 0
+                
+            # Add split status information
+            enhanced_circle['is_split_circle'] = circle_id in self.split_circles
+            if enhanced_circle['is_split_circle']:
+                enhanced_circle['original_circle_id'] = self.split_circles[circle_id]
+            
+            enhanced_circle['has_splits'] = circle_id in self.original_circles and len(self.original_circles[circle_id]) > 0
+            if enhanced_circle['has_splits']:
+                enhanced_circle['split_circle_ids'] = self.original_circles[circle_id]
+                
+            # Add circle to results
+            enhanced_circles.append(enhanced_circle)
+            
+        return enhanced_circles
+        
+    def synchronize_metadata(self, circles_df=None, results_df=None, split_summary=None):
+        """
+        Synchronize metadata across all circle data structures to ensure consistency.
+        This method serves as the central synchronization point for circle metadata.
+        
+        Args:
+            circles_df: DataFrame containing circle data (matched_circles)
+            results_df: DataFrame containing participant results
+            split_summary: Dictionary containing split circle summary data
+            
+        Returns:
+            tuple: (updated_circles_df, has_changes) - DataFrame with synchronized metadata and a boolean indicating if changes were made
+        """
+        self.logger.info("Starting metadata synchronization process")
+        has_changes = False
+        
+        # Step 1: Update metadata manager with any new circle data
+        if circles_df is not None:
+            self.logger.info(f"Synchronizing metadata from circles DataFrame with {len(circles_df)} circles")
+            # We don't want to reinitialize completely, just update existing circles and add new ones
+            self._update_existing_circles(circles_df)
+            has_changes = True
+            
+        # Step 2: Update metadata manager with any new results data
+        if results_df is not None:
+            self.logger.info(f"Synchronizing metadata from results DataFrame with {len(results_df)} participants")
+            self.results_df = results_df
+            has_changes = True
+            
+        # Step 3: Update metadata manager with split circle information
+        if split_summary is not None and 'split_details' in split_summary:
+            self.logger.info(f"Synchronizing metadata from split summary with {len(split_summary['split_details'])} splits")
+            self._process_split_summary(split_summary)
+            has_changes = True
+        
+        # Step 4: Validate metadata consistency and fix discrepancies
+        validation_results = self._validate_metadata_consistency()
+        if validation_results['discrepancies_found']:
+            self.logger.warning(f"Found {validation_results['total_discrepancies']} metadata discrepancies")
+            self._fix_metadata_discrepancies(validation_results)
+            has_changes = True
+        
+        # Step 5: Return updated circle data
+        if has_changes:
+            # Get updated circles DataFrame
+            updated_circles_df = self.get_circles_dataframe()
+            self.logger.info(f"Metadata synchronization complete - returning updated circles DataFrame with {len(updated_circles_df)} circles")
+            return updated_circles_df, True
+        else:
+            self.logger.info("No changes made during metadata synchronization")
+            return circles_df, False
+    
+    def _update_existing_circles(self, circles_df):
+        """
+        Update existing circles with data from circles DataFrame without full reinitialization.
+        
+        Args:
+            circles_df: DataFrame containing circle data
+        """
+        if circles_df is None or len(circles_df) == 0:
+            self.logger.warning("Empty circles DataFrame provided for update")
+            return
+            
+        # Convert to list of dictionaries if it's a DataFrame
+        circle_dicts = circles_df.to_dict('records') if hasattr(circles_df, 'to_dict') else circles_df
+            
+        # Update existing circles and add new ones
+        for circle_data in circle_dicts:
+            circle_id = circle_data.get('circle_id')
+            if not circle_id:
+                self.logger.warning(f"Skipping circle data without circle_id: {circle_data}")
+                continue
+                
+            if circle_id in self.circles:
+                # Update existing circle
+                self.logger.debug(f"Updating existing circle: {circle_id}")
+                for key, value in circle_data.items():
+                    # Don't overwrite critical fields with None or empty values
+                    if value is not None and value != '' and key != 'circle_id':
+                        self.circles[circle_id][key] = value
+            else:
+                # Add new circle
+                self.logger.debug(f"Adding new circle: {circle_id}")
+                self.circles[circle_id] = circle_data.copy()
+    
+    def _process_split_summary(self, split_summary):
+        """
+        Process split circle summary data to update split circle tracking.
+        
+        Args:
+            split_summary: Dictionary containing split circle summary data
+        """
+        if not split_summary or 'split_details' not in split_summary:
+            self.logger.warning("Invalid split summary provided")
+            return
+            
+        # Process each split
+        for detail in split_summary['split_details']:
+            original_id = detail.get('original_circle_id')
+            new_circle_ids = detail.get('new_circle_ids', [])
+            
+            if not original_id or not new_circle_ids:
+                self.logger.warning(f"Invalid split detail: {detail}")
+                continue
+                
+            # Update original_circles tracking
+            self.original_circles[original_id] = new_circle_ids
+            
+            # Update split_circles tracking
+            for new_id in new_circle_ids:
+                self.split_circles[new_id] = original_id
+                
+            # Mark original circle as inactive if it exists
+            if original_id in self.circles:
+                self.circles[original_id]['is_active'] = False
+                self.circles[original_id]['replaced_by_splits'] = True
+                
+            # Ensure all split circles have proper metadata
+            for i, new_id in enumerate(new_circle_ids):
+                if new_id not in self.circles and 'members' in detail and i < len(detail.get('members', [])):
+                    # Create new circle entry if it doesn't exist
+                    self.circles[new_id] = {
+                        'circle_id': new_id,
+                        'is_split_circle': True,
+                        'original_circle_id': original_id,
+                        'is_active': True,
+                        'members': detail['members'][i],
+                        'member_count': len(detail['members'][i]) if i < len(detail.get('member_counts', [])) else 0,
+                        'max_additions': 8 - len(detail['members'][i]) if i < len(detail.get('member_counts', [])) else 0
+                    }
+                    
+                    # Copy metadata from original circle
+                    if original_id in self.circles:
+                        for key in ['region', 'subregion', 'meeting_time']:
+                            if key in self.circles[original_id]:
+                                self.circles[new_id][key] = self.circles[original_id][key]
+    
+    def _validate_metadata_consistency(self):
+        """
+        Validate metadata consistency across all circle data.
+        
+        Returns:
+            dict: Validation results including discrepancies found and total count
+        """
+        validation_results = {
+            'discrepancies_found': False,
+            'total_discrepancies': 0,
+            'field_discrepancies': {},
+            'circle_discrepancies': {}
+        }
+        
+        # Check critical fields for each circle
+        critical_fields = ['member_count', 'max_additions', 'always_hosts', 'sometimes_hosts']
+        
+        for circle_id, circle_data in self.circles.items():
+            circle_discrepancies = []
+            
+            # Check member_count against length of members list
+            if 'members' in circle_data and 'member_count' in circle_data:
+                members = circle_data['members']
+                if isinstance(members, list) and len(members) != circle_data['member_count']:
+                    circle_discrepancies.append(f"member_count ({circle_data['member_count']}) != len(members) ({len(members)})")
+                    
+            # Check max_additions calculation
+            if 'member_count' in circle_data and circle_data.get('is_active', True):
+                # For active circles, max_additions should be 8 - member_count or 0 if member_count >= 8
+                expected_max = max(0, 8 - circle_data['member_count']) 
+                if 'max_additions' in circle_data and circle_data['max_additions'] != expected_max:
+                    circle_discrepancies.append(f"max_additions ({circle_data['max_additions']}) != expected ({expected_max})")
+            
+            # If discrepancies found for this circle, add to results
+            if circle_discrepancies:
+                validation_results['discrepancies_found'] = True
+                validation_results['total_discrepancies'] += len(circle_discrepancies)
+                validation_results['circle_discrepancies'][circle_id] = circle_discrepancies
+        
+        return validation_results
+    
+    def _fix_metadata_discrepancies(self, validation_results):
+        """
+        Fix metadata discrepancies identified during validation.
+        
+        Args:
+            validation_results: Dictionary containing validation results
+        """
+        if not validation_results['discrepancies_found']:
+            return
+            
+        # Process each circle with discrepancies
+        for circle_id, discrepancies in validation_results['circle_discrepancies'].items():
+            if circle_id not in self.circles:
+                continue
+                
+            circle_data = self.circles[circle_id]
+            
+            # Fix member_count based on members list
+            if 'members' in circle_data and isinstance(circle_data['members'], list):
+                circle_data['member_count'] = len(circle_data['members'])
+                
+            # Fix max_additions based on member_count
+            if 'member_count' in circle_data and circle_data.get('is_active', True):
+                # All circles (including split circles) have a max of 8 members total
+                circle_data['max_additions'] = max(0, 8 - circle_data['member_count'])
+                
+            # Fix host counts - critical for circle eligibility
+            if self.results_df is not None and 'members' in circle_data and circle_data['members']:
+                # Get host counts from results DataFrame
+                members_list = self._ensure_list(circle_data['members'])
+                always_hosts, sometimes_hosts = self._count_hosts_from_members(members_list, circle_id)
+                
+                # Update circle metadata
+                if 'always_hosts' not in circle_data or circle_data['always_hosts'] != always_hosts:
+                    self.logger.info(f"Fixing always_hosts for {circle_id}: {circle_data.get('always_hosts', 'None')} → {always_hosts}")
+                    circle_data['always_hosts'] = always_hosts
+                
+                if 'sometimes_hosts' not in circle_data or circle_data['sometimes_hosts'] != sometimes_hosts:
+                    self.logger.info(f"Fixing sometimes_hosts for {circle_id}: {circle_data.get('sometimes_hosts', 'None')} → {sometimes_hosts}")
+                    circle_data['sometimes_hosts'] = sometimes_hosts
+                
+            self.logger.info(f"Fixed metadata discrepancies for circle {circle_id}")
+    
+    def get_all_circles_enhanced(self, include_inactive=False):
+        """
+        Get all circle data with enhanced metadata for display.
+        
+        Args:
+            include_inactive: Whether to include circles that have been replaced by splits
+            
+        Returns:
+            List of dictionaries with enhanced circle data
+        """
         # Extract circle data with detailed logging
         circle_data = []
         total_circles = len(self.circles)
