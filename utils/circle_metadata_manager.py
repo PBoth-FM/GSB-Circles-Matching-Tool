@@ -1477,14 +1477,47 @@ class CircleMetadataManager:
         Returns:
             List of member IDs or empty list if circle not found
         """
+        # Add special circle debugging for our test circles
+        test_circle_ids = ['IP-BOS-04', 'IP-BOS-05', 'IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
+        is_test_circle = circle_id in test_circle_ids
+        
+        if is_test_circle:
+            print(f"\n🔍🔍🔍 CIRCLE MEMBERS DEBUG FOR {circle_id} 🔍🔍🔍")
+        
         if not circle_id:
             # Handle case where circle_id is None or empty
             self.logger.warning(f"Attempted to get members for invalid circle_id: '{circle_id}'")
             return []
+        
+        # First try using ParticipantDataManager if available
+        if hasattr(self, 'participant_manager') and self.participant_manager is not None:
+            try:
+                # Check if the participant manager knows about this circle
+                circle_members = self.participant_manager.get_circle_members(circle_id)
+                
+                if circle_members and len(circle_members) > 0:
+                    if is_test_circle:
+                        print(f"  ✅ Found {len(circle_members)} members via ParticipantDataManager for circle {circle_id}")
+                        print(f"  ✅ Members: {circle_members}")
+                    
+                    self.logger.info(f"Retrieved {len(circle_members)} members from ParticipantDataManager for circle {circle_id}")
+                    return circle_members
+                
+                if is_test_circle:
+                    print(f"  ⚠️ ParticipantDataManager returned no members for circle {circle_id}, falling back to metadata")
+            except Exception as e:
+                if is_test_circle:
+                    print(f"  ⚠️ Error getting members from ParticipantDataManager: {str(e)}")
+                self.logger.warning(f"Error getting members from ParticipantDataManager: {str(e)}")
+        elif is_test_circle:
+            print(f"  ⚠️ No ParticipantDataManager available for {circle_id}")
             
+        # Fall back to traditional approach using circle metadata
         circle = self.get_circle_data(circle_id)
         if circle is None:
-            self.logger.warning(f"⚠️ Circle {circle_id} not found in metadata manager")
+            if is_test_circle:
+                print(f"  ⚠️ Circle {circle_id} not found in metadata manager")
+            self.logger.warning(f"Circle {circle_id} not found in metadata manager")
             return []
             
         # Get members with fallback to empty list
@@ -1493,8 +1526,12 @@ class CircleMetadataManager:
         # Ensure members is a list and filter out invalid values
         member_list = self._ensure_list(members)
         
+        if is_test_circle:
+            print(f"  ✅ Found {len(member_list)} members via circle metadata for circle {circle_id}")
+            print(f"  ✅ Members: {member_list}")
+        
         # Log details for debugging
-        self.logger.info(f"Retrieved {len(member_list)} members for circle {circle_id}")
+        self.logger.info(f"Retrieved {len(member_list)} members from circle metadata for circle {circle_id}")
         
         return member_list
     

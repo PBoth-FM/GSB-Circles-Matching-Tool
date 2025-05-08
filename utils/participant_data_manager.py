@@ -227,6 +227,19 @@ class ParticipantDataManager:
             
         return list(self.circle_participants_map[circle_id])
     
+    def get_circle_members(self, circle_id: str) -> List[str]:
+        """
+        Get IDs of all members in a specific circle (alias for get_participant_ids_by_circle)
+        
+        Args:
+            circle_id: ID of the circle
+            
+        Returns:
+            List of member IDs in the circle
+        """
+        # This is an alias method for consistency with CircleMetadataManager
+        return self.get_participant_ids_by_circle(circle_id)
+    
     def get_circle_by_participant(self, participant_id: str) -> Optional[str]:
         """
         Get the circle ID for a specific participant
