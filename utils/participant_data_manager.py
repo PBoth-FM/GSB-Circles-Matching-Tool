@@ -313,42 +313,55 @@ class ParticipantDataManager:
             # ALWAYS mappings
             "always": "always",
             "always host": "always",
+            "always_host": "always",
+            "yes": "always",
+            "1": "always",
+            "1.0": "always",
             # SOMETIMES mappings
             "sometimes": "sometimes",
-            "sometimes host": "sometimes",
+            "sometimes host": "sometimes", 
+            "sometimes_host": "sometimes",
+            "maybe": "sometimes",
+            "0.5": "sometimes",
             # NEVER mappings
             "n/a": "never",
             "never": "never",
             "never host": "never",
+            "never_host": "never",
+            "no": "never",
+            "0": "never",
+            "0.0": "never",
         }
+        
+        if debug_mode:
+            print(f"🔍 DETAILED HOST DEBUG for participant {participant_id}")
+            # Print all host-related fields in participant data
+            host_related_columns = {}
+            for col in participant_data:
+                if 'host' in col.lower() or col.lower() in ['willing_to_host', 'hostingpreference']:
+                    host_related_columns[col] = participant_data[col]
+            if host_related_columns:
+                print(f"  Host-related columns found: {host_related_columns}")
             
         # Try standardized host status first
         for col in ['host_status_standardized', 'Standardized Host']:
             if col in participant_data and not pd.isna(participant_data[col]):
                 status = participant_data[col]
                 if status:
-                    normalized = str(status).lower()
+                    normalized = str(status).lower().strip()
                     if debug_mode:
-                        print(f"🔍 Found standardized host status for {participant_id} in '{col}': '{normalized}'")
-                    # Map standardized statuses correctly
-                    if normalized == "always":
-                        return "always"
-                    elif normalized == "sometimes":
-                        return "sometimes"
-                    elif normalized == "never":
-                        return "never"
-                    else:
-                        # For any other values, use our mapping
-                        if normalized in HOST_VALUE_MAP:
-                            return HOST_VALUE_MAP[normalized]
+                        print(f"  🔍 Found standardized host status in '{col}': '{normalized}'")
+                    # Map standardized statuses directly
+                    if normalized in HOST_VALUE_MAP:
+                        return HOST_VALUE_MAP[normalized]
                 
-        # Fall back to raw 'host' column (column 29)
+        # Fall back to raw 'host' column (column 29) which is the main source in most datasets
         if 'host' in participant_data and not pd.isna(participant_data['host']):
             raw_host = str(participant_data['host']).lower().strip()
             if debug_mode:
-                print(f"🔍 Using raw 'host' value for {participant_id}: '{raw_host}'")
+                print(f"  🔍 Using raw 'host' value: '{raw_host}'")
             
-            # Use our direct mapping for exact matches
+            # Use our direct mapping for exact matches first
             if raw_host in HOST_VALUE_MAP:
                 return HOST_VALUE_MAP[raw_host]
             
@@ -357,27 +370,75 @@ class ParticipantDataManager:
                 return 'always'
             elif 'sometimes' in raw_host:
                 return 'sometimes'
-            elif 'never' in raw_host or 'n/a' in raw_host:
+            elif 'never' in raw_host or 'n/a' in raw_host or raw_host == '':
                 return 'never'
                 
-        # Try other host status columns
-        for col in ['Host', 'HostingPreference', 'Host Status']:
+            # Handle numeric values that might be cast to strings
+            if raw_host.isdigit():
+                if raw_host == '1': 
+                    return 'always'
+                elif raw_host == '0': 
+                    return 'never'
+                
+            # Other potential patterns that might appear in the data
+            # For floating point values like "1.0" or "0.5" converted to strings
+            try:
+                numeric_value = float(raw_host)
+                if numeric_value == 1.0:
+                    return 'always'
+                elif numeric_value == 0.5:
+                    return 'sometimes'
+                elif numeric_value == 0.0:
+                    return 'never'
+            except ValueError:
+                # Not a numeric value, continue to other checks
+                pass
+                
+        # Try other host status columns with more specific naming
+        for col in ['Host', 'HostingPreference', 'Host Status', 'willing_to_host']:
             if col in participant_data and not pd.isna(participant_data[col]):
                 status = str(participant_data[col]).lower().strip()
                 if debug_mode:
-                    print(f"🔍 Checking host status in '{col}' for {participant_id}: '{status}'")
+                    print(f"  🔍 Checking host status in '{col}': '{status}'")
                 
-                # Map to standard values
+                # Try direct mapping first
+                if status in HOST_VALUE_MAP:
+                    return HOST_VALUE_MAP[status]
+                
+                # Then try partial matches
                 if 'always' in status or status == 'yes' or status == '1':
                     return 'always'
                 elif 'sometimes' in status or status == 'maybe' or status == '0.5':
                     return 'sometimes'
-                elif 'never' in status or 'n/a' in status or status == 'no' or status == '0':
+                elif 'never' in status or 'n/a' in status or status == 'no' or status == '0' or status == '':
                     return 'never'
+                
+                # Try numeric conversion as a last resort
+                try:
+                    numeric_value = float(status)
+                    if numeric_value == 1.0:
+                        return 'always'
+                    elif numeric_value == 0.5:
+                        return 'sometimes'
+                    elif numeric_value == 0.0:
+                        return 'never'
+                except ValueError:
+                    # Not a numeric value, continue to other checks
+                    pass
         
+        # Enhanced debugger for test cases
         if debug_mode:
-            print(f"⚠️ No host status found for {participant_id} in any column")
-        return ""
+            important_columns = ['Encoded ID', 'host', 'willing_to_host', 'Host', 'HostingPreference']
+            found_columns = {}
+            for col in important_columns:
+                if col in participant_data:
+                    found_columns[col] = participant_data[col]
+            print(f"  ⚠️ No conclusive host status. Important columns: {found_columns}")
+            
+        # Final fallback - default to never
+        if debug_mode:
+            print(f"  ⚠️ No host status found, defaulting to 'never' for {participant_id}")
+        return "never"
     
     def is_participant_co_leader(self, participant_id: str) -> bool:
         """

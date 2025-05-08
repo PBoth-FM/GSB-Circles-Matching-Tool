@@ -800,7 +800,7 @@ def get_member_roles(participants_data, member_ids, test_mode=False, test_circle
             if not member_rows.empty:
                 members_processed += 1
                 
-                # Process host status
+                # Process host status with enhanced detection
                 if host_col:
                     try:
                         host_value = member_rows.iloc[0][host_col]
@@ -809,14 +809,74 @@ def get_member_roles(participants_data, member_ids, test_mode=False, test_circle
                             roles["never_host"].append(member_id)
                             continue
                             
-                        host_status = str(host_value).lower()
+                        # Convert to string and normalize
+                        host_status = str(host_value).lower().strip()
                         
-                        if "always" in host_status or host_status == "yes" or host_status == "1":
+                        # More comprehensive host value normalization based on our updated mapping
+                        # Use the same exact mappings we use in ParticipantDataManager
+                        host_mapping = {
+                            # ALWAYS mappings
+                            "always": "always",
+                            "always host": "always",
+                            "always_host": "always",
+                            "yes": "always",
+                            "1": "always",
+                            "1.0": "always",
+                            # SOMETIMES mappings  
+                            "sometimes": "sometimes",
+                            "sometimes host": "sometimes",
+                            "sometimes_host": "sometimes",
+                            "maybe": "sometimes", 
+                            "0.5": "sometimes",
+                            # NEVER mappings
+                            "n/a": "never",
+                            "never": "never", 
+                            "never host": "never",
+                            "never_host": "never",
+                            "no": "never",
+                            "0": "never",
+                            "0.0": "never",
+                            "": "never"
+                        }
+                        
+                        # First try exact matches
+                        if host_status in host_mapping:
+                            normalized_status = host_mapping[host_status]
+                            if normalized_status == "always":
+                                roles["always_host"].append(member_id)
+                            elif normalized_status == "sometimes":
+                                roles["sometimes_host"].append(member_id)
+                            else:
+                                roles["never_host"].append(member_id)
+                            continue
+                        
+                        # Then try partial matches
+                        if "always" in host_status:
                             roles["always_host"].append(member_id)
-                        elif "sometimes" in host_status or host_status == "maybe" or host_status == "0.5":
+                        elif "sometimes" in host_status:
                             roles["sometimes_host"].append(member_id)
-                        else:
+                        elif "never" in host_status or "n/a" in host_status:
                             roles["never_host"].append(member_id)
+                        # Check for numeric values (could be int/float converted to string)
+                        elif host_status.replace('.', '', 1).isdigit():
+                            try:
+                                numeric_value = float(host_status)
+                                if numeric_value == 1.0:
+                                    roles["always_host"].append(member_id)
+                                elif numeric_value == 0.5:
+                                    roles["sometimes_host"].append(member_id)
+                                elif numeric_value == 0.0:
+                                    roles["never_host"].append(member_id)
+                                else:
+                                    # Any other numeric value defaults to never
+                                    roles["never_host"].append(member_id)
+                            except ValueError:
+                                # If we can't convert, default to never
+                                roles["never_host"].append(member_id)
+                        else:
+                            # Anything else defaults to never
+                            roles["never_host"].append(member_id)
+                            
                     except Exception as e:
                         print(f"⚠️ WARNING: Error processing host status for member {member_id}: {str(e)}")
                         roles["never_host"].append(member_id)  # Default to never host on error
