@@ -4515,38 +4515,36 @@ def render_circle_table():
         if available_cols:
             display_df = circles_df[available_cols].copy()
             
-            # Add a column to indicate if this is a split circle
+            # Check for split info directly from the enhanced metadata in the DataFrame
             if 'circle_id' in circles_df.columns:
-                is_split_circle = circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)
-                circles_df['is_split_circle'] = is_split_circle
-                
-                # Add original circle ID if this is a split circle
-                if 'original_circle_id' in circles_df.columns:
-                    # Only include this column if we have split circles
+                # Check if we have split status from the metadata manager
+                if 'split_status' not in circles_df.columns:
+                    # Create the split_status column if it doesn't exist already
+                    circles_df['split_status'] = ''
+                    
+                    # Derive split status from circle ID if it's not already set from metadata manager
+                    is_split_circle = circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)
+                    circles_df['is_split_circle'] = is_split_circle
+                    
+                    # For split circles, determine the split letter
                     if is_split_circle.any():
-                        display_cols.append('original_circle_id')
-                        if 'original_circle_id' not in available_cols:
-                            available_cols.append('original_circle_id')
-                            display_df = circles_df[available_cols].copy()
-                
-                # Add split indicator column for display
-                circles_df['split_status'] = ''
-                split_circles = circles_df[is_split_circle]
-                
-                if not split_circles.empty:
-                    # Mark split circles
-                    for idx in split_circles.index:
-                        circle_id = circles_df.loc[idx, 'circle_id']
-                        if 'split_letter' in circles_df.columns:
-                            split_letter = circles_df.loc[idx, 'split_letter']
-                            circles_df.loc[idx, 'split_status'] = f"Split {split_letter}"
-                        else:
+                        for idx in circles_df[is_split_circle].index:
+                            circle_id = circles_df.loc[idx, 'circle_id']
                             # Extract split letter from circle ID
                             if "-SPLIT-" in circle_id:
                                 split_letter = circle_id[-1]  # Last character is the split letter
                                 circles_df.loc[idx, 'split_status'] = f"Split {split_letter}"
                             else:
                                 circles_df.loc[idx, 'split_status'] = "Split"
+                
+                # Add original circle ID to display if present
+                if 'original_circle_id' in circles_df.columns:
+                    # Only add this column if we have some split circles
+                    if 'is_split_circle' in circles_df.columns and circles_df['is_split_circle'].any():
+                        display_cols.append('original_circle_id')
+                        if 'original_circle_id' not in available_cols:
+                            available_cols.append('original_circle_id')
+                            display_df = circles_df[available_cols].copy()
                 
                 # Add split status column to display
                 display_cols.append('split_status')

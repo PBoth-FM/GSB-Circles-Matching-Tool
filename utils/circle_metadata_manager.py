@@ -774,10 +774,28 @@ class CircleMetadataManager:
             enhanced_circle['is_split_circle'] = circle_id in self.split_circles
             if enhanced_circle['is_split_circle']:
                 enhanced_circle['original_circle_id'] = self.split_circles[circle_id]
+                # Add split letter (A, B, C, etc.) extracted from ID
+                if "-SPLIT-" in circle_id:
+                    # Capture the split letter (last character)
+                    enhanced_circle['split_letter'] = circle_id[-1]
+                    # Create a human-readable split status for display
+                    enhanced_circle['split_status'] = f"Split {enhanced_circle['split_letter']}"
+                else:
+                    enhanced_circle['split_status'] = "Split"
+                
+                # FIXED: Ensure max_additions is set for split circles
+                # Split circles can add members up to a maximum of 8 total
+                if 'max_additions' not in enhanced_circle or enhanced_circle['max_additions'] is None:
+                    max_total = 8  # Maximum size for a split circle
+                    current_count = enhanced_circle['member_count']
+                    enhanced_circle['max_additions'] = max(0, max_total - current_count)
+                    print(f"  ✅ Set max_additions={enhanced_circle['max_additions']} for split circle {circle_id}")
             
             enhanced_circle['has_splits'] = circle_id in self.original_circles and len(self.original_circles[circle_id]) > 0
             if enhanced_circle['has_splits']:
                 enhanced_circle['split_circle_ids'] = self.original_circles[circle_id]
+                # Mark original circles as inactive if they have splits
+                enhanced_circle['split_status'] = "Original (Split)"
                 
             # Add circle to results
             enhanced_circles.append(enhanced_circle)
