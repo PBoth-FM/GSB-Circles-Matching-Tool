@@ -231,6 +231,14 @@ def update_metadata_manager_with_splits(split_summary):
             # CRITICAL: Update the split circle tracking in the manager
             manager.split_circles[new_circle_id] = original_circle_id
             
+            # Additional eligibility diagnostics
+            if member_count < 8:
+                print(f"  ✅ Split circle {new_circle_id} has {member_count} members and max_additions={circle_data['max_additions']}")
+                print(f"  ✅ Circle is eligible for new members (is_eligible={circle_data.get('is_eligible', 'not set')})")
+            else:
+                print(f"  ⚠️ Split circle {new_circle_id} has {member_count} members, no room for new members")
+                print(f"  ⚠️ Circle is not eligible (is_eligible={circle_data.get('is_eligible', 'not set')})")
+            
             # Add to metadata manager
             manager.add_or_update_circle(new_circle_id, circle_data)
             print(f"✅ Added split circle {new_circle_id} to CircleMetadataManager with {member_count} members")

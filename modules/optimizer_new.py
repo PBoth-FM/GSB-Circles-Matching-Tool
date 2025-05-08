@@ -1388,8 +1388,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"✅ All {len(existing_circles)} circles have eligibility logs")
     
     # Identify viable circles for optimization
+    # ENHANCED: Check both max_additions AND is_eligible flag (for split circles)
     viable_circles = {circle_id: circle_data for circle_id, circle_data in existing_circles.items() 
-                     if circle_data.get('max_additions', 0) > 0}
+                     if (circle_data.get('max_additions', 0) > 0 or circle_data.get('is_eligible', False))}
     
     # ENHANCED VIABLE CIRCLE DETECTION: List all circles with capacity
     print(f"\n🔍 VIABLE CIRCLES DETECTION:")
@@ -1477,9 +1478,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                            if circle.get('region', '') == region]
         viable_circle_count = len(viable_circles)
         
+        # Check for split circles specifically
+        split_circles = [c_id for c_id, circle in viable_circles.items() 
+                        if 'SPLIT' in c_id or circle.get('is_split_circle', False)]
+        
         print(f"All circles span {len(all_regions)} regions: {all_regions}")
         print(f"Found {len(circles_in_region)} total circles in region {region}")
         print(f"Of those, {viable_circle_count} have capacity (max_additions > 0)")
+        
+        if split_circles:
+            print(f"Viable circles include {len(split_circles)} split circles: {split_circles}")
         
         if viable_circle_count > 0:
             print(f"Viable circles in region {region}:")
