@@ -355,6 +355,23 @@ def run_optimization():
                         original_id = sample_split.get("original_circle_id", "unknown")
                         new_ids = sample_split.get("new_circle_ids", [])
                         print(f"  Example: {original_id} was split into {len(new_ids)} circles: {new_ids}")
+                        
+                        # CRITICAL: Ensure split circles are included in the matched_circles for UI display
+                        # This is needed because the UI uses matched_circles for display
+                        try:
+                            # Get the CircleMetadataManager to ensure a consistent source of circle data
+                            from utils.circle_metadata_manager import get_manager_from_session_state
+                            manager = get_manager_from_session_state(st.session_state)
+                            if manager:
+                                # Get the updated circles dataframe including splits
+                                updated_circles = manager.get_circles_dataframe()
+                                # Update the matched_circles in session state
+                                st.session_state.matched_circles = updated_circles
+                                print(f"  ✅ Updated matched_circles in session state to include split circles")
+                        except Exception as e:
+                            print(f"  ⚠️ Error updating matched_circles with split circles: {str(e)}")
+                    else:
+                        print("  No large circles were split in this run")
                 else:
                     print("  No large circles were split in this run")
             else:
