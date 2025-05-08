@@ -1951,20 +1951,43 @@ def test_circle_splitting():
                         sometimes_count = detail['sometimes_hosts'][i] if i < len(detail['sometimes_hosts']) else 0
                         
                         # Get the host IDs if available
-                        always_ids = detail.get('always_host_ids', [{}])[i] if i < len(detail.get('always_host_ids', [])) else {}
-                        sometimes_ids = detail.get('sometimes_host_ids', [{}])[i] if i < len(detail.get('sometimes_host_ids', [])) else {}
+                        always_ids = detail.get('always_host_ids', [])[i] if i < len(detail.get('always_host_ids', [])) else []
+                        sometimes_ids = detail.get('sometimes_host_ids', [])[i] if i < len(detail.get('sometimes_host_ids', [])) else []
                         
-                        # Display counts
-                        st.write(f"    Always Hosts: {always_count}, Sometimes Hosts: {sometimes_count}")
+                        # Calculate actual host counts from host_ids arrays
+                        actual_always_count = len(always_ids) if always_ids else always_count
+                        actual_sometimes_count = len(sometimes_ids) if sometimes_ids else sometimes_count
                         
-                        # Display IDs in a collapsible section
-                        with st.expander("Show Host IDs"):
+                        # Display enhanced host information with counts
+                        if actual_always_count > 0 or actual_sometimes_count > 0:
+                            st.write(f"    ✅ Host Coverage: {actual_always_count} Always Hosts, {actual_sometimes_count} Sometimes Hosts")
+                        else:
+                            st.write(f"    ⚠️ No host coverage detected! Always: {actual_always_count}, Sometimes: {actual_sometimes_count}")
+                        
+                        # Display IDs in a collapsible section with improved formatting
+                        with st.expander("Show Host Details"):
                             if always_ids:
-                                st.write("Always Host IDs:")
+                                st.write(f"**Always Host IDs ({len(always_ids)}):**")
                                 st.write(", ".join(str(id) for id in always_ids))
+                            else:
+                                st.write("**Always Host IDs:** None")
+                                
                             if sometimes_ids:
-                                st.write("Sometimes Host IDs:")
+                                st.write(f"**Sometimes Host IDs ({len(sometimes_ids)}):**")
                                 st.write(", ".join(str(id) for id in sometimes_ids))
+                            else:
+                                st.write("**Sometimes Host IDs:** None")
+                            
+                            # Add verification of host requirements
+                            is_valid = False
+                            if actual_always_count >= 1:
+                                is_valid = True
+                                st.write("✅ **Host Requirement Met:** At least one Always Host")
+                            elif actual_sometimes_count >= 2:
+                                is_valid = True
+                                st.write("✅ **Host Requirement Met:** At least two Sometimes Hosts")
+                            else:
+                                st.write("❌ **Host Requirement NOT Met:** Needs 1+ Always OR 2+ Sometimes Hosts")
                 st.write("---")
         else:
             st.warning("No circles were split.")

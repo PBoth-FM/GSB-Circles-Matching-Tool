@@ -4040,8 +4040,9 @@ def render_split_circle_summary(key_prefix="overview"):
                 new_ids_str = ", ".join(new_ids)
                 member_counts_str = ", ".join([str(count) for count in member_counts])
                 
-                # Add host information with enhanced details
+                # Add host information with enhanced details and validation
                 host_info = []
+                host_status = []
                 for i in range(len(new_ids)):
                     # Get host counts
                     always = always_hosts[i] if i < len(always_hosts) else 0
@@ -4060,9 +4061,25 @@ def render_split_circle_summary(key_prefix="overview"):
                     sometimes_final = max(sometimes, sometimes_count)
                     
                     # Format as "XA/YS" (X Always hosts, Y Sometimes hosts)
-                    host_info.append(f"{always_final}A/{sometimes_final}S")
+                    host_format = f"{always_final}A/{sometimes_final}S"
+                    
+                    # Determine if host requirements are met
+                    meets_requirements = (always_final >= 1) or (sometimes_final >= 2)
+                    
+                    # Format as "✅ XA/YS" if requirements met or "❌ XA/YS" if not
+                    if meets_requirements:
+                        host_info.append(f"✅ {host_format}")
+                        host_status.append("Valid")
+                    else:
+                        host_info.append(f"❌ {host_format}")
+                        host_status.append("Invalid")
                 
                 host_info_str = ", ".join(host_info)
+                
+                # Add alert if any split circle doesn't meet requirements
+                if "Invalid" in host_status:
+                    print(f"⚠️ WARNING: Some split circles for {detail['original_circle_id']} don't meet host requirements")
+                    # We'll still display them in the table, but with warning indicators
                 
                 # Add to table data
                 table_data.append({
@@ -4159,13 +4176,45 @@ def render_split_circle_summary(key_prefix="overview"):
             for split in split_summary['split_details']:
                 original_id = split['original_circle_id']
                 new_ids = split['new_circle_ids']
+                member_counts = split.get('member_counts', [])
                 
                 st.write(f"**Original Circle**: {original_id} with {split['member_count']} members")
                 st.write(f"**Split Into**: {len(new_ids)} circles")
                 
-                # List new circle IDs
+                # List new circle IDs with enhanced host information
                 for i, new_id in enumerate(new_ids):
-                    st.write(f"- {new_id}")
+                    # Get member count for this split circle
+                    member_count = member_counts[i] if i < len(member_counts) else "?"
+                    
+                    # Get host counts for this split circle
+                    always_host_ids = split.get('always_host_ids', [])
+                    sometimes_host_ids = split.get('sometimes_host_ids', [])
+                    
+                    always_count = len(always_host_ids[i]) if i < len(always_host_ids) else 0
+                    sometimes_count = len(sometimes_host_ids[i]) if i < len(sometimes_host_ids) else 0
+                    
+                    # Determine host requirement status
+                    host_status = "✅" if (always_count >= 1 or sometimes_count >= 2) else "❌"
+                    
+                    # Create host status summary
+                    host_summary = f"{host_status} {always_count} Always, {sometimes_count} Sometimes hosts"
+                    
+                    # Display circle with host status
+                    st.write(f"- **{new_id}** with {member_count} members ({host_summary})")
+                    
+                    # Show detailed host IDs in a nested expander
+                    with st.expander(f"View host details for {new_id}", expanded=False):
+                        if i < len(always_host_ids) and always_host_ids[i]:
+                            st.write("**Always Host IDs:**")
+                            st.write(", ".join(str(id) for id in always_host_ids[i]))
+                        else:
+                            st.write("**Always Host IDs:** None")
+                            
+                        if i < len(sometimes_host_ids) and sometimes_host_ids[i]:
+                            st.write("**Sometimes Host IDs:**")
+                            st.write(", ".join(str(id) for id in sometimes_host_ids[i]))
+                        else:
+                            st.write("**Sometimes Host IDs:** None")
                 
                 st.markdown("---")
     
