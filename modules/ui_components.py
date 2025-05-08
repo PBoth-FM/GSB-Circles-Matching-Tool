@@ -4044,9 +4044,9 @@ def render_split_circle_summary(key_prefix="overview"):
                 host_info = []
                 host_status = []
                 for i in range(len(new_ids)):
-                    # Get host counts
-                    always = always_hosts[i] if i < len(always_hosts) else 0
-                    sometimes = sometimes_hosts[i] if i < len(sometimes_hosts) else 0
+                    # Get host counts - ensure they are integers
+                    always = int(always_hosts[i]) if i < len(always_hosts) and always_hosts[i] is not None else 0
+                    sometimes = int(sometimes_hosts[i]) if i < len(sometimes_hosts) and sometimes_hosts[i] is not None else 0
                     
                     # Get host IDs if available
                     always_host_ids = detail.get("always_host_ids", [])
@@ -4055,6 +4055,12 @@ def render_split_circle_summary(key_prefix="overview"):
                     # Get the counts for this specific circle
                     always_count = len(always_host_ids[i]) if i < len(always_host_ids) else always
                     sometimes_count = len(sometimes_host_ids[i]) if i < len(sometimes_host_ids) else sometimes
+                    
+                    # Ensure we're comparing integers
+                    always = int(always) if isinstance(always, (int, float, str)) and str(always).strip() else 0
+                    sometimes = int(sometimes) if isinstance(sometimes, (int, float, str)) and str(sometimes).strip() else 0
+                    always_count = int(always_count) if isinstance(always_count, (int, float, str)) and str(always_count).strip() else 0
+                    sometimes_count = int(sometimes_count) if isinstance(sometimes_count, (int, float, str)) and str(sometimes_count).strip() else 0
                     
                     # Use the better count (either from the IDs or the original count)
                     always_final = max(always, always_count)
@@ -4190,8 +4196,13 @@ def render_split_circle_summary(key_prefix="overview"):
                     always_host_ids = split.get('always_host_ids', [])
                     sometimes_host_ids = split.get('sometimes_host_ids', [])
                     
+                    # Calculate counts from the host IDs
                     always_count = len(always_host_ids[i]) if i < len(always_host_ids) else 0
                     sometimes_count = len(sometimes_host_ids[i]) if i < len(sometimes_host_ids) else 0
+                    
+                    # Ensure we're comparing integers
+                    always_count = int(always_count) if isinstance(always_count, (int, float, str)) and str(always_count).strip() else 0
+                    sometimes_count = int(sometimes_count) if isinstance(sometimes_count, (int, float, str)) and str(sometimes_count).strip() else 0
                     
                     # Determine host requirement status
                     host_status = "✅" if (always_count >= 1 or sometimes_count >= 2) else "❌"
@@ -4202,19 +4213,25 @@ def render_split_circle_summary(key_prefix="overview"):
                     # Display circle with host status
                     st.write(f"- **{new_id}** with {member_count} members ({host_summary})")
                     
-                    # Show detailed host IDs in a nested expander
-                    with st.expander(f"View host details for {new_id}", expanded=False):
-                        if i < len(always_host_ids) and always_host_ids[i]:
-                            st.write("**Always Host IDs:**")
-                            st.write(", ".join(str(id) for id in always_host_ids[i]))
-                        else:
-                            st.write("**Always Host IDs:** None")
+                    # Show detailed host IDs in a collapsible section using HTML and markdown
+                    if st.checkbox(f"Show host details for {new_id}", key=f"host_details_{new_id}_{i}_{id(split)}"):
+                        # Create an indented container for host details
+                        with st.container():
+                            st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Host Details:**")
                             
-                        if i < len(sometimes_host_ids) and sometimes_host_ids[i]:
-                            st.write("**Sometimes Host IDs:**")
-                            st.write(", ".join(str(id) for id in sometimes_host_ids[i]))
-                        else:
-                            st.write("**Sometimes Host IDs:** None")
+                            # Show Always Hosts
+                            if i < len(always_host_ids) and always_host_ids[i]:
+                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Always Host IDs:**")
+                                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(str(id) for id in always_host_ids[i])}")
+                            else:
+                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Always Host IDs:** None")
+                            
+                            # Show Sometimes Hosts
+                            if i < len(sometimes_host_ids) and sometimes_host_ids[i]:
+                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Sometimes Host IDs:**")
+                                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(str(id) for id in sometimes_host_ids[i])}")
+                            else:
+                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Sometimes Host IDs:** None")
                 
                 st.markdown("---")
     
