@@ -268,6 +268,40 @@ def run_optimization():
                 if use_optimizer_metadata:
                     print("  ✅ Using optimizer metadata for circle reconstruction")
                     
+                # PHASE 4: Apply postprocessing for split circles
+                print("\n🔄 APPLYING CIRCLE SPLITTING POSTPROCESSING")
+                try:
+                    # Import our integration module
+                    from modules.optimizer_integration import postprocess_optimization_results
+                    
+                    # Get preprocessing summary from session state, if available
+                    preprocessing_summary = {}
+                    if "split_circle_summary" in st.session_state:
+                        preprocessing_summary["split_circle_summary"] = st.session_state.split_circle_summary
+                    
+                    # Apply postprocessing to handle split circles in the results
+                    processed_results, postprocessing_summary = postprocess_optimization_results(
+                        optimization_results=results,
+                        circles_data=matched_circles,
+                        participants_data=st.session_state.processed_data,
+                        preprocessing_summary=preprocessing_summary
+                    )
+                    
+                    # Log the postprocessing summary
+                    if postprocessing_summary:
+                        print("✅ Circle splitting postprocessing summary:")
+                        for key, value in postprocessing_summary.items():
+                            print(f"  {key}: {value}")
+                    
+                    # Use the processed results (currently they may be the same as the original results)
+                    results = processed_results
+                    
+                except Exception as e:
+                    print(f"⚠️ Error during circle splitting postprocessing: {str(e)}")
+                    # If there's an error, we'll continue with the original results
+                    import traceback
+                    print(traceback.format_exc())
+            
                 # Initialize/update the circle metadata manager with optimizer results
                 circle_manager = initialize_or_update_manager(
                     st.session_state,
@@ -304,43 +338,27 @@ def run_optimization():
                 print(f"⚠️ Error applying metadata fixes: {str(e)}")
                 print("  Continuing with original results")
             
-            # STEP: Split large circles (11+ members) into smaller circles
-            print("\n🔄 APPLYING CIRCLE SPLITTING LOGIC")
-            try:
-                # Import the circle splitting function
-                from modules.circle_splitter import split_large_circles
-                
-                # Convert circles to DataFrame if needed
-                if not isinstance(matched_circles, pd.DataFrame):
-                    print("  Converting matched_circles to DataFrame for splitting")
-                    matched_circles_df = pd.DataFrame(matched_circles)
+            # NOTICE: Circle splitting is now handled before optimization in modules/optimizer.py
+            # Our Phase 4 integration now orchestrates circle splitting before the optimizer runs
+            # and handles postprocessing of split circles after optimization
+            print("\n🔄 CIRCLE SPLITTING STATUS:")
+            if "split_circle_summary" in st.session_state:
+                split_summary = st.session_state.split_circle_summary
+                if split_summary and "total_large_circles_found" in split_summary:
+                    print(f"  Found {split_summary['total_large_circles_found']} large circles (11+ members)")
+                    print(f"  Split {split_summary['total_circles_successfully_split']} circles successfully")
+                    print(f"  Created {split_summary['total_new_circles_created']} new split circles")
+                    
+                    # If we have split details, provide a sample
+                    if "split_details" in split_summary and split_summary["split_details"]:
+                        sample_split = split_summary["split_details"][0]
+                        original_id = sample_split.get("original_circle_id", "unknown")
+                        new_ids = sample_split.get("new_circle_ids", [])
+                        print(f"  Example: {original_id} was split into {len(new_ids)} circles: {new_ids}")
                 else:
-                    matched_circles_df = matched_circles
-                
-                # Apply circle splitting algorithm
-                print("  Running split_large_circles function")
-                updated_circles, split_summary, updated_results = split_large_circles(
-                    matched_circles_df, 
-                    results
-                )
-                
-                # Update the circles and results with the split data
-                matched_circles = updated_circles
-                results = updated_results
-                
-                # Store the split summary for UI components
-                st.session_state.split_circle_summary = split_summary
-                
-                # Log summary of splitting
-                print(f"  Split summary: {split_summary['total_large_circles_found']} large circles found")
-                print(f"  {split_summary['total_circles_successfully_split']} circles successfully split")
-                print(f"  {split_summary['total_new_circles_created']} new circles created")
-                
-            except Exception as e:
-                print(f"⚠️ Error during circle splitting: {str(e)}")
-                print("  Continuing with original circles")
-                import traceback
-                print(traceback.format_exc())
+                    print("  No large circles were split in this run")
+            else:
+                print("  No circle splitting was performed (no summary available)")
                 
             # Store results in session state
             st.session_state.results = results

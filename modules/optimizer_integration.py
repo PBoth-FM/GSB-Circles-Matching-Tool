@@ -250,6 +250,8 @@ def postprocess_optimization_results(optimization_results, circles_data, partici
                 split_circles_receiving_members = 0
                 
                 # Process all results
+                circles_receiving_members = 0  # Initialize the variable
+                
                 if isinstance(optimization_results, list):
                     # Count circles receiving members
                     circles_receiving_members = sum(1 for result in optimization_results if result.get("new_members", []))
@@ -272,7 +274,6 @@ def postprocess_optimization_results(optimization_results, circles_data, partici
                                 split_circles_receiving_members += 1
                                 print(f"  ✅ Split circle {row.get('circle_id')} received {len(row.get('new_members', []))} new members")
                 else:
-                    circles_receiving_members = 0
                     print("⚠️ POSTPROCESSING: Unrecognized optimization results format")
                 
                 # Store stats in summary
