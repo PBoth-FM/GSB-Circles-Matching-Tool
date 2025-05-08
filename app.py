@@ -1972,8 +1972,11 @@ def test_circle_splitting():
                         else:
                             st.write(f"    ⚠️ No host coverage detected! Always: {actual_always_count}, Sometimes: {actual_sometimes_count}")
                         
+                        # Generate a unique key for the expander to avoid conflicts
+                        import random 
+                        host_expander_key = f"host_expander_{new_id}_{i}_{random.randint(1000, 9999)}"
                         # Display IDs in a collapsible section with improved formatting
-                        with st.expander("Show Host Details"):
+                        with st.expander("Show Host Details", key=host_expander_key):
                             if always_ids:
                                 st.write(f"**Always Host IDs ({len(always_ids)}):**")
                                 st.write(", ".join(str(id) for id in always_ids))

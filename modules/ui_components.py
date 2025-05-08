@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import random
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -4120,6 +4121,7 @@ def render_split_circle_summary(key_prefix="overview"):
                     # Show a few examples
                     # Use a dynamic prefix based on where it's called from plus a unique identifier
                     # Combine the key_prefix with a random number to ensure uniqueness
+                    import random
                     unique_id = f"{key_prefix}_{id(manager)}_{random.randint(10000, 99999)}"
                     checkbox_key = f"metadata_manager_split_details_{unique_id}"
                     if st.checkbox("Show Split Circle Details from Metadata Manager", key=checkbox_key):
@@ -4214,7 +4216,10 @@ def render_split_circle_summary(key_prefix="overview"):
                     st.write(f"- **{new_id}** with {member_count} members ({host_summary})")
                     
                     # Show detailed host IDs in a collapsible section using HTML and markdown
-                    if st.checkbox(f"Show host details for {new_id}", key=f"host_details_{new_id}_{i}_{id(split)}"):
+                    # Use a highly unique key by combining multiple factors: key_prefix, split ID, new_id, index, and a random number
+                    import random
+                    unique_checkbox_key = f"host_details_{key_prefix}_{new_id}_{i}_{id(split)}_{random.randint(1000, 9999)}"
+                    if st.checkbox(f"Show host details for {new_id}", key=unique_checkbox_key):
                         # Create an indented container for host details
                         with st.container():
                             st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Host Details:**")
