@@ -1946,9 +1946,25 @@ def test_circle_splitting():
                     st.write(f"  - {new_id} with {member_count} members")
                     # Show host distribution if available
                     if 'always_hosts' in detail and 'sometimes_hosts' in detail:
-                        always = detail['always_hosts'][i] if i < len(detail['always_hosts']) else 0
-                        sometimes = detail['sometimes_hosts'][i] if i < len(detail['sometimes_hosts']) else 0
-                        st.write(f"    Always Hosts: {always}, Sometimes Hosts: {sometimes}")
+                        # Get the host counts for this split circle
+                        always_count = detail['always_hosts'][i] if i < len(detail['always_hosts']) else 0
+                        sometimes_count = detail['sometimes_hosts'][i] if i < len(detail['sometimes_hosts']) else 0
+                        
+                        # Get the host IDs if available
+                        always_ids = detail.get('always_host_ids', [{}])[i] if i < len(detail.get('always_host_ids', [])) else {}
+                        sometimes_ids = detail.get('sometimes_host_ids', [{}])[i] if i < len(detail.get('sometimes_host_ids', [])) else {}
+                        
+                        # Display counts
+                        st.write(f"    Always Hosts: {always_count}, Sometimes Hosts: {sometimes_count}")
+                        
+                        # Display IDs in a collapsible section
+                        with st.expander("Show Host IDs"):
+                            if always_ids:
+                                st.write("Always Host IDs:")
+                                st.write(", ".join(str(id) for id in always_ids))
+                            if sometimes_ids:
+                                st.write("Sometimes Host IDs:")
+                                st.write(", ".join(str(id) for id in sometimes_ids))
                 st.write("---")
         else:
             st.warning("No circles were split.")

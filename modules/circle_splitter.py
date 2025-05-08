@@ -605,7 +605,11 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
                         member_to_circle_mapping
                     )
                     
-                # Add details to the summary
+                # Add details to the summary with enhanced host information
+                # Get the host member lists from member_roles
+                always_hosts = member_roles.get("always_host", [])
+                sometimes_hosts = member_roles.get("sometimes_host", [])
+                
                 split_detail = {
                     "original_circle_id": circle_id,
                     "member_count": member_count,
@@ -616,7 +620,16 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
                     "region": region,
                     "subregion": subregion,  # Use the extracted subregion from participants
                     "meeting_time": circle.get("meeting_time", ""),
-                    "members": [c["members"] for c in split_result["new_circles"]]
+                    "members": [c["members"] for c in split_result["new_circles"]],
+                    # Add host IDs for each split circle for better visibility and debugging
+                    "always_host_ids": [
+                        [m for m in c["members"] if m in always_hosts] 
+                        for c in split_result["new_circles"]
+                    ],
+                    "sometimes_host_ids": [
+                        [m for m in c["members"] if m in sometimes_hosts]
+                        for c in split_result["new_circles"]
+                    ]
                 }
                 split_summary["split_details"].append(split_detail)
                 

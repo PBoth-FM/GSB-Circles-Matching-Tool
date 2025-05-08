@@ -4040,12 +4040,28 @@ def render_split_circle_summary(key_prefix="overview"):
                 new_ids_str = ", ".join(new_ids)
                 member_counts_str = ", ".join([str(count) for count in member_counts])
                 
-                # Add host information
+                # Add host information with enhanced details
                 host_info = []
                 for i in range(len(new_ids)):
+                    # Get host counts
                     always = always_hosts[i] if i < len(always_hosts) else 0
                     sometimes = sometimes_hosts[i] if i < len(sometimes_hosts) else 0
-                    host_info.append(f"{always}A/{sometimes}S")
+                    
+                    # Get host IDs if available
+                    always_host_ids = detail.get("always_host_ids", [])
+                    sometimes_host_ids = detail.get("sometimes_host_ids", [])
+                    
+                    # Get the counts for this specific circle
+                    always_count = len(always_host_ids[i]) if i < len(always_host_ids) else always
+                    sometimes_count = len(sometimes_host_ids[i]) if i < len(sometimes_host_ids) else sometimes
+                    
+                    # Use the better count (either from the IDs or the original count)
+                    always_final = max(always, always_count)
+                    sometimes_final = max(sometimes, sometimes_count)
+                    
+                    # Format as "XA/YS" (X Always hosts, Y Sometimes hosts)
+                    host_info.append(f"{always_final}A/{sometimes_final}S")
+                
                 host_info_str = ", ".join(host_info)
                 
                 # Add to table data
