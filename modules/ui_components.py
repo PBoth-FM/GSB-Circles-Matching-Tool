@@ -4618,15 +4618,21 @@ def render_circle_table():
             
             # Add styling to highlight split circles and large circles that should be split
             def highlight_circles(row):
-                # Check if it's a split circle
-                if 'Split Status' in row and row['Split Status']:
-                    return ['background-color: #e6f3ff'] * len(row)  # Light blue for split circles
+                # Check if circle ID contains 'SPLIT' to identify split circles
+                circle_id = row.get('Circle Id', '')
+                
+                # Check if it's explicitly marked as a split circle or the ID contains SPLIT
+                is_split = ('Split Status' in row and row['Split Status']) or (isinstance(circle_id, str) and 'SPLIT' in circle_id)
+                
+                if is_split:
+                    # Enhanced styling for split circles - light blue background with a subtle border
+                    return ['background-color: #e6f3ff; border-left: 3px solid #4b89dc;'] * len(row)
                 
                 # Check if it's a large circle (11+ members) that should have been split
                 if 'Member Count' in row and isinstance(row['Member Count'], (int, float)) and row['Member Count'] >= 11:
                     # This is a large circle that wasn't split - highlight in a different color
                     print(f"🔍 Found large circle with {row['Member Count']} members that wasn't split: {row.get('Circle Id', 'unknown')}")
-                    return ['background-color: #ffec99'] * len(row)  # Light yellow for large circles
+                    return ['background-color: #ffec99; border-left: 3px solid #f6b26b;'] * len(row)  # Light yellow with orange border
                 
                 return [''] * len(row)
             
@@ -4801,7 +4807,14 @@ def render_circle_details():
         # Add split circle information if applicable
         circle_id = selected_circle
         if 'SPLIT' in circle_id:
-            st.info("This circle was created by splitting a large circle with 11+ members.")
+            st.info("This circle was created by splitting a large circle with 11+ members. Split circles can accept new members up to a maximum of 8 total.")
+            
+            # Use a more noticeable UI element to highlight split circle status
+            st.markdown("""
+            <div style="background-color: #e6f3ff; padding: 10px; border-left: 4px solid #4b89dc; margin-bottom: 15px;">
+                <strong>Split Circle</strong>: This circle was created through automatic splitting to maintain optimal group sizes.
+            </div>
+            """, unsafe_allow_html=True)
             
             # Add original circle information if available
             if 'original_circle_id' in circle_row:
