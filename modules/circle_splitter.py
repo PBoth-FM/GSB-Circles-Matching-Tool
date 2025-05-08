@@ -213,13 +213,13 @@ def update_participant_assignments(participants_data, original_circle_id, new_ci
     print(f"✅ Updated {update_count} participant assignments from {original_circle_id} to split circles")
     return updated_participants
 
-def split_large_circles(circles_data, participants_data):
+def split_large_circles(circles_data, participants_data=None):
     """
     Identifies circles with 11+ members and splits them into smaller circles.
     
     Args:
         circles_data: DataFrame or list of dictionaries containing circle information
-        participants_data: DataFrame containing participant information
+        participants_data: DataFrame containing participant information (optional if using manager)
         
     Returns:
         tuple: (
@@ -228,6 +228,19 @@ def split_large_circles(circles_data, participants_data):
             updated_participants: DataFrame with updated participant assignments
         )
     """
+    import streamlit as st
+    from utils.participant_data_manager import ParticipantDataManager
+    
+    # Check if we have a ParticipantDataManager in session state
+    if participants_data is None and hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+        print("🔍 Using ParticipantDataManager from session state")
+        participants_data = st.session_state.participant_data_manager.get_all_participants()
+        print(f"✅ Retrieved {len(participants_data)} participants from ParticipantDataManager")
+    
+    # Safety check to ensure we have participant data
+    if participants_data is None:
+        print("⚠️ ERROR: participants_data is None and no ParticipantDataManager found in session state")
+        raise ValueError("No participant data available for circle splitting")
     # Initialize summary stats
     split_summary = {
         "total_circles_examined": 0,

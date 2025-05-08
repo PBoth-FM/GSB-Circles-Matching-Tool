@@ -22,6 +22,8 @@ from modules.ui_components import (
 )
 from utils.helpers import generate_download_link
 from utils.feature_flags import initialize_feature_flags, set_flag
+from utils.participant_data_manager import ParticipantDataManager
+from utils.circle_metadata_manager import CircleMetadataManager, get_manager_from_session_state, initialize_or_update_manager
 
 # Configure Streamlit page
 st.set_page_config(
@@ -496,6 +498,13 @@ def process_uploaded_file(uploaded_file):
             print("\n🔬🔬🔬 SUPER DETAILED DATA DIAGNOSTICS IN PROCESS_UPLOADED_FILE 🔬🔬🔬")
             print(f"🔬 DataFrame shape: {df.shape}")
             print(f"🔬 DataFrame columns: {df.columns.tolist()}")
+            
+            # Initialize the ParticipantDataManager with the raw data
+            print("\n🔧 INITIALIZING PARTICIPANT DATA MANAGER")
+            participant_manager = ParticipantDataManager()
+            participant_manager.initialize_from_dataframe(df)
+            st.session_state.participant_data_manager = participant_manager
+            print(f"✅ Successfully initialized ParticipantDataManager with {len(df)} participants")
             
             # Count participants by status for debugging
             if 'Status' in df.columns:
