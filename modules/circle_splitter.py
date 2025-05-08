@@ -557,7 +557,8 @@ def split_large_circles(circles_data, participants_data=None, test_mode=False):
                     member_roles=member_roles,
                     format_prefix=format_prefix,
                     region=region,
-                    circle_number=circle_number
+                    circle_number=circle_number,
+                    participants_data=participants_data
                 )
             except Exception as e:
                 print(f"⚠️ ERROR preparing for circle split of {circle_id}: {str(e)}")
@@ -927,7 +928,7 @@ def get_member_roles(participants_data, member_ids, test_mode=False, test_circle
     
     return roles
 
-def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_prefix, region, circle_number):
+def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_prefix, region, circle_number, participants_data=None):
     """
     Split a circle into smaller circles with balanced host distribution.
     Each split circle must have at least one "Always Host" or two "Sometimes Host" members.
@@ -940,6 +941,7 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         format_prefix: Format prefix (IP- or V-)
         region: Region code
         circle_number: Original circle number
+        participants_data: Optional DataFrame containing participant data, used for region/subregion extraction
         
     Returns:
         dict: Result of splitting containing success status and split data
