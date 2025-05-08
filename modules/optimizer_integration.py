@@ -242,57 +242,70 @@ def update_metadata_manager_with_splits(split_summary):
     print(f"  manager.original_circles contains {len(manager.original_circles)} entries")
     print(f"  manager.split_circles contains {len(manager.split_circles)} entries")
     
-    # CRITICAL FIX: Force a refresh of all data from the CircleMetadataManager to session state
-    print(f"\n🔄 UPDATING SESSION STATE: Propagating split circle changes to all parts of the application")
+    # CRITICAL FIX: Use the enhanced metadata synchronization system to propagate changes
+    print(f"\n🔄 UPDATING SESSION STATE: Using metadata synchronization to propagate split circle changes")
     
-    # 1. Update matched_circles DataFrame in session state - this is used by most UI components
-    if hasattr(st.session_state, 'matched_circles') and st.session_state.matched_circles is not None:
-        # Get all ACTIVE circle data from manager as a DataFrame
-        circles_data = []
-        active_count = 0
-        inactive_count = 0
-        
-        for circle_id, circle_data in manager.circles.items():
-            # Track active vs inactive circles
-            if circle_data.get("replaced_by_splits", False):
-                inactive_count += 1
-            else:
-                active_count += 1
-                # Only include active circles in the DataFrame
-                circle_copy = circle_data.copy()
-                circle_copy["circle_id"] = circle_id
-                circles_data.append(circle_copy)
-        
-        print(f"  CircleMetadataManager contains {active_count} active and {inactive_count} inactive circles")
-        
-        # Create a DataFrame from the circle data
-        if circles_data:
-            import pandas as pd
-            updated_df = pd.DataFrame(circles_data)
-            
-            # CRITICAL: Update session state with the new DataFrame
-            print(f"  Replacing matched_circles in session state with new DataFrame ({len(circles_data)} rows)")
-            st.session_state.matched_circles = updated_df
+    # Collect inputs for synchronization
+    circles_df = st.session_state.matched_circles if hasattr(st.session_state, 'matched_circles') else None
+    results_df = st.session_state.results if hasattr(st.session_state, 'results') else None
+    
+    # POWERFUL SYNCHRONIZATION: Use the enhanced metadata synchronization function to update everything
+    updated_circles_df, has_changes = manager.synchronize_metadata(
+        circles_df=circles_df,
+        results_df=results_df,
+        split_summary=split_summary
+    )
+    
+    if has_changes:
+        # Update session state with synchronized data
+        print(f"  ✅ Metadata synchronization successful - updating session state")
+        if updated_circles_df is not None:
+            print(f"  Replacing matched_circles in session state with synchronized DataFrame ({len(updated_circles_df)} rows)")
+            st.session_state.matched_circles = updated_circles_df
             
             # Verify split circles are in the updated DataFrame
-            split_circle_count = sum(1 for c in circles_data if 'SPLIT' in c.get('circle_id', ''))
-            print(f"  ✅ New DataFrame contains {split_circle_count} split circles")
+            if hasattr(updated_circles_df, 'circle_id'):
+                split_circle_count = sum(1 for c_id in updated_circles_df['circle_id'] if 'SPLIT' in c_id)
+            else:
+                split_circle_count = sum(1 for c in updated_circles_df if 'SPLIT' in c.get('circle_id', ''))
+            print(f"  ✅ Synchronized DataFrame contains {split_circle_count} split circles")
             
             # DEBUG: Check if specific test circles are in the updated data
             test_circles = ['IP-NAP-01', 'IP-SHA-01', 'IP-ATL-1']
-            split_examples = [c for c in circles_data if 'SPLIT' in c.get('circle_id', '')][:3]
+            
+            # Get active and inactive counts for reporting
+            active_count = sum(1 for _, c in manager.circles.items() if not c.get("replaced_by_splits", False))
+            inactive_count = sum(1 for _, c in manager.circles.items() if c.get("replaced_by_splits", False))
+            print(f"  CircleMetadataManager contains {active_count} active and {inactive_count} inactive circles")
             
             # Check priority original circles - should be inactive and not in DataFrame
             for test_id in test_circles:
-                found = any(c.get('circle_id') == test_id for c in circles_data)
-                if found and test_id in all_original_circles:
+                in_original_circles = test_id in all_original_circles
+                in_df = False
+                
+                # Check if test_id is in the updated DataFrame
+                if hasattr(updated_circles_df, 'circle_id'):
+                    in_df = test_id in updated_circles_df['circle_id'].values
+                else:
+                    in_df = any(c.get('circle_id') == test_id for c in updated_circles_df)
+                
+                if in_df and in_original_circles:
                     print(f"  ⚠️ ERROR: Original circle {test_id} is still in matched_circles even though it was split")
-                elif not found and test_id in all_original_circles:
+                elif not in_df and in_original_circles:
                     print(f"  ✅ Original circle {test_id} correctly removed from matched_circles (replaced by splits)")
-                elif not found and test_id not in all_original_circles:
+                elif not in_df and not in_original_circles:
                     print(f"  ⚠️ Expected circle {test_id} is missing from matched_circles data")
             
             # Check a few split circles - should be active and in DataFrame
+            split_examples = []
+            if hasattr(updated_circles_df, 'to_dict'):
+                # If it's a DataFrame, convert to records
+                df_records = updated_circles_df.to_dict('records')
+                split_examples = [c for c in df_records if 'SPLIT' in c.get('circle_id', '')][:3]
+            else:
+                # It's already a list
+                split_examples = [c for c in updated_circles_df if 'SPLIT' in c.get('circle_id', '')][:3]
+                
             for i, circle in enumerate(split_examples):
                 circle_id = circle.get('circle_id', 'Unknown')
                 member_count = circle.get('member_count', 0)

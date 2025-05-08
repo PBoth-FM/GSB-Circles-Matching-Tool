@@ -1802,7 +1802,34 @@ def test_circle_splitting():
         # Import the circle splitting function
         from modules.circle_splitter import split_large_circles
         
+        # Import metadata synchronization
+        from utils.circle_metadata_manager import get_manager_from_session_state
+        
+        # Step 1: Split circles directly
         updated_circles, split_summary = split_large_circles(test_circles_df, test_participants)
+        
+        # Step 2: Use metadata synchronization to ensure consistent data
+        print("🔄 TEST: Using metadata synchronization to ensure consistent data")
+        
+        # Get current metadata manager or create a new one
+        metadata_manager = get_manager_from_session_state(st.session_state)
+        if metadata_manager is None:
+            from utils.circle_metadata_manager import CircleMetadataManager
+            metadata_manager = CircleMetadataManager()
+            st.session_state.circle_metadata_manager = metadata_manager
+            print("  ✅ Created new CircleMetadataManager for testing")
+        
+        # Synchronize metadata with test results
+        synchronized_circles, has_changes = metadata_manager.synchronize_metadata(
+            circles_df=updated_circles,
+            results_df=test_participants,
+            split_summary=split_summary
+        )
+        
+        if has_changes:
+            print("  ✅ Metadata synchronization successful")
+            # Use the synchronized circles for display
+            updated_circles = synchronized_circles
         
         # Store the split summary in session state for UI components to use
         st.session_state.split_circle_summary = split_summary
