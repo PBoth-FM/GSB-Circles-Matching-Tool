@@ -1806,7 +1806,10 @@ def test_circle_splitting():
         from utils.circle_metadata_manager import get_manager_from_session_state
         
         # Step 1: Split circles directly
-        updated_circles, split_summary = split_large_circles(test_circles_df, test_participants)
+        updated_circles, split_summary, updated_participants = split_large_circles(test_circles_df, test_participants)
+        
+        # Update participant assignments
+        test_participants = updated_participants
         
         # Step 2: Use metadata synchronization to ensure consistent data
         print("🔄 TEST: Using metadata synchronization to ensure consistent data")

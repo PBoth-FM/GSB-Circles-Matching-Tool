@@ -157,6 +157,62 @@ def rebuild_circle_member_lists(circles_data, participants_data):
         return circles_df.to_dict('records')
     return circles_df
 
+def update_participant_assignments(participants_data, original_circle_id, new_circle_assignments):
+    """
+    Update participant assignments in the results DataFrame after circle splitting.
+    This function updates the 'proposed_NEW_circles_id' column to reflect the new circle assignments.
+    
+    Args:
+        participants_data: DataFrame containing participant information
+        original_circle_id: ID of the original circle that was split
+        new_circle_assignments: Dictionary mapping member IDs to their new circle IDs
+        
+    Returns:
+        DataFrame: Updated participants DataFrame with new circle assignments
+    """
+    # Create a copy to avoid modifying the original
+    updated_participants = participants_data.copy()
+    
+    # Find ID column
+    id_col = None
+    for col in ['Encoded ID', 'encoded_id', 'participant_id']:
+        if col in updated_participants.columns:
+            id_col = col
+            break
+    
+    if id_col is None:
+        print("⚠️ ERROR: Could not find participant ID column in participants data")
+        return updated_participants
+    
+    # Find circle assignment column
+    circle_col = None
+    for col in ['proposed_NEW_circles_id', 'assigned_circle', 'circle_id']:
+        if col in updated_participants.columns:
+            circle_col = col
+            break
+    
+    if circle_col is None:
+        print("⚠️ ERROR: Could not find circle assignment column in participants data")
+        return updated_participants
+    
+    # Update assignments
+    update_count = 0
+    for member_id, new_circle_id in new_circle_assignments.items():
+        # Find this member in the DataFrame
+        member_mask = updated_participants[id_col] == member_id
+        
+        # Skip if member not found
+        if not any(member_mask):
+            print(f"⚠️ WARNING: Member {member_id} not found in participants data")
+            continue
+            
+        # Update the assignment
+        updated_participants.loc[member_mask, circle_col] = new_circle_id
+        update_count += 1
+    
+    print(f"✅ Updated {update_count} participant assignments from {original_circle_id} to split circles")
+    return updated_participants
+
 def split_large_circles(circles_data, participants_data):
     """
     Identifies circles with 11+ members and splits them into smaller circles.
@@ -169,6 +225,7 @@ def split_large_circles(circles_data, participants_data):
         tuple: (
             updated_circles: DataFrame or list with split circles replacing large ones,
             split_summary: Dictionary containing statistics and details about the splitting process
+            updated_participants: DataFrame with updated participant assignments
         )
     """
     # Initialize summary stats
@@ -323,6 +380,22 @@ def split_large_circles(circles_data, participants_data):
                 # Add each new circle to the updated list
                 for new_circle in split_result["new_circles"]:
                     updated_circles.append(new_circle)
+                
+                # Build a mapping of member ID to new circle ID for updating participant assignments
+                member_to_circle_mapping = {}
+                for new_circle in split_result["new_circles"]:
+                    new_circle_id = new_circle["circle_id"]
+                    for member_id in new_circle["members"]:
+                        member_to_circle_mapping[member_id] = new_circle_id
+                
+                # Update participant assignments for this split circle
+                if participants_data is not None:
+                    print(f"🔄 Updating participant assignments for {circle_id}")
+                    participants_data = update_participant_assignments(
+                        participants_data, 
+                        circle_id, 
+                        member_to_circle_mapping
+                    )
                     
                 # Add details to the summary
                 split_detail = {
@@ -361,7 +434,8 @@ def split_large_circles(circles_data, participants_data):
                 pass  # If we can't even add the circle, just skip it
             continue
     
-    return updated_circles, split_summary
+    # Return updated circles, split summary, and updated participant assignments
+    return updated_circles, split_summary, participants_data
 
 def get_member_roles(participants_data, member_ids):
     """
