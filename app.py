@@ -275,6 +275,44 @@ def run_optimization():
             except Exception as e:
                 print(f"⚠️ Error applying metadata fixes: {str(e)}")
                 print("  Continuing with original results")
+            
+            # STEP: Split large circles (11+ members) into smaller circles
+            print("\n🔄 APPLYING CIRCLE SPLITTING LOGIC")
+            try:
+                # Import the circle splitting function
+                from modules.circle_splitter import split_large_circles
+                
+                # Convert circles to DataFrame if needed
+                if not isinstance(matched_circles, pd.DataFrame):
+                    print("  Converting matched_circles to DataFrame for splitting")
+                    matched_circles_df = pd.DataFrame(matched_circles)
+                else:
+                    matched_circles_df = matched_circles
+                
+                # Apply circle splitting algorithm
+                print("  Running split_large_circles function")
+                updated_circles, split_summary, updated_results = split_large_circles(
+                    matched_circles_df, 
+                    results
+                )
+                
+                # Update the circles and results with the split data
+                matched_circles = updated_circles
+                results = updated_results
+                
+                # Store the split summary for UI components
+                st.session_state.split_circle_summary = split_summary
+                
+                # Log summary of splitting
+                print(f"  Split summary: {split_summary['total_large_circles_found']} large circles found")
+                print(f"  {split_summary['total_circles_successfully_split']} circles successfully split")
+                print(f"  {split_summary['total_new_circles_created']} new circles created")
+                
+            except Exception as e:
+                print(f"⚠️ Error during circle splitting: {str(e)}")
+                print("  Continuing with original circles")
+                import traceback
+                print(traceback.format_exc())
                 
             # Store results in session state
             st.session_state.results = results

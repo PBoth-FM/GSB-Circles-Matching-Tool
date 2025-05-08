@@ -938,6 +938,13 @@ class CircleMetadataManager:
                         for key in ['region', 'subregion', 'meeting_time']:
                             if key in self.circles[original_id]:
                                 self.circles[new_id][key] = self.circles[original_id][key]
+                                
+                    # Add host information if available in the split summary
+                    if 'always_hosts' in detail and i < len(detail['always_hosts']):
+                        self.circles[new_id]['always_hosts'] = detail['always_hosts'][i]
+                        
+                    if 'sometimes_hosts' in detail and i < len(detail['sometimes_hosts']):
+                        self.circles[new_id]['sometimes_hosts'] = detail['sometimes_hosts'][i]
     
     def _validate_metadata_consistency(self):
         """
