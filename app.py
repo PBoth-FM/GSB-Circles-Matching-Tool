@@ -368,8 +368,71 @@ def run_optimization():
                                 # Update the matched_circles in session state
                                 st.session_state.matched_circles = updated_circles
                                 print(f"  ✅ Updated matched_circles in session state to include split circles")
+                                
+                                # CRITICAL FIX: Update the results DataFrame to show the split circles 
+                                # in the Circle Composition and CSV export
+                                if 'proposed_NEW_circles_id' in results.columns:
+                                    print("  🔄 Updating results DataFrame with split circle assignments")
+                                    
+                                    # Get all the split circle IDs
+                                    all_split_circle_ids = []
+                                    for detail in split_summary.get("split_details", []):
+                                        all_split_circle_ids.extend(detail.get("new_circle_ids", []))
+                                    
+                                    # Get all the original circle IDs (to mark as inactive)
+                                    all_original_circle_ids = [
+                                        detail.get("original_circle_id") 
+                                        for detail in split_summary.get("split_details", [])
+                                    ]
+                                    
+                                    # Update the results DataFrame to ensure it has the split circles
+                                    if hasattr(manager, 'split_circles') and manager.split_circles:
+                                        print(f"  Found {len(manager.split_circles)} split circles in metadata manager")
+                                        # Log the split circles
+                                        print(f"  Split circles: {list(manager.split_circles.keys())}")
+                                        
+                                        # Add all split circles to matched_circles if not already there
+                                        for split_id, original_id in manager.split_circles.items():
+                                            # Check if this split circle is already in matched_circles
+                                            if split_id not in st.session_state.matched_circles['circle_id'].values:
+                                                # Get the data for this split circle from the manager
+                                                split_circle_data = manager.get_circle_data(split_id)
+                                                if split_circle_data:
+                                                    # Convert to DataFrame row
+                                                    split_row = pd.DataFrame([split_circle_data])
+                                                    # Append to matched_circles
+                                                    st.session_state.matched_circles = pd.concat(
+                                                        [st.session_state.matched_circles, split_row], 
+                                                        ignore_index=True
+                                                    )
+                                                    print(f"  ✅ Added split circle {split_id} to matched_circles")
+                                        
+                                        # Get the most up-to-date circle data from the metadata manager
+                                        st.session_state.matched_circles = manager.get_circles_dataframe()
+                                        print(f"  ✅ Updated matched_circles with latest data from metadata manager")
+                                        
+                                        # Get members of the split circles to update their assignments
+                                        for split_id, original_id in manager.split_circles.items():
+                                            # Get the member list for this split circle
+                                            split_circle_data = manager.get_circle_data(split_id)
+                                            if split_circle_data and "members" in split_circle_data:
+                                                member_ids = split_circle_data["members"]
+                                                # Update these members in the results DataFrame
+                                                for member_id in member_ids:
+                                                    # Find this member in the results
+                                                    if member_id in results["Encoded ID"].values:
+                                                        # Update their assignment to the split circle
+                                                        idx = results[results["Encoded ID"] == member_id].index
+                                                        results.loc[idx, "proposed_NEW_circles_id"] = split_id
+                                                        print(f"  ✅ Updated assignment for member {member_id} to split circle {split_id}")
+                                
+                                # Update the CSV export results in session state
+                                st.session_state.results = results
+                                print(f"  ✅ Updated results in session state with split circle assignments")
                         except Exception as e:
                             print(f"  ⚠️ Error updating matched_circles with split circles: {str(e)}")
+                            import traceback
+                            print(traceback.format_exc())
                     else:
                         print("  No large circles were split in this run")
                 else:
