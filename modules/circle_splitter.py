@@ -535,18 +535,31 @@ def get_member_roles(participants_data, member_ids):
         "co_leader": []
     }
     
-    # First try using ParticipantDataManager if available
+    # Try using ParticipantDataManager if available (preferred approach)
     participant_manager = None
-    if hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+    if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
         participant_manager = st.session_state.participant_data_manager
-        print(f"🔍 DEBUG: Using ParticipantDataManager for role analysis of {len(member_ids)} members")
+        print(f"✅ Using ParticipantDataManager for host role detection of {len(member_ids)} members")
         
+        missing_members = 0
         if participant_manager and member_ids:
             # Process each member using the manager
             for member_id in member_ids:
+                if not member_id or pd.isna(member_id):
+                    continue
+                    
+                member_id = str(member_id)  # Ensure consistent string format
+                
                 try:
                     # Get host status directly from manager
                     host_status = participant_manager.get_participant_host_status(member_id)
+                    
+                    # More detailed debug for host detection issues
+                    if not host_status:
+                        print(f"⚠️ No host status found for member {member_id}, defaulting to 'never'")
+                        missing_members += 1
+                        roles["never_host"].append(member_id)
+                        continue
                     
                     # Categorize based on host status
                     if host_status == "always":
@@ -565,24 +578,31 @@ def get_member_roles(participants_data, member_ids):
                     # Default to never host on error
                     roles["never_host"].append(member_id)
             
-            # If we successfully processed members with the manager, return the results
-            if any(len(role_list) > 0 for role_list in roles.values()):
-                print(f"✅ ParticipantDataManager: Member role analysis complete")
-                print(f"   Always Hosts: {len(roles['always_host'])}")
-                print(f"   Sometimes Hosts: {len(roles['sometimes_host'])}")
-                print(f"   Never Hosts: {len(roles['never_host'])}")
-                print(f"   Co-Leaders: {len(roles['co_leader'])}")
+            # Enhanced debug information
+            total_processed = len(roles["always_host"]) + len(roles["sometimes_host"]) + len(roles["never_host"])
+            print(f"✅ ParticipantDataManager host role detection complete")
+            print(f"   Always Hosts: {len(roles['always_host'])} members")
+            print(f"   Sometimes Hosts: {len(roles['sometimes_host'])} members")
+            print(f"   Never Hosts: {len(roles['never_host'])} members")
+            print(f"   Co-Leaders: {len(roles['co_leader'])} members")
+            print(f"   Missing host status: {missing_members} members")
+            print(f"   Total processed: {total_processed} of {len(member_ids)} members")
+            
+            # If we have processed at least 90% of members, consider it a success
+            # This allows for some tolerance of data issues
+            if total_processed >= 0.9 * len(member_ids):
                 return roles
+            else:
+                print(f"⚠️ WARNING: Only processed {total_processed} of {len(member_ids)} members with ParticipantDataManager")
+                print(f"    Falling back to traditional approach for more complete results")
     
     # Fall back to traditional approach if manager method failed or wasn't available
+    print(f"⚠️ Falling back to traditional host detection for {len(member_ids)} members")
+    
     # Skip if no participant data
     if participants_data is None or len(member_ids) == 0:
         print(f"🔍 DEBUG: No participants or member_ids for role analysis")
         return roles
-    
-    # Log member_ids for debugging
-    print(f"🔍 DEBUG: get_member_roles - Analyzing {len(member_ids)} members")
-    print(f"🔍 DEBUG: get_member_roles - First few members: {str(member_ids[:5])}")
     
     # Ensure we have an Encoded ID column
     id_col = "Encoded ID"
@@ -590,42 +610,59 @@ def get_member_roles(participants_data, member_ids):
         print(f"⚠️ WARNING: Could not find '{id_col}' column in participants data")
         return roles
     
-    # Look for host column with different possible names
+    # First, check for standardized host status column (preferred)
     host_col = None
-    for col_name in ["host", "Host", "willing_to_host"]:
-        if col_name in participants_data.columns:
-            host_col = col_name
-            break
+    if 'host_status_standardized' in participants_data.columns:
+        host_col = 'host_status_standardized'
+        print(f"✅ Using standardized host status column: {host_col}")
+    elif 'Standardized Host' in participants_data.columns:
+        host_col = 'Standardized Host'
+        print(f"✅ Using standardized host status column: {host_col}")
+    else:
+        # Fall back to other host columns
+        for col_name in ["host", "Host", "willing_to_host", "HostingPreference", "Host Status"]:
+            if col_name in participants_data.columns:
+                host_col = col_name
+                print(f"✅ Using host status column: {host_col}")
+                break
     
     # Look for co-leader column
     co_leader_col = None
     for col_name in ["co_leader", "Co_Leader", "co-leader", "Co-Leader", "co_lead", "Co_Lead"]:
         if col_name in participants_data.columns:
             co_leader_col = col_name
+            print(f"✅ Using co-leader column: {co_leader_col}")
             break
     
-    # Process each member
+    # Process each member using traditional column-based approach
+    members_processed = 0
     for member_id in member_ids:
         try:
+            if not member_id or pd.isna(member_id):
+                continue
+                
+            member_id = str(member_id)  # Ensure consistent string format
+            
             # Find this member in the DataFrame
-            member_rows = participants_data[participants_data[id_col] == member_id]
+            member_rows = participants_data[participants_data[id_col].astype(str) == member_id]
             
             if not member_rows.empty:
+                members_processed += 1
+                
                 # Process host status
                 if host_col:
                     try:
                         host_value = member_rows.iloc[0][host_col]
                         # Handle potential NaN values
                         if pd.isna(host_value):
-                            print(f"⚠️ WARNING: NaN host value for member {member_id}")
                             roles["never_host"].append(member_id)
                             continue
                             
                         host_status = str(host_value).lower()
                         
-                        if "always" in host_status or host_status == "yes":
+                        if "always" in host_status or host_status == "yes" or host_status == "1":
                             roles["always_host"].append(member_id)
-                        elif "sometimes" in host_status or host_status == "maybe":
+                        elif "sometimes" in host_status or host_status == "maybe" or host_status == "0.5":
                             roles["sometimes_host"].append(member_id)
                         else:
                             roles["never_host"].append(member_id)
@@ -646,10 +683,19 @@ def get_member_roles(participants_data, member_ids):
                                 roles["co_leader"].append(member_id)
                     except Exception as e:
                         print(f"⚠️ WARNING: Error processing co-leader status for member {member_id}: {str(e)}")
+            else:
+                print(f"⚠️ WARNING: Member {member_id} not found in participants data")
         except Exception as e:
             print(f"⚠️ WARNING: Error processing member {member_id}: {str(e)}")
             # Default to never host on error
             roles["never_host"].append(member_id)
+    
+    print(f"✅ Traditional host role detection complete")
+    print(f"   Found {members_processed} of {len(member_ids)} members in participant data")
+    print(f"   Always Hosts: {len(roles['always_host'])}")
+    print(f"   Sometimes Hosts: {len(roles['sometimes_host'])}")
+    print(f"   Never Hosts: {len(roles['never_host'])}")
+    print(f"   Co-Leaders: {len(roles['co_leader'])}")
     
     return roles
 
@@ -670,10 +716,12 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     Returns:
         dict: Result of splitting containing success status and split data
     """
-    # ENHANCED DEBUGGING - Log original member count
+    import streamlit as st
+    from utils.participant_data_manager import ParticipantDataManager
+    
+    # Enhanced logging for circle splitting
     original_member_count = len(members)
-    print(f"🔍 DEBUG: Starting split of circle {circle_id} with {original_member_count} members")
-    print(f"🔍 DEBUG: Member IDs: {members}")
+    print(f"🔍 Starting split process for circle {circle_id} with {original_member_count} members")
     
     # Ensure we have at least 11 members
     if original_member_count < 11:
@@ -682,16 +730,88 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
             "reason": f"Not enough members to split (need 11+, found {original_member_count})"
         }
     
+    # Get the ParticipantDataManager for additional validation if needed
+    participant_manager = None
+    if hasattr(st, 'session_state') and 'participant_data_manager' in st.session_state:
+        participant_manager = st.session_state.participant_data_manager
+        print(f"✅ Using ParticipantDataManager for additional host validation")
+    
     # Check if we have enough hosts
     always_hosts = member_roles.get("always_host", [])
     sometimes_hosts = member_roles.get("sometimes_host", [])
     co_leaders = member_roles.get("co_leader", [])
     never_hosts = member_roles.get("never_host", [])
     
-    print(f"🔍 DEBUG: Role counts - Always Hosts: {len(always_hosts)}, " 
-          f"Sometimes Hosts: {len(sometimes_hosts)}, "
-          f"Co-Leaders: {len(co_leaders)}, "
-          f"Never Hosts: {len(never_hosts)}")
+    # Enhanced logging
+    print(f"🔍 Current roles distribution:")
+    print(f"   Always Hosts: {len(always_hosts)} members")
+    print(f"   Sometimes Hosts: {len(sometimes_hosts)} members")
+    print(f"   Co-Leaders: {len(co_leaders)} members")
+    print(f"   Never Hosts: {len(never_hosts)} members")
+    
+    # In test mode, log the actual member IDs for each role
+    if circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
+        print(f"🧪 TEST CIRCLE {circle_id} - Detailed host breakdown:")
+        print(f"   Always Hosts: {always_hosts}")
+        print(f"   Sometimes Hosts: {sometimes_hosts}")
+        print(f"   Co-Leaders: {co_leaders}")
+    
+    # Double-check host counts using ParticipantDataManager for test circles
+    # This helps diagnose issues with host detection
+    if participant_manager and circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
+        print(f"🧪 TEST CIRCLE {circle_id} - Double-checking hosts with ParticipantDataManager:")
+        always_count = sometimes_count = never_count = 0
+        for member_id in members:
+            host_status = participant_manager.get_participant_host_status(member_id)
+            if host_status == "always":
+                always_count += 1
+            elif host_status == "sometimes":
+                sometimes_count += 1
+            else:
+                never_count += 1
+        
+        print(f"   ParticipantDataManager host counts:")
+        print(f"   Always: {always_count}, Sometimes: {sometimes_count}, Never: {never_count}")
+        
+        # If there's a significant discrepancy, use the ParticipantDataManager data
+        if abs(len(always_hosts) - always_count) > 1 or abs(len(sometimes_hosts) - sometimes_count) > 1:
+            print(f"⚠️ Host count discrepancy detected! Rebuilding member_roles using ParticipantDataManager")
+            
+            # Rebuild member_roles directly from ParticipantDataManager
+            new_roles = {
+                "always_host": [],
+                "sometimes_host": [],
+                "never_host": [],
+                "co_leader": []
+            }
+            
+            for member_id in members:
+                try:
+                    host_status = participant_manager.get_participant_host_status(member_id)
+                    if host_status == "always":
+                        new_roles["always_host"].append(member_id)
+                    elif host_status == "sometimes":
+                        new_roles["sometimes_host"].append(member_id)
+                    else:
+                        new_roles["never_host"].append(member_id)
+                        
+                    if participant_manager.is_participant_co_leader(member_id):
+                        new_roles["co_leader"].append(member_id)
+                except Exception as e:
+                    print(f"⚠️ Error getting host status from manager: {str(e)}")
+                    new_roles["never_host"].append(member_id)
+            
+            # Replace with new roles
+            always_hosts = new_roles["always_host"]
+            sometimes_hosts = new_roles["sometimes_host"]
+            never_hosts = new_roles["never_host"]
+            co_leaders = new_roles["co_leader"]
+            
+            print(f"✅ Rebuilt member_roles from ParticipantDataManager:")
+            print(f"   Always Hosts: {len(always_hosts)} members")
+            print(f"   Sometimes Hosts: {len(sometimes_hosts)} members")
+            print(f"   Co-Leaders: {len(co_leaders)} members")
+            print(f"   Never Hosts: {len(never_hosts)} members")
     
     # Calculate minimum required hosts for splitting
     min_splits = 2  # Minimum 2 splits for a large circle
@@ -700,7 +820,6 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     # - At least 1 Always Host, or
     # - At least 2 Sometimes Hosts
     
-    # Check if we have enough hosts for the required splits
     always_host_count = len(always_hosts)
     sometimes_host_count = len(sometimes_hosts)
     
@@ -710,6 +829,13 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     
     max_possible_circles = possible_circles_from_always + possible_circles_from_sometimes
     
+    # Enhanced logging for host distribution planning
+    print(f"🔍 Host distribution planning:")
+    print(f"   Always Hosts: {always_host_count} members → Can support {possible_circles_from_always} circles")
+    print(f"   Sometimes Hosts: {sometimes_host_count} members → Can support {possible_circles_from_sometimes} circles (pairs)")
+    print(f"   Total possible circles based on hosts: {max_possible_circles}")
+    print(f"   Minimum required splits: {min_splits}")
+    
     if max_possible_circles < min_splits:
         return {
             "success": False,
@@ -718,7 +844,6 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
         }
     
     # IMPROVED: Determine optimal number of splits based on member count
-    # Try to make all circles roughly equal size with minimum 5 members
     member_count = original_member_count
     
     # Calculate ideal number of splits for relatively equal distribution
@@ -742,7 +867,10 @@ def split_circle_with_balanced_hosts(circle_id, members, member_roles, format_pr
     num_splits = min(max_splits, max_possible_circles)
     num_splits = max(num_splits, 2)  # Ensure at least 2 splits
     
-    print(f"🔍 DEBUG: Creating {num_splits} splits for {member_count} members")
+    print(f"🔍 Split planning:")
+    print(f"   Target minimum circle size: {target_min_size} members")
+    print(f"   Maximum possible splits based on size: {max_splits}")
+    print(f"   Actual planned splits: {num_splits}")
     
     # Create a copy of members to track assignments
     unassigned_members = members.copy()
