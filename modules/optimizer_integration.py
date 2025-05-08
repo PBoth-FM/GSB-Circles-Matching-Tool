@@ -183,6 +183,64 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
     # Add validation results to the summary
     preprocessing_summary["validation_results"] = validation_results
     
+    # Debug dump of split circles specifically for UI integration diagnosis
+    if manager and hasattr(manager, 'split_circles') and manager.split_circles:
+        print("\n🔍 SPLIT CIRCLES DEBUG DUMP (PRE-OPTIMIZATION):")
+        print(f"  Split circles tracked in manager: {len(manager.split_circles)}")
+        for split_id, original_id in manager.split_circles.items():
+            # Get the circle data
+            circle_data = manager.get_circle_data(split_id)
+            if circle_data:
+                # Check key attributes for displaying in UI and CSV
+                has_region = 'region' in circle_data and circle_data['region']
+                has_subregion = 'subregion' in circle_data and circle_data['subregion']
+                has_meeting_time = 'meeting_time' in circle_data and circle_data['meeting_time']
+                has_members = 'members' in circle_data and len(circle_data['members']) > 0
+                member_count = len(circle_data.get('members', []))
+                max_additions = circle_data.get('max_additions', 0)
+                
+                print(f"  📊 {split_id} (from {original_id}):")
+                print(f"     Region: {circle_data.get('region', 'Unknown')} (Has value: {has_region})")
+                print(f"     Subregion: {circle_data.get('subregion', 'Unknown')} (Has value: {has_subregion})")
+                print(f"     Meeting time: {circle_data.get('meeting_time', 'Unknown')} (Has value: {has_meeting_time})")
+                print(f"     Member count: {member_count} (Has members: {has_members})")
+                print(f"     Max additions: {max_additions}, Active: {circle_data.get('active', False)}")
+                
+                # Check for member IDs
+                if has_members and len(circle_data['members']) > 0:
+                    print(f"     Sample members: {circle_data['members'][:3]}...")
+                    
+                    # Also check that these members have the correct circle assignment in participants_data
+                    if participants_data is not None:
+                        # Find the column used for circle assignments
+                        circle_col = None
+                        for col in ['proposed_NEW_circles_id', 'assigned_circle', 'circle_id']:
+                            if col in participants_data.columns:
+                                circle_col = col
+                                break
+                        
+                        if circle_col:
+                            sample_id = circle_data['members'][0] if circle_data['members'] else None
+                            if sample_id and sample_id in participants_data['Encoded ID'].values:
+                                participant_row = participants_data[participants_data['Encoded ID'] == sample_id]
+                                assigned_circle = participant_row[circle_col].iloc[0] if not participant_row.empty else None
+                                
+                                # Check if assignment matches
+                                correct_assignment = assigned_circle == split_id
+                                print(f"     Member {sample_id} circle assignment: {assigned_circle} (Correct: {correct_assignment})")
+                                
+                                if not correct_assignment:
+                                    print(f"     ⚠️ WARNING: Member {sample_id} is not correctly assigned to {split_id}!")
+                                    validation_results["problems_found"].append(
+                                        f"Member {sample_id} shows {assigned_circle} instead of {split_id}"
+                                    )
+                else:
+                    print(f"     ⚠️ WARNING: Split circle {split_id} has no members!")
+                    validation_results["problems_found"].append(f"Split circle {split_id} has no members")
+            else:
+                print(f"  ⚠️ WARNING: Could not get data for split circle {split_id}!")
+                validation_results["problems_found"].append(f"Missing data for split circle {split_id}")
+    
     # Log validation summary
     if validation_results["problems_found"]:
         print(f"⚠️ Found {len(validation_results['problems_found'])} issues with split circle preparation")
@@ -370,6 +428,72 @@ def postprocess_optimization_results(optimization_results, circles_data, partici
             else:
                 print("  No unmatched participants found")
                 postprocessing_summary["unmatched_participant_count"] = 0
+    
+    # CRITICAL FIX: Update participants_data with split circle assignments
+    # This ensures the CSV export includes the correct split circle assignments
+    if manager and hasattr(manager, 'split_circles') and participants_data is not None:
+        print("\n🔄 UPDATING PARTICIPANTS WITH SPLIT CIRCLE ASSIGNMENTS FOR CSV EXPORT:")
+        print(f"  Checking {len(manager.split_circles)} split circles for CSV export integration")
+        
+        # Track stats for logging
+        total_updated = 0
+        circle_assignment_col = None
+        
+        # Find the column used for circle assignments
+        for col in ['proposed_NEW_circles_id', 'assigned_circle', 'circle_id']:
+            if col in participants_data.columns:
+                circle_assignment_col = col
+                print(f"  ✅ Found circle assignment column: {circle_assignment_col}")
+                break
+        
+        if circle_assignment_col:
+            # For each split circle, update the participants' assignments
+            for split_id, original_id in manager.split_circles.items():
+                # Get the circle data
+                circle_data = manager.get_circle_data(split_id)
+                if circle_data and 'members' in circle_data and circle_data['members']:
+                    members = circle_data['members']
+                    print(f"  Processing split circle {split_id} with {len(members)} members")
+                    
+                    # Update each member's circle assignment
+                    for member_id in members:
+                        # Skip invalid IDs
+                        if member_id is None or pd.isna(member_id):
+                            continue
+                            
+                        # Find this member in the participants data
+                        if member_id in participants_data['Encoded ID'].values:
+                            # Update their circle assignment
+                            idx = participants_data[participants_data['Encoded ID'] == member_id].index
+                            
+                            # Get current assignment to check if updating is necessary
+                            current_assignment = participants_data.loc[idx, circle_assignment_col].iloc[0]
+                            if current_assignment != split_id:
+                                # Update the assignment
+                                participants_data.loc[idx, circle_assignment_col] = split_id
+                                total_updated += 1
+                
+            print(f"  ✅ Updated {total_updated} participants with split circle assignments for CSV export")
+            
+            # Store the updated participants data in session state for CSV export
+            import streamlit as st
+            if 'results' in st.session_state and hasattr(st.session_state.results, 'shape'):
+                # Only update the circle assignment column
+                if circle_assignment_col in st.session_state.results.columns:
+                    # Create a copy to avoid warnings
+                    results_copy = st.session_state.results.copy()
+                    
+                    # Update the circle assignments
+                    for idx, row in participants_data.iterrows():
+                        if row['Encoded ID'] in results_copy['Encoded ID'].values:
+                            results_idx = results_copy[results_copy['Encoded ID'] == row['Encoded ID']].index
+                            results_copy.loc[results_idx, circle_assignment_col] = row[circle_assignment_col]
+                    
+                    # Update session state
+                    st.session_state.results = results_copy
+                    print(f"  ✅ Updated session state results with split circle assignments for CSV export")
+        else:
+            print(f"  ⚠️ WARNING: Could not find circle assignment column in participants data")
     
     # Return the processed results
     return optimization_results, postprocessing_summary
