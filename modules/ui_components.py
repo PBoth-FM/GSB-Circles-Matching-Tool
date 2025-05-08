@@ -833,7 +833,11 @@ def render_details_tab():
     detail_tab1, detail_tab2, detail_tab3, detail_tab4 = st.tabs(["Overview", "Circles", "Participants", "Split Circles"])
     
     with detail_tab1:
+        # Use render_results_overview without showing the split circle summary inside it
+        # to avoid duplicate rendering
+        st.session_state.skip_split_circle_summary = True
         render_results_overview()
+        st.session_state.skip_split_circle_summary = False
     
     with detail_tab2:
         render_circle_details()
@@ -842,7 +846,8 @@ def render_details_tab():
         render_participant_details()
         
     with detail_tab4:
-        render_split_circle_summary()
+        # Use specific tab key prefix
+        render_split_circle_summary(key_prefix="details_tab4")
 
 
 def render_demographics_tab():
@@ -4005,9 +4010,18 @@ def render_debug_tab():
                 st.write(str(value)[:1000] + "..." if len(str(value)) > 1000 else str(value))
 
 
-def render_split_circle_summary():
-    """Render a summary of split circles"""
-    print("\n🔍 CHECKING FOR SPLIT CIRCLE SUMMARY DATA")
+def render_split_circle_summary(key_prefix="overview"):
+    """Render a summary of split circles
+    
+    Args:
+        key_prefix (str): Prefix to use for Streamlit widget keys to ensure uniqueness
+    """
+    print(f"\n🔍 CHECKING FOR SPLIT CIRCLE SUMMARY DATA (key_prefix={key_prefix})")
+    
+    # Check if we should skip rendering based on session state flag
+    if hasattr(st.session_state, 'skip_split_circle_summary') and st.session_state.skip_split_circle_summary:
+        print("ℹ️ Skipping split circle summary display due to skip_split_circle_summary flag")
+        return
     
     if 'split_circle_summary' not in st.session_state:
         print("⚠️ No split_circle_summary found in session state")
@@ -4088,7 +4102,10 @@ def render_split_circle_summary():
                     st.success(f"The CircleMetadataManager is tracking {split_count} split circles from {original_count} original circles.")
                     
                     # Show a few examples
-                    if st.checkbox("Show Split Circle Details from Metadata Manager", key="metadata_manager_split_details"):
+                    # Use a dynamic prefix based on where it's called from 
+                    # to ensure unique keys for each rendering context
+                    checkbox_key = f"metadata_manager_split_details_{id(manager)}"
+                    if st.checkbox("Show Split Circle Details from Metadata Manager", key=checkbox_key):
                         st.subheader("Sample of Split Circles in Metadata Manager")
                         
                         # Get up to 5 split circle IDs
@@ -4179,7 +4196,7 @@ def render_results_overview():
     st.subheader("Matching Results Overview")
     
     # Add the split circle summary right after the main header
-    render_split_circle_summary()
+    render_split_circle_summary(key_prefix="results_overview")
     
     # Get the data
     matched_df = st.session_state.matched_circles
