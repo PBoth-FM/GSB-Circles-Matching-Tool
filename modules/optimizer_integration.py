@@ -336,7 +336,7 @@ def update_metadata_manager_with_splits(split_summary):
     # 4. Force a rerun of several key data-dependent functions to refresh UI data
     if hasattr(st.session_state, 'processed_data') and st.session_state.processed_data is not None:
         # Rebuild circle member lists to ensure all members are correctly assigned
-        from app import rebuild_circle_member_lists
+        from utils.circle_rebuilder import rebuild_circle_member_lists
         
         try:
             # Get current circles and participants

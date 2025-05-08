@@ -4319,7 +4319,7 @@ def render_circle_table():
     """Render the circle composition table"""
     # ENHANCED: Use rebuild_circle_member_lists to get the most accurate data
     import pandas as pd
-    from app import rebuild_circle_member_lists
+    from utils.circle_rebuilder import rebuild_circle_member_lists
     
     # Check if we have data to display
     if ('matched_circles' not in st.session_state or 
