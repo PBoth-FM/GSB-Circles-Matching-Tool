@@ -8,7 +8,7 @@ import numpy as np
 import random
 from typing import Dict, List, Tuple, Any, Union, Optional
 
-def rebuild_circle_member_lists(circles_data, participants_data):
+def rebuild_circle_member_lists(circles_data, participants_data=None):
     """
     Reconstruct complete member lists for all circles directly from participant data.
     This function addresses the disconnect between member_count and actual members lists.
@@ -16,10 +16,24 @@ def rebuild_circle_member_lists(circles_data, participants_data):
     Args:
         circles_data: DataFrame or list of dictionaries containing circle data
         participants_data: DataFrame containing participant data with circle assignments
+                          (or None to use ParticipantDataManager)
         
     Returns:
         List or DataFrame with rebuilt member lists for each circle
     """
+    import streamlit as st
+    from utils.participant_data_manager import ParticipantDataManager
+    
+    # Check if we have a ParticipantDataManager in session state
+    if participants_data is None and hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+        print("🔍 Using ParticipantDataManager for circle member reconstruction")
+        participants_data = st.session_state.participant_data_manager.get_all_participants()
+        print(f"✅ Retrieved {len(participants_data)} participants from ParticipantDataManager")
+    
+    # Safety check to ensure we have participant data
+    if participants_data is None:
+        print("⚠️ ERROR: participants_data is None and no ParticipantDataManager found in session state")
+        raise ValueError("No participant data available for circle member rebuilding")
     # Convert to DataFrame if needed for consistent processing
     input_was_list = not isinstance(circles_data, pd.DataFrame)
     if input_was_list:
@@ -170,6 +184,33 @@ def update_participant_assignments(participants_data, original_circle_id, new_ci
     Returns:
         DataFrame: Updated participants DataFrame with new circle assignments
     """
+    import streamlit as st
+    from utils.participant_data_manager import ParticipantDataManager
+    
+    # Try to use ParticipantDataManager if available
+    if hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+        print(f"🔍 Using ParticipantDataManager to update circle assignments")
+        try:
+            manager = st.session_state.participant_data_manager
+            update_count = 0
+            
+            # Update assignments through the manager
+            for member_id, new_circle_id in new_circle_assignments.items():
+                success = manager.update_participant_circle(member_id, new_circle_id)
+                if success:
+                    update_count += 1
+                else:
+                    print(f"⚠️ WARNING: Failed to update circle for member {member_id}")
+            
+            print(f"✅ ParticipantDataManager: Updated {update_count} participant assignments from {original_circle_id} to split circles")
+            
+            # Return the updated DataFrame from the manager
+            return manager.get_all_participants()
+        except Exception as e:
+            print(f"⚠️ ERROR using ParticipantDataManager to update assignments: {str(e)}")
+            print("Falling back to direct DataFrame update")
+    
+    # Fall back to traditional approach
     # Create a copy to avoid modifying the original
     updated_participants = participants_data.copy()
     
@@ -466,6 +507,9 @@ def get_member_roles(participants_data, member_ids):
     Returns:
         dict: Dictionary with member roles information
     """
+    import streamlit as st
+    from utils.participant_data_manager import ParticipantDataManager
+    
     # Initialize role categories
     roles = {
         "always_host": [],
@@ -474,6 +518,46 @@ def get_member_roles(participants_data, member_ids):
         "co_leader": []
     }
     
+    # First try using ParticipantDataManager if available
+    participant_manager = None
+    if hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+        participant_manager = st.session_state.participant_data_manager
+        print(f"🔍 DEBUG: Using ParticipantDataManager for role analysis of {len(member_ids)} members")
+        
+        if participant_manager and member_ids:
+            # Process each member using the manager
+            for member_id in member_ids:
+                try:
+                    # Get host status directly from manager
+                    host_status = participant_manager.get_participant_host_status(member_id)
+                    
+                    # Categorize based on host status
+                    if host_status == "always":
+                        roles["always_host"].append(member_id)
+                    elif host_status == "sometimes":
+                        roles["sometimes_host"].append(member_id)
+                    else:
+                        roles["never_host"].append(member_id)
+                    
+                    # Check co-leader status
+                    if participant_manager.is_participant_co_leader(member_id):
+                        roles["co_leader"].append(member_id)
+                        
+                except Exception as e:
+                    print(f"⚠️ WARNING: Error in ParticipantDataManager for member {member_id}: {str(e)}")
+                    # Default to never host on error
+                    roles["never_host"].append(member_id)
+            
+            # If we successfully processed members with the manager, return the results
+            if any(len(role_list) > 0 for role_list in roles.values()):
+                print(f"✅ ParticipantDataManager: Member role analysis complete")
+                print(f"   Always Hosts: {len(roles['always_host'])}")
+                print(f"   Sometimes Hosts: {len(roles['sometimes_host'])}")
+                print(f"   Never Hosts: {len(roles['never_host'])}")
+                print(f"   Co-Leaders: {len(roles['co_leader'])}")
+                return roles
+    
+    # Fall back to traditional approach if manager method failed or wasn't available
     # Skip if no participant data
     if participants_data is None or len(member_ids) == 0:
         print(f"🔍 DEBUG: No participants or member_ids for role analysis")
@@ -1053,12 +1137,50 @@ def get_region_subregion_from_participants(participants_data, member_ids):
     Extract region and subregion from the first participant in a circle.
     
     Args:
-        participants_data (DataFrame): DataFrame with participant information
+        participants_data (DataFrame or None): DataFrame with participant information or None to use ParticipantDataManager
         member_ids (list): List of member IDs in the circle
         
     Returns:
         tuple: (region, subregion) strings extracted from the first participant's data
     """
+    import streamlit as st
+    from utils.participant_data_manager import ParticipantDataManager
+    
+    # First try using ParticipantDataManager if available
+    participant_manager = None
+    if hasattr(st, 'session_state') and hasattr(st.session_state, 'participant_data_manager'):
+        participant_manager = st.session_state.participant_data_manager
+        print("🔍 Using ParticipantDataManager for region/subregion extraction")
+        
+        if participant_manager and member_ids:
+            # Try each member ID until we find valid region data
+            for member_id in member_ids:
+                try:
+                    # Get participant data directly from manager
+                    participant = participant_manager.get_participant_by_id(member_id)
+                    if participant:
+                        # Extract region
+                        region = ""
+                        for field in ['Current Region', 'Region', 'region', 'current_region', 'Derived_Region']:
+                            if field in participant and participant[field] and not pd.isna(participant[field]):
+                                region = str(participant[field])
+                                break
+                                
+                        # Extract subregion
+                        subregion = ""
+                        for field in ['Current Subregion', 'Subregion', 'subregion', 'current_subregion']:
+                            if field in participant and participant[field] and not pd.isna(participant[field]):
+                                subregion = str(participant[field])
+                                break
+                                
+                        if region:
+                            print(f"✅ ParticipantDataManager: Found region '{region}' and subregion '{subregion}' for member {member_id}")
+                            return region, subregion
+                except Exception as e:
+                    print(f"⚠️ Error in ParticipantDataManager for member {member_id}: {str(e)}")
+                    continue
+    
+    # Fall back to traditional approach if manager method failed or wasn't available
     if participants_data is None or not member_ids:
         print("⚠️ No participant data or member IDs available for region extraction")
         return "", ""
