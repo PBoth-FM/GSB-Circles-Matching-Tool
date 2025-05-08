@@ -187,6 +187,32 @@ def run_optimization():
                     print(f"✅ After de-duplication: {results.shape[0]} participants (was {total_ids})")
             
             # Count matched vs unmatched
+            # Check if proposed_NEW_circles_id column exists, and add it if needed
+            if 'proposed_NEW_circles_id' not in results.columns:
+                print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results")
+                
+                # Check for alternative column names that might contain the same information
+                potential_cols = [
+                    'circles_id', 'circle_id', 
+                    'proposed_circles_id', 'NEW_circles_id',
+                    'matched_circle_id', 'circle_assignment'
+                ]
+                
+                found_alternative = False
+                for col in potential_cols:
+                    if col in results.columns:
+                        print(f"✅ Found alternative column '{col}' - using this instead")
+                        # Copy the alternative column to the expected name
+                        results['proposed_NEW_circles_id'] = results[col]
+                        found_alternative = True
+                        break
+                        
+                if not found_alternative:
+                    print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
+                    # Create the column with a default value of UNMATCHED
+                    results['proposed_NEW_circles_id'] = 'UNMATCHED'
+            
+            # Now proceed with the count (the column should exist now)
             if 'proposed_NEW_circles_id' in results.columns:
                 matched_in_results = len(results[results['proposed_NEW_circles_id'] != 'UNMATCHED'])
                 unmatched_in_results = len(results[results['proposed_NEW_circles_id'] == 'UNMATCHED'])
@@ -685,6 +711,60 @@ def process_uploaded_file(uploaded_file):
                     matched_count = 0
                     unmatched_count = 0
                     
+                    # Check if the required column exists and add it if it doesn't
+                    if 'proposed_NEW_circles_id' not in results_df.columns:
+                        print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results_df")
+                        
+                        # Check for alternative column names that might contain the same information
+                        potential_cols = [
+                            'circles_id', 'circle_id', 
+                            'proposed_circles_id', 'NEW_circles_id',
+                            'matched_circle_id', 'circle_assignment'
+                        ]
+                        
+                        found_alternative = False
+                        for col in potential_cols:
+                            if col in results_df.columns:
+                                print(f"✅ Found alternative column '{col}' - using this instead")
+                                # Copy the alternative column to the expected name
+                                results_df['proposed_NEW_circles_id'] = results_df[col]
+                                found_alternative = True
+                                break
+                                
+                        if not found_alternative:
+                            print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
+                            # Create the column with a default value of UNMATCHED
+                            results_df['proposed_NEW_circles_id'] = 'UNMATCHED'
+                            
+                            # If we have a matched_circles column in session state, try to map participants to circles
+                            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+                                print("🔄 Attempting to rebuild proposed_NEW_circles_id from matched_circles")
+                                try:
+                                    # For each circle, find its members and update their assignment in results_df
+                                    circles = st.session_state.matched_circles
+                                    matched_count = 0
+                                    
+                                    if isinstance(circles, list):
+                                        for circle in circles:
+                                            if isinstance(circle, dict) and 'members' in circle and 'circle_id' in circle:
+                                                circle_id = circle['circle_id']
+                                                members = circle['members']
+                                                
+                                                # Update assignments for all members of this circle
+                                                for member_id in members:
+                                                    # Find this member in results_df and update their assignment
+                                                    mask = results_df['Encoded ID'].astype(str) == str(member_id)
+                                                    if mask.any():
+                                                        results_df.loc[mask, 'proposed_NEW_circles_id'] = circle_id
+                                                        matched_count += 1
+                                        
+                                        print(f"✅ Rebuilt circle assignments for {matched_count} participants")
+                                except Exception as e:
+                                    print(f"⚠️ Error rebuilding circle assignments: {str(e)}")
+                        
+                        # Update the session state with the modified results_df that now has the required column
+                        st.session_state.results = results_df
+                    
                     if 'proposed_NEW_circles_id' in results_df.columns:
                         # Check all values for diagnostics
                         circle_values = results_df['proposed_NEW_circles_id'].value_counts().to_dict()
@@ -842,12 +922,69 @@ def process_uploaded_file(uploaded_file):
                     # ENHANCED CSV DIAGNOSTICS: Compare with what will appear in the CSV
                     print("\n🔍🔍🔍 COMPARING UI STATS VS CSV EXPORT 🔍🔍🔍")
                     
+                    # Check if the required column exists and add it if it doesn't
+                    if 'proposed_NEW_circles_id' not in results_df.columns:
+                        print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results_df")
+                        
+                        # Check for alternative column names that might contain the same information
+                        potential_cols = [
+                            'circles_id', 'circle_id', 
+                            'proposed_circles_id', 'NEW_circles_id',
+                            'matched_circle_id', 'circle_assignment'
+                        ]
+                        
+                        found_alternative = False
+                        for col in potential_cols:
+                            if col in results_df.columns:
+                                print(f"✅ Found alternative column '{col}' - using this instead")
+                                # Copy the alternative column to the expected name
+                                results_df['proposed_NEW_circles_id'] = results_df[col]
+                                found_alternative = True
+                                break
+                                
+                        if not found_alternative:
+                            print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
+                            # Create the column with a default value of UNMATCHED
+                            results_df['proposed_NEW_circles_id'] = 'UNMATCHED'
+                            
+                            # If we have a matched_circles column in session state, try to map participants to circles
+                            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+                                print("🔄 Attempting to rebuild proposed_NEW_circles_id from matched_circles")
+                                try:
+                                    # For each circle, find its members and update their assignment in results_df
+                                    circles = st.session_state.matched_circles
+                                    matched_count = 0
+                                    
+                                    if isinstance(circles, list):
+                                        for circle in circles:
+                                            if isinstance(circle, dict) and 'members' in circle and 'circle_id' in circle:
+                                                circle_id = circle['circle_id']
+                                                members = circle['members']
+                                                
+                                                # Update assignments for all members of this circle
+                                                for member_id in members:
+                                                    # Find this member in results_df and update their assignment
+                                                    mask = results_df['Encoded ID'].astype(str) == str(member_id)
+                                                    if mask.any():
+                                                        results_df.loc[mask, 'proposed_NEW_circles_id'] = circle_id
+                                                        matched_count += 1
+                                        
+                                        print(f"✅ Rebuilt circle assignments for {matched_count} participants")
+                                except Exception as e:
+                                    print(f"⚠️ Error rebuilding circle assignments: {str(e)}")
+                    
+                    # Now use the column (which should exist now)
+                    print(f"🔍 Column check: 'proposed_NEW_circles_id' exists: {'proposed_NEW_circles_id' in results_df.columns}")
+                    
                     # Capture the list of matched participants that contribute to the UI count
                     valid_circle_mask = (results_df['proposed_NEW_circles_id'].notna()) & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
                     ui_matched_ids = results_df[valid_circle_mask]['Encoded ID'].tolist()
                     
                     # Store this for comparison when CSV is downloaded
                     st.session_state.ui_matched_ids = ui_matched_ids
+                    
+                    # Update the session state with the modified results_df that now has the required column
+                    st.session_state.results = results_df
                     
                     # Generate a test CSV (same process used in the download button)
                     from utils.helpers import generate_download_link, get_valid_participants
