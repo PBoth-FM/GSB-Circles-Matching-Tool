@@ -28,18 +28,41 @@ def rebuild_circle_member_lists(circles_data, participants_data):
         circles_df = circles_data.copy()
     
     # Find the column that contains circle assignments
+    # Use Current_Circle_ID as primary (only for CONTINUING participants), then fall back
     circle_col = None
+    current_circle_col = None
+    
+    # First, check for Current_Circle_ID column which applies to continuing participants
+    if 'Current_Circle_ID' in participants_data.columns:
+        current_circle_col = 'Current_Circle_ID'
+        print(f"✅ Found Current_Circle_ID column for CONTINUING participants")
+        
+        # Check how many participants have assignments
+        if 'Status' in participants_data.columns:
+            continuing_count = participants_data[
+                (participants_data['Status'] == 'CONTINUING') & 
+                (~participants_data['Current_Circle_ID'].isna())
+            ].shape[0]
+            print(f"✅ Found {continuing_count} CONTINUING participants with circle assignments")
+    
+    # Also look for a column for general/new assignments
     for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
         if col in participants_data.columns:
             circle_col = col
+            print(f"✅ Found general circle assignment column: '{circle_col}'")
+            # Check how many participants have assignments
+            assigned_count = participants_data[~participants_data[circle_col].isna()].shape[0]
+            print(f"✅ Found {assigned_count} participants with assignments in column '{circle_col}'")
             break
     
-    if not circle_col:
+    if not current_circle_col and not circle_col:
         print("⚠️ WARNING: Could not find circle assignment column in participants data")
+        print(f"⚠️ Available columns: {participants_data.columns.tolist()}")
         return circles_data  # Return original data if we can't find assignments
     
     # Track which circles were updated
     circles_updated = 0
+    all_circle_members = 0
     
     # For each circle, find all participants assigned to it
     for idx, circle in circles_df.iterrows():
@@ -47,14 +70,53 @@ def rebuild_circle_member_lists(circles_data, participants_data):
         if not circle_id:
             continue
         
-        # Find all participants assigned to this circle
-        circle_members = participants_data[participants_data[circle_col] == circle_id]
-        if 'Encoded ID' in participants_data.columns and not circle_members.empty:
-            # Get the member IDs and update the circle
-            member_ids = circle_members['Encoded ID'].tolist()
+        # Get members using both approaches
+        members_list = []
+        
+        # Method 1: Check CONTINUING participants using Current_Circle_ID
+        if current_circle_col:
+            # Select CONTINUING participants in this circle
+            if 'Status' in participants_data.columns:
+                continuing_members = participants_data[
+                    (participants_data[current_circle_col] == circle_id) & 
+                    (participants_data['Status'] == 'CONTINUING')
+                ]
+            else:
+                continuing_members = participants_data[participants_data[current_circle_col] == circle_id]
             
-            # Filter out any None or NaN values
-            member_ids = [str(m) for m in member_ids if m is not None and not pd.isna(m)]
+            if 'Encoded ID' in participants_data.columns and not continuing_members.empty:
+                continuing_ids = continuing_members['Encoded ID'].dropna().tolist()
+                # Add to our member list
+                members_list.extend(continuing_ids)
+                print(f"👥 Circle {circle_id}: Found {len(continuing_ids)} CONTINUING members")
+        
+        # Method 2: Check general assignments using the other circle column
+        if circle_col:
+            general_members = participants_data[participants_data[circle_col] == circle_id]
+            if 'Encoded ID' in participants_data.columns and not general_members.empty:
+                general_ids = general_members['Encoded ID'].dropna().tolist()
+                # Only add IDs not already in the list
+                new_ids = [id for id in general_ids if id not in members_list]
+                if new_ids:
+                    members_list.extend(new_ids)
+                    print(f"👥 Circle {circle_id}: Found {len(new_ids)} additional members from '{circle_col}'")
+        
+        # If we found any members, update the circle
+        if members_list:
+            # Filter out any None or NaN values and convert to strings
+            member_ids = [str(m) for m in members_list if m is not None and not pd.isna(m)]
+            
+            # Debug for specific test circles
+            if circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
+                print(f"🔍 TEST CIRCLE {circle_id}: Found {len(member_ids)} total members")
+                if len(member_ids) > 0:
+                    print(f"🔍 First few members: {member_ids[:3]}")
+                
+                # Check for member count mismatch
+                if 'member_count' in circles_df.columns:
+                    current_count = circles_df.at[idx, 'member_count']
+                    if current_count != len(member_ids):
+                        print(f"⚠️ Member count mismatch for {circle_id}: stored={current_count}, found={len(member_ids)}")
             
             # Update the circle
             circles_df.at[idx, 'members'] = member_ids
@@ -67,8 +129,9 @@ def rebuild_circle_member_lists(circles_data, participants_data):
                 circles_df.at[idx, 'member_count'] = len(member_ids)
             
             circles_updated += 1
+            all_circle_members += len(member_ids)
     
-    print(f"✅ Successfully rebuilt member lists for {circles_updated} circles")
+    print(f"✅ Successfully rebuilt member lists for {circles_updated} circles with a total of {all_circle_members} members")
     
     # Return in the same format as the input
     if input_was_list:

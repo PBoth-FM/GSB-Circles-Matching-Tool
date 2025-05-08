@@ -1321,18 +1321,28 @@ def rebuild_circle_member_lists(circles_df, participants_df):
     updated_circles = circles_df.copy()
     
     # Find the column that contains circle assignments
+    # Use Current_Circle_ID as the primary column (as specified), then fall back to alternatives
     circle_col = None
-    for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
+    preferred_cols = ['Current_Circle_ID', 'assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']
+    
+    for col in preferred_cols:
         if col in participants_df.columns:
             circle_col = col
+            print(f"✅ Found circle assignment column: '{circle_col}'")
+            # Show how many participants have assignments in this column
+            assigned_count = participants_df[~participants_df[circle_col].isna()].shape[0]
+            total_count = len(participants_df)
+            print(f"✅ Found {assigned_count} of {total_count} participants with circle assignments in column '{circle_col}'")
             break
     
     if not circle_col:
         print("⚠️ WARNING: Could not find circle assignment column in participants data")
+        print(f"⚠️ Available columns: {participants_df.columns.tolist()}")
         return updated_circles  # No column found to rebuild memberships
     
     # Track which circles were updated
     circles_updated = 0
+    all_circle_members = 0
     
     # For each circle, find all participants assigned to it
     for idx, circle in updated_circles.iterrows():
@@ -1349,6 +1359,18 @@ def rebuild_circle_member_lists(circles_df, participants_df):
             # Filter out any None or NaN values
             member_ids = [str(m) for m in member_ids if m is not None and not pd.isna(m)]
             
+            # Debug for specific test circles
+            if circle_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
+                print(f"🔍 Circle {circle_id}: Found {len(member_ids)} members using column '{circle_col}'")
+                if len(member_ids) > 0:
+                    print(f"🔍 First few members: {member_ids[:3]}")
+                
+                # Check for member count mismatch
+                if 'member_count' in updated_circles.columns:
+                    current_count = updated_circles.at[idx, 'member_count']
+                    if current_count != len(member_ids):
+                        print(f"⚠️ Member count mismatch for {circle_id}: stored={current_count}, found={len(member_ids)}")
+            
             # Update the circle
             updated_circles.at[idx, 'members'] = member_ids
             
@@ -1360,8 +1382,33 @@ def rebuild_circle_member_lists(circles_df, participants_df):
                 updated_circles.at[idx, 'member_count'] = len(member_ids)
             
             circles_updated += 1
+            all_circle_members += len(member_ids)
     
-    print(f"✅ Successfully rebuilt member lists for {circles_updated} circles")
+    print(f"✅ Successfully rebuilt member lists for {circles_updated} circles with a total of {all_circle_members} members")
+    
+    # Debug special case: why is there a mismatch for IP-NAP-01?
+    if 'Current_Circle_ID' in participants_df.columns:
+        for test_id in ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']:
+            # Find circle in updated DataFrame
+            circle_row = updated_circles[updated_circles['circle_id'] == test_id]
+            if not circle_row.empty:
+                stored_count = circle_row.iloc[0].get('member_count', 0)
+                # Find all continuing participants in this circle
+                continuing_members = participants_df[
+                    (participants_df['Current_Circle_ID'] == test_id) &
+                    (participants_df['Status'] == 'CONTINUING')
+                ]
+                print(f"🔍 DEEP DEBUG {test_id}: Found {len(continuing_members)} continuing members")
+                
+                # Check for any participants with this circle ID but not continuing status
+                other_members = participants_df[
+                    (participants_df['Current_Circle_ID'] == test_id) &
+                    (participants_df['Status'] != 'CONTINUING')
+                ]
+                if not other_members.empty:
+                    print(f"⚠️ Found {len(other_members)} NON-continuing participants with {test_id} assignment")
+                    print(f"⚠️ Their statuses: {other_members['Status'].unique().tolist()}")
+    
     return updated_circles
 
 def test_circle_splitting():
@@ -1387,7 +1434,10 @@ def test_circle_splitting():
         
         # Attempt to identify which column contains circle assignments
         circle_col = None
-        for col in ['assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']:
+        # First, check if we have Current_Circle_ID as specified
+        preferred_cols = ['Current_Circle_ID', 'assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']
+        
+        for col in preferred_cols:
             if col in participants_data.columns:
                 circle_col = col
                 st.write(f"Found circle assignment column: '{circle_col}'")
@@ -1397,6 +1447,13 @@ def test_circle_splitting():
                 # Show sample of different circle IDs in use
                 sample_circles = participants_data[circle_col].dropna().unique()[:5]
                 st.write(f"Sample circle IDs: {sample_circles.tolist()}")
+                
+                # For Current_Circle_ID specifically, also check status distribution
+                if col == 'Current_Circle_ID':
+                    st.write("Distribution of participants with Current_Circle_ID by Status:")
+                    if 'Status' in participants_data.columns:
+                        status_counts = participants_data[~participants_data['Current_Circle_ID'].isna()]['Status'].value_counts()
+                        st.write(status_counts)
                 break
         
         if not circle_col:
