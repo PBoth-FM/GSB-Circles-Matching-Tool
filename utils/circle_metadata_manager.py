@@ -1050,13 +1050,35 @@ class CircleMetadataManager:
         return [c for c in self.circles.values() if c.get('is_new_circle', False)]
     
     def get_circle_members(self, circle_id: str) -> List[str]:
-        """Get member IDs for a specific circle"""
+        """
+        Get member IDs for a specific circle
+        
+        Args:
+            circle_id: The ID of the circle to get members for
+            
+        Returns:
+            List of member IDs or empty list if circle not found
+        """
+        if not circle_id:
+            # Handle case where circle_id is None or empty
+            self.logger.warning(f"Attempted to get members for invalid circle_id: '{circle_id}'")
+            return []
+            
         circle = self.get_circle_data(circle_id)
         if circle is None:
-            print(f"⚠️ WARNING: Circle {circle_id} not found in metadata manager")
+            self.logger.warning(f"⚠️ Circle {circle_id} not found in metadata manager")
             return []
+            
+        # Get members with fallback to empty list
         members = circle.get('members', [])
-        return self._ensure_list(members)
+        
+        # Ensure members is a list and filter out invalid values
+        member_list = self._ensure_list(members)
+        
+        # Log details for debugging
+        self.logger.info(f"Retrieved {len(member_list)} members for circle {circle_id}")
+        
+        return member_list
     
     def get_circle_member_data(self, circle_id: str) -> pd.DataFrame:
         """Get detailed data for all members of a circle"""
