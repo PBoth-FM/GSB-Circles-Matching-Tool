@@ -1696,6 +1696,9 @@ def test_circle_splitting():
     4. Ensures all split circles maintain minimum size requirements (5+ members)
     5. Confirms original circles are properly deactivated
     """
+    # Add the import for streamlit first
+    import streamlit as st
+    
     st.info("Running direct test of circle splitting functionality...")
     
     if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
