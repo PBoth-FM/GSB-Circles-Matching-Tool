@@ -712,6 +712,21 @@ def update_metadata_manager_with_splits(split_summary):
             # Update the original circle with this information
             manager.add_or_update_circle(original_circle_id, original_circle_data)
             print(f"✅ Updated original circle {original_circle_id} to mark as replaced by splits")
+            
+            # CRITICAL ENHANCEMENT: Also update circles_data in session state
+            # This aligns with what happens in the Split Test tab and is key to making views update
+            if 'circles_data' in st.session_state and isinstance(st.session_state.circles_data, list):
+                print(f"  🔄 Updating circles_data in session state for original circle {original_circle_id}")
+                for i, circle in enumerate(st.session_state.circles_data):
+                    if circle.get('circle_id') == original_circle_id:
+                        # Update with our marked-inactive data
+                        st.session_state.circles_data[i] = {**circle, **{
+                            'replaced_by_splits': True,
+                            'active': False,
+                            'split_into': new_circle_ids
+                        }}
+                        print(f"  ✅ Successfully updated original circle in circles_data")
+                        break
         else:
             print(f"⚠️ WARNING: Original circle {original_circle_id} not found in CircleMetadataManager")
         
@@ -790,6 +805,14 @@ def update_metadata_manager_with_splits(split_summary):
             # Add to metadata manager
             manager.add_or_update_circle(new_circle_id, circle_data)
             print(f"✅ Added split circle {new_circle_id} to CircleMetadataManager with {member_count} members")
+            
+            # CRITICAL ENHANCEMENT: Also add to circles_data in session state (needed for UI components)
+            if 'circles_data' in st.session_state:
+                if isinstance(st.session_state.circles_data, list):
+                    # Add the new split circle to circles_data
+                    print(f"  🔄 Adding split circle {new_circle_id} to circles_data in session state")
+                    st.session_state.circles_data.append(circle_data)
+                    print(f"  ✅ Successfully added split circle to circles_data")
     
     print(f"✅ CircleMetadataManager now tracking {len(manager.split_circles)} split circles")
     
