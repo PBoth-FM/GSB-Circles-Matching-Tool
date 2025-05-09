@@ -50,6 +50,71 @@ def generate_download_link(df):
             print(f"  ✓ Column '{col}' exists in dataframe")
         else:
             print(f"  ⚠️ Column '{col}' NOT FOUND in dataframe!")
+            
+    # CRITICAL ENHANCEMENT: Filter out participants assigned to inactive/original circles
+    # that have been split into new circles
+    if 'proposed_NEW_circles_id' in output_df.columns:
+        # Track how many circles have SPLIT in their name (should be split circles)
+        split_circles = [c for c in output_df['proposed_NEW_circles_id'].unique() 
+                         if isinstance(c, str) and 'SPLIT' in c]
+        if split_circles:
+            print(f"  ✓ Found {len(split_circles)} split circles in results")
+        
+        # Load the CircleMetadataManager to check for inactive circles
+        try:
+            from utils.circle_metadata_manager import get_manager_from_session_state
+            import streamlit as st
+            
+            if 'session_state' in dir(st):
+                manager = get_manager_from_session_state(st.session_state)
+                if manager:
+                    # Get all inactive circles (replaced by splits)
+                    inactive_circles = [
+                        circle_id for circle_id, data in manager.circles.items() 
+                        if data.get('replaced_by_splits', False)
+                    ]
+                    
+                    if inactive_circles:
+                        print(f"  ⚠️ Found {len(inactive_circles)} inactive circles that were replaced by splits")
+                        print(f"  First few: {inactive_circles[:3]}")
+                        
+                        # Check if any participants are assigned to inactive circles
+                        inactive_assignments = output_df[output_df['proposed_NEW_circles_id'].isin(inactive_circles)]
+                        if not inactive_assignments.empty:
+                            print(f"  ⚠️ Found {len(inactive_assignments)} participants assigned to inactive circles")
+                            print(f"  These will be fixed by reassigning to proper split circles:")
+                            
+                            # For each participant assigned to an inactive circle, find the correct split
+                            fixed_count = 0
+                            for idx, row in inactive_assignments.iterrows():
+                                inactive_circle = row['proposed_NEW_circles_id']
+                                if inactive_circle in manager.original_circles:
+                                    # Get the split circles that replaced this original circle
+                                    split_replacements = manager.original_circles[inactive_circle]
+                                    # Since we don't know which split this participant belongs to,
+                                    # look up the participant ID in circle member lists
+                                    member_id = row.get('Encoded ID')
+                                    if member_id:
+                                        assigned_split = None
+                                        for split_id in split_replacements:
+                                            split_data = manager.get_circle_data(split_id)
+                                            if split_data and 'members' in split_data:
+                                                if member_id in split_data['members']:
+                                                    assigned_split = split_id
+                                                    break
+                                        
+                                        if assigned_split:
+                                            print(f"  ✅ Fixing participant {member_id}: {inactive_circle} → {assigned_split}")
+                                            output_df.at[idx, 'proposed_NEW_circles_id'] = assigned_split
+                                            fixed_count += 1
+                                        else:
+                                            print(f"  ⚠️ Could not find matching split circle for {member_id}")
+                            
+                            if fixed_count > 0:
+                                print(f"  ✅ Fixed {fixed_count} participant assignments from inactive to split circles")
+        except Exception as e:
+            print(f"  ⚠️ Error checking for inactive circles: {str(e)}")
+            print("  Continuing with original circle assignments")
     
     # Count Unknown values in key columns before any fixes
     if 'proposed_NEW_Subregion' in output_df.columns:

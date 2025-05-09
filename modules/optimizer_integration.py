@@ -183,6 +183,28 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
                 validation_results["original_circles_inactive"] = False
                 validation_results["problems_found"].append(f"Original circle {orig_id} not properly marked inactive")
                 print(f"  ⚠️ Original circle {orig_id} is not properly marked inactive")
+                
+                # FIX: Ensure original circle is properly marked as inactive
+                circle_data['active'] = False
+                circle_data['replaced_by_splits'] = True
+                manager.circles[orig_id] = circle_data
+                print(f"  ✅ FIXED: Original circle {orig_id} now properly marked as inactive")
+                
+                # Also update the circle in the updated_circles list/dataframe if present
+                if updated_circles is not None:
+                    if isinstance(updated_circles, pd.DataFrame):
+                        if orig_id in updated_circles['circle_id'].values:
+                            circle_idx = updated_circles.index[updated_circles['circle_id'] == orig_id].tolist()[0]
+                            updated_circles.at[circle_idx, 'active'] = False
+                            updated_circles.at[circle_idx, 'replaced_by_splits'] = True
+                            print(f"  ✅ FIXED: Original circle {orig_id} marked inactive in circles DataFrame")
+                    else:
+                        # List format
+                        for i, circle in enumerate(updated_circles):
+                            if circle.get('circle_id') == orig_id:
+                                updated_circles[i]['active'] = False
+                                updated_circles[i]['replaced_by_splits'] = True
+                                print(f"  ✅ FIXED: Original circle {orig_id} marked inactive in circles list")
         
         # Validate split circles are active and have correct max_additions
         for split_id in manager.split_circles:
@@ -193,6 +215,25 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
                 validation_results["split_circles_active"] = False
                 validation_results["problems_found"].append(f"Split circle {split_id} not marked active")
                 print(f"  ⚠️ Split circle {split_id} is not marked active")
+                
+                # FIX: Ensure split circle is properly marked active
+                circle_data['active'] = True
+                manager.circles[split_id] = circle_data
+                print(f"  ✅ FIXED: Split circle {split_id} now marked as active")
+                
+                # Update in the updated_circles list/dataframe if present
+                if updated_circles is not None:
+                    if isinstance(updated_circles, pd.DataFrame):
+                        if split_id in updated_circles['circle_id'].values:
+                            circle_idx = updated_circles.index[updated_circles['circle_id'] == split_id].tolist()[0]
+                            updated_circles.at[circle_idx, 'active'] = True
+                            print(f"  ✅ FIXED: Split circle {split_id} marked active in circles DataFrame")
+                    else:
+                        # List format
+                        for i, circle in enumerate(updated_circles):
+                            if circle.get('circle_id') == split_id:
+                                updated_circles[i]['active'] = True
+                                print(f"  ✅ FIXED: Split circle {split_id} marked active in circles list")
             
             # Check max_additions is correctly set
             member_count = circle_data.get('member_count', 0)
@@ -205,9 +246,102 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
                     f"Split circle {split_id} has incorrect max_additions: {actual_max_additions}, expected: {expected_max_additions}"
                 )
                 print(f"  ⚠️ Split circle {split_id} has incorrect max_additions: {actual_max_additions}, expected: {expected_max_additions}")
+                
+                # FIX: Set the correct max_additions value
+                circle_data['max_additions'] = expected_max_additions
+                # Set eligibility based on whether there's room for new members
+                circle_data['is_eligible'] = expected_max_additions > 0
+                manager.circles[split_id] = circle_data
+                print(f"  ✅ FIXED: Split circle {split_id} max_additions updated to {expected_max_additions}")
+                
+                # Update in the updated_circles list/dataframe if present
+                if updated_circles is not None:
+                    if isinstance(updated_circles, pd.DataFrame):
+                        if split_id in updated_circles['circle_id'].values:
+                            circle_idx = updated_circles.index[updated_circles['circle_id'] == split_id].tolist()[0]
+                            updated_circles.at[circle_idx, 'max_additions'] = expected_max_additions
+                            updated_circles.at[circle_idx, 'is_eligible'] = expected_max_additions > 0
+                            print(f"  ✅ FIXED: Split circle {split_id} max_additions updated in circles DataFrame")
+                    else:
+                        # List format
+                        for i, circle in enumerate(updated_circles):
+                            if circle.get('circle_id') == split_id:
+                                updated_circles[i]['max_additions'] = expected_max_additions
+                                updated_circles[i]['is_eligible'] = expected_max_additions > 0
+                                print(f"  ✅ FIXED: Split circle {split_id} max_additions updated in circles list")
     
     # Add validation results to the summary
     preprocessing_summary["validation_results"] = validation_results
+    
+    # Run final check to ensure updated_circles contains all split circles and original circles are inactive
+    if split_summary and split_summary.get('total_circles_successfully_split', 0) > 0:
+        print("\n🔍 FINAL VALIDATION: Ensuring all split circles are present and original circles are inactive")
+        
+        # Get all original and split circle IDs
+        original_circle_ids = []
+        split_circle_ids = []
+        
+        for detail in split_summary.get("split_details", []):
+            original_id = detail.get("original_circle_id")
+            if original_id:
+                original_circle_ids.append(original_id)
+                
+            new_ids = detail.get("new_circle_ids", [])
+            split_circle_ids.extend(new_ids)
+        
+        # Check updated_circles to ensure all circles are present with correct status
+        if updated_circles is not None:
+            if isinstance(updated_circles, pd.DataFrame):
+                # DataFrame format
+                # Check original circles are inactive
+                for orig_id in original_circle_ids:
+                    if orig_id in updated_circles['circle_id'].values:
+                        idx = updated_circles.index[updated_circles['circle_id'] == orig_id].tolist()[0]
+                        active_status = updated_circles.at[idx, 'active']
+                        if active_status == True:
+                            print(f"  ⚠️ FINAL CHECK: Original circle {orig_id} still marked as active in final DataFrame")
+                            updated_circles.at[idx, 'active'] = False
+                            print(f"  ✅ FIXED: Original circle {orig_id} now properly marked inactive in final check")
+                
+                # Check split circles are present and active
+                for split_id in split_circle_ids:
+                    if split_id not in updated_circles['circle_id'].values:
+                        print(f"  ⚠️ FINAL CHECK: Split circle {split_id} missing from final DataFrame")
+                    else:
+                        idx = updated_circles.index[updated_circles['circle_id'] == split_id].tolist()[0]
+                        active_status = updated_circles.at[idx, 'active']
+                        if active_status != True:
+                            print(f"  ⚠️ FINAL CHECK: Split circle {split_id} not marked as active in final DataFrame")
+                            updated_circles.at[idx, 'active'] = True
+                            print(f"  ✅ FIXED: Split circle {split_id} now properly marked active in final check")
+            else:
+                # List format
+                # Check original circles are inactive
+                for orig_id in original_circle_ids:
+                    for i, circle in enumerate(updated_circles):
+                        if circle.get('circle_id') == orig_id:
+                            active_status = circle.get('active', True)
+                            if active_status == True:
+                                print(f"  ⚠️ FINAL CHECK: Original circle {orig_id} still marked as active in final list")
+                                updated_circles[i]['active'] = False
+                                print(f"  ✅ FIXED: Original circle {orig_id} now properly marked inactive in final check")
+                
+                # Check split circles are present and active
+                for split_id in split_circle_ids:
+                    split_found = False
+                    for i, circle in enumerate(updated_circles):
+                        if circle.get('circle_id') == split_id:
+                            split_found = True
+                            active_status = circle.get('active', False)
+                            if active_status != True:
+                                print(f"  ⚠️ FINAL CHECK: Split circle {split_id} not marked as active in final list")
+                                updated_circles[i]['active'] = True
+                                print(f"  ✅ FIXED: Split circle {split_id} now properly marked active in final check")
+                    
+                    if not split_found:
+                        print(f"  ⚠️ FINAL CHECK: Split circle {split_id} missing from final list")
+        
+        print("✅ Final validation complete - updated circles are ready for optimization")
     
     # Debug dump of split circles specifically for UI integration diagnosis
     if manager and hasattr(manager, 'split_circles') and manager.split_circles:
