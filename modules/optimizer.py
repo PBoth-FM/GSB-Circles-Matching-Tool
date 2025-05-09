@@ -274,78 +274,18 @@ def generate_circle_metadata(circle_id, members_list, region=None, subregion=Non
     
     return metadata
 
-def run_matching_algorithm(data, config, existing_circles=None):
+def run_matching_algorithm(data, config):
     """
     Run the optimization algorithm to match participants into circles
     
     Args:
         data: DataFrame with processed participant data
         config: Dictionary with configuration parameters
-        existing_circles: Optional DataFrame or list of circles that have already been processed
-                         (e.g., circles that have been split). If provided, these will be used
-                         instead of circles from session state.
         
     Returns:
         Tuple of (results DataFrame, matched_circles DataFrame, unmatched_participants DataFrame)
         Note: Circle eligibility logs are stored directly in st.session_state.circle_eligibility_logs
     """
-    
-    # CRITICAL: Check for existing circles that were split before or use the passed existing_circles parameter
-    print("\n🔄 CHECKING FOR ALREADY SPLIT CIRCLES")
-    
-    # Use the existing_circles parameter if provided, otherwise check the session state
-    circles_to_use = None
-    
-    if existing_circles is not None:
-        print("🔄 Using pre-split circles passed as parameter")
-        circles_to_use = existing_circles
-    else:
-        try:
-            # First check if we have circle data to split
-            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                # Import our integration module
-                from modules.optimizer_integration import preprocess_circles_for_optimization
-                
-                # Apply preprocessing, which includes circle splitting
-                updated_circles, preprocessing_summary = preprocess_circles_for_optimization(
-                    circles_data=st.session_state.matched_circles,
-                    participants_data=data
-                )
-                
-                # If preprocessing was successful, update the circles in session state
-                if updated_circles is not None:
-                    # Store the updated circles back to session state
-                    st.session_state.matched_circles = updated_circles
-                    circles_to_use = updated_circles
-                    print(f"✅ Updated matched_circles in session state with {len(updated_circles)} circles after preprocessing")
-                    
-                    # Check if we have a split summary
-                    if "split_circle_summary" in preprocessing_summary:
-                        split_summary = preprocessing_summary["split_circle_summary"]
-                        
-                        # Print summary for debugging
-                        split_count = split_summary.get('total_circles_successfully_split', 0)
-                        new_circles = split_summary.get('total_new_circles_created', 0)
-                        
-                        if split_count > 0:
-                            print(f"✅ Successfully split {split_count} large circles into {new_circles} new circles")
-                            
-                            # Show details of the splits
-                            for detail in split_summary.get('split_details', []):
-                                original_id = detail.get('original_circle_id', 'unknown')
-                                new_ids = detail.get('new_circle_ids', [])
-                                print(f"  Split {original_id} into: {', '.join(new_ids)}")
-                        else:
-                            print("ℹ️ No circles were split in this run")
-                    else:
-                        print("ℹ️ No circle splitting summary available")
-            else:
-                print("ℹ️ No circles data available yet - likely first optimization run")
-        except Exception as e:
-            print(f"⚠️ Error during preprocessing/circle splitting: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
-            print("  Continuing with optimization without preprocessing/circle splitting")
     
     # CRITICAL FIX: Check for Seattle specific participants that should match with IP-SEA-01
     # This fix was determined after analyzing the core compatibility issue 
@@ -567,25 +507,6 @@ def run_matching_algorithm(data, config, existing_circles=None):
     processed_participants = set()   # Track participants already assigned
     direct_circles_list = []         # Track circle metadata
     direct_results = []              # Track direct assignments
-    
-    # First check if we have pre-split circles that should be prioritized
-    # This is where we integrate with the circles_to_use parameter
-    existing_circle_ids = []
-    if circles_to_use is not None:
-        # If circles_to_use is a DataFrame, extract the circle_id column
-        if isinstance(circles_to_use, pd.DataFrame):
-            if 'circle_id' in circles_to_use.columns:
-                existing_circle_ids = circles_to_use['circle_id'].tolist()
-                print(f"🔄 Using {len(existing_circle_ids)} existing circles from circles_to_use parameter")
-                # Log the first few circle IDs for debugging
-                print(f"   Sample circle IDs: {existing_circle_ids[:5]}...")
-        # If it's a list of dictionaries, extract the circle_id field
-        elif isinstance(circles_to_use, list) and len(circles_to_use) > 0:
-            if isinstance(circles_to_use[0], dict) and 'circle_id' in circles_to_use[0]:
-                existing_circle_ids = [c.get('circle_id') for c in circles_to_use if c.get('circle_id')]
-                print(f"🔄 Using {len(existing_circle_ids)} existing circles from circles_to_use list")
-                # Log the first few circle IDs for debugging
-                print(f"   Sample circle IDs: {existing_circle_ids[:5] if len(existing_circle_ids) > 5 else existing_circle_ids}...")
 
     # Only proceed if we found the current circle column and are in preserve mode
     if current_circle_col and existing_circle_handling == 'preserve':
@@ -594,12 +515,6 @@ def run_matching_algorithm(data, config, existing_circles=None):
         
         if debug_mode:
             print(f"DIRECT CONTINUATION: Found {len(continuing_df)} CURRENT-CONTINUING participants with circle IDs")
-            
-        # Check for split circles in the existing circles
-        split_circles = [id for id in existing_circle_ids if '-SPLIT-' in id]
-        original_circles = [id.split('-SPLIT-')[0] for id in split_circles]
-        if split_circles:
-            print(f"🔄 Found {len(split_circles)} split circles, derived from {len(set(original_circles))} original circles")
         
         if not continuing_df.empty:
             # Group participants by their current circle ID
@@ -616,23 +531,6 @@ def run_matching_algorithm(data, config, existing_circles=None):
                     
                 # Convert to string and standardize
                 circle_id = str(circle_id).strip()
-                
-                # Check if this is an original circle that has been split
-                skip_circle = False
-                
-                # If we have existing circle IDs from circles_to_use
-                if existing_circle_ids:
-                    # Skip original circles that have already been split
-                    original_circle_id = circle_id
-                    derived_split_ids = [cid for cid in existing_circle_ids if cid.startswith(f"{original_circle_id}-SPLIT-")]
-                    
-                    if derived_split_ids:
-                        print(f"🔄 Skipping original circle {original_circle_id} since it has been split into: {', '.join(derived_split_ids[:3])}...")
-                        skip_circle = True
-                
-                # Skip this circle if it's been split
-                if skip_circle:
-                    continue
                 
                 if debug_mode:
                     print(f"DIRECT CONTINUATION: Processing circle {circle_id} with {len(group)} members")
@@ -1644,145 +1542,6 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                         existing_circles[circle_id] = circle_data
                         if debug_mode:
                             print(f"Preserving viable existing circle {circle_id} with {len(members)} members")
-    
-    # Step 1.5: Split large circles (11+ members) into smaller circles
-    print("\n🔄 CHECKING FOR LARGE CIRCLES (11+ MEMBERS) TO SPLIT")
-    
-    # Import our circle splitting module
-    try:
-        from modules.circle_splitter import split_large_circles
-        print("✅ Successfully imported circle_splitter module")
-    except Exception as e:
-        print(f"❌ ERROR importing circle_splitter module: {str(e)}")
-        # If we fail to import, we'll skip the splitting step
-        split_large_circles = None
-    
-    # Convert our existing_circles dict to a format suitable for the splitter
-    existing_circles_list = []
-    large_circle_count = 0
-    for circle_id, circle_data in existing_circles.items():
-        # Debug logging for large circles
-        member_count = 0
-        # Make sure we correctly handle members field that might be a list or a string representation 
-        if isinstance(circle_data.get('members', []), list):
-            member_count = len(circle_data.get('members', []))
-        elif isinstance(circle_data.get('members', ''), str) and circle_data.get('members', '').startswith('['):
-            try:
-                member_list = eval(circle_data.get('members', '[]'))
-                member_count = len(member_list)
-            except Exception as e:
-                print(f"⚠️ Failed to parse members for {circle_id}: {str(e)}")
-                if ',' in circle_data.get('members', ''):
-                    # Fallback: Count commas for rudimentary member count
-                    member_count = circle_data.get('members', '').count(',') + 1
-                else:
-                    member_count = 1 if circle_data.get('members') else 0
-        elif 'member_count' in circle_data:
-            member_count = circle_data['member_count']
-            
-        if member_count >= 11:
-            large_circle_count += 1
-            print(f"🔎 Found large circle for splitting: {circle_id} with {member_count} members")
-        
-        # Ensure we have member_count field for consistency
-        circle_dict = circle_data.copy()
-        circle_dict['circle_id'] = circle_id
-        if 'member_count' not in circle_dict:
-            circle_dict['member_count'] = member_count
-        existing_circles_list.append(circle_dict)
-    
-    print(f"🔎 Found {large_circle_count} potential large circles to split in existing_circles_list with {len(existing_circles_list)} total circles")
-    print(f"🔎 First 3 circles in list: {[c['circle_id'] for c in existing_circles_list[:3]]}")
-    
-    # Force verification of large circles with 11+ members
-    large_circles = []
-    for circle in existing_circles_list:
-        # Check multiple ways to determine the member count
-        if 'member_count' in circle and circle['member_count'] >= 11:
-            large_circles.append(circle['circle_id'])
-        elif 'members' in circle:
-            if isinstance(circle['members'], list) and len(circle['members']) >= 11:
-                large_circles.append(circle['circle_id'])
-            elif isinstance(circle['members'], str) and circle['members'].count(',') >= 10:  # 11 members = 10 commas
-                large_circles.append(circle['circle_id'])
-    
-    # For testing - force specific circles to be large if they appear in the data
-    test_large_circles = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
-    for circle in existing_circles_list:
-        if circle['circle_id'] in test_large_circles and circle['circle_id'] not in large_circles:
-            print(f"🧪 TEST OVERRIDE: Forcing {circle['circle_id']} to be considered a large circle for splitting")
-            
-            # Ensure this circle appears to have 11+ members for splitting
-            if 'member_count' in circle and circle['member_count'] < 11:
-                circle['member_count'] = 11
-                print(f"🧪 TEST OVERRIDE: Setting member_count=11 for test circle {circle['circle_id']}")
-                
-            large_circles.append(circle['circle_id'])
-    
-    print(f"🔎 Verified {len(large_circles)} large circles to split: {large_circles}")
-    
-    # Force initialize the split_circle_summary in session state to ensure it always exists
-    import streamlit as st
-    if 'split_circle_summary' not in st.session_state:
-        st.session_state.split_circle_summary = {
-            'total_circles_eligible_for_splitting': 0,
-            'total_circles_successfully_split': 0,
-            'total_new_circles_created': 0,
-            'circles_unable_to_split': [],
-            'split_details': []
-        }
-    
-    if existing_circles_list and split_large_circles is not None and len(large_circles) > 0:
-        print(f"🔴 CRITICAL DEBUG: Found {len(large_circles)} large circles with 11+ members. Executing split_large_circles function.")
-        
-        # Run the circle splitting function
-        updated_circles_df, split_summary = split_large_circles(existing_circles_list, region_df)
-        
-        # Store the split summary in session state for UI reporting
-        st.session_state.split_circle_summary = split_summary
-        
-        # Additional debug info about the result
-        print(f"\n🔍 SPLIT CIRCLE SUMMARY:")
-        print(f"  Circles eligible for splitting: {split_summary.get('total_circles_eligible_for_splitting', 0)}")
-        print(f"  Circles successfully split: {split_summary.get('total_circles_successfully_split', 0)}")
-        print(f"  New circles created: {split_summary.get('total_new_circles_created', 0)}")
-        
-        # Format detailed information
-        for detail in split_summary.get('split_details', []):
-            print(f"  Original circle {detail.get('original_circle_id')} split into: {', '.join(detail.get('new_circle_ids', []))}")
-        
-        if split_summary['total_circles_successfully_split'] > 0:
-            print(f"✅ Successfully split {split_summary['total_circles_successfully_split']} large circles into {split_summary['total_new_circles_created']} new circles")
-            
-            # Update our existing_circles dictionary with the split circles
-            existing_circles.clear()
-            
-            # Convert DataFrame back to dictionary format
-            for _, circle in updated_circles_df.iterrows():
-                circle_id = circle['circle_id']
-                circle_dict = circle.to_dict()
-                
-                # Remove circle_id from the dict since it's used as the key
-                if 'circle_id' in circle_dict:
-                    del circle_dict['circle_id']
-                
-                existing_circles[circle_id] = circle_dict
-                
-            print(f"✅ Updated existing_circles dictionary with {len(existing_circles)} circles after splitting")
-        else:
-            print("ℹ️ No circles were split (either none had 11+ members or couldn't meet host requirements)")
-    else:
-        print("ℹ️ No existing circles to check for splitting")
-        
-        # Initialize empty summary if no splitting was done
-        import streamlit as st
-        st.session_state.split_circle_summary = {
-            'total_circles_eligible_for_splitting': 0,
-            'total_circles_successfully_split': 0,
-            'total_new_circles_created': 0,
-            'circles_unable_to_split': [],
-            'split_details': []
-        }
     
     # Step 2: Process participants in existing viable circles
     processed_ids = set()

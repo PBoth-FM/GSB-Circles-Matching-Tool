@@ -1,26 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import random
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import io
 import base64
-import random
-
-# Function has been moved to a more comprehensive implementation at line ~4029
-# This is to avoid duplication and ensure consistent behavior
-def render_split_circle_summary(key_prefix=None):
-    """
-    Render the summary of split circles - redirects to the main implementation
-    
-    Args:
-        key_prefix (str, optional): Prefix for unique Streamlit component keys to avoid duplicates
-    """
-    # Forward to the main implementation
-    from modules.ui_components import render_split_circle_summary as main_render_split_circle_summary
-    return main_render_split_circle_summary(key_prefix=key_prefix)
 
 def calculate_total_diversity_score(matched_circles_df, results_df):
     """
@@ -807,25 +792,17 @@ def render_details_tab():
         st.warning("No matching results available. Please run the matching algorithm first.")
         return
     
-    # Create tabs for different views, adding Split Circles tab
-    detail_tab1, detail_tab2, detail_tab3, detail_tab4 = st.tabs(["Overview", "Circles", "Participants", "Split Circles"])
+    # Create tabs for different views
+    detail_tab1, detail_tab2, detail_tab3 = st.tabs(["Overview", "Circles", "Participants"])
     
     with detail_tab1:
-        # Use render_results_overview without showing the split circle summary inside it
-        # to avoid duplicate rendering
-        st.session_state.skip_split_circle_summary = True
         render_results_overview()
-        st.session_state.skip_split_circle_summary = False
     
     with detail_tab2:
         render_circle_details()
     
     with detail_tab3:
         render_participant_details()
-        
-    with detail_tab4:
-        # Use specific tab key prefix
-        render_split_circle_summary(key_prefix="details_tab4")
 
 
 def render_demographics_tab():
@@ -3988,268 +3965,6 @@ def render_debug_tab():
                 st.write(str(value)[:1000] + "..." if len(str(value)) > 1000 else str(value))
 
 
-def render_split_circle_summary(key_prefix="overview"):
-    """Render a summary of split circles
-    
-    Args:
-        key_prefix (str): Prefix to use for Streamlit widget keys to ensure uniqueness
-    """
-    print(f"\n🔍 CHECKING FOR SPLIT CIRCLE SUMMARY DATA (key_prefix={key_prefix})")
-    
-    # Check if we should skip rendering based on session state flag
-    if hasattr(st.session_state, 'skip_split_circle_summary') and st.session_state.skip_split_circle_summary:
-        print("ℹ️ Skipping split circle summary display due to skip_split_circle_summary flag")
-        return
-    
-    if 'split_circle_summary' not in st.session_state:
-        print("⚠️ No split_circle_summary found in session state")
-        st.info("No circle splitting summary available. Circle splitting may not have been needed or didn't meet requirements.")
-        return
-    
-    split_summary = st.session_state.split_circle_summary
-    
-    # Check the format of the summary - if it's the new format, it will have 'total_circles_examined'
-    if 'total_circles_examined' in split_summary:
-        # New circle splitter format
-        st.subheader("Circle Splitting Summary")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("Total Large Circles Found", split_summary.get("total_large_circles_found", 0))
-            st.metric("Circles Successfully Split", split_summary.get("total_circles_successfully_split", 0))
-            
-        with col2:
-            st.metric("New Circles Created", split_summary.get("total_new_circles_created", 0))
-            st.metric("Total Circles Examined", split_summary.get("total_circles_examined", 0))
-        
-        # If we have details, show a table of specific splits
-        if "split_details" in split_summary and split_summary["split_details"]:
-            st.subheader("Split Details")
-            
-            # Create a list to hold the data for the table
-            table_data = []
-            
-            for detail in split_summary["split_details"]:
-                original_id = detail.get("original_circle_id", "Unknown")
-                new_ids = detail.get("new_circle_ids", [])
-                member_counts = detail.get("member_counts", [])
-                always_hosts = detail.get("always_hosts", [0] * len(new_ids))
-                sometimes_hosts = detail.get("sometimes_hosts", [0] * len(new_ids))
-                
-                # Format the new IDs and member counts
-                new_ids_str = ", ".join(new_ids)
-                member_counts_str = ", ".join([str(count) for count in member_counts])
-                
-                # Add host information with enhanced details and validation
-                host_info = []
-                host_status = []
-                for i in range(len(new_ids)):
-                    # Get host counts - ensure they are integers
-                    always = int(always_hosts[i]) if i < len(always_hosts) and always_hosts[i] is not None else 0
-                    sometimes = int(sometimes_hosts[i]) if i < len(sometimes_hosts) and sometimes_hosts[i] is not None else 0
-                    
-                    # Get host IDs if available
-                    always_host_ids = detail.get("always_host_ids", [])
-                    sometimes_host_ids = detail.get("sometimes_host_ids", [])
-                    
-                    # Get the counts for this specific circle
-                    always_count = len(always_host_ids[i]) if i < len(always_host_ids) else always
-                    sometimes_count = len(sometimes_host_ids[i]) if i < len(sometimes_host_ids) else sometimes
-                    
-                    # Ensure we're comparing integers
-                    always = int(always) if isinstance(always, (int, float, str)) and str(always).strip() else 0
-                    sometimes = int(sometimes) if isinstance(sometimes, (int, float, str)) and str(sometimes).strip() else 0
-                    always_count = int(always_count) if isinstance(always_count, (int, float, str)) and str(always_count).strip() else 0
-                    sometimes_count = int(sometimes_count) if isinstance(sometimes_count, (int, float, str)) and str(sometimes_count).strip() else 0
-                    
-                    # Use the better count (either from the IDs or the original count)
-                    always_final = max(always, always_count)
-                    sometimes_final = max(sometimes, sometimes_count)
-                    
-                    # Format as "XA/YS" (X Always hosts, Y Sometimes hosts)
-                    host_format = f"{always_final}A/{sometimes_final}S"
-                    
-                    # Determine if host requirements are met
-                    meets_requirements = (always_final >= 1) or (sometimes_final >= 2)
-                    
-                    # Format as "✅ XA/YS" if requirements met or "❌ XA/YS" if not
-                    if meets_requirements:
-                        host_info.append(f"✅ {host_format}")
-                        host_status.append("Valid")
-                    else:
-                        host_info.append(f"❌ {host_format}")
-                        host_status.append("Invalid")
-                
-                host_info_str = ", ".join(host_info)
-                
-                # Add alert if any split circle doesn't meet requirements
-                if "Invalid" in host_status:
-                    print(f"⚠️ WARNING: Some split circles for {detail['original_circle_id']} don't meet host requirements")
-                    # We'll still display them in the table, but with warning indicators
-                
-                # Add to table data
-                table_data.append({
-                    "Original Circle": original_id,
-                    "New Circles": new_ids_str,
-                    "Member Distribution": member_counts_str,
-                    "Host Distribution": host_info_str
-                })
-            
-            # Display as a DataFrame
-            st.dataframe(pd.DataFrame(table_data))
-            
-            # Calculate total members before and after splitting
-            total_members_before = sum([sum(detail.get("member_counts", [])) for detail in split_summary["split_details"]])
-            total_members_after = sum([sum(detail.get("member_counts", [])) for detail in split_summary["split_details"]])
-            
-            # Show verification message
-            st.info(f"**Verification**: Total members before splitting: {total_members_before}, after splitting: {total_members_after}. " 
-                    f"All members were preserved in the splitting process.")
-                    
-            # Check if we have a metadata manager in the session state
-            if 'circle_metadata_manager' in st.session_state and st.session_state.circle_metadata_manager:
-                manager = st.session_state.circle_metadata_manager
-                
-                # Count total split circles tracked by the manager
-                split_count = len(manager.split_circles)
-                original_count = len(manager.original_circles)
-                
-                if split_count > 0:
-                    st.success(f"The CircleMetadataManager is tracking {split_count} split circles from {original_count} original circles.")
-                    
-                    # Show a few examples
-                    # Use a dynamic prefix based on where it's called from plus a unique identifier
-                    # Combine the key_prefix with a random number to ensure uniqueness
-                    import random
-                    unique_id = f"{key_prefix}_{id(manager)}_{random.randint(10000, 99999)}"
-                    checkbox_key = f"metadata_manager_split_details_{unique_id}"
-                    if st.checkbox("Show Split Circle Details from Metadata Manager", key=checkbox_key):
-                        st.subheader("Sample of Split Circles in Metadata Manager")
-                        
-                        # Get up to 5 split circle IDs
-                        sample_split_ids = list(manager.split_circles.keys())[:5]
-                        
-                        # Create a list for the table
-                        manager_data = []
-                        
-                        for split_id in sample_split_ids:
-                            original_id = manager.get_original_circle_id(split_id)
-                            circle_data = manager.circles.get(split_id, {})
-                            
-                            manager_data.append({
-                                "Split Circle ID": split_id,
-                                "Original Circle ID": original_id,
-                                "Member Count": circle_data.get("member_count", "N/A"),
-                                "Max Additions": circle_data.get("max_additions", "N/A"),
-                                "Always Hosts": circle_data.get("always_hosts", "N/A"),
-                                "Sometimes Hosts": circle_data.get("sometimes_hosts", "N/A")
-                            })
-                        
-                        # Display the table
-                        st.dataframe(pd.DataFrame(manager_data))
-                else:
-                    st.warning("No split circles found in the CircleMetadataManager.")
-            
-    # Handle legacy format for backward compatibility
-    elif 'total_circles_eligible_for_splitting' in split_summary:
-        print(f"✅ Found legacy split_circle_summary with {split_summary['total_circles_eligible_for_splitting']} eligible circles")
-        
-        # Only show this section if there were circles eligible for splitting
-        if split_summary['total_circles_eligible_for_splitting'] == 0:
-            print("ℹ️ No circles eligible for splitting, skipping summary display")
-            st.info("No circle splitting was needed - all circles are optimally sized.")
-            return
-        
-        print(f"🔍 Displaying split summary for {split_summary['total_circles_successfully_split']} split circles")
-        st.subheader("Circle Splitting Summary")
-        
-        # Create metrics for split circles
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.metric("Circles Split", f"{split_summary['total_circles_successfully_split']} of {split_summary['total_circles_eligible_for_splitting']} eligible")
-        
-        with col2:
-            st.metric("New Circles Created", split_summary['total_new_circles_created'])
-    
-    # For completely unknown format
-    else:
-        st.info("Circle splitting data is in an unknown format. Please check the logs for details.")
-        st.json(split_summary)
-    
-    # Show details of each split
-    if split_summary['split_details']:
-        with st.expander("View Split Circle Details", expanded=False):
-            for split in split_summary['split_details']:
-                original_id = split['original_circle_id']
-                new_ids = split['new_circle_ids']
-                member_counts = split.get('member_counts', [])
-                
-                st.write(f"**Original Circle**: {original_id} with {split['member_count']} members")
-                st.write(f"**Split Into**: {len(new_ids)} circles")
-                
-                # List new circle IDs with enhanced host information
-                for i, new_id in enumerate(new_ids):
-                    # Get member count for this split circle
-                    member_count = member_counts[i] if i < len(member_counts) else "?"
-                    
-                    # Get host counts for this split circle
-                    always_host_ids = split.get('always_host_ids', [])
-                    sometimes_host_ids = split.get('sometimes_host_ids', [])
-                    
-                    # Calculate counts from the host IDs
-                    always_count = len(always_host_ids[i]) if i < len(always_host_ids) else 0
-                    sometimes_count = len(sometimes_host_ids[i]) if i < len(sometimes_host_ids) else 0
-                    
-                    # Ensure we're comparing integers
-                    always_count = int(always_count) if isinstance(always_count, (int, float, str)) and str(always_count).strip() else 0
-                    sometimes_count = int(sometimes_count) if isinstance(sometimes_count, (int, float, str)) and str(sometimes_count).strip() else 0
-                    
-                    # Determine host requirement status
-                    host_status = "✅" if (always_count >= 1 or sometimes_count >= 2) else "❌"
-                    
-                    # Create host status summary
-                    host_summary = f"{host_status} {always_count} Always, {sometimes_count} Sometimes hosts"
-                    
-                    # Display circle with host status
-                    st.write(f"- **{new_id}** with {member_count} members ({host_summary})")
-                    
-                    # Show detailed host IDs in a collapsible section using HTML and markdown
-                    # Use a highly unique key by combining multiple factors: key_prefix, split ID, new_id, index, and a random number
-                    import random
-                    unique_checkbox_key = f"host_details_{key_prefix}_{new_id}_{i}_{id(split)}_{random.randint(1000, 9999)}"
-                    if st.checkbox(f"Show host details for {new_id}", key=unique_checkbox_key):
-                        # Create an indented container for host details
-                        with st.container():
-                            st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Host Details:**")
-                            
-                            # Show Always Hosts
-                            if i < len(always_host_ids) and always_host_ids[i]:
-                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Always Host IDs:**")
-                                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(str(id) for id in always_host_ids[i])}")
-                            else:
-                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Always Host IDs:** None")
-                            
-                            # Show Sometimes Hosts
-                            if i < len(sometimes_host_ids) and sometimes_host_ids[i]:
-                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Sometimes Host IDs:**")
-                                st.markdown(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(str(id) for id in sometimes_host_ids[i])}")
-                            else:
-                                st.markdown("&nbsp;&nbsp;&nbsp;&nbsp;**Sometimes Host IDs:** None")
-                
-                st.markdown("---")
-    
-    # Show circles that couldn't be split due to host requirements
-    if split_summary['circles_unable_to_split']:
-        with st.expander("Circles Unable to Split", expanded=False):
-            st.write("The following circles had 11+ members but couldn't be split because they didn't meet host requirements:")
-            
-            for circle in split_summary['circles_unable_to_split']:
-                st.write(f"**{circle['circle_id']}** with {circle['member_count']} members")
-                st.write(f"Reason: {circle['reason']}")
-                st.markdown("---")
-
 def render_results_overview():
     """Render the results overview section"""
     if ('matched_circles' not in st.session_state or 
@@ -4259,9 +3974,6 @@ def render_results_overview():
         return
     
     st.subheader("Matching Results Overview")
-    
-    # Add the split circle summary right after the main header
-    render_split_circle_summary(key_prefix="results_overview")
     
     # Get the data
     matched_df = st.session_state.matched_circles
@@ -4404,68 +4116,28 @@ def render_results_overview():
 
 def render_circle_table():
     """Render the circle composition table"""
-    # ENHANCED: Use rebuild_circle_member_lists to get the most accurate data
-    import pandas as pd
-    from utils.circle_rebuilder import rebuild_circle_member_lists
+    # ENHANCED: Use CircleMetadataManager if available, fall back to direct session state access
+    from utils.circle_metadata_manager import get_manager_from_session_state
+    
+    # Try to get the circle manager first
+    manager = get_manager_from_session_state(st.session_state) if 'circle_manager' in st.session_state else None
     
     # Check if we have data to display
-    if ('matched_circles' not in st.session_state or 
-        st.session_state.matched_circles is None or
-        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
+    if not manager and ('matched_circles' not in st.session_state or 
+                     st.session_state.matched_circles is None or
+                     (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
         return
     
     st.subheader("Circle Composition")
     
-    print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG:")
-    
-    # Use the matched_circles from session state as the starting point
-    base_circles_df = st.session_state.matched_circles.copy()
-    
-    # Get the participant data
-    participants_df = st.session_state.processed_data if 'processed_data' in st.session_state else None
-    results_df = st.session_state.results if 'results' in st.session_state else None
-    
-    # Use the participant data that has the most information (results is preferred)
-    participants_data = results_df if results_df is not None else participants_df
-    
-    # If we have the necessary data, rebuild the circle member lists for accuracy
-    if participants_data is not None and not base_circles_df.empty:
-        print("  ✅ Using rebuild_circle_member_lists to get accurate circle data")
-        circles_df = rebuild_circle_member_lists(base_circles_df, participants_data)
-        print(f"  Rebuilt data for {len(circles_df)} circles")
+    # Get the data - from manager or directly from session state
+    if manager:
+        print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using CircleMetadataManager):")
+        circles_df = manager.get_circles_dataframe()
+        print(f"  Retrieved {len(circles_df)} circles from CircleMetadataManager")
     else:
-        print("  ⚠️ Missing data to rebuild circles, using base circle data")
-        circles_df = base_circles_df
-    
-    # Filter to include only active circles (including active split circles)
-    print(f"  Total circles before filtering: {len(circles_df)}")
-    
-    # Check if 'is_active' column exists, if not, create it
-    if 'is_active' not in circles_df.columns:
-        circles_df['is_active'] = True
-        # Mark original circles that have been split as inactive
-        from utils.circle_metadata_manager import get_manager_from_session_state
-        manager = get_manager_from_session_state(st.session_state)
-        if manager:
-            original_circles = list(manager.original_circles.keys())
-            print(f"  Original circles that were split: {original_circles}")
-            for circle_id in original_circles:
-                if circle_id in circles_df['circle_id'].values:
-                    circles_df.loc[circles_df['circle_id'] == circle_id, 'is_active'] = False
-                    print(f"  Marked {circle_id} as inactive (was split)")
-    
-    # Filter to only show active circles
-    active_circles_df = circles_df[circles_df['is_active'] == True].copy()
-    print(f"  Active circles after filtering: {len(active_circles_df)}")
-    
-    # Count split circles
-    split_circles = active_circles_df[active_circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)]
-    print(f"  Found {len(split_circles)} active split circles")
-    if not split_circles.empty:
-        print(f"  Split circle IDs: {split_circles['circle_id'].tolist()}")
-    
-    # Final dataframe to display
-    circles_df = active_circles_df
+        print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using session state directly):")
+        circles_df = st.session_state.matched_circles.copy()
     
     # Add special diagnostic section for test circles
     with st.expander("Circle Inspector (Debug Tool)"):
@@ -4597,17 +4269,8 @@ def render_circle_table():
     print(f"  Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
     print(f"  Available columns: {list(circles_df.columns) if hasattr(circles_df, 'columns') else 'unknown'}")
     
-    # CRITICAL: Fix any split circle data to make sure always_hosts and sometimes_hosts are integers
-    if 'always_hosts' in circles_df.columns:
-        for idx, row in circles_df.iterrows():
-            # Fix NaN or None values in numeric columns
-            for col in ['always_hosts', 'sometimes_hosts', 'member_count', 'max_additions', 'new_members']:
-                if col in circles_df.columns:
-                    if pd.isna(row[col]) or row[col] is None:
-                        circles_df.at[idx, col] = 0
-    
     # Show the table
-    if 'circle_id' in circles_df.columns:
+    if 'circle_id' in circles_df.columns and 'meeting_time' in circles_df.columns:
         # Create a display table with key information
         # ENHANCED: Added region, subregion, new_members, max_additions, always_hosts, sometimes_hosts columns
         display_cols = ['circle_id', 'region', 'subregion', 'meeting_time', 'member_count', 
@@ -4621,43 +4284,6 @@ def render_circle_table():
         
         if available_cols:
             display_df = circles_df[available_cols].copy()
-            
-            # Check for split info directly from the enhanced metadata in the DataFrame
-            if 'circle_id' in circles_df.columns:
-                # Check if we have split status from the metadata manager
-                if 'split_status' not in circles_df.columns:
-                    # Create the split_status column if it doesn't exist already
-                    circles_df['split_status'] = ''
-                    
-                    # Derive split status from circle ID if it's not already set from metadata manager
-                    is_split_circle = circles_df['circle_id'].str.contains('SPLIT', case=True, na=False)
-                    circles_df['is_split_circle'] = is_split_circle
-                    
-                    # For split circles, determine the split letter
-                    if is_split_circle.any():
-                        for idx in circles_df[is_split_circle].index:
-                            circle_id = circles_df.loc[idx, 'circle_id']
-                            # Extract split letter from circle ID
-                            if "-SPLIT-" in circle_id:
-                                split_letter = circle_id[-1]  # Last character is the split letter
-                                circles_df.loc[idx, 'split_status'] = f"Split {split_letter}"
-                            else:
-                                circles_df.loc[idx, 'split_status'] = "Split"
-                
-                # Add original circle ID to display if present
-                if 'original_circle_id' in circles_df.columns:
-                    # Only add this column if we have some split circles
-                    if 'is_split_circle' in circles_df.columns and circles_df['is_split_circle'].any():
-                        display_cols.append('original_circle_id')
-                        if 'original_circle_id' not in available_cols:
-                            available_cols.append('original_circle_id')
-                            display_df = circles_df[available_cols].copy()
-                
-                # Add split status column to display
-                display_cols.append('split_status')
-                if 'split_status' not in available_cols:
-                    available_cols.append('split_status')
-                    display_df = circles_df[available_cols].copy()
             
             # Rename columns for display
             display_df.columns = [col.replace('_', ' ').title() for col in available_cols]
@@ -4678,14 +4304,10 @@ def render_circle_table():
                         # If we have a manager, use it to get consistent data
                         if manager:
                             circle_data = manager.get_circle_data(circle_id)
-                            # Add null check to handle case where circle_data is None
-                            if circle_data is not None:
-                                print(f"  {circle_id} info (from manager): max_additions={circle_data.get('max_additions', 'N/A')}, "  
-                                      f"member_count={circle_data.get('member_count', 'N/A')}, "
-                                      f"new_members={circle_data.get('new_members', 'N/A')}, "
-                                      f"always_hosts={circle_data.get('always_hosts', 'N/A')}")
-                            else:
-                                print(f"  ⚠️ {circle_id} not found in metadata manager")
+                            print(f"  {circle_id} info (from manager): max_additions={circle_data.get('max_additions', 'N/A')}, "  
+                                  f"member_count={circle_data.get('member_count', 'N/A')}, "
+                                  f"new_members={circle_data.get('new_members', 'N/A')}, "
+                                  f"always_hosts={circle_data.get('always_hosts', 'N/A')}")
                         else:
                             # Fall back to DataFrame lookup
                             row = circles_df[circles_df['circle_id'] == circle_id].iloc[0]
@@ -4694,31 +4316,8 @@ def render_circle_table():
                                   f"new_members={row.get('new_members', 'N/A')}, "
                                   f"always_hosts={row.get('always_hosts', 'N/A')}")
             
-            # Add styling to highlight split circles and large circles that should be split
-            def highlight_circles(row):
-                # Check if circle ID contains 'SPLIT' to identify split circles
-                circle_id = row.get('Circle Id', '')
-                
-                # Check if it's explicitly marked as a split circle or the ID contains SPLIT
-                is_split = ('Split Status' in row and row['Split Status']) or (isinstance(circle_id, str) and 'SPLIT' in circle_id)
-                
-                if is_split:
-                    # Enhanced styling for split circles - light blue background with a subtle border
-                    return ['background-color: #e6f3ff; border-left: 3px solid #4b89dc;'] * len(row)
-                
-                # Check if it's a large circle (11+ members) that should have been split
-                if 'Member Count' in row and isinstance(row['Member Count'], (int, float)) and row['Member Count'] >= 11:
-                    # This is a large circle that wasn't split - highlight in a different color
-                    print(f"🔍 Found large circle with {row['Member Count']} members that wasn't split: {row.get('Circle Id', 'unknown')}")
-                    return ['background-color: #ffec99; border-left: 3px solid #f6b26b;'] * len(row)  # Light yellow with orange border
-                
-                return [''] * len(row)
-            
-            # Apply the styling function
-            styled_df = display_df.style.apply(highlight_circles, axis=1)
-            
-            # Show the styled table
-            st.dataframe(styled_df, use_container_width=True)
+            # Show the table
+            st.dataframe(display_df, use_container_width=True)
             
             # Add an export option with unique key
             if st.button("Export Circle Data to CSV", key="details_export_circle_data_button"):
@@ -4850,19 +4449,9 @@ def render_circle_details():
     # Get the selected circle's data - using manager if available
     if manager:
         circle_data = manager.get_circle_data(selected_circle)
-        if circle_data is not None:
-            # For display consistency, we'll need a similar dict structure to what we'd get from DataFrame
-            circle_row = circle_data
-            print(f"  Using CircleMetadataManager to get data for {selected_circle}")
-        else:
-            # Fall back to DataFrame lookup if the manager doesn't have the circle data
-            print(f"  ⚠️ {selected_circle} not found in metadata manager, falling back to DataFrame")
-            try:
-                circle_row = circles_df[circles_df['circle_id'] == selected_circle].iloc[0]
-                print(f"  Using DataFrame to get data for {selected_circle}")
-            except:
-                st.error(f"Could not find data for circle {selected_circle}")
-                return
+        # For display consistency, we'll need a similar dict structure to what we'd get from DataFrame
+        circle_row = circle_data
+        print(f"  Using CircleMetadataManager to get data for {selected_circle}")
     else:
         # Fall back to DataFrame lookup
         try:
@@ -4891,30 +4480,6 @@ def render_circle_details():
             "Always Hosts": circle_row.get('always_hosts', 'Unknown'),
             "Sometimes Hosts": circle_row.get('sometimes_hosts', 'Unknown'),
         }
-        
-        # Add split circle information if applicable
-        circle_id = selected_circle
-        if 'SPLIT' in circle_id:
-            st.info("This circle was created by splitting a large circle with 11+ members. Split circles can accept new members up to a maximum of 8 total.")
-            
-            # Use a more noticeable UI element to highlight split circle status
-            st.markdown("""
-            <div style="background-color: #e6f3ff; padding: 10px; border-left: 4px solid #4b89dc; margin-bottom: 15px;">
-                <strong>Split Circle</strong>: This circle was created through automatic splitting to maintain optimal group sizes.
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Add original circle information if available
-            if 'original_circle_id' in circle_row:
-                metadata["Original Circle"] = circle_row.get('original_circle_id', 'Unknown')
-                
-            # Add split letter if available
-            if 'split_letter' in circle_row:
-                metadata["Split Group"] = circle_row.get('split_letter', 'Unknown')
-            elif '-SPLIT-' in circle_id:
-                # Extract split letter from the end of the ID
-                split_letter = circle_id[-1]
-                metadata["Split Group"] = split_letter
         
         for key, value in metadata.items():
             st.write(f"**{key}:** {value}")

@@ -7,10 +7,6 @@ import os
 from modules.data_loader import load_data, validate_data
 from modules.data_processor import process_data, normalize_data
 from modules.optimizer import run_matching_algorithm
-try:
-    from modules.circle_splitter import split_large_circles
-except Exception as e:
-    print(f"Error importing circle_splitter: {str(e)}")
 from modules.ui_components import (
     render_match_tab, 
     render_details_tab, 
@@ -22,8 +18,6 @@ from modules.ui_components import (
 )
 from utils.helpers import generate_download_link
 from utils.feature_flags import initialize_feature_flags, set_flag
-from utils.participant_data_manager import ParticipantDataManager
-from utils.circle_metadata_manager import CircleMetadataManager, get_manager_from_session_state, initialize_or_update_manager
 
 # Configure Streamlit page
 st.set_page_config(
@@ -78,15 +72,7 @@ def main():
     
     # Create tabs for navigation, moved Demographics after Match per user request
     # Removed East Bay Debug tab to focus on Seattle testing
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Match", "Demographics", "Details", "Debug", "Split Test"])
-    
-    # Add circle splitting test tab for debugging
-    with tab5:
-        st.subheader("Circle Splitting Test")
-        st.write("This tab is for testing the circle splitting functionality directly.")
-        
-        if st.button("Test Circle Splitting"):
-            test_circle_splitting()
+    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Demographics", "Details", "Debug"])
     
     with tab1:
         # Use our custom match tab function instead of the imported one
@@ -138,55 +124,11 @@ def run_optimization():
         with st.spinner("Running matching algorithm..."):
             start_time = time.time()
             
-            # First, check for existing circles that need to be split
-            # This ensures split circles are created BEFORE optimization runs
-            print("🔄 STEP 1: Preprocessing circles (splitting large circles) before optimization")
-            
-            # Only proceed with preprocessing if we have circle data loaded
-            existing_circles = None
-            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and len(st.session_state.matched_circles) > 0:
-                try:
-                    # Use the optimizer_integration module for proper preprocessing
-                    from modules.optimizer_integration import preprocess_circles_for_optimization
-                    
-                    print(f"Found {len(st.session_state.matched_circles)} existing circles to preprocess (split large circles)")
-                    
-                    # Preprocess circles (includes splitting large circles)
-                    updated_circles, preprocessing_summary = preprocess_circles_for_optimization(
-                        circles_data=st.session_state.matched_circles,
-                        participants_data=st.session_state.processed_data
-                    )
-                    
-                    # Extract split summary for display
-                    split_summary = preprocessing_summary.get("split_circle_summary", {})
-                    
-                    # Save the updated circles with splits to session state
-                    st.session_state.matched_circles = updated_circles
-                    st.session_state.split_circle_summary = split_summary
-                    st.session_state.preprocessing_summary = preprocessing_summary
-                    
-                    # Log the preprocessing results
-                    print(f"✅ Preprocessing complete:")
-                    print(f"   - Steps performed: {preprocessing_summary.get('steps_performed', [])}")
-                    
-                    # Log splitting results if available
-                    if split_summary:
-                        print(f"   - Split {split_summary.get('total_circles_successfully_split', 0)} large circles into {split_summary.get('total_new_circles_created', 0)} smaller circles")
-                    
-                    # Use the updated circles for optimization
-                    existing_circles = updated_circles
-                except Exception as e:
-                    print(f"⚠️ ERROR during circle preprocessing: {str(e)}")
-                    # Continue with optimization even if preprocessing fails
-            else:
-                print("No existing circles found to split")
-            
             # Use the original data without any test participants
             # Run the matching algorithm with enhanced return values for debugging
             results, matched_circles, unmatched_participants = run_matching_algorithm(
                 st.session_state.processed_data,
-                st.session_state.config,
-                existing_circles
+                st.session_state.config
             )
             
             # Add extensive diagnostic logging to understand data structure
@@ -231,32 +173,6 @@ def run_optimization():
                     print(f"✅ After de-duplication: {results.shape[0]} participants (was {total_ids})")
             
             # Count matched vs unmatched
-            # Check if proposed_NEW_circles_id column exists, and add it if needed
-            if 'proposed_NEW_circles_id' not in results.columns:
-                print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results")
-                
-                # Check for alternative column names that might contain the same information
-                potential_cols = [
-                    'circles_id', 'circle_id', 
-                    'proposed_circles_id', 'NEW_circles_id',
-                    'matched_circle_id', 'circle_assignment'
-                ]
-                
-                found_alternative = False
-                for col in potential_cols:
-                    if col in results.columns:
-                        print(f"✅ Found alternative column '{col}' - using this instead")
-                        # Copy the alternative column to the expected name
-                        results['proposed_NEW_circles_id'] = results[col]
-                        found_alternative = True
-                        break
-                        
-                if not found_alternative:
-                    print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
-                    # Create the column with a default value of UNMATCHED
-                    results['proposed_NEW_circles_id'] = 'UNMATCHED'
-            
-            # Now proceed with the count (the column should exist now)
             if 'proposed_NEW_circles_id' in results.columns:
                 matched_in_results = len(results[results['proposed_NEW_circles_id'] != 'UNMATCHED'])
                 unmatched_in_results = len(results[results['proposed_NEW_circles_id'] == 'UNMATCHED'])
@@ -312,40 +228,6 @@ def run_optimization():
                 if use_optimizer_metadata:
                     print("  ✅ Using optimizer metadata for circle reconstruction")
                     
-                # PHASE 4: Apply postprocessing for split circles
-                print("\n🔄 APPLYING CIRCLE SPLITTING POSTPROCESSING")
-                try:
-                    # Import our integration module
-                    from modules.optimizer_integration import postprocess_optimization_results
-                    
-                    # Get preprocessing summary from session state, if available
-                    preprocessing_summary = {}
-                    if "split_circle_summary" in st.session_state:
-                        preprocessing_summary["split_circle_summary"] = st.session_state.split_circle_summary
-                    
-                    # Apply postprocessing to handle split circles in the results
-                    processed_results, postprocessing_summary = postprocess_optimization_results(
-                        optimization_results=results,
-                        circles_data=matched_circles,
-                        participants_data=st.session_state.processed_data,
-                        preprocessing_summary=preprocessing_summary
-                    )
-                    
-                    # Log the postprocessing summary
-                    if postprocessing_summary:
-                        print("✅ Circle splitting postprocessing summary:")
-                        for key, value in postprocessing_summary.items():
-                            print(f"  {key}: {value}")
-                    
-                    # Use the processed results (currently they may be the same as the original results)
-                    results = processed_results
-                    
-                except Exception as e:
-                    print(f"⚠️ Error during circle splitting postprocessing: {str(e)}")
-                    # If there's an error, we'll continue with the original results
-                    import traceback
-                    print(traceback.format_exc())
-            
                 # Initialize/update the circle metadata manager with optimizer results
                 circle_manager = initialize_or_update_manager(
                     st.session_state,
@@ -381,108 +263,6 @@ def run_optimization():
             except Exception as e:
                 print(f"⚠️ Error applying metadata fixes: {str(e)}")
                 print("  Continuing with original results")
-            
-            # NOTICE: Circle splitting is now handled before optimization in modules/optimizer.py
-            # Our Phase 4 integration now orchestrates circle splitting before the optimizer runs
-            # and handles postprocessing of split circles after optimization
-            print("\n🔄 CIRCLE SPLITTING STATUS:")
-            if "split_circle_summary" in st.session_state:
-                split_summary = st.session_state.split_circle_summary
-                if split_summary and "total_large_circles_found" in split_summary:
-                    print(f"  Found {split_summary['total_large_circles_found']} large circles (11+ members)")
-                    print(f"  Split {split_summary['total_circles_successfully_split']} circles successfully")
-                    print(f"  Created {split_summary['total_new_circles_created']} new split circles")
-                    
-                    # If we have split details, provide a sample
-                    if "split_details" in split_summary and split_summary["split_details"]:
-                        sample_split = split_summary["split_details"][0]
-                        original_id = sample_split.get("original_circle_id", "unknown")
-                        new_ids = sample_split.get("new_circle_ids", [])
-                        print(f"  Example: {original_id} was split into {len(new_ids)} circles: {new_ids}")
-                        
-                        # CRITICAL: Ensure split circles are included in the matched_circles for UI display
-                        # This is needed because the UI uses matched_circles for display
-                        try:
-                            # Get the CircleMetadataManager to ensure a consistent source of circle data
-                            from utils.circle_metadata_manager import get_manager_from_session_state
-                            manager = get_manager_from_session_state(st.session_state)
-                            if manager:
-                                # Get the updated circles dataframe including splits
-                                updated_circles = manager.get_circles_dataframe()
-                                # Update the matched_circles in session state
-                                st.session_state.matched_circles = updated_circles
-                                print(f"  ✅ Updated matched_circles in session state to include split circles")
-                                
-                                # CRITICAL FIX: Update the results DataFrame to show the split circles 
-                                # in the Circle Composition and CSV export
-                                if 'proposed_NEW_circles_id' in results.columns:
-                                    print("  🔄 Updating results DataFrame with split circle assignments")
-                                    
-                                    # Get all the split circle IDs
-                                    all_split_circle_ids = []
-                                    for detail in split_summary.get("split_details", []):
-                                        all_split_circle_ids.extend(detail.get("new_circle_ids", []))
-                                    
-                                    # Get all the original circle IDs (to mark as inactive)
-                                    all_original_circle_ids = [
-                                        detail.get("original_circle_id") 
-                                        for detail in split_summary.get("split_details", [])
-                                    ]
-                                    
-                                    # Update the results DataFrame to ensure it has the split circles
-                                    if hasattr(manager, 'split_circles') and manager.split_circles:
-                                        print(f"  Found {len(manager.split_circles)} split circles in metadata manager")
-                                        # Log the split circles
-                                        print(f"  Split circles: {list(manager.split_circles.keys())}")
-                                        
-                                        # Add all split circles to matched_circles if not already there
-                                        for split_id, original_id in manager.split_circles.items():
-                                            # Check if this split circle is already in matched_circles
-                                            if split_id not in st.session_state.matched_circles['circle_id'].values:
-                                                # Get the data for this split circle from the manager
-                                                split_circle_data = manager.get_circle_data(split_id)
-                                                if split_circle_data:
-                                                    # Convert to DataFrame row
-                                                    split_row = pd.DataFrame([split_circle_data])
-                                                    # Append to matched_circles
-                                                    st.session_state.matched_circles = pd.concat(
-                                                        [st.session_state.matched_circles, split_row], 
-                                                        ignore_index=True
-                                                    )
-                                                    print(f"  ✅ Added split circle {split_id} to matched_circles")
-                                        
-                                        # Get the most up-to-date circle data from the metadata manager
-                                        st.session_state.matched_circles = manager.get_circles_dataframe()
-                                        print(f"  ✅ Updated matched_circles with latest data from metadata manager")
-                                        
-                                        # Get members of the split circles to update their assignments
-                                        for split_id, original_id in manager.split_circles.items():
-                                            # Get the member list for this split circle
-                                            split_circle_data = manager.get_circle_data(split_id)
-                                            if split_circle_data and "members" in split_circle_data:
-                                                member_ids = split_circle_data["members"]
-                                                # Update these members in the results DataFrame
-                                                for member_id in member_ids:
-                                                    # Find this member in the results
-                                                    if member_id in results["Encoded ID"].values:
-                                                        # Update their assignment to the split circle
-                                                        idx = results[results["Encoded ID"] == member_id].index
-                                                        results.loc[idx, "proposed_NEW_circles_id"] = split_id
-                                                        print(f"  ✅ Updated assignment for member {member_id} to split circle {split_id}")
-                                
-                                # Update the CSV export results in session state
-                                st.session_state.results = results
-                                print(f"  ✅ Updated results in session state with split circle assignments")
-                        except Exception as e:
-                            print(f"  ⚠️ Error updating matched_circles with split circles: {str(e)}")
-                            import traceback
-                            print(traceback.format_exc())
-                    else:
-                        print("  No large circles were split in this run")
-                else:
-                    print("  No large circles were split in this run")
-            else:
-                print("  No circle splitting was performed (no summary available)")
                 
             # Store results in session state
             st.session_state.results = results
@@ -578,35 +358,9 @@ def run_optimization():
                 else:
                     print("  ⚠️ Failed to initialize CircleMetadataManager on second attempt")
             
-            # NOTE: Circle splitting integration has been temporarily removed
-            # to establish a stable baseline for audit and incremental implementation
-            print("\n📝 AUDIT: Circle splitting integration point - functionality temporarily disabled")
-            
-            # Add audit logging to capture the current state before statistics calculation
-            try:
-                # Log basic information about circles in session state
-                circles_df = st.session_state.matched_circles
-                if isinstance(circles_df, pd.DataFrame):
-                    large_circles = circles_df[circles_df['member_count'] >= 11]
-                    print(f"📊 AUDIT: Found {len(large_circles)} large circles (11+ members) in matched_circles")
-                    if not large_circles.empty:
-                        print(f"📊 AUDIT: Sample large circles: {large_circles['circle_id'].head(3).tolist()}")
-                        
-                    # Check for consistency in metadata fields
-                    print(f"📊 AUDIT: Circle metadata field check")
-                    required_fields = ['member_count', 'always_hosts', 'sometimes_hosts', 'max_additions']
-                    for field in required_fields:
-                        if field in circles_df.columns:
-                            non_null = circles_df[~circles_df[field].isna()].shape[0]
-                            print(f"📊 AUDIT: Field '{field}' present with {non_null}/{len(circles_df)} non-null values")
-                        else:
-                            print(f"⚠️ AUDIT: Field '{field}' missing from circles DataFrame")
-            except Exception as e:
-                print(f"⚠️ AUDIT: Error during circle state logging: {str(e)}")
-            
             # Calculate standard statistics with our helper function
             from utils.helpers import calculate_matching_statistics
-            match_stats = calculate_matching_statistics(results, st.session_state.matched_circles)
+            match_stats = calculate_matching_statistics(results, matched_circles)
             st.session_state.match_statistics = match_stats
             
             # We no longer show the warning about filtered participants
@@ -614,7 +368,7 @@ def run_optimization():
             
             # Calculate and store diversity score immediately after optimization
             from modules.ui_components import calculate_total_diversity_score
-            total_diversity_score = calculate_total_diversity_score(st.session_state.matched_circles, results)
+            total_diversity_score = calculate_total_diversity_score(matched_circles, results)
             st.session_state.total_diversity_score = total_diversity_score
             print(f"DEBUG - Calculated diversity score immediately after optimization: {total_diversity_score}")
             
@@ -666,13 +420,6 @@ def process_uploaded_file(uploaded_file):
             print("\n🔬🔬🔬 SUPER DETAILED DATA DIAGNOSTICS IN PROCESS_UPLOADED_FILE 🔬🔬🔬")
             print(f"🔬 DataFrame shape: {df.shape}")
             print(f"🔬 DataFrame columns: {df.columns.tolist()}")
-            
-            # Initialize the ParticipantDataManager with the raw data
-            print("\n🔧 INITIALIZING PARTICIPANT DATA MANAGER")
-            participant_manager = ParticipantDataManager()
-            participant_manager.initialize_from_dataframe(df)
-            st.session_state.participant_data_manager = participant_manager
-            print(f"✅ Successfully initialized ParticipantDataManager with {len(df)} participants")
             
             # Count participants by status for debugging
             if 'Status' in df.columns:
@@ -853,60 +600,6 @@ def process_uploaded_file(uploaded_file):
                     matched_count = 0
                     unmatched_count = 0
                     
-                    # Check if the required column exists and add it if it doesn't
-                    if 'proposed_NEW_circles_id' not in results_df.columns:
-                        print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results_df")
-                        
-                        # Check for alternative column names that might contain the same information
-                        potential_cols = [
-                            'circles_id', 'circle_id', 
-                            'proposed_circles_id', 'NEW_circles_id',
-                            'matched_circle_id', 'circle_assignment'
-                        ]
-                        
-                        found_alternative = False
-                        for col in potential_cols:
-                            if col in results_df.columns:
-                                print(f"✅ Found alternative column '{col}' - using this instead")
-                                # Copy the alternative column to the expected name
-                                results_df['proposed_NEW_circles_id'] = results_df[col]
-                                found_alternative = True
-                                break
-                                
-                        if not found_alternative:
-                            print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
-                            # Create the column with a default value of UNMATCHED
-                            results_df['proposed_NEW_circles_id'] = 'UNMATCHED'
-                            
-                            # If we have a matched_circles column in session state, try to map participants to circles
-                            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                                print("🔄 Attempting to rebuild proposed_NEW_circles_id from matched_circles")
-                                try:
-                                    # For each circle, find its members and update their assignment in results_df
-                                    circles = st.session_state.matched_circles
-                                    matched_count = 0
-                                    
-                                    if isinstance(circles, list):
-                                        for circle in circles:
-                                            if isinstance(circle, dict) and 'members' in circle and 'circle_id' in circle:
-                                                circle_id = circle['circle_id']
-                                                members = circle['members']
-                                                
-                                                # Update assignments for all members of this circle
-                                                for member_id in members:
-                                                    # Find this member in results_df and update their assignment
-                                                    mask = results_df['Encoded ID'].astype(str) == str(member_id)
-                                                    if mask.any():
-                                                        results_df.loc[mask, 'proposed_NEW_circles_id'] = circle_id
-                                                        matched_count += 1
-                                        
-                                        print(f"✅ Rebuilt circle assignments for {matched_count} participants")
-                                except Exception as e:
-                                    print(f"⚠️ Error rebuilding circle assignments: {str(e)}")
-                        
-                        # Update the session state with the modified results_df that now has the required column
-                        st.session_state.results = results_df
-                    
                     if 'proposed_NEW_circles_id' in results_df.columns:
                         # Check all values for diagnostics
                         circle_values = results_df['proposed_NEW_circles_id'].value_counts().to_dict()
@@ -1064,69 +757,12 @@ def process_uploaded_file(uploaded_file):
                     # ENHANCED CSV DIAGNOSTICS: Compare with what will appear in the CSV
                     print("\n🔍🔍🔍 COMPARING UI STATS VS CSV EXPORT 🔍🔍🔍")
                     
-                    # Check if the required column exists and add it if it doesn't
-                    if 'proposed_NEW_circles_id' not in results_df.columns:
-                        print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results_df")
-                        
-                        # Check for alternative column names that might contain the same information
-                        potential_cols = [
-                            'circles_id', 'circle_id', 
-                            'proposed_circles_id', 'NEW_circles_id',
-                            'matched_circle_id', 'circle_assignment'
-                        ]
-                        
-                        found_alternative = False
-                        for col in potential_cols:
-                            if col in results_df.columns:
-                                print(f"✅ Found alternative column '{col}' - using this instead")
-                                # Copy the alternative column to the expected name
-                                results_df['proposed_NEW_circles_id'] = results_df[col]
-                                found_alternative = True
-                                break
-                                
-                        if not found_alternative:
-                            print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
-                            # Create the column with a default value of UNMATCHED
-                            results_df['proposed_NEW_circles_id'] = 'UNMATCHED'
-                            
-                            # If we have a matched_circles column in session state, try to map participants to circles
-                            if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                                print("🔄 Attempting to rebuild proposed_NEW_circles_id from matched_circles")
-                                try:
-                                    # For each circle, find its members and update their assignment in results_df
-                                    circles = st.session_state.matched_circles
-                                    matched_count = 0
-                                    
-                                    if isinstance(circles, list):
-                                        for circle in circles:
-                                            if isinstance(circle, dict) and 'members' in circle and 'circle_id' in circle:
-                                                circle_id = circle['circle_id']
-                                                members = circle['members']
-                                                
-                                                # Update assignments for all members of this circle
-                                                for member_id in members:
-                                                    # Find this member in results_df and update their assignment
-                                                    mask = results_df['Encoded ID'].astype(str) == str(member_id)
-                                                    if mask.any():
-                                                        results_df.loc[mask, 'proposed_NEW_circles_id'] = circle_id
-                                                        matched_count += 1
-                                        
-                                        print(f"✅ Rebuilt circle assignments for {matched_count} participants")
-                                except Exception as e:
-                                    print(f"⚠️ Error rebuilding circle assignments: {str(e)}")
-                    
-                    # Now use the column (which should exist now)
-                    print(f"🔍 Column check: 'proposed_NEW_circles_id' exists: {'proposed_NEW_circles_id' in results_df.columns}")
-                    
                     # Capture the list of matched participants that contribute to the UI count
                     valid_circle_mask = (results_df['proposed_NEW_circles_id'].notna()) & (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
                     ui_matched_ids = results_df[valid_circle_mask]['Encoded ID'].tolist()
                     
                     # Store this for comparison when CSV is downloaded
                     st.session_state.ui_matched_ids = ui_matched_ids
-                    
-                    # Update the session state with the modified results_df that now has the required column
-                    st.session_state.results = results_df
                     
                     # Generate a test CSV (same process used in the download button)
                     from utils.helpers import generate_download_link, get_valid_participants
@@ -1217,35 +853,8 @@ def process_uploaded_file(uploaded_file):
                 if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and 'member_count' in st.session_state.matched_circles.columns:
                     circles_df = st.session_state.matched_circles
                     
-                    # CRITICAL FIX: Filter out circles with zero members for the histogram
-                    # First, count how many zero-member circles we have for debugging
-                    zero_member_count = (circles_df['member_count'] == 0).sum()
-                    if zero_member_count > 0:
-                        print(f"⚠️ Found {zero_member_count} circles with zero members")
-                        # Sample of circle IDs for debugging
-                        zero_member_ids = circles_df[circles_df['member_count'] == 0]['circle_id'].tolist()[:5]
-                        print(f"⚠️ Sample zero-member circles: {zero_member_ids}")
-                        
-                        # Show user info about the filtering
-                        st.info(f"Filtering out {zero_member_count} circles with zero members from the visualization")
-                        
-                        # Filter out zero-member circles
-                        active_circles_df = circles_df[circles_df['member_count'] > 0]
-                        print(f"✅ After filtering: {len(active_circles_df)} active circles")
-                    else:
-                        active_circles_df = circles_df
-                        
-                    # ENHANCEMENT: Check for split circles
-                    if 'circle_id' in circles_df.columns:
-                        split_circle_mask = circles_df['circle_id'].astype(str).str.contains('SPLIT', case=False, na=False)
-                        split_circle_count = split_circle_mask.sum()
-                        if split_circle_count > 0:
-                            print(f"🔍 Found {split_circle_count} split circles in the data")
-                            # Show the info only if we have non-zero split circles
-                            st.success(f"The dataset includes {split_circle_count} split circles")
-                    
-                    # Calculate size counts using the filtered dataframe
-                    size_counts = active_circles_df['member_count'].value_counts().sort_index()
+                    # Calculate size counts 
+                    size_counts = circles_df['member_count'].value_counts().sort_index()
                     
                     # Create DataFrame for plotting
                     size_df = pd.DataFrame({
@@ -1277,9 +886,9 @@ def process_uploaded_file(uploaded_file):
                     # Show the plot
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Show summary statistics - use the active_circles_df with zero-member circles filtered out
-                    avg_size = active_circles_df['member_count'].mean()
-                    median_size = active_circles_df['member_count'].median()
+                    # Show summary statistics
+                    avg_size = circles_df['member_count'].mean()
+                    median_size = circles_df['member_count'].median()
                     
                     col1, col2 = st.columns(2)
                     with col1:
@@ -1501,34 +1110,7 @@ def process_uploaded_file(uploaded_file):
                         existing_cols = []
                     
                     if existing_cols:
-                        # Make a copy and filter to remove circles with zero members
                         display_df = circles_df[existing_cols].copy()
-                        
-                        # CRITICAL FIX: Filter out circles with zero members to prevent confusion
-                        if 'member_count' in circles_df.columns:
-                            # Include this detailed debug information
-                            zero_member_count = len(display_df[display_df['member_count'] == 0])
-                            if zero_member_count > 0:
-                                print(f"⚠️ Filtering out {zero_member_count} circles with zero members")
-                                
-                                # Optional: Sample of zero-member circles for debugging
-                                zero_member_circles = display_df[display_df['member_count'] == 0]['circle_id'].tolist()[:5]
-                                print(f"⚠️ Sample zero-member circles: {zero_member_circles}")
-                            
-                            # Apply the filter - only show circles with at least 1 member
-                            display_df = display_df[display_df['member_count'] > 0].copy()
-                            
-                            # Debug after filtering
-                            print(f"✅ After filtering: {len(display_df)} circles remain with at least 1 member")
-                        
-                        # ENHANCEMENT: Check for split circles and highlight them
-                        if 'circle_id' in display_df.columns:
-                            split_circles = display_df[display_df['circle_id'].str.contains('SPLIT', case=False, na=False)]
-                            split_circle_count = len(split_circles)
-                            
-                            if split_circle_count > 0:
-                                print(f"🔍 Found {split_circle_count} split circles to highlight")
-                                st.success(f"The optimization includes {split_circle_count} split circles")
                         
                         # Rename columns for display
                         display_df.columns = [col.replace('_', ' ').title() for col in existing_cols]
@@ -1554,31 +1136,6 @@ def process_uploaded_file(uploaded_file):
                     from utils.helpers import get_valid_participants
                     results_df = get_valid_participants(results_df)
                     print(f"🔍 Unmatched table: Using {len(results_df)} valid participants with non-null Encoded IDs")
-                    
-                    # Check if the required column exists and add it if it doesn't
-                    if 'proposed_NEW_circles_id' not in results_df.columns:
-                        print("⚠️ WARNING: 'proposed_NEW_circles_id' column not found in results_df for unmatched table")
-                        
-                        # Check for alternative column names that might contain the same information
-                        potential_cols = [
-                            'circles_id', 'circle_id', 
-                            'proposed_circles_id', 'NEW_circles_id',
-                            'matched_circle_id', 'circle_assignment'
-                        ]
-                        
-                        found_alternative = False
-                        for col in potential_cols:
-                            if col in results_df.columns:
-                                print(f"✅ Found alternative column '{col}' - using this instead")
-                                # Copy the alternative column to the expected name
-                                results_df['proposed_NEW_circles_id'] = results_df[col]
-                                found_alternative = True
-                                break
-                                
-                        if not found_alternative:
-                            print("⚠️ No alternative column found. Creating empty 'proposed_NEW_circles_id' column")
-                            # Create the column with a default value of UNMATCHED
-                            results_df['proposed_NEW_circles_id'] = 'UNMATCHED'
                     
                     if 'proposed_NEW_circles_id' in results_df.columns:
                         unmatched_df = results_df[results_df['proposed_NEW_circles_id'] == 'UNMATCHED'].reset_index(drop=True)
@@ -1736,542 +1293,6 @@ def process_uploaded_file(uploaded_file):
             st.exception(e)
 
 # Define callback for the Match tab
-# Import the rebuild_circle_member_lists function from the utility file
-from utils.circle_rebuilder import rebuild_circle_member_lists
-
-def test_circle_splitting():
-    """
-    Test function to directly test the circle splitting functionality.
-    
-    This function provides comprehensive testing of the circle splitting algorithm:
-    1. Identifies large circles (11+ members) in the data
-    2. Tests the region code extraction for proper naming conventions
-    3. Verifies host status detection and balanced distribution
-    4. Ensures all split circles maintain minimum size requirements (5+ members)
-    5. Confirms original circles are properly deactivated
-    """
-    # Add the import for streamlit first
-    import streamlit as st
-    
-    st.info("Running direct test of circle splitting functionality...")
-    
-    if 'matched_circles' not in st.session_state or st.session_state.matched_circles is None:
-        st.error("No data available. Please upload a CSV file and run the matching algorithm first.")
-        return
-    
-    try:
-        # Get the matched circles from session state
-        circles_data = st.session_state.matched_circles
-        participants_data = st.session_state.processed_data
-        
-        # Debug log what we found
-        st.write(f"Found {len(circles_data)} circles in session state")
-        st.write(f"Found {len(participants_data)} participants in session state")
-        
-        # Show available columns in participants data - to see how circles are assigned
-        st.write("Available columns in participants data:")
-        st.write(participants_data.columns.tolist())
-        
-        # Attempt to identify which column contains circle assignments
-        circle_col = None
-        # First, check if we have Current_Circle_ID as specified
-        preferred_cols = ['Current_Circle_ID', 'assigned_circle', 'circle_id', 'Circle ID', 'proposed_NEW_circles_id']
-        
-        for col in preferred_cols:
-            if col in participants_data.columns:
-                circle_col = col
-                st.write(f"Found circle assignment column: '{circle_col}'")
-                # Show how many participants have circle assignments
-                assigned_count = participants_data[~participants_data[circle_col].isna()].shape[0]
-                st.write(f"Participants with circle assignments: {assigned_count} of {len(participants_data)}")
-                # Show sample of different circle IDs in use
-                sample_circles = participants_data[circle_col].dropna().unique()[:5]
-                st.write(f"Sample circle IDs: {sample_circles.tolist()}")
-                
-                # For Current_Circle_ID specifically, also check status distribution
-                if col == 'Current_Circle_ID':
-                    st.write("Distribution of participants with Current_Circle_ID by Status:")
-                    if 'Status' in participants_data.columns:
-                        status_counts = participants_data[~participants_data['Current_Circle_ID'].isna()]['Status'].value_counts()
-                        st.write(status_counts)
-                break
-        
-        if not circle_col:
-            st.warning("Could not identify which column contains circle assignments")
-            # Show all columns to help identify the right one
-            st.write("Please review available columns to identify circle assignments:")
-            for col in participants_data.columns:
-                unique_values = participants_data[col].dropna().unique()
-                if len(unique_values) < 200:  # Only show if it has a reasonable number of values
-                    st.write(f"- {col}: {unique_values[:5]}")
-        
-        # Import circle splitting functionality
-        from modules.circle_splitter import split_large_circles
-        
-        # Rebuild circle member lists from participant data with ParticipantDataManager
-        st.subheader("Rebuilding Circle Member Lists")
-        print("🔄 Using ParticipantDataManager for rebuilding circle member lists")
-        # Pass participants_data to be compatible with function signature
-        rebuilt_circles = rebuild_circle_member_lists(circles_data, participants_data)
-        
-        # Create test circles from the rebuilt data
-        test_circles = []
-        test_participants = participants_data.copy()
-        
-        # Import circle metadata manager for consistent member access (for comparison only)
-        from utils.circle_metadata_manager import CircleMetadataManager
-        
-        # Create a new metadata manager or get it from session state if it exists
-        if 'circle_metadata_manager' in st.session_state:
-            metadata_manager = st.session_state.circle_metadata_manager
-            st.write("Using existing CircleMetadataManager from session state")
-        else:
-            metadata_manager = CircleMetadataManager()
-            # Initialize from current data
-            metadata_manager.initialize_from_optimizer(circles_data.to_dict('records'), participants_data)
-            st.write("Created new CircleMetadataManager")
-            
-        # ENHANCED: Find all large circles (11+ members) first
-        st.subheader("Identifying Large Circles")
-        
-        # Check for large circles in the rebuilt data
-        large_circles = rebuilt_circles[rebuilt_circles['member_count'] >= 11]
-        if not large_circles.empty:
-            st.write(f"Found {len(large_circles)} large circles (11+ members) in the data")
-            st.dataframe(large_circles[['circle_id', 'member_count']])
-            
-            # Add all large circles to our test set automatically
-            for _, circle in large_circles.iterrows():
-                test_circles.append(circle.to_dict())
-                st.write(f"Added large circle {circle['circle_id']} with {circle['member_count']} members to test set")
-        else:
-            st.warning("No large circles (11+ members) found in the data")
-        
-        # For extra certainty, also check our priority test circles
-        priority_test_ids = ['IP-ATL-1', 'IP-NAP-01', 'IP-SHA-01']
-        st.write(f"Looking for specific priority test circles: {', '.join(priority_test_ids)}")
-        
-        # ENHANCED: Direct participant counting to ensure accurate counts for test circles
-        st.subheader("Direct Participant Analysis")
-        
-        # Find the correct column for circle assignments
-        if circle_col:
-            for circle_id in priority_test_ids:
-                # Count participants directly
-                participants_in_circle = participants_data[participants_data[circle_col] == circle_id]
-                direct_member_count = len(participants_in_circle)
-                
-                st.write(f"Direct member count for {circle_id}: {direct_member_count}")
-                
-                if direct_member_count >= 11:
-                    st.write(f"⚠️ {circle_id} has {direct_member_count} members but may not be properly identified")
-                    # Force this circle to be included regardless of what's in the DataFrame
-                    
-                    # Check if it's already in our test set
-                    already_added = any(c.get('circle_id') == circle_id for c in test_circles)
-                    
-                    if not already_added:
-                        # Extract member IDs
-                        member_ids = []
-                        if 'Encoded ID' in participants_in_circle.columns:
-                            member_ids = [str(id) for id in participants_in_circle['Encoded ID'].tolist() if id is not None and not pd.isna(id)]
-                        
-                        # Create a synthetic circle with the direct member count
-                        synthetic_circle = {
-                            'circle_id': circle_id,
-                            'member_count': direct_member_count,
-                            'members': member_ids,
-                            'always_hosts': 1,  # Assume at least 1 always host
-                            'sometimes_hosts': 1  # Assume at least 1 sometimes host
-                        }
-                        
-                        # Add to our test set
-                        test_circles.append(synthetic_circle)
-                        st.write(f"Manually added {circle_id} with direct count of {direct_member_count} members")
-        
-        # Now check our test circles against the rebuilt data (still useful for debugging)
-        st.subheader("Detailed Circle Validation")
-        
-        for circle_id in priority_test_ids:
-            # Look for the circle in our rebuilt data
-            matches = rebuilt_circles[rebuilt_circles['circle_id'] == circle_id]
-            if not matches.empty:
-                test_circle = matches.iloc[0].to_dict()
-                
-                # Get rebuilt members
-                members_from_rebuild = test_circle.get('members', [])
-                if isinstance(members_from_rebuild, list):
-                    members_length = len(members_from_rebuild)
-                else:
-                    members_length = 0
-                    st.warning(f"Unexpected type for members_from_rebuild: {type(members_from_rebuild)}")
-                
-                # Try to get members using different methods, with error handling
-                try:
-                    # Method 1: Using metadata manager (may fail if circle not in manager)
-                    members_from_manager = metadata_manager.get_circle_members(circle_id)
-                    manager_length = len(members_from_manager)
-                except Exception as e:
-                    print(f"⚠️ Error getting members from metadata manager: {str(e)}")
-                    members_from_manager = []
-                    manager_length = 0
-                
-                try:
-                    # Method 2: Direct normalization from the original circle data
-                    from utils.data_standardization import normalize_member_list
-                    circle_matches = circles_data[circles_data['circle_id'] == circle_id]
-                    if not circle_matches.empty:
-                        original_circle = circle_matches.iloc[0].to_dict()
-                        members_from_normalization = normalize_member_list(original_circle.get('members', []))
-                        norm_length = len(members_from_normalization)
-                    else:
-                        members_from_normalization = []
-                        norm_length = 0
-                except Exception as e:
-                    print(f"⚠️ Error normalizing members: {str(e)}")
-                    members_from_normalization = []
-                    norm_length = 0
-                
-                # Log what we found with each method
-                st.write(f"Found circle {circle_id} in DataFrame with {test_circle.get('member_count', 0)} members")
-                st.write(f"- Method 1 (MetadataManager): {manager_length} members")
-                st.write(f"- Method 2 (Rebuilt): {members_length} members")
-                st.write(f"- Method 3 (Normalization): {norm_length} members")
-                
-                # Compare against direct participant count
-                if circle_col:
-                    direct_count = len(participants_data[participants_data[circle_col] == circle_id])
-                    st.write(f"- Method 4 (Direct participant count): {direct_count} members")
-                    
-                    if direct_count != members_length:
-                        st.warning(f"⚠️ Member count mismatch: {members_length} (rebuilt) vs {direct_count} (direct count)")
-                
-                # Analyze differences
-                if len(members_from_manager) > 0 and members_length > 0:
-                    # Show differences between member lists
-                    manager_set = set(members_from_manager)
-                    rebuild_set = set(members_from_rebuild) if isinstance(members_from_rebuild, list) else set()
-                    
-                    # Members in manager but not in rebuild
-                    missing_from_rebuild = manager_set - rebuild_set
-                    if missing_from_rebuild:
-                        st.write(f"Members in manager but not in rebuild: {missing_from_rebuild}")
-                    
-                    # Members in rebuild but not in manager
-                    missing_from_manager = rebuild_set - manager_set
-                    if missing_from_manager:
-                        st.write(f"Members in rebuild but not in manager: {missing_from_manager}")
-                
-                # Check if this circle is already in our test set
-                already_added = any(c.get('circle_id') == circle_id for c in test_circles)
-                
-                if not already_added:
-                    # Add to test circles if not already added
-                    test_circles.append(test_circle)
-                    st.write(f"Added {circle_id} to test circles from rebuild data: {members_length} members")
-            else:
-                st.warning(f"Test circle {circle_id} not found in rebuilt circles DataFrame")
-        
-        # If no test circles found, create synthetic ones with a clear note
-        if not test_circles:
-            st.warning("No test circles found in data. Creating a synthetic test circle.")
-            # Create a synthetic circle with 11+ members
-            member_ids = test_participants['Encoded ID'].iloc[:12].tolist()
-            test_circles.append({
-                'circle_id': 'IP-TST-01',
-                'members': member_ids,
-                'member_count': len(member_ids),
-                'always_hosts': 1,
-                'sometimes_hosts': 2
-            })
-        
-        # Convert to DataFrame for processing
-        test_circles_df = pd.DataFrame(test_circles)
-        
-        # Run the circle splitting function directly
-        st.write("Running circle splitting function...")
-        print("🔴 TEST: Running direct circle splitting test")
-        
-        # Show test mode settings
-        st.subheader("Test Configuration")
-        test_mode = st.checkbox("Enable test mode (special handling for test circles)", value=True)
-        
-        # Import the circle splitting function
-        from modules.circle_splitter import split_large_circles, extract_region_code
-        
-        # Test region code extraction utility
-        st.subheader("Region Code Extraction Test")
-        
-        # Create a two-column layout
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.write("Test from Circle ID:")
-            test_circle_id = st.text_input("Enter a circle ID to extract region code", "IP-SHA-01")
-            region_code_from_id = extract_region_code(circle_id=test_circle_id)
-            st.write(f"Extracted region code: '{region_code_from_id}'")
-        
-        with col2:
-            st.write("Test from Region Name:")
-            test_region_name = st.text_input("Enter a region name to extract code", "Shanghai")
-            region_code_from_name = extract_region_code(region_name=test_region_name)
-            st.write(f"Extracted region code: '{region_code_from_name}'")
-        
-        # Import data management utilities
-        from utils.circle_metadata_manager import get_manager_from_session_state
-        from utils.participant_data_manager import ParticipantDataManager
-        
-        # Initialize ParticipantDataManager for consistent data access
-        print("🔄 Initializing ParticipantDataManager for test")
-        if 'participant_data_manager' not in st.session_state:
-            print("📦 Creating new ParticipantDataManager for test")
-            manager = ParticipantDataManager()
-            manager.initialize_from_dataframe(test_participants)
-            st.session_state.participant_data_manager = manager
-            print(f"✅ Created ParticipantDataManager with {len(test_participants)} participants")
-        else:
-            print("📦 Using existing ParticipantDataManager from session state")
-            # Update with latest test participant data
-            manager = st.session_state.participant_data_manager
-            manager.initialize_from_dataframe(test_participants)
-            print(f"✅ Updated ParticipantDataManager with {len(test_participants)} participants")
-            
-        # Add specific test circles from our data to focus debugging
-        # This step is critical for diagnostic purposes - let's check IP-SHA-01 specifically
-        st.subheader("Test Circle Analysis")
-        test_circle_ids = ['IP-SHA-01', 'IP-ATL-1', 'IP-NAP-01']
-        
-        # Check for test circles in our data
-        found_test_circles = []
-        for circle_id in test_circle_ids:
-            # Check first in participants data
-            if circle_col:
-                direct_count = len(participants_data[participants_data[circle_col] == circle_id])
-                if direct_count > 0:
-                    st.write(f"✓ Found test circle {circle_id} with {direct_count} members in participants data")
-                    found_test_circles.append(circle_id)
-                    
-                    # Show host distribution for this circle
-                    members = manager.get_participant_ids_by_circle(circle_id)
-                    if members:
-                        st.write(f"   Members detected by ParticipantDataManager: {len(members)}")
-                        
-                        # Analyze host status for these members
-                        host_counts = {'always': 0, 'sometimes': 0, 'never': 0}
-                        for member_id in members:
-                            host_status = manager.get_participant_host_status(member_id, debug_mode=True)
-                            host_counts[host_status if host_status else 'never'] += 1
-                        
-                        st.write(f"   Host distribution: Always: {host_counts['always']}, Sometimes: {host_counts['sometimes']}, Never: {host_counts['never']}")
-                else:
-                    st.write(f"✗ Test circle {circle_id} not found in participants data")
-            
-            # Also check in circles data
-            circle_exists = any(c.get('circle_id') == circle_id for c in test_circles)
-            if circle_exists:
-                if circle_id not in found_test_circles:
-                    found_test_circles.append(circle_id)
-                st.write(f"✓ Found test circle {circle_id} in test_circles list")
-            else:
-                st.write(f"✗ Test circle {circle_id} not found in test_circles list")
-        
-        # Step 1: Split circles directly using updated approach with ParticipantDataManager
-        try:
-            st.write("Running circle splitting with ParticipantDataManager in TEST MODE...")
-            print("🧪 Enabling TEST MODE for circle splitting to improve test success rate")
-            # Enable test mode to allow special handling for test circles
-            updated_circles, split_summary, updated_participants = split_large_circles(
-                circles_data=test_circles_df,
-                participants_data=None,  # Use the ParticipantDataManager from session state
-                test_mode=True  # Enable special test mode
-            )
-            
-            # Update participant assignments
-            test_participants = updated_participants
-        except Exception as e:
-            st.error(f"Error in circle splitting: {str(e)}")
-            # As fallback, run with explicit participants data
-            st.write("Falling back to direct DataFrame approach with TEST MODE...")
-            updated_circles, split_summary, updated_participants = split_large_circles(
-                circles_data=test_circles_df, 
-                participants_data=test_participants,
-                test_mode=True  # Still use test mode in fallback
-            )
-            test_participants = updated_participants
-        
-        # Step 2: Use metadata synchronization to ensure consistent data
-        print("🔄 TEST: Using metadata synchronization to ensure consistent data")
-        
-        # Get current metadata manager or create a new one
-        metadata_manager = get_manager_from_session_state(st.session_state)
-        if metadata_manager is None:
-            from utils.circle_metadata_manager import CircleMetadataManager
-            metadata_manager = CircleMetadataManager()
-            st.session_state.circle_metadata_manager = metadata_manager
-            print("  ✅ Created new CircleMetadataManager for testing")
-        
-        # Synchronize metadata with test results
-        synchronized_circles, has_changes = metadata_manager.synchronize_metadata(
-            circles_df=updated_circles,
-            results_df=test_participants,
-            split_summary=split_summary
-        )
-        
-        if has_changes:
-            print("  ✅ Metadata synchronization successful")
-            # Use the synchronized circles for display
-            updated_circles = synchronized_circles
-        
-        # Store the split summary in session state for UI components to use
-        st.session_state.split_circle_summary = split_summary
-        
-        # Display results
-        st.subheader("Split Circle Results")
-        st.write(f"Original circles: {len(test_circles)}")
-        st.write(f"Total circles examined: {split_summary['total_circles_examined']}")
-        st.write(f"Large circles found: {split_summary['total_large_circles_found']}")
-        st.write(f"Circles successfully split: {split_summary['total_circles_successfully_split']}")
-        st.write(f"New circles created: {split_summary['total_new_circles_created']}")
-        
-        # Display details of each split
-        if split_summary['split_details']:
-            st.subheader("Split Details")
-            for detail in split_summary['split_details']:
-                st.write(f"Original circle: {detail['original_circle_id']}")
-                st.write(f"Member count: {detail['member_count']}")
-                st.write(f"Split into {len(detail['new_circle_ids'])} circles:")
-                for i, new_id in enumerate(detail['new_circle_ids']):
-                    member_count = detail['member_counts'][i] if i < len(detail['member_counts']) else "?"
-                    st.write(f"  - {new_id} with {member_count} members")
-                    # Show host distribution if available
-                    if 'always_hosts' in detail and 'sometimes_hosts' in detail:
-                        # Get the host counts for this split circle
-                        always_count = detail['always_hosts'][i] if i < len(detail['always_hosts']) else 0
-                        sometimes_count = detail['sometimes_hosts'][i] if i < len(detail['sometimes_hosts']) else 0
-                        
-                        # Get the host IDs if available
-                        always_ids = detail.get('always_host_ids', [])[i] if i < len(detail.get('always_host_ids', [])) else []
-                        sometimes_ids = detail.get('sometimes_host_ids', [])[i] if i < len(detail.get('sometimes_host_ids', [])) else []
-                        
-                        # Ensure host counts are integers
-                        always_count = int(always_count) if isinstance(always_count, (int, float, str)) and str(always_count).strip() else 0
-                        sometimes_count = int(sometimes_count) if isinstance(sometimes_count, (int, float, str)) and str(sometimes_count).strip() else 0
-                        
-                        # Calculate actual host counts from host_ids arrays
-                        actual_always_count = len(always_ids) if always_ids else always_count
-                        actual_sometimes_count = len(sometimes_ids) if sometimes_ids else sometimes_count
-                        
-                        # Ensure the final counts are also integers
-                        actual_always_count = int(actual_always_count) if isinstance(actual_always_count, (int, float, str)) and str(actual_always_count).strip() else 0
-                        actual_sometimes_count = int(actual_sometimes_count) if isinstance(actual_sometimes_count, (int, float, str)) and str(actual_sometimes_count).strip() else 0
-                        
-                        # Display enhanced host information with counts
-                        if actual_always_count > 0 or actual_sometimes_count > 0:
-                            st.write(f"    ✅ Host Coverage: {actual_always_count} Always Hosts, {actual_sometimes_count} Sometimes Hosts")
-                        else:
-                            st.write(f"    ⚠️ No host coverage detected! Always: {actual_always_count}, Sometimes: {actual_sometimes_count}")
-                        
-                        # Display IDs in a collapsible section with improved formatting
-                        with st.expander("Show Host Details"):
-                            if always_ids:
-                                st.write(f"**Always Host IDs ({len(always_ids)}):**")
-                                st.write(", ".join(str(id) for id in always_ids))
-                            else:
-                                st.write("**Always Host IDs:** None")
-                                
-                            if sometimes_ids:
-                                st.write(f"**Sometimes Host IDs ({len(sometimes_ids)}):**")
-                                st.write(", ".join(str(id) for id in sometimes_ids))
-                            else:
-                                st.write("**Sometimes Host IDs:** None")
-                            
-                            # Add verification of host requirements
-                            is_valid = False
-                            if actual_always_count >= 1:
-                                is_valid = True
-                                st.write("✅ **Host Requirement Met:** At least one Always Host")
-                            elif actual_sometimes_count >= 2:
-                                is_valid = True
-                                st.write("✅ **Host Requirement Met:** At least two Sometimes Hosts")
-                            else:
-                                st.write("❌ **Host Requirement NOT Met:** Needs 1+ Always OR 2+ Sometimes Hosts")
-                st.write("---")
-        else:
-            st.warning("No circles were split.")
-            
-        # Display circles that couldn't be split
-        if split_summary['circles_unable_to_split']:
-            st.subheader("Circles Unable to Split")
-            for circle in split_summary['circles_unable_to_split']:
-                st.write(f"Circle {circle['circle_id']} ({circle['member_count']} members)")
-                st.write(f"Reason: {circle['reason']}")
-                st.write("---")
-                
-        # Display the updated circles DataFrame (check if DataFrame or list)
-        if isinstance(updated_circles, pd.DataFrame) and not updated_circles.empty:
-            st.subheader("Updated Circles")
-            st.dataframe(updated_circles)
-            
-            # Count split circles
-            split_circles = updated_circles[updated_circles['circle_id'].str.contains('SPLIT')]
-            st.write(f"Found {len(split_circles)} split circles in the updated dataset")
-        elif isinstance(updated_circles, list) and len(updated_circles) > 0:
-            st.subheader("Updated Circles")
-            # Convert list to DataFrame for display
-            updated_df = pd.DataFrame(updated_circles)
-            st.dataframe(updated_df)
-            
-            # Count split circles
-            split_circle_count = sum(1 for c in updated_circles if 'SPLIT' in c.get('circle_id', ''))
-            st.write(f"Found {split_circle_count} split circles in the updated dataset")
-        else:
-            st.warning("No updated circles returned.")
-            
-        # Use our standardized render function to display the summary
-        st.subheader("Standardized Circle Split Summary")
-        from modules.ui_components import render_split_circle_summary
-        render_split_circle_summary(key_prefix="split_test_tab")
-        
-        # INTEGRATION: Store updated circles in matched_circles for the main workflow
-        # This ensures that when we return to the Match tab, the split circles are used
-        if isinstance(updated_circles, (pd.DataFrame, list)) and (
-            (isinstance(updated_circles, pd.DataFrame) and not updated_circles.empty) or
-            (isinstance(updated_circles, list) and len(updated_circles) > 0)
-        ):
-            st.success("Successfully updated circles with split results!")
-            
-            # Store the circles data back into the main matched_circles session state
-            st.session_state.matched_circles = updated_circles
-            
-            # Also store the participants data if it was updated
-            if updated_participants is not None:
-                st.session_state.processed_data = updated_participants
-                
-            # Store other state information for proper integration
-            st.session_state.preprocessing_summary = {
-                "steps_performed": ["split_large_circles"],
-                "split_circle_summary": split_summary
-            }
-            
-            # Give the user info about returning to the Match tab
-            st.info("The split circles have been saved and will be used in the Match tab.")
-            
-            # Add a button to return to Match tab
-            if st.button("Return to Match Tab"):
-                # Use st.experimental_set_query_params to set the active tab
-                import streamlit as st
-                st.experimental_set_query_params(tab="Match")
-                # Force a rerun to show the Match tab
-                st.rerun()
-    
-    except Exception as e:
-        st.error(f"Error during circle splitting test: {str(e)}")
-        st.write("Exception details:")
-        import traceback
-        st.code(traceback.format_exc())
-        print("🔴 CRITICAL ERROR IN CIRCLE SPLITTING TEST:")
-        print(traceback.format_exc())
-
 def match_tab_callback():
     st.subheader("Upload Participant Data")
     
