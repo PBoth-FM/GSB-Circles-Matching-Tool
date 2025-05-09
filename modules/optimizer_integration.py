@@ -39,10 +39,20 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
         "eligible_split_circles": 0
     }
     
-    # Step 1: Split large circles
+    # Step 1: Split large circles - using third return value for updated participants
     print("\n🔄 PREPROCESSING: Starting circle splitting process")
     print("  Splitting circles with 11+ members before optimization to make split circles available for new members")
-    updated_circles, split_summary = split_large_circles(circles_data, participants_data)
+    updated_circles, split_summary, updated_participants = split_large_circles(
+        circles_data, 
+        participants_data,
+        test_mode=False  # Ensure we're not in test mode for production use
+    )
+    
+    # Store updated participants if provided
+    if updated_participants is not None and not updated_participants.empty:
+        print(f"✅ Using updated participants data with split circle assignments ({len(updated_participants)} participants)")
+        st.session_state.processed_data = updated_participants
+    
     preprocessing_summary["steps_performed"].append("split_large_circles")
     preprocessing_summary["split_circle_summary"] = split_summary
     
@@ -50,6 +60,22 @@ def preprocess_circles_for_optimization(circles_data, participants_data):
     if "split_circle_summary" not in st.session_state or st.session_state.split_circle_summary != split_summary:
         st.session_state.split_circle_summary = split_summary
         print("✅ Stored split circle summary in session state")
+        
+    # Log detailed information about the split results
+    if split_summary:
+        large_circles_found = split_summary.get('total_large_circles_found', 0)
+        circles_split = split_summary.get('total_circles_successfully_split', 0)
+        new_circles_created = split_summary.get('total_new_circles_created', 0)
+        
+        print(f"🔄 Circle splitting results:")
+        print(f"  - Large circles found: {large_circles_found}")
+        print(f"  - Circles successfully split: {circles_split}")
+        print(f"  - New split circles created: {new_circles_created}")
+        
+        if new_circles_created > 0:
+            print(f"🎯 Successfully split {circles_split} circles into {new_circles_created} new circles")
+        else:
+            print("ℹ️ No circles needed splitting")
     
     # Step 2: Update the CircleMetadataManager with split circle information
     if split_summary and split_summary.get('total_circles_successfully_split', 0) > 0:
