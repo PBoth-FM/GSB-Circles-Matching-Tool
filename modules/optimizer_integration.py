@@ -904,6 +904,32 @@ def update_metadata_manager_with_splits(split_summary):
     st.session_state.split_circle_summary = split_summary
     print("  ✅ Updated split_circle_summary in session state")
     
+    # CRITICAL ENHANCEMENT: Update circles_data from matched_circles to ensure visualization components show correct data
+    if hasattr(st.session_state, 'matched_circles') and st.session_state.matched_circles is not None:
+        try:
+            # Convert matched_circles to a list format that visualization components expect
+            if hasattr(st.session_state.matched_circles, 'to_dict'):
+                print("  🔄 Converting matched_circles to dict format for visualization components")
+                circles_data = st.session_state.matched_circles.to_dict('records')
+                
+                # Update circles_data in session state
+                st.session_state.circles_data = circles_data
+                print(f"  ✅ Successfully updated circles_data in session state with {len(circles_data)} circles")
+                
+                # Debug: Check split circles are included
+                split_circle_count = sum(1 for c in circles_data if isinstance(c.get('circle_id', ''), str) and 'SPLIT' in c.get('circle_id', ''))
+                if split_circle_count > 0:
+                    print(f"  ✅ circles_data now contains {split_circle_count} split circles")
+                else:
+                    print(f"  ⚠️ WARNING: No split circles found in updated circles_data")
+            else:
+                # It's already in list format
+                print("  🔄 matched_circles already in list format, using directly")
+                st.session_state.circles_data = st.session_state.matched_circles
+                print(f"  ✅ Updated circles_data with matched_circles list ({len(st.session_state.matched_circles)} circles)")
+        except Exception as e:
+            print(f"  ⚠️ Error updating circles_data from matched_circles: {str(e)}")
+    
     # 4. Force a rerun of several key data-dependent functions to refresh UI data
     if hasattr(st.session_state, 'processed_data') and st.session_state.processed_data is not None:
         # Rebuild circle member lists to ensure all members are correctly assigned
