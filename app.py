@@ -1217,8 +1217,35 @@ def process_uploaded_file(uploaded_file):
                 if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and 'member_count' in st.session_state.matched_circles.columns:
                     circles_df = st.session_state.matched_circles
                     
-                    # Calculate size counts 
-                    size_counts = circles_df['member_count'].value_counts().sort_index()
+                    # CRITICAL FIX: Filter out circles with zero members for the histogram
+                    # First, count how many zero-member circles we have for debugging
+                    zero_member_count = (circles_df['member_count'] == 0).sum()
+                    if zero_member_count > 0:
+                        print(f"⚠️ Found {zero_member_count} circles with zero members")
+                        # Sample of circle IDs for debugging
+                        zero_member_ids = circles_df[circles_df['member_count'] == 0]['circle_id'].tolist()[:5]
+                        print(f"⚠️ Sample zero-member circles: {zero_member_ids}")
+                        
+                        # Show user info about the filtering
+                        st.info(f"Filtering out {zero_member_count} circles with zero members from the visualization")
+                        
+                        # Filter out zero-member circles
+                        active_circles_df = circles_df[circles_df['member_count'] > 0]
+                        print(f"✅ After filtering: {len(active_circles_df)} active circles")
+                    else:
+                        active_circles_df = circles_df
+                        
+                    # ENHANCEMENT: Check for split circles
+                    if 'circle_id' in circles_df.columns:
+                        split_circle_mask = circles_df['circle_id'].astype(str).str.contains('SPLIT', case=False, na=False)
+                        split_circle_count = split_circle_mask.sum()
+                        if split_circle_count > 0:
+                            print(f"🔍 Found {split_circle_count} split circles in the data")
+                            # Show the info only if we have non-zero split circles
+                            st.success(f"The dataset includes {split_circle_count} split circles")
+                    
+                    # Calculate size counts using the filtered dataframe
+                    size_counts = active_circles_df['member_count'].value_counts().sort_index()
                     
                     # Create DataFrame for plotting
                     size_df = pd.DataFrame({
@@ -1250,9 +1277,9 @@ def process_uploaded_file(uploaded_file):
                     # Show the plot
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Show summary statistics
-                    avg_size = circles_df['member_count'].mean()
-                    median_size = circles_df['member_count'].median()
+                    # Show summary statistics - use the active_circles_df with zero-member circles filtered out
+                    avg_size = active_circles_df['member_count'].mean()
+                    median_size = active_circles_df['member_count'].median()
                     
                     col1, col2 = st.columns(2)
                     with col1:
@@ -1474,7 +1501,34 @@ def process_uploaded_file(uploaded_file):
                         existing_cols = []
                     
                     if existing_cols:
+                        # Make a copy and filter to remove circles with zero members
                         display_df = circles_df[existing_cols].copy()
+                        
+                        # CRITICAL FIX: Filter out circles with zero members to prevent confusion
+                        if 'member_count' in circles_df.columns:
+                            # Include this detailed debug information
+                            zero_member_count = len(display_df[display_df['member_count'] == 0])
+                            if zero_member_count > 0:
+                                print(f"⚠️ Filtering out {zero_member_count} circles with zero members")
+                                
+                                # Optional: Sample of zero-member circles for debugging
+                                zero_member_circles = display_df[display_df['member_count'] == 0]['circle_id'].tolist()[:5]
+                                print(f"⚠️ Sample zero-member circles: {zero_member_circles}")
+                            
+                            # Apply the filter - only show circles with at least 1 member
+                            display_df = display_df[display_df['member_count'] > 0].copy()
+                            
+                            # Debug after filtering
+                            print(f"✅ After filtering: {len(display_df)} circles remain with at least 1 member")
+                        
+                        # ENHANCEMENT: Check for split circles and highlight them
+                        if 'circle_id' in display_df.columns:
+                            split_circles = display_df[display_df['circle_id'].str.contains('SPLIT', case=False, na=False)]
+                            split_circle_count = len(split_circles)
+                            
+                            if split_circle_count > 0:
+                                print(f"🔍 Found {split_circle_count} split circles to highlight")
+                                st.success(f"The optimization includes {split_circle_count} split circles")
                         
                         # Rename columns for display
                         display_df.columns = [col.replace('_', ' ').title() for col in existing_cols]
