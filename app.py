@@ -67,8 +67,7 @@ set_flag('use_standardized_member_lists', True)  # Ensure consistent member list
 set_flag('use_standardized_host_status', True)  # Normalize host status values
 
 def main():
-    st.title("CirclesTool2")
-    st.write("GSB Alumni Circle Matching Tool")
+    st.title("GSB Circles Matching Tool")
     
     # Create tabs for navigation, moved Demographics after Match per user request
     # Removed East Bay Debug tab to focus on Seattle testing
