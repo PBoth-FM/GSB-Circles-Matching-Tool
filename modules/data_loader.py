@@ -1,3 +1,6 @@
+
+import csv
+
 import pandas as pd
 import numpy as np
 import io
@@ -78,7 +81,14 @@ def load_data(uploaded_file):
         file_extension = uploaded_file.name.split('.')[-1].lower()
 
         if file_extension == 'csv':
-            df = pd.read_csv(uploaded_file)
+            df = pd.read_csv(
+                uploaded_file,
+                quoting=csv.QUOTE_ALL,  # Force quoting for all fields
+                escapechar='\\',        # Use backslash as escape character
+                doublequote=True,       # Handle double quotes properly
+                encoding='utf-8',       # Explicit encoding
+                on_bad_lines='warn'     # Warn but don't fail on problematic lines
+            )
         elif file_extension in ['xlsx', 'xls']:
             df = pd.read_excel(uploaded_file)
         else:
