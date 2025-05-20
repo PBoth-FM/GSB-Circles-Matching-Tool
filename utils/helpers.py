@@ -39,6 +39,13 @@ def generate_download_link(df):
     # Create a copy to avoid modifying the original DataFrame
     output_df = df.copy()
     
+    # Sort by Derived_Region and proposed_NEW_circles_id, with nulls at end
+    if 'Derived_Region' in output_df.columns and 'proposed_NEW_circles_id' in output_df.columns:
+        output_df = output_df.sort_values(
+            ['Derived_Region', 'proposed_NEW_circles_id'],
+            na_position='last'
+        )
+    
     # ENHANCED DIAGNOSTICS: Count participants in CSV before processing
     print("\n🔍 🔍 🔍 CSV GENERATION DIAGNOSTICS - ENHANCED DEBUG 🔍 🔍 🔍")
     print(f"  Initial DataFrame shape: {output_df.shape}")
