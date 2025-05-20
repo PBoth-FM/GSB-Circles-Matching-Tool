@@ -172,11 +172,14 @@ def preprocess_continuing_members(participants_df, circle_ids):
     print(f"  - Total CURRENT-CONTINUING participants checked: {total_checked}")
     if total_checked > 0:
         print(f"  - Found circle IDs with standard method: {found_with_standard_method} ({found_with_standard_method/total_checked:.1%})")
+        print(f"  - Found circle IDs with fallback methods: {found_with_fallback_method} ({found_with_fallback_method/total_checked:.1%})")
+        print(f"  - Successfully preassigned: {len(preassigned)} ({len(preassigned)/total_checked:.1%})")
+        print(f"  - Problem participants: {len(problem_participants)} ({len(problem_participants)/total_checked:.1%})")
     else:
         print("  - No CURRENT-CONTINUING participants to check")
-    print(f"  - Found circle IDs with fallback methods: {found_with_fallback_method} ({found_with_fallback_method/total_checked:.1%})")
-    print(f"  - Successfully preassigned: {len(preassigned)} ({len(preassigned)/total_checked:.1%})")
-    print(f"  - Problem participants: {len(problem_participants)} ({len(problem_participants)/total_checked:.1%})")
+        print("  - Found circle IDs with fallback methods: 0 (0.0%)")
+        print("  - Successfully preassigned: 0 (0.0%)")
+        print("  - Problem participants: 0 (0.0%)")
     
     return preassigned, problem_participants
 
