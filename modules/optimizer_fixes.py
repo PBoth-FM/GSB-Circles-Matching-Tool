@@ -65,11 +65,44 @@ def preprocess_continuing_members(participants_df, circle_ids):
         dict: Mapping of participant IDs to their preassigned circles
         list: List of participants with missing circle IDs
     """
-    # Filter for CURRENT-CONTINUING participants
-    continuing_mask = participants_df['Status'].isin(['CURRENT-CONTINUING', 'Current-CONTINUING'])
+    # Safety check - if DataFrame is empty or None, return empty results
+    if participants_df is None or participants_df.empty:
+        print("⚠️ WARNING: Empty participants dataframe received")
+        return {}, []
+    
+    # Check for required columns
+    required_columns = ["Encoded ID"]
+    missing_columns = [col for col in required_columns if col not in participants_df.columns]
+    if missing_columns:
+        print(f"⚠️ WARNING: Missing required columns: {missing_columns}")
+        print(f"  Available columns: {list(participants_df.columns)}")
+        return {}, []
+    
+    # Check for status column with multiple possible names
+    status_column = None
+    possible_status_columns = ["Status", "Alumna Circle Status", "Circle Status", "Member Status"]
+    for col in possible_status_columns:
+        if col in participants_df.columns:
+            status_column = col
+            print(f"✅ Found status column: '{col}'")
+            break
+    
+    if status_column is None:
+        print(f"⚠️ WARNING: No status column found. Checked for: {possible_status_columns}")
+        print(f"  Available columns: {list(participants_df.columns)}")
+        return {}, []
+    
+    # Filter for CURRENT-CONTINUING participants with case-insensitive matching
+    # Convert status column to uppercase for comparison
+    status_values = participants_df[status_column].astype(str).str.upper()
+    continuing_mask = status_values.str.contains("CURRENT.*CONTINUING", regex=True)
     continuing_participants = participants_df[continuing_mask]
     
     print(f"\n🔍 ENHANCED PREPROCESSING: Found {len(continuing_participants)} CURRENT-CONTINUING participants")
+    if len(continuing_participants) == 0:
+        print(f"⚠️ WARNING: No CURRENT-CONTINUING participants found in the data")
+        print(f"  Sample of status values: {participants_df[status_column].sample(min(5, len(participants_df))).tolist()}")
+        return {}, []
     
     # Show column names for debugging
     print(f"  Available columns: {list(participants_df.columns)}")
@@ -98,88 +131,105 @@ def preprocess_continuing_members(participants_df, circle_ids):
     found_with_standard_method = 0
     found_with_fallback_method = 0
     
-    # Process each CURRENT-CONTINUING participant
-    for idx, row in continuing_participants.iterrows():
-        p_id = row['Encoded ID']
-        total_checked += 1
-        
-        # Use our robust method to find circle ID
-        current_circle = find_current_circle_id(row)
-        method_used = "standard"
-        
-        if current_circle:
-            found_with_standard_method += 1
-        else:
-            # Try a more aggressive fallback approach if standard method failed
-            for col in circle_columns:
-                if col in row and not pd.isna(row[col]) and row[col]:
-                    value = str(row[col]).strip()
-                    # Check for any plausible circle ID format
-                    if ('-' in value and 
-                        (any(pattern in value for pattern in valid_circle_patterns) or 
-                         any(c.isalpha() for c in value) and any(c.isdigit() for c in value))):
-                        current_circle = value
-                        method_used = f"fallback ({col})"
-                        found_with_fallback_method += 1
-                        break
-        
-        # Try special case handling for problematic IDs
-        if not current_circle:
-            # Check for known special cases by participant ID
-            if p_id == '6623295104':
-                current_circle = 'IP-NYC-18'  # Hardcoded based on evidence
-                method_used = "hardcoded special case"
-                print(f"  ✅ SPECIAL CASE: Hardcoded participant {p_id} to {current_circle}")
-            
-            # Add more special cases here as needed
-        
-        # Make a final decision based on all methods
-        if current_circle:
-            # Check if circle exists in valid circle IDs - be more lenient here
-            if current_circle in circle_ids:
-                preassigned[p_id] = current_circle
-                print(f"  ✅ Successfully preassigned {p_id} to {current_circle} using {method_used} method")
-            else:
-                # Make one more attempt to match with a valid circle ID using partial matching
-                matched = False
-                for valid_id in circle_ids:
-                    # Check if there's substantial overlap between the found ID and a valid ID
-                    if (valid_id.startswith(current_circle) or 
-                        current_circle.startswith(valid_id) or 
-                        (len(valid_id) >= 5 and valid_id[:5] == current_circle[:5])):
-                        preassigned[p_id] = valid_id
-                        print(f"  ✅ PARTIAL MATCH: Mapped {current_circle} to valid circle {valid_id} for {p_id}")
-                        matched = True
-                        break
+    try:
+        # Process each CURRENT-CONTINUING participant
+        for idx, row in continuing_participants.iterrows():
+            if 'Encoded ID' not in row:
+                print(f"⚠️ WARNING: Row is missing 'Encoded ID' column: {row.name}")
+                continue
                 
-                if not matched:
-                    # Circle ID not found in valid circles even with flexible matching
-                    problem_participants.append({
-                        'participant_id': p_id,
-                        'circle_id': current_circle,
-                        'reason': f'Circle ID not in valid circles (using {method_used} method)'
-                    })
-        else:
-            # No circle ID found with any method
-            problem_participants.append({
-                'participant_id': p_id,
-                'circle_id': None,
-                'reason': 'No circle ID found with any method'
-            })
+            p_id = row['Encoded ID']
+            total_checked += 1
+            
+            # Use our robust method to find circle ID
+            current_circle = find_current_circle_id(row)
+            method_used = "standard"
+            
+            if current_circle:
+                found_with_standard_method += 1
+            else:
+                # Try a more aggressive fallback approach if standard method failed
+                for col in circle_columns:
+                    if col in row and not pd.isna(row[col]) and row[col]:
+                        value = str(row[col]).strip()
+                        # Check for any plausible circle ID format
+                        if ('-' in value and 
+                            (any(pattern in value for pattern in valid_circle_patterns) or 
+                             any(c.isalpha() for c in value) and any(c.isdigit() for c in value))):
+                            current_circle = value
+                            method_used = f"fallback ({col})"
+                            found_with_fallback_method += 1
+                            break
+            
+            # Try special case handling for problematic IDs
+            if not current_circle:
+                # Check for known special cases by participant ID
+                if p_id == '6623295104':
+                    current_circle = 'IP-NYC-18'  # Hardcoded based on evidence
+                    method_used = "hardcoded special case"
+                    print(f"  ✅ SPECIAL CASE: Hardcoded participant {p_id} to {current_circle}")
+                
+                # Add more special cases here as needed
+            
+            # Make a final decision based on all methods
+            if current_circle:
+                # Check if circle exists in valid circle IDs - be more lenient here
+                if current_circle in circle_ids:
+                    preassigned[p_id] = current_circle
+                    print(f"  ✅ Successfully preassigned {p_id} to {current_circle} using {method_used} method")
+                else:
+                    # Make one more attempt to match with a valid circle ID using partial matching
+                    matched = False
+                    for valid_id in circle_ids:
+                        # Check if there's substantial overlap between the found ID and a valid ID
+                        if (valid_id.startswith(current_circle) or 
+                            current_circle.startswith(valid_id) or 
+                            (len(valid_id) >= 5 and valid_id[:5] == current_circle[:5])):
+                            preassigned[p_id] = valid_id
+                            print(f"  ✅ PARTIAL MATCH: Mapped {current_circle} to valid circle {valid_id} for {p_id}")
+                            matched = True
+                            break
+                    
+                    if not matched:
+                        # Circle ID not found in valid circles even with flexible matching
+                        problem_participants.append({
+                            'participant_id': p_id,
+                            'circle_id': current_circle,
+                            'reason': f'Circle ID not in valid circles (using {method_used} method)'
+                        })
+            else:
+                # No circle ID found with any method
+                problem_participants.append({
+                    'participant_id': p_id,
+                    'circle_id': None,
+                    'reason': 'No circle ID found with any method'
+                })
+    except Exception as e:
+        print(f"⚠️ ERROR in processing participants: {str(e)}")
     
     # Print summary statistics
     print(f"\n📊 PREPROCESSING RESULTS:")
     print(f"  - Total CURRENT-CONTINUING participants checked: {total_checked}")
-    if total_checked > 0:
-        print(f"  - Found circle IDs with standard method: {found_with_standard_method} ({found_with_standard_method/total_checked:.1%})")
-        print(f"  - Found circle IDs with fallback methods: {found_with_fallback_method} ({found_with_fallback_method/total_checked:.1%})")
-        print(f"  - Successfully preassigned: {len(preassigned)} ({len(preassigned)/total_checked:.1%})")
-        print(f"  - Problem participants: {len(problem_participants)} ({len(problem_participants)/total_checked:.1%})")
-    else:
-        print("  - No CURRENT-CONTINUING participants to check")
-        print("  - Found circle IDs with fallback methods: 0 (0.0%)")
-        print("  - Successfully preassigned: 0 (0.0%)")
-        print("  - Problem participants: 0 (0.0%)")
+    
+    # Safe calculation of percentages - avoid division by zero
+    try:
+        if total_checked > 0:
+            std_method_pct = found_with_standard_method / total_checked
+            fallback_method_pct = found_with_fallback_method / total_checked
+            preassigned_pct = len(preassigned) / total_checked
+            problem_pct = len(problem_participants) / total_checked
+            
+            print(f"  - Found circle IDs with standard method: {found_with_standard_method} ({std_method_pct:.1%})")
+            print(f"  - Found circle IDs with fallback methods: {found_with_fallback_method} ({fallback_method_pct:.1%})")
+            print(f"  - Successfully preassigned: {len(preassigned)} ({preassigned_pct:.1%})")
+            print(f"  - Problem participants: {len(problem_participants)} ({problem_pct:.1%})")
+        else:
+            print("  - No CURRENT-CONTINUING participants to check")
+            print("  - Found circle IDs with fallback methods: 0 (0.0%)")
+            print("  - Successfully preassigned: 0 (0.0%)")
+            print("  - Problem participants: 0 (0.0%)")
+    except Exception as e:
+        print(f"⚠️ ERROR in summary statistics calculation: {str(e)}")
     
     return preassigned, problem_participants
 
