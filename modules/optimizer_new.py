@@ -1633,8 +1633,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Format the counter as a 2-digit number (01, 02, etc.)
         circle_num = str(counter).zfill(2)
         
-        # Generate a unique ID for this potential new circle using the correct format
-        circle_id = f"{format_prefix}-NEW-{region_code}-{circle_num}"
+        # Generate a unique ID for this potential new circle using the updated format
+        circle_id = f"{format_prefix}-{region_code}-NEW-{circle_num}"
         
         if debug_mode:
             print(f"  Created new circle ID: {circle_id} for subregion: {subregion}, time: {time_slot}")
