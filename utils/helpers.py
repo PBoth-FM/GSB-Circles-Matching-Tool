@@ -336,7 +336,9 @@ def generate_circle_id(region, subregion, index, is_new=True):
         is_new: Whether this is a new circle (True) or existing circle (False)
         
     Returns:
-        Circle ID string
+        Circle ID string in format:
+        - New circles: {Format}-{RegionCode}-NEW-{index} 
+        - Existing circles: {Format}-{RegionCode}-{index}
     """
     # Import here to avoid circular imports
     from utils.normalization import get_region_code
@@ -347,12 +349,15 @@ def generate_circle_id(region, subregion, index, is_new=True):
     # Format the index as 2-digit number
     index_str = str(index).zfill(2)
     
-    # Format: IP-NEW-{RegionCode}-{index} for new circles
-    # For existing circles, the format is just IP-{RegionCode}-{index}
+    # Determine if virtual or in-person format
+    format_prefix = "V" if "Virtual" in region else "IP"
+    
+    # Format: {Format}-{RegionCode}-NEW-{index} for new circles
+    # For existing circles, the format is {Format}-{RegionCode}-{index}
     if is_new:
-        return f"IP-NEW-{region_code}-{index_str}"
+        return f"{format_prefix}-{region_code}-NEW-{index_str}"
     else:
-        return f"IP-{region_code}-{index_str}"
+        return f"{format_prefix}-{region_code}-{index_str}"
 
 def estimate_compatibility(participant, subregion, time_slot):
     """
