@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-05-21 22:23:07",
+    "timestamp": "2025-05-21 22:43:59",
     "region": "all_regions",
     "total_logs": 180,
-    "added_logs": 39,
+    "added_logs": 125,
     "existing_logs": 180,
     "regions_processed": [
       "all_regions"
@@ -195,7 +195,7 @@
     "IP-CHI-01": {
       "circle_id": "IP-CHI-01",
       "region": "Chicago",
-      "subregion": "City-Loop",
+      "subregion": "City - Loop",
       "meeting_time": "Thursday (Evenings)",
       "max_additions": 0,
       "current_members": 8,
@@ -209,7 +209,7 @@
     "IP-CHI-02": {
       "circle_id": "IP-CHI-02",
       "region": "Chicago",
-      "subregion": "City-Northwest/Central",
+      "subregion": "City - Northwest/Central",
       "meeting_time": "Varies (Varies)",
       "max_additions": 0,
       "current_members": 5,
@@ -237,7 +237,7 @@
     "IP-CHI-04": {
       "circle_id": "IP-CHI-04",
       "region": "Chicago",
-      "subregion": "City-Northside (Lincoln Park/Lakeview)",
+      "subregion": "City - Northside (Lincoln Park/Lakeview)",
       "meeting_time": "Varies (Evenings)",
       "max_additions": 0,
       "current_members": 7,
@@ -251,7 +251,7 @@
     "IP-CHI-05": {
       "circle_id": "IP-CHI-05",
       "region": "Chicago",
-      "subregion": "City-Loop",
+      "subregion": "City - Loop",
       "meeting_time": "Varies (Evenings)",
       "max_additions": 0,
       "current_members": 5,
@@ -1679,7 +1679,7 @@
     "IP-SFO-25": {
       "circle_id": "IP-SFO-25",
       "region": "San Francisco",
-      "subregion": "Pac Heights/Marina",
+      "subregion": "Presidio/Marina/Pacific Heights",
       "meeting_time": "Unknown",
       "max_additions": 0,
       "current_members": 10,

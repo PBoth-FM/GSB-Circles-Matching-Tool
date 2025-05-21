@@ -18,6 +18,155 @@ def safe_isna(val):
         # For scalar values
         return pd.isna(val)
 
+def renumber_circles_sequentially(circles_df):
+    """
+    Renumber all circles sequentially within their region code groups.
+    This ensures that circle IDs follow a consistent numbered pattern (01, 02, 03...)
+    for each region code.
+    
+    Args:
+        circles_df: DataFrame containing circle information
+        
+    Returns:
+        DataFrame: Updated DataFrame with renumbered circle IDs
+    """
+    print("\n🔄 POST-PROCESSING: Renumbering circles sequentially by region code")
+    
+    if circles_df is None or circles_df.empty:
+        print("  ⚠️ No circles to renumber")
+        return circles_df
+    
+    # Extract all circle IDs
+    if 'circle_id' not in circles_df.columns:
+        print("  ⚠️ No circle_id column found in DataFrame")
+        return circles_df
+    
+    # Create a mapping of old IDs to new IDs
+    circle_id_mapping = {}
+    
+    # Group circles by region code
+    region_groups = {}
+    
+    for _, row in circles_df.iterrows():
+        circle_id = row['circle_id']
+        
+        if not isinstance(circle_id, str):
+            continue
+            
+        # Skip UNMATCHED circles
+        if circle_id == 'UNMATCHED':
+            continue
+            
+        # Extract parts based on circle type (in-person vs virtual)
+        parts = circle_id.split('-')
+        
+        # Skip circles with invalid formats
+        if len(parts) < 3:
+            continue
+            
+        # Determine if this is a virtual circle or in-person circle
+        is_virtual = parts[0] in ['VO', 'V']
+        
+        # Extract the region code differently based on circle type
+        if is_virtual:
+            # Handle virtual circle format: VO-AM-GMT-5-NEW-XX or VO-AM-GMT-5-XX
+            if len(parts) >= 5 and 'GMT' in parts[2]:
+                # Format: VO-AM-GMT-5-NEW-XX or VO-AM-GMT-5-XX
+                # Region code is "AM-GMT-5"
+                region_code = f"{parts[1]}-{parts[2]}-{parts[3]}"
+                
+                # Check if this is a NEW circle
+                is_new = 'NEW' in parts
+            elif len(parts) >= 4:
+                # Alternate format: VO-AM-GMT+1-NEW-XX
+                # Region code is "AM-GMT+1"
+                region_code = f"{parts[1]}-{parts[2]}"
+                
+                # Check if this is a NEW circle
+                is_new = 'NEW' in parts
+            else:
+                # Unknown format, skip
+                continue
+        else:
+            # Handle in-person circle format: IP-NYC-XX or IP-NYC-NEW-XX
+            if len(parts) >= 3:
+                region_code = parts[1]  # e.g., NYC, BOS, etc.
+                
+                # Check if this is a NEW circle
+                is_new = 'NEW' in parts
+            else:
+                # Unknown format, skip
+                continue
+        
+        # Add to the appropriate region group
+        key = f"{parts[0]}-{region_code}"  # e.g., IP-NYC or VO-AM-GMT-5
+        if key not in region_groups:
+            region_groups[key] = []
+            
+        region_groups[key].append({
+            'circle_id': circle_id,
+            'is_new': is_new,
+            'format_prefix': parts[0],
+            'region_code': region_code,
+            'row_index': _
+        })
+    
+    # Renumber circles in each region group
+    for region_key, circles in region_groups.items():
+        # Log the region group
+        print(f"  📊 Processing region group: {region_key}")
+        
+        # Extract format prefix from the key
+        format_prefix = region_key.split('-')[0]  # IP or VO
+        region_code = region_key[len(format_prefix)+1:]  # Remove the prefix and dash
+        
+        # Sort existing and new circles separately
+        existing_circles = [c for c in circles if not c['is_new']]
+        new_circles = [c for c in circles if c['is_new']]
+        
+        # Process existing circles (no NEW in the ID)
+        for idx, circle_info in enumerate(sorted(existing_circles, key=lambda x: x['circle_id']), start=1):
+            old_id = circle_info['circle_id']
+            
+            # Create a new ID with sequential numbering
+            # Format: IP-NYC-01 or VO-AM-GMT-5-01
+            new_id = f"{format_prefix}-{region_code}-{str(idx).zfill(2)}"
+            
+            # Only update if the IDs are different
+            if old_id != new_id:
+                circle_id_mapping[old_id] = new_id
+                print(f"    🔄 Renumbering: {old_id} → {new_id}")
+        
+        # Process new circles (with NEW in the ID)
+        for idx, circle_info in enumerate(sorted(new_circles, key=lambda x: x['circle_id']), start=1):
+            old_id = circle_info['circle_id']
+            
+            # Create a new ID with sequential numbering
+            # Format: IP-NYC-NEW-01 or VO-AM-GMT-5-NEW-01
+            new_id = f"{format_prefix}-{region_code}-NEW-{str(idx).zfill(2)}"
+            
+            # Only update if the IDs are different
+            if old_id != new_id:
+                circle_id_mapping[old_id] = new_id
+                print(f"    🔄 Renumbering: {old_id} → {new_id}")
+    
+    # If there are circles to renumber, update the circle IDs
+    if circle_id_mapping:
+        print(f"  🔄 Renumbering {len(circle_id_mapping)} circles")
+        
+        # Create a copy of the DataFrame to avoid modifying while iterating
+        updated_df = circles_df.copy()
+        
+        # Update circle IDs in the DataFrame
+        for old_id, new_id in circle_id_mapping.items():
+            # Update the circle_id column
+            updated_df.loc[updated_df['circle_id'] == old_id, 'circle_id'] = new_id
+        
+        return updated_df
+    else:
+        print("  ✅ No circles needed renumbering")
+        return circles_df
+
 def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
     """
     Fix virtual circle IDs that use the incorrect format.
@@ -853,7 +1002,18 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     
     # Debug - show a few sample circles
     if not circles_df.empty and len(circles_df) > 0:
-        print("  Sample circles:")
+        print("  Sample circles before renumbering:")
+        for i, (_, row) in enumerate(circles_df.head(5).iterrows()):
+            print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members "
+                 f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
+                 f"max_additions={row.get('max_additions', 0)})")
+    
+    # Apply sequential renumbering to ensure consistent circle IDs
+    circles_df = renumber_circles_sequentially(circles_df)
+    
+    # Debug - show sample circles after renumbering
+    if not circles_df.empty and len(circles_df) > 0:
+        print("  Sample circles after renumbering:")
         for i, (_, row) in enumerate(circles_df.head(5).iterrows()):
             print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members "
                  f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
