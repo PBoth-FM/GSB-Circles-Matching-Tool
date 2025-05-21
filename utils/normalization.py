@@ -15,10 +15,16 @@ def load_normalization_tables():
     region_mapping = {}
     subregion_mapping = {}
     region_code_mapping = {}
+    region_subregion_mapping = {}
     
     try:
         # Try to load region normalization
-        if os.path.exists('attached_assets/Appendix2-RegionNormalizationCodes.csv'):
+        if os.path.exists('attached_assets/Circles-RegionNormalization.csv'):
+            print("✅ Using new Circles-RegionNormalization.csv file")
+            region_df = pd.read_csv('attached_assets/Circles-RegionNormalization.csv')
+            region_mapping = dict(zip(region_df['All unique variations'], region_df['Normalized Region']))
+        elif os.path.exists('attached_assets/Appendix2-RegionNormalizationCodes.csv'):
+            print("⚠️ Using legacy Appendix2-RegionNormalizationCodes.csv file")
             region_df = pd.read_csv('attached_assets/Appendix2-RegionNormalizationCodes.csv')
             region_mapping = dict(zip(region_df['All unique Region variations'], region_df['Normalized Region']))
             # Also create a mapping from normalized region names to region codes
@@ -28,11 +34,40 @@ def load_normalization_tables():
         
     try:
         # Try to load subregion normalization
-        if os.path.exists('attached_assets/Appendix1-SubregionNormalization.csv'):
+        if os.path.exists('attached_assets/Circles-SubregionNormalization.csv'):
+            print("✅ Using new Circles-SubregionNormalization.csv file")
+            subregion_df = pd.read_csv('attached_assets/Circles-SubregionNormalization.csv')
+            subregion_mapping = dict(zip(subregion_df['All unique variations'], subregion_df['Normalized']))
+        elif os.path.exists('attached_assets/Appendix1-SubregionNormalization.csv'):
+            print("⚠️ Using legacy Appendix1-SubregionNormalization.csv file")
             subregion_df = pd.read_csv('attached_assets/Appendix1-SubregionNormalization.csv')
             subregion_mapping = dict(zip(subregion_df['All unique variations'], subregion_df['Normalized']))
     except Exception as e:
         print(f"Could not load subregion normalization table: {str(e)}")
+    
+    # Load Region-Subregion-Code mapping
+    try:
+        if os.path.exists('attached_assets/Circles-RegionSubregionCodeMapping.csv'):
+            print("✅ Using new Circles-RegionSubregionCodeMapping.csv file")
+            mapping_df = pd.read_csv('attached_assets/Circles-RegionSubregionCodeMapping.csv')
+            # Create a more sophisticated region code mapping
+            for _, row in mapping_df.iterrows():
+                format_type = row['Format']
+                region = row['Region']
+                subregion = row['Subregion']
+                region_code = row['Region Code']
+                
+                # For in-person circles, map the normalized region to region code
+                if format_type == 'In Person':
+                    if region not in region_code_mapping:
+                        region_code_mapping[region] = region_code
+                
+                # Store a mapping of (normalized_region, normalized_subregion) to region_code
+                # This is crucial for virtual circles where region code depends on subregion
+                key = (region, subregion)
+                region_subregion_mapping[key] = region_code
+    except Exception as e:
+        print(f"Could not load region-subregion-code mapping: {str(e)}")
     
     # If files not found, use hardcoded fallback (minimal version)
     if not region_mapping:
@@ -126,10 +161,10 @@ def load_normalization_tables():
             'Virtual-Only APAC+EMEA': 'AE'
         }
     
-    return region_mapping, subregion_mapping, region_code_mapping
+    return region_mapping, subregion_mapping, region_code_mapping, region_subregion_mapping
 
 # Load the mappings
-REGION_MAPPING, SUBREGION_MAPPING, REGION_CODE_MAPPING = load_normalization_tables()
+REGION_MAPPING, SUBREGION_MAPPING, REGION_CODE_MAPPING, REGION_SUBREGION_MAPPING = load_normalization_tables()
 
 def normalize_regions(region):
     """

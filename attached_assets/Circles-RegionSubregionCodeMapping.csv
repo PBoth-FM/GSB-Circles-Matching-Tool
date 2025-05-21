@@ -1,0 +1,120 @@
+Format,Region,Subregion,Region Code
+In Person,Atlanta,Atlanta,ATL
+In Person,Austin,Central Austin,AUS
+In Person,Austin,East Austin,AUS
+In Person,Austin,North Austin/Cedar Park/Leander/Round Rock,AUS
+In Person,Austin,South Austin/Circle C,AUS
+In Person,Austin,West Austin/Westlake/Bee Cave,AUS
+In Person,Austin,Westlake/Barton Creek/Bee Cave/Lakeway,AUS
+In Person,Boston,Boston,BOS
+In Person,Boston,Brookline/Newton,BOS
+In Person,Boston,Cambridge/Somerville,BOS
+In Person,Boston,n/a (Meeting online only),BOS
+In Person,Boston,North of Boston,BOS
+In Person,Boston,Northwest of Boston (e.g. Belmont/Lexington/Concord),BOS
+In Person,Boston,South of Boston,BOS
+In Person,Boston,West of Boston (e.g. Needham/Wellesley/Natick),BOS
+In Person,Chicago,City - Loop,CHI
+In Person,Chicago,City - Northside (Lincoln Park/Lakeview),CHI
+In Person,Chicago,City - Northwest/Central,CHI
+In Person,Chicago,North Shore Suburbs,CHI
+In Person,East Bay,East of Caldecott Tunnel,EAB
+In Person,East Bay,West of Caldecott Tunnel,EAB
+In Person,Houston,Galleria & West,HOU
+In Person,Houston,Montrose/River Oaks/Heights,HOU
+In Person,Houston,West University/Bellaire,HOU
+In Person,London,Central,LON
+In Person,London,East,LON
+In Person,London,North,LON
+In Person,London,Southeast,LON
+In Person,London,Southwest,LON
+In Person,London,West,LON
+In Person,Los Angeles,Beverly Hills/Westwood,LAX
+In Person,Los Angeles,Brentwood/Santa Monica/Palisades/Malibu,LAX
+In Person,Los Angeles,Mid City/Mid Wilshire,LAX
+In Person,Los Angeles,Pasadena/Burbank/Glendale,LAX
+In Person,Los Angeles,Playa Vista/Marina Del Rey/Culver City,LAX
+In Person,Los Angeles,South Bay,LAX
+In Person,Los Angeles,The Valley (E of 405),LAX
+In Person,Los Angeles,West Valley (W of 405),LAX
+In Person,Marin County,Marin,MAR
+In Person,Mexico City,Mexico City,MXC
+In Person,Nairobi,Nairobi,NBO
+In Person,Napa-Sonoma,Napa/Sonoma,NAP
+In Person,New York,Brooklyn Heights/Downtown Brooklyn,NYC
+In Person,New York,Chelsea,NYC
+In Person,New York,Cobble Hill/Boerum Hill,NYC
+In Person,New York,CT,NYC
+In Person,New York,Flatiron,NYC
+In Person,New York,Fort Greene,NYC
+In Person,New York,Gramercy,NYC
+In Person,New York,Kips Bay/Murray Hill,NYC
+In Person,New York,Midtown East,NYC
+In Person,New York,Midtown West,NYC
+In Person,New York,n/a Meeting online only,NYC
+In Person,New York,Park Slope/Prospect Heights,NYC
+In Person,New York,Queens,NYC
+In Person,New York,Southern Manhattan,NYC
+In Person,New York,Tribeca,NYC
+In Person,New York,Upper East Side,NYC
+In Person,New York,Upper West Side,NYC
+In Person,New York,West Village,NYC
+In Person,New York,Westchester,NYC
+In Person,New York,Williamsburg,NYC
+In Person,Peninsula,Los Altos Hills,PSA
+In Person,Peninsula,Menlo Park,PSA
+In Person,Peninsula,Mid-Peninsula,PSA
+In Person,Peninsula,Mountain View/Los Altos,PSA
+In Person,Peninsula,Palo Alto,PSA
+In Person,Peninsula,Redwood City/San Carlos,PSA
+In Person,Peninsula,Redwood Shores,PSA
+In Person,Peninsula,San Mateo,PSA
+In Person,Peninsula,Sunnyvale,PSA
+In Person,San Diego,San Diego,SAN
+In Person,San Francisco,Buena Vista Park/Ashbury Heights,SFO
+In Person,San Francisco,Excelsior/Glen Park/Bernal,SFO
+In Person,San Francisco,Hayes/Nopa/Haight,SFO
+In Person,San Francisco,Mid Market/SoMa,SFO
+In Person,San Francisco,Mission Bay/Potrero,SFO
+In Person,San Francisco,Noe/Mission/Castro,SFO
+In Person,San Francisco,Presidio/Marina/Pacific Heights,SFO
+In Person,San Francisco,Richmond/Sunset,SFO
+In Person,San Francisco,Russian Hill/Nob Hill/North Beach,SFO
+In Person,San Francisco,San Francisco,SFO
+In Person,Sao Paulo,Sao Paulo,SPO
+In Person,Seattle,Downtown Seattle (Capital Hill/Madrona/Queen Ann/etc.),SEA
+In Person,Seattle,East Side (Bellevue/Issaquah/Redmond/etc.),SEA
+In Person,Seattle,North of Downtown Seattle (University District/Green Lake/Ballard/etc.),SEA
+In Person,Seattle,South of Downtown Seattle (Mt Baker/ West Seattle/ Columbia City/ etc.),SEA
+In Person,Shanghai,Shanghai,SHA
+In Person,Singapore,Singapore,SIN
+In Person,South Florida,Fort Lauderdale,SFL
+In Person,South Florida,Miami,SFL
+In Person,South Florida,Palm Beach,SFL
+In Person,South Florida,South Florida,SFL
+In Person,South Florida,West Palm Beach,SFL
+In Person,Washington DC,Montgomery County MD,WDC
+In Person,Washington DC,n/a Meeting online only,WDC
+In Person,Washington DC,Northern VA,WDC
+In Person,Washington DC,Northwest DC,WDC
+In Person,Washington DC,Varies,WDC
+Virtual,None of these.,Not valid - requested region does not exist,Invalid
+Virtual,Virtual Portland,Not valid - requested region does not exist,Invalid
+Virtual,Virtual-Only Americas,GMT-3 (Brasilia Time: Sao Paulo),AM-GMT-3
+Virtual,Virtual-Only Americas,GMT-4 (Atlantic Standard Time: San Juan),AM-GMT-4
+Virtual,Virtual-Only Americas,GMT-5 (Eastern Standard Time: Boston/Montreal/New York City/Toronto/Washington/D.C.),AM-GMT-5
+Virtual,Virtual-Only Americas,GMT-6 (Central Standard Time: Austin/Chicago/Houston/Mexico City),AM-GMT-6
+Virtual,Virtual-Only Americas,GMT-7 (Mountain Standard Time: Denver/Phoenix),AM-GMT-7
+Virtual,Virtual-Only Americas,GMT-8 (Pacific Standard Time: Los Angeles/San Diego/San Francisco/Seattle),AM-GMT-8
+Virtual,Virtual-Only APAC+EMEA,GMT (Western European Time / Greenwich Mean Time: London),AE-GMT
+Virtual,Virtual-Only APAC+EMEA,GMT+1 (Central European Time: Berlin/Madrid/Paris/Rome),AE-GMT+1
+Virtual,Virtual-Only APAC+EMEA,GMT+10 (Australian Eastern Standard Time: Melbourne/ Sydney),AE-GMT+10
+Virtual,Virtual-Only APAC+EMEA,GMT+12 (New Zealand Standard Time: Auckland),AE-GMT+12
+Virtual,Virtual-Only APAC+EMEA,GMT+2 (Israel Standard Time: Jerusalem),AE-GMT+2
+Virtual,Virtual-Only APAC+EMEA,"GMT+3 (Moscow Standard Time/Turkey Time/East Africa Time: Istanbul, Moscow, Nairobi)",AE-GMT+3
+Virtual,Virtual-Only APAC+EMEA,GMT+4 (UAE Standard Time: Dubai),AE-GMT+4
+Virtual,Virtual-Only APAC+EMEA,GMT+5:30 (Indian Standard Time: Mumbai),AE-GMT+530
+Virtual,Virtual-Only APAC+EMEA,GMT+7 (Indochina Time: Bangkok),AE-GMT+7
+Virtual,Virtual-Only APAC+EMEA,GMT+8 (Hong Kong Time / China Taiwan Time / Singapore Standard Time: Hong Kong/Shanghai/Singapore),AE-GMT+8
+Virtual,Virtual-Only APAC+EMEA,GMT+9 (Japan Standard Time: Tokyo),AE-GMT+9
+Virtual,Virtual-Only APAC+EMEA,Varies,AE-GMT+1
