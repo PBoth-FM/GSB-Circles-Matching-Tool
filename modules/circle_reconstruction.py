@@ -218,31 +218,34 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         # IMPROVED: Instead of just using the first member, we'll check all members for metadata
         # This ensures we use the most complete data available for continuing circles
         
-        # CRITICAL FIX: For new circles (starting with "IP-NEW"), use Derived_Region or Current_Region
-        # This fixes the "None" region issue in Circle Composition
-        is_new_circle = circle_id.startswith('IP-NEW')
+        # CRITICAL FIX: Check if this is a virtual or new circle to apply appropriate logic
+        is_virtual = isinstance(circle_id, str) and ('VO-' in circle_id or 'V-VIR' in circle_id)
+        is_new_circle = isinstance(circle_id, str) and ('NEW' in circle_id or circle_id.startswith('IP-NEW') or circle_id.startswith('V-VIR-NEW'))
         is_continuing_circle = not is_new_circle and any('CURRENT-CONTINUING' == str(row.get('Status', '')).upper() for _, row in members_df.iterrows())
         
         # Display circle type for debugging
-        print(f"  Circle {circle_id}: Type: {'NEW' if is_new_circle else 'CONTINUING' if is_continuing_circle else 'UNKNOWN'}")
+        print(f"  Circle {circle_id}: Type: {'NEW' if is_new_circle else 'CONTINUING' if is_continuing_circle else 'UNKNOWN'}, Virtual: {is_virtual}")
         
         # Define property extraction for each member
         property_values = {
             'region': [],
             'subregion': [],
             'meeting_day': [],
-            'meeting_time': []
+            'meeting_time': [],
+            'meeting_day_time': []  # For the combined proposed_NEW_DayTime field
         }
         
         # Define column priorities based on circle type
+        # For region columns, always prioritize Derived_Region first
+        # For new circles, prioritize proposed_NEW fields over Current fields
         property_columns = {
-            'region': ['Derived_Region', 'Current_Region', 'proposed_NEW_Region', 'region'] if is_new_circle else 
-                     ['proposed_NEW_Region', 'Current_Region', 'Derived_Region', 'region'],
+            'region': ['Derived_Region', 'Current_Region', 'proposed_NEW_Region', 'region'],
             'subregion': ['proposed_NEW_Subregion', 'Current_Subregion', 'subregion'],
             'meeting_day': ['Current_Meeting_Day', 'Current Meeting Day', 'Current/ Continuing Meeting Day',
                           'Meeting Day', 'Preferred Meeting Day'],
             'meeting_time': ['Current_Meeting_Time', 'Current Meeting Time', 'Current/ Continuing Meeting Time', 
-                           'Meeting Time', 'Preferred Meeting Time']
+                           'Meeting Time', 'Preferred Meeting Time'],
+            'meeting_day_time': ['proposed_NEW_DayTime', 'Current_DayTime']
         }
         
         # Check every member for each property
@@ -265,8 +268,65 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         # Process the collected values for each property
         extracted_props = {}
         
-        # For region and subregion, prioritize values from CURRENT-CONTINUING members
+        # NEW CODE: First check if this is a new circle and try to extract the proposed values directly
+        if is_new_circle:
+            print(f"  🔍 NEW CIRCLE DETECTED: {circle_id} - Looking for proposed_NEW values first")
+            
+            # For region, prioritize Derived_Region
+            derived_region_found = False
+            for _, member in members_df.iterrows():
+                if 'Derived_Region' in member and not pd.isna(member['Derived_Region']) and member['Derived_Region']:
+                    extracted_props['region'] = str(member['Derived_Region'])
+                    print(f"  ✅ NEW CIRCLE: Set region='{extracted_props['region']}' from Derived_Region")
+                    derived_region_found = True
+                    break
+            
+            # If Derived_Region not found, use Requested_Region
+            if not derived_region_found:
+                for _, member in members_df.iterrows():
+                    if 'Requested_Region' in member and not pd.isna(member['Requested_Region']) and member['Requested_Region']:
+                        extracted_props['region'] = str(member['Requested_Region'])
+                        print(f"  ✅ NEW CIRCLE: Set region='{extracted_props['region']}' from Requested_Region")
+                        break
+            
+            # For subregion, use proposed_NEW_Subregion
+            proposed_subregion_found = False
+            for _, member in members_df.iterrows():
+                if 'proposed_NEW_Subregion' in member and not pd.isna(member['proposed_NEW_Subregion']) and member['proposed_NEW_Subregion']:
+                    extracted_props['subregion'] = str(member['proposed_NEW_Subregion'])
+                    print(f"  ✅ NEW CIRCLE: Set subregion='{extracted_props['subregion']}' from proposed_NEW_Subregion")
+                    proposed_subregion_found = True
+                    break
+            
+            # For meeting_time, use proposed_NEW_DayTime
+            proposed_time_found = False
+            for _, member in members_df.iterrows():
+                if 'proposed_NEW_DayTime' in member and not pd.isna(member['proposed_NEW_DayTime']) and member['proposed_NEW_DayTime']:
+                    extracted_props['meeting_time'] = str(member['proposed_NEW_DayTime'])
+                    print(f"  ✅ NEW CIRCLE: Set meeting_time='{extracted_props['meeting_time']}' from proposed_NEW_DayTime")
+                    proposed_time_found = True
+                    break
+            
+            # Virtual circles need special handling to ensure region is set correctly
+            if is_virtual and 'region' in extracted_props:
+                if 'Virtual' not in extracted_props['region']:
+                    # Update region to include Virtual designation if not already there
+                    if 'Americas' in extracted_props['region']:
+                        extracted_props['region'] = 'Virtual-Only Americas'
+                    elif 'APAC' in extracted_props['region'] or 'EMEA' in extracted_props['region']:
+                        extracted_props['region'] = 'Virtual-Only APAC+EMEA'
+                    else:
+                        # Generic virtual designation as fallback
+                        extracted_props['region'] = f"Virtual-Only {extracted_props['region']}"
+                    print(f"  ✅ VIRTUAL CIRCLE: Updated region to '{extracted_props['region']}'")
+        
+        # If we're missing information, fall back to the standard approach for all circles
+        # For region and subregion, prioritize values from CURRENT-CONTINUING members if not already set
         for prop in ['region', 'subregion']:
+            # Skip if already set for new circles
+            if prop in extracted_props and extracted_props[prop] and extracted_props[prop] != 'Unknown':
+                continue
+                
             if property_values[prop]:
                 # First try CURRENT-CONTINUING members' values
                 continuing_values = [item['value'] for item in property_values[prop] if item['is_continuing']]
@@ -282,70 +342,81 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 extracted_props[prop] = 'Unknown' if prop == 'subregion' else '' 
                 print(f"  ⚠️ Using fallback value '{extracted_props[prop]}' for {prop}")
         
-        # For meeting day and time, combine them if both exist
-        has_day_data = len(property_values['meeting_day']) > 0
-        has_time_data = len(property_values['meeting_time']) > 0
-        
-        if has_day_data and has_time_data:
-            # Prioritize continuing member data
-            day_values = [item for item in property_values['meeting_day'] if item['is_continuing']]
-            time_values = [item for item in property_values['meeting_time'] if item['is_continuing']]
-            
-            # If no continuing member data, use any data
-            if not day_values:
-                day_values = property_values['meeting_day']
-            if not time_values:
-                time_values = property_values['meeting_time']
-            
-            # Format the combined day and time
-            day = day_values[0]['value']
-            time = time_values[0]['value']
-            
-            # Standardize time format
-            if time.lower() == 'evening':
-                time = 'Evenings'
-            elif time.lower() == 'day':
-                time = 'Days'
+        # For meeting time, if not already set for new circles
+        if 'meeting_time' not in extracted_props or not extracted_props['meeting_time']:
+            # First check for combined day-time values
+            if property_values['meeting_day_time']:
+                # Prioritize continuing member data for existing circles
+                if is_continuing_circle:
+                    time_values = [item for item in property_values['meeting_day_time'] if item['is_continuing']]
+                    if not time_values:
+                        time_values = property_values['meeting_day_time']
+                else:
+                    # For new circles, just use any value with preference for proposed_NEW_DayTime
+                    proposed_values = [item for item in property_values['meeting_day_time'] 
+                                     if 'proposed_NEW_DayTime' in item['column']]
+                    time_values = proposed_values if proposed_values else property_values['meeting_day_time']
                 
-            formatted_time = f"{day} ({time})"
-            extracted_props['meeting_time'] = formatted_time
-            print(f"  ✅ Set combined meeting_time='{formatted_time}' from separate day and time columns")
+                extracted_props['meeting_time'] = time_values[0]['value']
+                print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from combined day-time column")
             
-        elif has_day_data:
-            # Just use the day
-            day_values = [item for item in property_values['meeting_day'] if item['is_continuing']]
-            if not day_values:
-                day_values = property_values['meeting_day']
+            # If no combined data, try to build from separate day and time
+            elif len(property_values['meeting_day']) > 0 and len(property_values['meeting_time']) > 0:
+                # Prioritize continuing member data for existing circles
+                if is_continuing_circle:
+                    day_values = [item for item in property_values['meeting_day'] if item['is_continuing']]
+                    time_values = [item for item in property_values['meeting_time'] if item['is_continuing']]
+                    
+                    # If no continuing member data, use any data
+                    if not day_values:
+                        day_values = property_values['meeting_day']
+                    if not time_values:
+                        time_values = property_values['meeting_time']
+                else:
+                    # For new circles, just use any value
+                    day_values = property_values['meeting_day']
+                    time_values = property_values['meeting_time']
                 
-            extracted_props['meeting_time'] = day_values[0]['value']
-            print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from day only")
-            
-        elif has_time_data:
-            # Just use the time
-            time_values = [item for item in property_values['meeting_time'] if item['is_continuing']]
-            if not time_values:
-                time_values = property_values['meeting_time']
+                # Format the combined day and time
+                day = day_values[0]['value']
+                time = time_values[0]['value']
                 
-            extracted_props['meeting_time'] = time_values[0]['value']
-            print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from time only")
-            
-        else:
-            # Also check for combined day-time columns
-            combined_columns = ['proposed_NEW_DayTime', 'Current_DayTime', 'Current/ Continuing DayTime']
-            found_combined = False
-            
-            for _, member in members_df.iterrows():
-                for col in combined_columns:
-                    if col in member and not pd.isna(member[col]) and member[col]:
-                        extracted_props['meeting_time'] = str(member[col])
-                        print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from combined column {col}")
-                        found_combined = True
-                        break
-                if found_combined:
-                    break
-            
-            # If still no data, use fallback
-            if not found_combined:
+                # Standardize time format
+                if time.lower() == 'evening':
+                    time = 'Evenings'
+                elif time.lower() == 'day':
+                    time = 'Days'
+                    
+                formatted_time = f"{day} ({time})"
+                extracted_props['meeting_time'] = formatted_time
+                print(f"  ✅ Set combined meeting_time='{formatted_time}' from separate day and time columns")
+                
+            elif len(property_values['meeting_day']) > 0:
+                # Just use the day
+                if is_continuing_circle:
+                    day_values = [item for item in property_values['meeting_day'] if item['is_continuing']]
+                    if not day_values:
+                        day_values = property_values['meeting_day']
+                else:
+                    day_values = property_values['meeting_day']
+                
+                extracted_props['meeting_time'] = day_values[0]['value']
+                print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from day only")
+                
+            elif len(property_values['meeting_time']) > 0:
+                # Just use the time
+                if is_continuing_circle:
+                    time_values = [item for item in property_values['meeting_time'] if item['is_continuing']]
+                    if not time_values:
+                        time_values = property_values['meeting_time']
+                else:
+                    time_values = property_values['meeting_time']
+                
+                extracted_props['meeting_time'] = time_values[0]['value']
+                print(f"  ✅ Set meeting_time='{extracted_props['meeting_time']}' from time only")
+                
+            else:
+                # Last resort fallback
                 extracted_props['meeting_time'] = 'Unknown'
                 print(f"  ⚠️ Using fallback value 'Unknown' for meeting_time")
         
