@@ -128,14 +128,32 @@ def renumber_circles_sequentially(circles_df):
         for idx, circle_info in enumerate(sorted(existing_circles, key=lambda x: x['circle_id']), start=1):
             old_id = circle_info['circle_id']
             
-            # Create a new ID with sequential numbering
-            # Format: IP-NYC-01 or VO-AM-GMT-5-01
-            new_id = f"{format_prefix}-{region_code}-{str(idx).zfill(2)}"
+            # Check if this is an existing circle with a non-standard ID format (single digit)
+            # For example, IP-ATL-1 instead of IP-ATL-01
+            is_continuing_circle = False
             
-            # Only update if the IDs are different
-            if old_id != new_id:
-                circle_id_mapping[old_id] = new_id
-                print(f"    🔄 Renumbering: {old_id} → {new_id}")
+            # Extract the numeric part of the circle ID
+            parts = old_id.split('-')
+            if len(parts) >= 3:
+                last_part = parts[-1]
+                # Check if it's a single digit (e.g., "1" instead of "01")
+                if last_part.isdigit() and len(last_part) == 1:
+                    is_continuing_circle = True
+                    print(f"    🔍 Found continuing circle with non-standard ID format: {old_id}")
+            
+            if is_continuing_circle:
+                # Preserve the original ID format for existing circles
+                new_id = old_id
+                print(f"    ✅ Preserving original ID format for continuing circle: {old_id}")
+            else:
+                # Create a new ID with sequential numbering
+                # Format: IP-NYC-01 or VO-AM-GMT-5-01
+                new_id = f"{format_prefix}-{region_code}-{str(idx).zfill(2)}"
+                
+                # Only update if the IDs are different
+                if old_id != new_id:
+                    circle_id_mapping[old_id] = new_id
+                    print(f"    🔄 Renumbering: {old_id} → {new_id}")
         
         # Process new circles (with NEW in the ID)
         for idx, circle_info in enumerate(sorted(new_circles, key=lambda x: x['circle_id']), start=1):
@@ -816,6 +834,21 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         circle_metadata[circle_id]['region'] = extracted_props['region']
         circle_metadata[circle_id]['subregion'] = extracted_props['subregion']
         circle_metadata[circle_id]['meeting_time'] = extracted_props['meeting_time']
+        
+        # Verify and fix member counts
+        # Calculate the actual member count based on the members list
+        if 'members' in circle_metadata[circle_id] and isinstance(circle_metadata[circle_id]['members'], list):
+            real_member_count = len(circle_metadata[circle_id]['members'])
+            
+            # If member_count doesn't match the real count, update it
+            if circle_metadata[circle_id].get('member_count', 0) != real_member_count:
+                print(f"  🛠️ FIXING: Circle {circle_id} has incorrect member_count {circle_metadata[circle_id].get('member_count', 0)} but actually has {real_member_count} members")
+                circle_metadata[circle_id]['member_count'] = real_member_count
+                
+            # Make sure member count is never zero for circles with members
+            if real_member_count > 0 and circle_metadata[circle_id].get('member_count', 0) == 0:
+                print(f"  🛠️ FIXING: Circle {circle_id} has zero member_count but has {real_member_count} members")
+                circle_metadata[circle_id]['member_count'] = real_member_count
         
         # Print the final extracted values
         print(f"  📊 FINAL VALUES for circle {circle_id}:")

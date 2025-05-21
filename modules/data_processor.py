@@ -135,6 +135,8 @@ def process_data(df, debug_mode=False):
     Returns:
         Processed DataFrame
     """
+    # Enable special debugging for Peninsula region issues
+    DEBUG_PENINSULA_REGION = True
     # Make a copy to avoid modifying the original
     processed_df = df.copy()
     
@@ -281,6 +283,8 @@ def normalize_data(df, debug_mode=False):
     Returns:
         DataFrame with normalized region and subregion data
     """
+    # Enable debugging for Peninsula region to catch and fix issues
+    DEBUG_PENINSULA_REGION = True
     if df is None or not isinstance(df, pd.DataFrame):
         # Handle the case where df might be a string or None
         return df
