@@ -337,27 +337,42 @@ def generate_circle_id(region, subregion, index, is_new=True):
         
     Returns:
         Circle ID string in format:
-        - New circles: {Format}-{RegionCode}-NEW-{index} 
-        - Existing circles: {Format}-{RegionCode}-{index}
+        - Virtual New circles: VO-{RegionCode}-NEW-{index} where RegionCode includes timezone (e.g., AM-GMT-6)
+        - Virtual Existing circles: VO-{RegionCode}-{index}
+        - In-person New circles: IP-{RegionCode}-NEW-{index}
+        - In-person Existing circles: IP-{RegionCode}-{index}
     """
     # Import here to avoid circular imports
-    from utils.normalization import get_region_code
+    from utils.normalization import get_region_code, get_region_code_with_subregion
     
-    # Get the standardized region code
-    region_code = get_region_code(region)
+    # Check if this is a virtual circle
+    is_virtual = "Virtual" in str(region) if region is not None else False
     
     # Format the index as 2-digit number
     index_str = str(index).zfill(2)
     
-    # Determine if virtual or in-person format
-    format_prefix = "V" if "Virtual" in region else "IP"
+    # Set the format prefix
+    format_prefix = "VO" if is_virtual else "IP"
     
+    # Get the appropriate region code
+    if is_virtual and subregion:
+        # For virtual circles, get the region code that includes timezone from subregion
+        region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
+        print(f"🔍 Virtual circle detected: region={region}, subregion={subregion}")
+        print(f"🔍 Using region code with subregion: {region_code}")
+    else:
+        # For in-person circles, use the standard region code
+        region_code = get_region_code(region)
+        
     # Format: {Format}-{RegionCode}-NEW-{index} for new circles
     # For existing circles, the format is {Format}-{RegionCode}-{index}
     if is_new:
-        return f"{format_prefix}-{region_code}-NEW-{index_str}"
+        circle_id = f"{format_prefix}-{region_code}-NEW-{index_str}"
     else:
-        return f"{format_prefix}-{region_code}-{index_str}"
+        circle_id = f"{format_prefix}-{region_code}-{index_str}"
+        
+    print(f"🔍 Generated circle ID: {circle_id} (is_virtual={is_virtual}, is_new={is_new})")
+    return circle_id
 
 def estimate_compatibility(participant, subregion, time_slot):
     """
