@@ -376,19 +376,38 @@ def map_circles_to_regions(circles_dict, participants_df, debug_mode=False):
     
     # First pass: Map each circle to a region based on circle ID or metadata
     for circle_id, circle_data in circles_dict.items():
+        # Check if this is a virtual circle based on prefix
+        is_virtual = isinstance(circle_id, str) and circle_id.startswith("VO-")
+        
         # Try getting region from circle data if available
         circle_region = None
-        if isinstance(circle_data, dict) and 'region' in circle_data:
-            circle_region = normalize_region_name(circle_data['region'])
+        circle_subregion = None
         
+        if isinstance(circle_data, dict):
+            if 'region' in circle_data:
+                circle_region = normalize_region_name(circle_data['region'])
+            if 'subregion' in circle_data:
+                circle_subregion = circle_data['subregion']
+                
         # If not found, try extraction from circle ID
         if not circle_region:
             circle_region = extract_region_code_from_circle_id(circle_id)
+            
+            # For virtual circles, also try to extract the subregion (timezone)
+            if is_virtual and not circle_subregion:
+                circle_subregion = extract_subregion_from_circle_id(circle_id)
+        
+        # Extra debug for virtual circles to ensure they are mapped correctly
+        if is_virtual and debug_mode:
+            print(f"  Virtual circle detected: {circle_id}")
+            print(f"  Determined region: {circle_region}, subregion: {circle_subregion}")
         
         if circle_region:
             if circle_region not in region_to_circles:
                 region_to_circles[circle_region] = []
-            region_to_circles[circle_region].append(circle_id)
+            
+            if circle_id not in region_to_circles[circle_region]:
+                region_to_circles[circle_region].append(circle_id)
             
             if debug_mode:
                 print(f"  Mapped circle {circle_id} to region {circle_region}")

@@ -300,6 +300,36 @@ def normalize_data(df, debug_mode=False):
             normalized_df[location_col] = normalized_df[location_col].apply(
                 lambda x: normalize_subregions(x) if pd.notna(x) and x != '' else x
             )
+            
+    # Add region code detection for virtual regions based on subregion
+    if debug_mode:
+        print("🔍 Enhanced region normalization with virtual-aware region codes")
+    
+    # Detect virtual circles based on region
+    try:
+        if 'Current_Region' in normalized_df.columns and 'Current_Subregion' in normalized_df.columns:
+            # Import our enhanced region code function that handles virtual circles
+            from utils.normalization import get_region_code_with_subregion
+            
+            # Create a new column for region codes that takes subregions into account for virtual circles
+            normalized_df['Region_Code'] = normalized_df.apply(
+                lambda row: get_region_code_with_subregion(
+                    row['Current_Region'],
+                    row['Current_Subregion'],
+                    'Virtual' in str(row['Current_Region']) if pd.notna(row['Current_Region']) else False
+                ) if pd.notna(row['Current_Region']) and pd.notna(row['Current_Subregion']) else None,
+                axis=1
+            )
+            
+            if debug_mode:
+                # Show sample of virtual regions and their codes
+                virtual_sample = normalized_df[normalized_df['Current_Region'].str.contains('Virtual', na=False)].head(5) if 'Current_Region' in normalized_df.columns else None
+                if virtual_sample is not None and not virtual_sample.empty:
+                    print("📊 Sample of virtual region codes:")
+                    for _, row in virtual_sample.iterrows():
+                        print(f"  Region: {row['Current_Region']}, Subregion: {row['Current_Subregion']}, Code: {row.get('Region_Code', 'Unknown')}")
+    except Exception as e:
+        print(f"⚠️ WARNING: Error while processing virtual region codes: {str(e)}")
     
     # Handle small regions with no subregions
     # For NEW participants from small regions who didn't specify a first_choice_location,
