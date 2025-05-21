@@ -1611,29 +1611,39 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     new_circle_metadata = {}  # Map IDs to their subregion and time
     
     # Import region code mapping utilities
-    from utils.normalization import get_region_code
+    from utils.normalization import get_region_code, get_region_code_with_subregion
     
     # Step 1: Group potential circles by region code for sequential numbering
     regions_and_times = {}
     
     # Get the standardized region code for the current region
-    region_code = get_region_code(region)
+    is_virtual = "Virtual" in region if region is not None else False
     
     # Initialize counter for this region - always start from 1
     counter = 1
     
     # Determine format based on whether it's virtual or in-person
-    format_prefix = "V" if "Virtual" in region else "IP"
+    format_prefix = "VO" if is_virtual else "IP"
     
     if debug_mode:
-        print(f"Creating new circle IDs for region {region} (code: {region_code})")
+        print(f"Creating new circle IDs for region {region} (is_virtual: {is_virtual})")
     
     # For each subregion and time slot combination
     for subregion, time_slot in new_circle_candidates:
         # Format the counter as a 2-digit number (01, 02, etc.)
         circle_num = str(counter).zfill(2)
         
-        # Generate a unique ID for this potential new circle using the updated format
+        # Get the appropriate region code
+        if is_virtual and subregion:
+            # For virtual circles, use the region code with timezone from subregion
+            region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
+            if debug_mode:
+                print(f"  Virtual circle with subregion {subregion}, using region_code: {region_code}")
+        else:
+            # For in-person circles, use the standard region code
+            region_code = get_region_code(region)
+        
+        # Generate a unique ID for this potential new circle using the correct format
         circle_id = f"{format_prefix}-{region_code}-NEW-{circle_num}"
         
         if debug_mode:
