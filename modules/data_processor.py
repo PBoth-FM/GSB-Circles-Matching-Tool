@@ -298,12 +298,27 @@ def normalize_data(df, debug_mode=False):
                 lambda x: normalize_regions(x) if pd.notna(x) else x
             )
     
-    # Normalize subregions
+    # Normalize subregions with region context
     for location_col in ['first_choice_location', 'second_choice_location', 'third_choice_location', 'Current_Subregion']:
         if location_col in normalized_df.columns:
-            normalized_df[location_col] = normalized_df[location_col].apply(
-                lambda x: normalize_subregions(x) if pd.notna(x) and x != '' else x
-            )
+            # Get the corresponding region column for context
+            region_col = 'Current_Region' if location_col == 'Current_Subregion' else 'Requested_Region'
+            
+            # Apply normalization with region context
+            if region_col in normalized_df.columns:
+                # Use both region and subregion for better context-aware normalization
+                normalized_df[location_col] = normalized_df.apply(
+                    lambda row: normalize_subregions(
+                        row[location_col], 
+                        region=row.get(region_col)
+                    ) if pd.notna(row[location_col]) and row[location_col] != '' else row[location_col],
+                    axis=1
+                )
+            else:
+                # Fallback if region column not available
+                normalized_df[location_col] = normalized_df[location_col].apply(
+                    lambda x: normalize_subregions(x) if pd.notna(x) and x != '' else x
+                )
             
     # Add region code detection for virtual regions based on subregion
     if debug_mode:
