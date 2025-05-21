@@ -87,6 +87,23 @@ def extract_region_code_from_circle_id(circle_id):
     if circle_id in special_cases:
         return special_cases[circle_id]
     
+    # Detection for Virtual-Only circles which have a different format
+    # Examples: VO-AM-GMT-5-01, VO-AE-GMT+1-02
+    virtual_pattern = r'^VO-([A-Za-z]+)-GMT([+-]?\d+(?::\d+)?)-\d+$'
+    virtual_match = re.match(virtual_pattern, circle_id)
+    
+    if virtual_match:
+        region_prefix = virtual_match.group(1)  # AM or AE
+        timezone = virtual_match.group(2)       # -5, +1, etc.
+        
+        # Map to virtual region
+        if region_prefix == 'AM':
+            return f'Virtual-Only Americas'
+        elif region_prefix == 'AE':
+            return f'Virtual-Only APAC+EMEA'
+        
+        # If we couldn't map it, we'll fall through to the standard pattern
+    
     # Try to extract region code from standard format (IP-REG-##)
     pattern = r'^[A-Za-z]+-([A-Za-z]+)(?:-\d+)?$'
     match = re.match(pattern, circle_id)
@@ -273,6 +290,71 @@ def get_region_from_circle_or_participant(item, debug_mode=False):
     # If we couldn't extract a region, return None
     if debug_mode:
         print(f"❌ Could not extract region from: {item}")
+    return None
+
+def extract_subregion_from_circle_id(circle_id):
+    """
+    Extract subregion information from a circle ID
+    
+    Args:
+        circle_id: Circle ID string
+        
+    Returns:
+        Extracted subregion or None if not found
+    """
+    if not circle_id or not isinstance(circle_id, str):
+        return None
+    
+    # For virtual circles, try to extract the timezone information
+    virtual_pattern = r'^VO-([A-Za-z]+)-GMT([+-]?\d+(?::\d+)?)-\d+$'
+    virtual_match = re.match(virtual_pattern, circle_id)
+    
+    if virtual_match:
+        region_prefix = virtual_match.group(1)  # AM or AE
+        timezone = virtual_match.group(2)       # -5, +1, etc.
+        
+        # Construct a timezone description
+        if region_prefix == 'AM':
+            # America timezones
+            if timezone == '-3':
+                return "GMT-3 (Brasilia Time: Sao Paulo)"
+            elif timezone == '-4':
+                return "GMT-4 (Atlantic Standard Time: San Juan)"
+            elif timezone == '-5':
+                return "GMT-5 (Eastern Standard Time: Boston/Montreal/New York City/Toronto/Washington/D.C.)"
+            elif timezone == '-6':
+                return "GMT-6 (Central Standard Time: Austin/Chicago/Houston/Mexico City)"
+            elif timezone == '-7':
+                return "GMT-7 (Mountain Standard Time: Denver/Phoenix)"
+            elif timezone == '-8':
+                return "GMT-8 (Pacific Standard Time: Los Angeles/San Diego/San Francisco/Seattle)"
+        elif region_prefix == 'AE':
+            # APAC+EMEA timezones
+            if timezone == '0':
+                return "GMT (Western European Time / Greenwich Mean Time: London)"
+            elif timezone == '+1':
+                return "GMT+1 (Central European Time: Berlin/Madrid/Paris/Rome)"
+            elif timezone == '+2':
+                return "GMT+2 (Israel Standard Time: Jerusalem)"
+            elif timezone == '+3':
+                return "GMT+3 (Moscow Standard Time/Turkey Time/East Africa Time: Istanbul, Moscow, Nairobi)"
+            elif timezone == '+4':
+                return "GMT+4 (UAE Standard Time: Dubai)"
+            elif timezone == '+5:30' or timezone == '+530' or timezone == '+5.5':
+                return "GMT+5:30 (Indian Standard Time: Mumbai)"
+            elif timezone == '+7':
+                return "GMT+7 (Indochina Time: Bangkok)"
+            elif timezone == '+8':
+                return "GMT+8 (Hong Kong Time / China Taiwan Time / Singapore Standard Time: Hong Kong/Shanghai/Singapore)"
+            elif timezone == '+9':
+                return "GMT+9 (Japan Standard Time: Tokyo)"
+            elif timezone == '+10':
+                return "GMT+10 (Australian Eastern Standard Time: Melbourne/ Sydney)"
+            elif timezone == '+12':
+                return "GMT+12 (New Zealand Standard Time: Auckland)"
+    
+    # For in-person circles, we could potentially extract subregion if needed
+    # Currently not implemented for standard formats
     return None
 
 def map_circles_to_regions(circles_dict, participants_df, debug_mode=False):

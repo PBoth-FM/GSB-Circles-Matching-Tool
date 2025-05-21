@@ -166,6 +166,87 @@ def load_normalization_tables():
 # Load the mappings
 REGION_MAPPING, SUBREGION_MAPPING, REGION_CODE_MAPPING, REGION_SUBREGION_MAPPING = load_normalization_tables()
 
+def get_region_code_with_subregion(region, subregion, is_virtual=False):
+    """
+    Get the region code based on region and subregion, with special handling for virtual circles.
+    
+    Args:
+        region: Normalized region name
+        subregion: Normalized subregion name
+        is_virtual: Whether this is a virtual circle
+        
+    Returns:
+        Region code string
+    """
+    # For virtual circles, the region code depends on the subregion
+    if is_virtual:
+        # Try the combined mapping first
+        key = (region, subregion)
+        if key in REGION_SUBREGION_MAPPING:
+            return REGION_SUBREGION_MAPPING[key]
+        
+        # If not found in combined mapping, check if region starts with 'Virtual'
+        if isinstance(region, str) and region.startswith('Virtual'):
+            # Check if this is Americas or APAC+EMEA
+            if 'Americas' in region:
+                # Try to extract timezone from subregion
+                if isinstance(subregion, str):
+                    if 'GMT-3' in subregion:
+                        return 'AM-GMT-3'
+                    elif 'GMT-4' in subregion:
+                        return 'AM-GMT-4'
+                    elif 'GMT-5' in subregion:
+                        return 'AM-GMT-5'
+                    elif 'GMT-6' in subregion:
+                        return 'AM-GMT-6'
+                    elif 'GMT-7' in subregion:
+                        return 'AM-GMT-7'
+                    elif 'GMT-8' in subregion:
+                        return 'AM-GMT-8'
+                # Default for Americas
+                return 'AM'
+            elif 'APAC' in region or 'EMEA' in region:
+                # Try to extract timezone from subregion
+                if isinstance(subregion, str):
+                    if 'GMT+1' in subregion:
+                        return 'AE-GMT+1'
+                    elif 'GMT+2' in subregion:
+                        return 'AE-GMT+2'
+                    elif 'GMT+3' in subregion:
+                        return 'AE-GMT+3'
+                    elif 'GMT+4' in subregion:
+                        return 'AE-GMT+4'
+                    elif 'GMT+5' in subregion or 'GMT+5:30' in subregion:
+                        return 'AE-GMT+530'
+                    elif 'GMT+7' in subregion:
+                        return 'AE-GMT+7'
+                    elif 'GMT+8' in subregion:
+                        return 'AE-GMT+8'
+                    elif 'GMT+9' in subregion:
+                        return 'AE-GMT+9'
+                    elif 'GMT+10' in subregion:
+                        return 'AE-GMT+10'
+                    elif 'GMT+12' in subregion:
+                        return 'AE-GMT+12'
+                    elif 'GMT' in subregion:
+                        return 'AE-GMT'
+                # Default for APAC+EMEA
+                return 'AE'
+        
+        # If all else fails, use the legacy mapping
+        if region in REGION_CODE_MAPPING:
+            return REGION_CODE_MAPPING[region]
+        
+        return 'Invalid'
+    
+    # For in-person circles, use standard region code from the mapping
+    if region in REGION_CODE_MAPPING:
+        return REGION_CODE_MAPPING[region]
+    
+    # If no mapping found, use a default or placeholder
+    print(f"⚠️ WARNING: Could not find region code for {region} (subregion: {subregion})")
+    return 'Unknown'
+
 def normalize_regions(region):
     """
     Normalize a region name using the mapping table
