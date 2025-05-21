@@ -18,6 +18,63 @@ def safe_isna(val):
         # For scalar values
         return pd.isna(val)
 
+def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
+    """
+    Fix virtual circle IDs that use the incorrect format.
+    Transforms V-VIR-NEW-XX to VO-REG-GMT±Y-NEW-XX format.
+    
+    Args:
+        circle_id: The circle ID to fix
+        region: Optional region information for the circle
+        subregion: Optional subregion information for the circle
+        
+    Returns:
+        str: Fixed circle ID or original if no fix needed
+    """
+    if not isinstance(circle_id, str):
+        return circle_id
+        
+    # Check if this is a virtual circle with old format (V-VIR-NEW-XX)
+    if circle_id.startswith('V-VIR-NEW-'):
+        print(f"🔧 FIXING VIRTUAL CIRCLE ID FORMAT: {circle_id}")
+        
+        # Extract the index number
+        parts = circle_id.split('-')
+        if len(parts) >= 3:
+            index_str = parts[-1]
+            
+            # Determine the region code based on the provided region/subregion
+            from utils.normalization import get_region_code_with_subregion
+            
+            if region and subregion:
+                is_virtual = 'Virtual' in str(region) if region is not None else False
+                
+                if is_virtual:
+                    # Get proper region code with timezone
+                    region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
+                    
+                    # Create new ID with proper format
+                    new_id = f"VO-{region_code}-NEW-{index_str}"
+                    print(f"  ✅ Converted {circle_id} to {new_id}")
+                    return new_id
+                else:
+                    # If we don't have proper region info, use Americas as default (most common)
+                    # This is a fallback and should rarely be used
+                    if 'APAC' in str(region) or 'EMEA' in str(region):
+                        region_code = 'AE-GMT+1'  # Default for APAC+EMEA
+                    else:
+                        region_code = 'AM-GMT-5'  # Default for Americas
+                        
+                    new_id = f"VO-{region_code}-NEW-{index_str}"
+                    print(f"  ⚠️ Limited region info - converted {circle_id} to {new_id} using default code")
+                    return new_id
+        
+        # If we couldn't properly convert, return original ID
+        return circle_id
+    
+    # Not a virtual circle or already in correct format
+    return circle_id
+
 def reconstruct_circles_from_results(results, original_circles=None, use_standardized_metadata=False):
     """
     Reconstruct circles dataframe from individual participant results.
@@ -153,6 +210,42 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             
         # Get participants in this circle
         members_df = matched_df[matched_df[circle_column] == circle_id]
+        
+        # FIX VIRTUAL CIRCLE ID FORMAT - Get region and subregion for the first member
+        # to help with conversion
+        region = None
+        subregion = None
+        
+        if members_df is not None and not members_df.empty:
+            # Try to extract region and subregion from the first member
+            first_member = members_df.iloc[0]
+            
+            # Try different column patterns for region
+            for region_col in ['Derived_Region', 'Current_Region', 'region', 'Region']:
+                if region_col in first_member and not pd.isna(first_member[region_col]):
+                    region = first_member[region_col]
+                    break
+                    
+            # Try different column patterns for subregion
+            for subregion_col in ['proposed_NEW_Subregion', 'Current_Subregion', 'subregion', 'Subregion']:
+                if subregion_col in first_member and not pd.isna(first_member[subregion_col]):
+                    subregion = first_member[subregion_col]
+                    break
+        
+        # Fix virtual circle ID format if needed
+        fixed_circle_id = fix_virtual_circle_id_format(circle_id, region, subregion)
+        
+        # If the circle ID was fixed, update the references
+        if fixed_circle_id != circle_id:
+            # Update the participants' circle assignments
+            matched_df.loc[matched_df[circle_column] == circle_id, circle_column] = fixed_circle_id
+            
+            # Update the current circle ID we're working with
+            circle_id = fixed_circle_id
+            print(f"  🔄 Updated circle ID references from {circle_id} to {fixed_circle_id}")
+            
+            # Re-fetch the members with the updated circle ID
+            members_df = matched_df[matched_df[circle_column] == circle_id]
         
         # CRITICAL FIX: Remove duplicate member IDs by using a set to ensure uniqueness
         member_ids_set = set(members_df[id_column].tolist())
