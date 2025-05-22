@@ -2593,15 +2593,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 loc_score = 0
                 time_score = 0
                 
-                # Location score (3 for first choice, 2 for second, 1 for third)
+                # Location score (30 for first choice, 20 for second, 10 for third)
                 if p_row['first_choice_location'] == subregion:
-                    loc_score = 3
+                    loc_score = 30
                 elif p_row['second_choice_location'] == subregion:
-                    loc_score = 2
+                    loc_score = 20
                 elif p_row['third_choice_location'] == subregion:
-                    loc_score = 1
+                    loc_score = 10
                 
-                # Time score (3 for first choice, 2 for second, 1 for third) - using is_time_compatible()
+                # Time score (30 for first choice, 20 for second, 10 for third) - using is_time_compatible()
                 first_choice = p_row['first_choice_time']
                 second_choice = p_row['second_choice_time']
                 third_choice = p_row['third_choice_time']
@@ -2611,13 +2611,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 
                 # Check first choice using is_time_compatible for consistent handling of "Varies"
                 if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
-                    time_score = 3
+                    time_score = 30
                 # Check second choice
                 elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
-                    time_score = 2
+                    time_score = 20
                 # Check third choice
                 elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
-                    time_score = 1
+                    time_score = 10
                 
                 # Total score (sum of location and time scores)
                 preference_scores[(p_id, c_id)] = loc_score + time_score
@@ -3702,11 +3702,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # Location score
             if participant.get('first_choice_location') == subregion:
-                loc_score = 3
+                loc_score = 30
             elif participant.get('second_choice_location') == subregion:
-                loc_score = 2
+                loc_score = 20
             elif participant.get('third_choice_location') == subregion:
-                loc_score = 1
+                loc_score = 10
             
             # Time score - using is_time_compatible() instead of direct comparisons
             time_slot = meta['meeting_time']
@@ -3719,13 +3719,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
             # Check first choice using is_time_compatible for consistent handling of "Varies"
             if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
-                time_score = 3
+                time_score = 30
             # Check second choice
             elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
-                time_score = 2
+                time_score = 20
             # Check third choice
             elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
-                time_score = 1
+                time_score = 10
             
             # Save scores
             participant_dict['location_score'] = loc_score

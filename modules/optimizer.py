@@ -1574,11 +1574,11 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             # Calculate time score
             time_score = 0
             if participant.get('first_choice_time') == time_slot:
-                time_score = 3
+                time_score = 30
             elif participant.get('second_choice_time') == time_slot:
-                time_score = 2
+                time_score = 20
             elif participant.get('third_choice_time') == time_slot:
-                time_score = 1
+                time_score = 10
                 
             # Update scores
             participant['location_score'] = loc_score
@@ -1772,11 +1772,11 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 # Calculate time score
                 time_score = 0
                 if participant.get('first_choice_time') == time_slot:
-                    time_score = 3
+                    time_score = 30
                 elif participant.get('second_choice_time') == time_slot:
-                    time_score = 2
+                    time_score = 20
                 elif participant.get('third_choice_time') == time_slot:
-                    time_score = 1
+                    time_score = 10
                     
                 # Update scores
                 participant['location_score'] = loc_score
@@ -2934,11 +2934,11 @@ def calculate_preference_score(participant, subregion, time_slot):
     
     # Location preference scoring
     if participant['first_choice_location'] == subregion:
-        loc_score = 3
+        loc_score = 30
     elif participant['second_choice_location'] == subregion:
-        loc_score = 2
+        loc_score = 20
     elif participant['third_choice_location'] == subregion:
-        loc_score = 1
+        loc_score = 10
     
     # Time preference scoring - use our is_time_compatible function
     from modules.data_processor import is_time_compatible
