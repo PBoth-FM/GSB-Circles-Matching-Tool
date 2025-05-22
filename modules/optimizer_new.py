@@ -4527,6 +4527,119 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"  ✅ Post-processing complete: All circles should now be visible in both Results CSV and UI")
     
     # Return the final logs copy with updated results
+
+def apply_metadata_reconstruction_fix(results, circles):
+    """
+    Apply metadata reconstruction fix to ensure CircleMetadataManager has complete data.
+    This is the new post-processing function that gets called from app.py.
+    
+    Args:
+        results: List of participant results
+        circles: List of circle metadata
+        
+    Returns:
+        Updated results and circles with proper metadata synchronization
+    """
+    import streamlit as st
+    import copy
+    
+    print(f"🔧 DIAGNOSTIC: Starting metadata reconstruction fix...")
+    print(f"🔧 DIAGNOSTIC: Received {len(results) if results else 0} results")
+    print(f"🔧 DIAGNOSTIC: Received {len(circles) if circles else 0} circles")
+    print(f"🔧 DIAGNOSTIC: Session state available: {hasattr(st, 'session_state')}")
+    if hasattr(st, 'session_state'):
+        print(f"🔧 DIAGNOSTIC: CircleMetadataManager available: {hasattr(st.session_state, 'circle_metadata_manager')}")
+    
+    if not results or not hasattr(st, 'session_state') or not hasattr(st.session_state, 'circle_metadata_manager'):
+        print(f"🔧 DIAGNOSTIC: Skipping metadata fix - missing required data or session state")
+        return results, circles
+    
+    manager = st.session_state.circle_metadata_manager
+    
+    # Step 1: Extract all new circles from the results data
+    new_circles_in_results = {}
+    for result in results:
+        circle_id = result.get('proposed_NEW_circles_id')
+        if circle_id and 'NEW' in circle_id and circle_id != 'UNMATCHED':
+            if circle_id not in new_circles_in_results:
+                new_circles_in_results[circle_id] = []
+            new_circles_in_results[circle_id].append(result.get('Encoded ID'))
+    
+    print(f"  Found {len(new_circles_in_results)} new circles in results data:")
+    for circle_id, members in new_circles_in_results.items():
+        print(f"    {circle_id}: {len(members)} members")
+    
+    # Step 2: For each new circle, ensure it has proper metadata in CircleMetadataManager
+    circles_added = 0
+    circles_updated = 0
+    
+    for circle_id, members in new_circles_in_results.items():
+        if not manager.has_circle(circle_id):
+            # Circle doesn't exist in manager - reconstruct metadata from results
+            sample_participant = None
+            for result in results:
+                if result.get('proposed_NEW_circles_id') == circle_id:
+                    sample_participant = result
+                    break
+            
+            if sample_participant:
+                # Reconstruct circle metadata from participant data
+                circle_data = {
+                    'circle_id': circle_id,
+                    'members': members,
+                    'member_count': len(members),
+                    'region': sample_participant.get('proposed_NEW_Region', 'Unknown'),
+                    'subregion': sample_participant.get('proposed_NEW_Subregion', 'Unknown'),
+                    'meeting_time': sample_participant.get('proposed_NEW_DayTime', 'Unknown'),
+                    'max_additions': 0,  # New circles are typically full
+                    'metadata_source': 'metadata_reconstruction_fix',
+                    'is_continuing': False,
+                    'is_existing': False,
+                    'is_new_circle': True,
+                    'new_members': len(members),
+                    'always_hosts': 0,
+                    'sometimes_hosts': 0,
+                    'continuing_members': 0
+                }
+                
+                manager.add_circle(circle_id, circle_data)
+                circles_added += 1
+                print(f"    ✅ Added circle {circle_id}: subregion={circle_data['subregion']}, meeting_time={circle_data['meeting_time']}")
+                
+        else:
+            # Circle exists but might have incomplete metadata - validate and fix
+            existing_data = manager.get_circle(circle_id)
+            if existing_data and (existing_data.get('subregion') == 'Unknown' or existing_data.get('meeting_time') == 'Unknown'):
+                # Find a participant to get the correct metadata
+                sample_participant = None
+                for result in results:
+                    if result.get('proposed_NEW_circles_id') == circle_id:
+                        sample_participant = result
+                        break
+                
+                if sample_participant:
+                    # Update the incomplete metadata
+                    updates_made = []
+                    if existing_data.get('subregion') == 'Unknown' and sample_participant.get('proposed_NEW_Subregion', 'Unknown') != 'Unknown':
+                        manager.update_circle(circle_id, subregion=sample_participant.get('proposed_NEW_Subregion'))
+                        updates_made.append(f"subregion={sample_participant.get('proposed_NEW_Subregion')}")
+                    
+                    if existing_data.get('meeting_time') == 'Unknown' and sample_participant.get('proposed_NEW_DayTime', 'Unknown') != 'Unknown':
+                        manager.update_circle(circle_id, meeting_time=sample_participant.get('proposed_NEW_DayTime'))
+                        updates_made.append(f"meeting_time={sample_participant.get('proposed_NEW_DayTime')}")
+                    
+                    if updates_made:
+                        print(f"    ✅ Updated metadata for {circle_id}: {', '.join(updates_made)}")
+                        circles_updated += 1
+    
+    if circles_added > 0:
+        print(f"  ✅ Added {circles_added} circles to CircleMetadataManager")
+    if circles_updated > 0:
+        print(f"  ✅ Updated {circles_updated} circles in CircleMetadataManager")
+    
+    print(f"🔧 DIAGNOSTIC: Metadata reconstruction fix complete!")
+    
+    return results, circles
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
     return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
 

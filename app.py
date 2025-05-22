@@ -130,6 +130,36 @@ def run_optimization():
                 st.session_state.config
             )
             
+            # 🔧 APPLY POST-PROCESSING: Fix metadata synchronization for new circles
+            print(f"🔧 APPLYING POST-PROCESSING METADATA FIX...")
+            
+            # Convert results to list format if it's a DataFrame
+            if isinstance(results, pd.DataFrame):
+                results_list = results.to_dict('records')
+            else:
+                results_list = results
+            
+            # Convert circles to list format if it's a DataFrame  
+            if isinstance(matched_circles, pd.DataFrame):
+                circles_list = matched_circles.to_dict('records')
+            else:
+                circles_list = matched_circles
+            
+            # Apply the metadata reconstruction fix
+            from modules.optimizer_new import apply_metadata_reconstruction_fix
+            results_list, circles_list = apply_metadata_reconstruction_fix(results_list, circles_list)
+            
+            # Convert back to original format
+            if isinstance(results, pd.DataFrame):
+                results = pd.DataFrame(results_list)
+            else:
+                results = results_list
+                
+            if isinstance(matched_circles, pd.DataFrame):
+                matched_circles = pd.DataFrame(circles_list)
+            else:
+                matched_circles = circles_list
+            
             # Add extensive diagnostic logging to understand data structure
             print("\n🔬🔬🔬 DETAILED RESULT ANALYSIS 🔬🔬🔬")
             print(f"Raw results length: {len(results)}")
