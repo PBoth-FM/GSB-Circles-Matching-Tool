@@ -7,16 +7,67 @@ import pandas as pd
 import numpy as np
 
 def safe_isna(val):
-    """Safely check if a value is NA, handling both scalar and array-like objects."""
-    if isinstance(val, (pd.Series, pd.DataFrame)):
-        # For pandas objects, check if all values are NA
-        return val.isna().all()
-    elif isinstance(val, (np.ndarray, list)):
-        # For numpy arrays or lists
-        return all(pd.isna(x) for x in val)
+    """
+    Enhanced function to safely check if a value is NA, handling all possible pandas objects.
+    This function properly handles all edge cases that could cause 'truth value is ambiguous' errors.
+    
+    Args:
+        val: Any value or object to check for NA/NaN status
+        
+    Returns:
+        bool: True if the value is NA/NaN (or all values are NA for collections), False otherwise
+    """
+    # Add comprehensive type-based debug logging
+    val_type = type(val).__name__
+    
+    # Handle pandas Series
+    if isinstance(val, pd.Series):
+        # Use .all() to get a single boolean result, even if the Series has multiple values
+        result = val.isna().all()
+        print(f"  [safe_isna] Series of length {len(val)}, result: {result}")
+        return result
+        
+    # Handle pandas DataFrame
+    elif isinstance(val, pd.DataFrame):
+        # For DataFrames, check if all values in all columns are NA
+        result = val.isna().all().all()
+        print(f"  [safe_isna] DataFrame of shape {val.shape}, result: {result}")
+        return result
+        
+    # Handle NumPy arrays
+    elif isinstance(val, np.ndarray):
+        # For NumPy arrays, use np.isnan and check if all values are NaN
+        if val.size == 0:
+            # Empty array case
+            print(f"  [safe_isna] Empty NumPy array, returning True")
+            return True
+        
+        # Handle different dtypes properly
+        if np.issubdtype(val.dtype, np.number):
+            result = np.isnan(val).all()
+        else:
+            # For non-numeric arrays, use pandas isna
+            result = all(pd.isna(x) for x in val)
+        
+        print(f"  [safe_isna] NumPy array of shape {val.shape}, result: {result}")
+        return result
+        
+    # Handle lists
+    elif isinstance(val, list):
+        if not val:
+            # Empty list case
+            print(f"  [safe_isna] Empty list, returning True")
+            return True
+            
+        result = all(pd.isna(x) for x in val)
+        print(f"  [safe_isna] List of length {len(val)}, result: {result}")
+        return result
+        
+    # Default case for scalar values
     else:
-        # For scalar values
-        return pd.isna(val)
+        result = pd.isna(val)
+        print(f"  [safe_isna] Scalar value of type {val_type}, result: {result}")
+        return result
 
 def renumber_circles_sequentially(circles_df):
     """
@@ -380,51 +431,43 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         if 'members' in circle:
                             member_val = circle['members']
                             
-                            # Handle pandas Series objects
+                            # Use our enhanced safe_isna function to handle all data types safely
+                            # First, get the actual value
                             if isinstance(member_val, pd.Series):
-                                # Check if all values are NA
-                                if not member_val.isna().all():
-                                    # Get first non-NA value
+                                # For Series objects, get a scalar representation if possible
+                                if not member_val.isna().all():  # Safe check using Series method
                                     non_na_values = member_val.dropna()
                                     if len(non_na_values) > 0:
-                                        member_val = non_na_values.iloc[0]
-                                        
-                                        # Process the scalar value we extracted
-                                        if isinstance(member_val, list):
-                                            circle_members[circle_id] = member_val
-                                            print(f"  ✅ Extracted list from Series for circle {circle_id}")
-                                        elif isinstance(member_val, str):
-                                            try:
-                                                # Try to parse if it's a string representation of a list
-                                                import ast
-                                                members_list = ast.literal_eval(member_val)
-                                                if isinstance(members_list, list):
-                                                    circle_members[circle_id] = members_list
-                                                    print(f"  ✅ Parsed members list from Series string for circle {circle_id}")
-                                            except Exception as e:
-                                                print(f"  ⚠️ Could not parse Series members list for circle {circle_id}: {str(e)}")
+                                        extracted_val = non_na_values.iloc[0]
+                                        print(f"  🔍 Extracted scalar value from Series for circle {circle_id}")
                                     else:
-                                        print(f"  ⚠️ No non-NA values found in Series for circle {circle_id}")
+                                        print(f"  ⚠️ No non-NA values in Series for circle {circle_id}")
+                                        continue
                                 else:
-                                    print(f"  ⚠️ All NA values in Series for circle {circle_id}")
+                                    print(f"  ⚠️ All values in Series are NA for circle {circle_id}")
+                                    continue
+                            else:
+                                # For non-Series objects, use directly
+                                extracted_val = member_val
                             
-                            # Handle scalar values directly
-                            elif not pd.isna(member_val):
-                                if isinstance(member_val, list):
-                                    circle_members[circle_id] = member_val
-                                    print(f"  ✅ Using scalar list for circle {circle_id}")
-                                elif isinstance(member_val, str):
+                            # Now check if the extracted/original value is NA using our safe function
+                            if not safe_isna(extracted_val):
+                                # Process the value based on its type
+                                if isinstance(extracted_val, list):
+                                    circle_members[circle_id] = extracted_val
+                                    print(f"  ✅ Using list value for circle {circle_id}")
+                                elif isinstance(extracted_val, str):
                                     try:
                                         # Try to parse if it's a string representation of a list
                                         import ast
-                                        members_list = ast.literal_eval(member_val)
+                                        members_list = ast.literal_eval(extracted_val)
                                         if isinstance(members_list, list):
                                             circle_members[circle_id] = members_list
-                                            print(f"  ✅ Parsed members list from scalar string for circle {circle_id}")
+                                            print(f"  ✅ Parsed list from string for circle {circle_id}")
                                     except Exception as e:
-                                        print(f"  ⚠️ Could not parse scalar members list for circle {circle_id}: {str(e)}")
+                                        print(f"  ⚠️ Could not parse string value for circle {circle_id}: {str(e)}")
                             else:
-                                print(f"  ⚠️ NA scalar value for members in circle {circle_id}")
+                                print(f"  ⚠️ Value is NA for circle {circle_id}")
                         
                         # Special handling for problematic regions
                         if 'MXC' in circle_id:
