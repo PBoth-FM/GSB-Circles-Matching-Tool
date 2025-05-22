@@ -1088,28 +1088,31 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     # Use hash of string if not an integer
                     circle_num = sum(ord(c) for c in circle_id)
                 
-                # Get normalized values from mappings
-                normalized_region = region_mapping['region']
-                available_subregions = region_mapping['subregions']
-                available_meeting_times = region_mapping['meeting_times']
+                # IMPROVED: Use actual region values from the data
+                region_name = REGION_CODE_TO_NAME.get(special_region_code, "Unknown Region")
                 
-                # Always set region to normalized value
-                extracted_props['region'] = normalized_region
-                print(f"  ✅ SPECIAL REGION: Set normalized region='{normalized_region}' for {circle_id}")
+                # Set region to proper normalized value from our simple mapping
+                extracted_props['region'] = region_name
+                print(f"  ✅ Set normalized region='{region_name}' for {circle_id}")
                 
-                # CRITICAL FIX: For these special regions like MXC, NBO, NAP, always set the correct subregion
-                # If this is one of our problematic circles, FORCE the correct normalized subregion
-                if circle_id in incorrect_circle_mappings:
-                    # Force the correct subregion based on our mapping
-                    special_code = incorrect_circle_mappings[circle_id]
-                    fixed_subregion = available_subregions[0]  # Take the first subregion from our normalized mapping
-                    
-                    # Log what we're about to do
-                    print(f"  🛠️ CRITICAL FIX: For {circle_id} ({normalized_region}), forcing subregion to '{fixed_subregion}'")
-                    print(f"  🔍 DETAILS: Previous subregion was '{extracted_props.get('subregion', 'Unknown')}'")
-                    
-                    # Force the correct subregion
-                    extracted_props['subregion'] = fixed_subregion
+                # IMPROVED: For problematic circles, use actual participant data for subregion values
+                # First check if we have any participants in this circle who have subregion data
+                if members_df is not None and not members_df.empty:
+                    # Look for Current_Subregion values in the data
+                    if 'Current_Subregion' in members_df.columns:
+                        # Get non-null subregions from active members
+                        valid_subregions = members_df[members_df['Current_Subregion'].notna()]['Current_Subregion'].unique()
+                        
+                        if len(valid_subregions) > 0:
+                            # Use the first available subregion (from actual data)
+                            actual_subregion = str(valid_subregions[0])
+                            
+                            # Log what we're about to do
+                            print(f"  ✅ USING ACTUAL DATA: Setting {circle_id} subregion to '{actual_subregion}' from participant data")
+                            print(f"  🔍 DETAILS: Previous subregion was '{extracted_props.get('subregion', 'Unknown')}'")
+                            
+                            # Set the correct subregion from the actual data
+                            extracted_props['subregion'] = actual_subregion
                     
                 # Different handling for CONTINUING vs NEW circles
                 if is_continuing_circle:
