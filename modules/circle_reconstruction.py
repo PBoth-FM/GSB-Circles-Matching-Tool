@@ -839,9 +839,22 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         # Enhanced check for special region circles - always set correct values
         special_region_code = None
         
-        # First check for direct circle ID matches
+        # First check for direct circle ID matches - CRITICAL FIX FOR SPECIAL REGIONS
         parts = circle_id.split('-')
-        if len(parts) >= 3 and parts[0] == 'IP':
+        
+        # Create a dict to track any incorrect mappings we find
+        incorrect_circle_mappings = {
+            'IP-MXC-01': 'MXC',  # Mexico City
+            'IP-NBO-01': 'NBO',  # Nairobi
+            'IP-NAP-01': 'NAP',  # Napa-Sonoma
+        }
+        
+        # Check for direct matches in our problematic circle IDs
+        if circle_id in incorrect_circle_mappings:
+            special_region_code = incorrect_circle_mappings[circle_id]
+            print(f"  🔍 CRITICAL FIX: Directly mapped {circle_id} to special region code {special_region_code}")
+        # Otherwise check the usual way
+        elif len(parts) >= 3 and parts[0] == 'IP':
             region_code = parts[1]
             if region_code in SPECIAL_REGION_CODES:
                 special_region_code = region_code
@@ -885,6 +898,20 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 extracted_props['region'] = normalized_region
                 print(f"  ✅ SPECIAL REGION: Set normalized region='{normalized_region}' for {circle_id}")
                 
+                # CRITICAL FIX: For these special regions like MXC, NBO, NAP, always set the correct subregion
+                # If this is one of our problematic circles, FORCE the correct normalized subregion
+                if circle_id in incorrect_circle_mappings:
+                    # Force the correct subregion based on our mapping
+                    special_code = incorrect_circle_mappings[circle_id]
+                    fixed_subregion = available_subregions[0]  # Take the first subregion from our normalized mapping
+                    
+                    # Log what we're about to do
+                    print(f"  🛠️ CRITICAL FIX: For {circle_id} ({normalized_region}), forcing subregion to '{fixed_subregion}'")
+                    print(f"  🔍 DETAILS: Previous subregion was '{extracted_props.get('subregion', 'Unknown')}'")
+                    
+                    # Force the correct subregion
+                    extracted_props['subregion'] = fixed_subregion
+                    
                 # Different handling for CONTINUING vs NEW circles
                 if is_continuing_circle:
                     print(f"  🔄 CONTINUING CIRCLE: {circle_id} - Preserving normalized metadata")
@@ -898,7 +925,7 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         current_subregion == 'Unknown' or 
                         not current_subregion or 
                         'Phoenix' in current_subregion
-                    )
+                    ) and circle_id not in incorrect_circle_mappings  # Skip if already fixed above
                     
                     # For continuing circles, check if any member has valid subregion info
                     if needs_subregion_fix:
