@@ -2923,9 +2923,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             circle_diversity_score = calculate_circle_diversity_score(circle_participants, remaining_df)
             
             # Add diversity contribution weighted by circle activation
-            if circle_diversity_score > 0:
+            if circle_diversity_score > 0 and c_id in y:
                 # Use the circle activation variable (y) to weight the diversity bonus
                 # This way diversity only counts when the circle is actually used
+                # DEFENSIVE FIX: Only use circles that have optimization variables
                 diversity_bonus += circle_diversity_score * y[c_id]
                         
                 if debug_mode and c_id in ['IP-BOS-04', 'IP-BOS-05', 'IP-SIN-01', 'IP-SEA-01']:
