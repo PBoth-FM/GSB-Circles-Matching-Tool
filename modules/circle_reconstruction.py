@@ -387,44 +387,30 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     # Clear normalization cache to ensure fresh data is loaded
     clear_normalization_cache()
     print("  🔄 Starting circle reconstruction with fresh normalization tables")
-    # Debug flag to track special regions that need enhanced handling
-    DEBUG_SPECIAL_REGIONS = True
+    # REMOVED: Special region mappings that were causing incorrect hardcoded values
+    # Instead, we'll rely on actual data from participant records and only use normalization
+    # for formatting consistency, not replacing values.
     
-    # Define special region codes that need enhanced metadata handling
-    SPECIAL_REGION_CODES = ['PSA', 'NAP', 'MXC', 'NBO', 'SAN', 'SPO']
-    
-    # Define mappings for special region circles using NORMALIZED values from the mapping files
-    SPECIAL_REGION_MAPPINGS = {
-        'PSA': {
-            'region': 'Peninsula',
-            'subregions': ["Palo Alto", "Menlo Park", "Mountain View/Los Altos", "Redwood City/San Carlos", "Mid-Peninsula"],
-            'meeting_times': ["Monday (Evenings)", "Tuesday (Evenings)", "Wednesday (Evenings)", "Thursday (Evenings)"]
-        },
-        'NAP': {
-            'region': 'Napa-Sonoma', # Normalized from mapping file
-            'subregions': ["Napa/Sonoma"], # Normalized from mapping file
-            'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
-        },
-        'MXC': {
-            'region': 'Mexico City',
-            'subregions': ["Mexico City"], # Normalized from mapping file - NOT "Santa Fe"
-            'meeting_times': ["Tuesday (Evenings)", "Thursday (Evenings)"]
-        },
-        'NBO': {
-            'region': 'Nairobi',
-            'subregions': ["Nairobi"], # Normalized from mapping file - NOT "Karen" 
-            'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
-        },
-        'SAN': {
-            'region': 'San Diego',
-            'subregions': ["San Diego"], # Normalized from mapping file
-            'meeting_times': ["Tuesday (Evenings)", "Thursday (Evenings)"]
-        },
-        'SPO': {
-            'region': 'Sao Paulo',
-            'subregions': ["Sao Paulo"], # Normalized from mapping file
-            'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
-        }
+    # Define a simple reference of region codes to region names for basic lookups
+    # This is only used as a fallback when no region information is available
+    REGION_CODE_TO_NAME = {
+        'PSA': 'Peninsula',
+        'NAP': 'Napa-Sonoma',
+        'MXC': 'Mexico City',
+        'NBO': 'Nairobi',
+        'SAN': 'San Diego',
+        'SPO': 'Sao Paulo',
+        'NYC': 'New York',
+        'BOS': 'Boston',
+        'SFO': 'San Francisco',
+        'EAB': 'East Bay',
+        'ATL': 'Atlanta',
+        'MAR': 'Marin County',
+        'PAL': 'Palo Alto',
+        'SEA': 'Seattle',
+        'POR': 'Portland',
+        'CHI': 'Chicago',
+        'LAX': 'Los Angeles'
     }
     print("\n🔄 RECONSTRUCTING CIRCLES FROM PARTICIPANT RESULTS")
     print("🔍 ENHANCED DIAGNOSTICS: Starting comprehensive circle reconstruction")
