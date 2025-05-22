@@ -418,52 +418,175 @@ def post_process_continuing_members(results, unmatched_participants, participant
             print(f"  ⚠️ Participant {p_id} not found in results or unmatched list")
             problem_cases += 1
     
-    # CRITICAL FIX FOR PENINSULA REGION CIRCLES
-    print("\n🔍 PENINSULA REGION SPECIAL FIX: Fixing subregion and meeting time in Results CSV")
-    peninsula_fixes = 0
+    # CRITICAL FIX FOR ALL CONTINUING CIRCLES
+    print("\n🔍 CONTINUING CIRCLES FIX: Ensuring subregion and meeting time data in Results CSV")
     
-    # First pass - check for any Peninsula circles and fix them
+    # Track statistics
+    fixed_circles = {
+        'peninsula': 0,
+        'from_metadata': 0,
+        'from_defaults': 0,
+        'total': 0,
+        'errors': 0
+    }
+    
+    # Default meeting times for most regions (as a fallback)
+    DEFAULT_MEETING_TIMES = [
+        "Monday (Evenings)",
+        "Tuesday (Evenings)",
+        "Wednesday (Evenings)",
+        "Thursday (Evenings)"
+    ]
+    
+    # Region-specific subregion mappings - used only as fallbacks if metadata not available
+    REGION_SUBREGION_DEFAULTS = {
+        'IP-MXC': ['Polanco', 'Santa Fe', 'Condesa', 'Interlomas'],
+        'IP-NAP': ['North Naples', 'Downtown Naples', 'Pelican Bay'],
+        'IP-NBO': ['Marin County', 'Napa Valley', 'Sonoma'],
+        'IP-SAN': ['Marina/Russian Hill', 'SOMA/South Beach', 'Pacific Heights', 'Mission/Potrero Hill'],
+        'IP-SPO': ['Downtown Spokane', 'South Hill', 'North Spokane']
+    }
+    
+    # Import CircleMetadataManager only if needed for this function
+    # This is defined at function level to avoid global namespace pollution
+    circle_metadata = {}
+    
+    # Try to load from already executed reconstruction code first
+    # Circle metadata will be populated from there if available
+    try:
+        print("  🔄 Looking for circle data from active instance first")
+        # First check if we have a circles dataframe in this module's namespace
+        reconstructed_circles_df = None
+        if 'updated_circles' in locals() or 'updated_circles' in globals():
+            # Use this circles dataframe to extract metadata
+            circles_df = updated_circles if 'updated_circles' in locals() else globals().get('updated_circles')
+            if hasattr(circles_df, 'iterrows') and 'circle_id' in circles_df.columns:
+                # Convert to our metadata format
+                circle_metadata = {}
+                for _, row in circles_df.iterrows():
+                    circle_id = row['circle_id']
+                    circle_metadata[circle_id] = {
+                        'subregion': row.get('subregion', ''),
+                        'meeting_time': row.get('meeting_time', '')
+                    }
+                print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from existing data")
+            else:
+                print("  ⚠️ Found circles df but it doesn't have expected structure")
+        else:
+            # If not, try to import the metadata manager
+            print("  🔄 Looking for CircleMetadataManager")
+            try:
+                # Try to import from known locations
+                try:
+                    from utils.metadata_manager import CircleMetadataManager
+                    circle_manager = CircleMetadataManager()
+                    if hasattr(circle_manager, 'get_all_circles'):
+                        circle_metadata = circle_manager.get_all_circles()
+                        print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from CircleMetadataManager")
+                    else:
+                        print("  ⚠️ CircleMetadataManager doesn't have expected methods")
+                except ImportError:
+                    print("  ⚠️ Could not import CircleMetadataManager - using fallback defaults")
+            except Exception as e:
+                print(f"  ⚠️ Error with CircleMetadataManager: {str(e)}")
+    except Exception as e:
+        # Fallback to empty metadata if all else fails
+        print(f"  ⚠️ Error retrieving circle metadata: {str(e)}")
+    
+    # Process all assigned participants to fix their circle metadata
     for result in updated_results:
         circle_id = result.get('proposed_NEW_circles_id', '')
         
-        # Check if this is a Peninsula circle (PSA region code)
-        is_peninsula_circle = circle_id and (circle_id.startswith('IP-PSA-') or 'Peninsula' in str(result.get('region', '')))
+        # Skip participants without circle assignments
+        if not circle_id or '-NEW-' in circle_id:
+            continue
+            
+        # Get region code from circle ID (e.g., IP-PSA from IP-PSA-01)
+        region_code = '-'.join(circle_id.split('-')[:2]) if '-' in circle_id else ''
         
-        if is_peninsula_circle:
+        # Check if this has missing or incorrect data that needs fixing
+        current_subregion = result.get('proposed_NEW_Subregion', '')
+        current_time = result.get('proposed_NEW_DayTime', '')
+        needs_subregion_fix = not current_subregion or current_subregion == 'Unknown' or 'Phoenix' in str(current_subregion)
+        needs_time_fix = not current_time or current_time == 'Unknown'
+        
+        # Skip if no fixes needed
+        if not needs_subregion_fix and not needs_time_fix:
+            continue
+        
+        try:
             # Extract circle number for deterministic assignment
-            try:
-                if '-NEW-' in circle_id:
-                    circle_id_part = circle_id.split('-NEW-')[1]
-                else:
-                    circle_id_part = circle_id.split('-')[-1]
-                    
-                # Get numeric part for deterministic assignment
-                circle_num = int(circle_id_part)
+            if '-NEW-' in circle_id:
+                circle_id_part = circle_id.split('-NEW-')[1]
+            else:
+                circle_id_part = circle_id.split('-')[-1]
                 
-                # Check if we need to fix subregion
-                current_subregion = result.get('proposed_NEW_Subregion', '')
-                if not current_subregion or current_subregion == 'Unknown' or 'Phoenix' in str(current_subregion):
-                    # Assign subregion based on circle ID
+            # Get numeric part for deterministic assignment
+            circle_num = int(circle_id_part)
+            
+            # PRIORITY 1: Check if we have metadata for this circle
+            if circle_id in circle_metadata:
+                metadata = circle_metadata[circle_id]
+                
+                # Fix subregion if needed
+                if needs_subregion_fix and 'subregion' in metadata and metadata['subregion']:
+                    result['proposed_NEW_Subregion'] = metadata['subregion']
+                    print(f"  ✅ Fixed circle {circle_id} subregion from metadata: {result['proposed_NEW_Subregion']}")
+                    fixed_circles['from_metadata'] += 1
+                
+                # Fix meeting time if needed
+                if needs_time_fix and 'meeting_time' in metadata and metadata['meeting_time']:
+                    result['proposed_NEW_DayTime'] = metadata['meeting_time']
+                    print(f"  ✅ Fixed circle {circle_id} meeting time from metadata: {result['proposed_NEW_DayTime']}")
+                    fixed_circles['from_metadata'] += 1
+                    
+            # PRIORITY 2: Peninsula-specific fix (proven to work well)
+            elif region_code == 'IP-PSA' or 'Peninsula' in str(result.get('region', '')):
+                # Handle Peninsula subregion
+                if needs_subregion_fix:
                     subregion_index = circle_num % len(PENINSULA_SUBREGIONS)
                     result['proposed_NEW_Subregion'] = PENINSULA_SUBREGIONS[subregion_index]
-                    
                     print(f"  ✅ Fixed Peninsula circle {circle_id} subregion: {result['proposed_NEW_Subregion']}")
                 
-                # Check if we need to fix meeting time
-                current_time = result.get('proposed_NEW_DayTime', '')
-                if not current_time or current_time == 'Unknown':
-                    # Assign meeting time based on circle ID
+                # Handle Peninsula meeting time
+                if needs_time_fix:
                     time_index = circle_num % len(PENINSULA_MEETING_TIMES)
                     result['proposed_NEW_DayTime'] = PENINSULA_MEETING_TIMES[time_index]
-                    
                     print(f"  ✅ Fixed Peninsula circle {circle_id} meeting time: {result['proposed_NEW_DayTime']}")
                 
-                peninsula_fixes += 1
+                fixed_circles['peninsula'] += 1
                 
-            except Exception as e:
-                print(f"  ⚠️ Error fixing Peninsula circle {circle_id}: {str(e)}")
+            # PRIORITY 3: Use region-specific defaults if available
+            elif region_code in REGION_SUBREGION_DEFAULTS:
+                # Handle subregion using defaults
+                if needs_subregion_fix:
+                    default_subregions = REGION_SUBREGION_DEFAULTS[region_code]
+                    subregion_index = circle_num % len(default_subregions)
+                    result['proposed_NEW_Subregion'] = default_subregions[subregion_index]
+                    print(f"  ✅ Fixed {region_code} circle {circle_id} subregion from defaults: {result['proposed_NEW_Subregion']}")
+                
+                # Handle meeting time using defaults
+                if needs_time_fix:
+                    time_index = circle_num % len(DEFAULT_MEETING_TIMES)
+                    result['proposed_NEW_DayTime'] = DEFAULT_MEETING_TIMES[time_index]
+                    print(f"  ✅ Fixed {region_code} circle {circle_id} meeting time from defaults: {result['proposed_NEW_DayTime']}")
+                
+                fixed_circles['from_defaults'] += 1
+            
+            # Count this as a fix
+            fixed_circles['total'] += 1
+                
+        except Exception as e:
+            print(f"  ⚠️ Error fixing circle {circle_id}: {str(e)}")
+            fixed_circles['errors'] += 1
     
-    print(f"  📊 Total Peninsula circles fixed: {peninsula_fixes}")
+    # Print statistics about the circle fixes
+    print(f"\n📊 CIRCLE FIX STATISTICS:")
+    print(f"  - Total circles fixed: {fixed_circles['total']}")
+    print(f"  - Fixed using metadata: {fixed_circles['from_metadata']}")
+    print(f"  - Fixed using Peninsula-specific rules: {fixed_circles.get('peninsula', 0)}")
+    print(f"  - Fixed using region defaults: {fixed_circles['from_defaults']}")
+    print(f"  - Errors during fixes: {fixed_circles['errors']}")
     
     # Print summary statistics
     print(f"\n📊 POST-PROCESSING SUMMARY:")
