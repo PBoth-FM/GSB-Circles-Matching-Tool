@@ -454,16 +454,22 @@ def post_process_continuing_members(results, unmatched_participants, participant
     # Try to load from already executed reconstruction code first
     # Circle metadata will be populated from there if available
     try:
-        print("  🔄 Looking for circle data from active instance first")
-        # First check if we have a circles dataframe in this module's namespace
-        reconstructed_circles_df = None
-        if 'updated_circles' in locals() or 'updated_circles' in globals():
-            # Use this circles dataframe to extract metadata
-            circles_df = updated_circles if 'updated_circles' in locals() else globals().get('updated_circles')
-            if hasattr(circles_df, 'iterrows') and 'circle_id' in circles_df.columns:
+        print("  🔄 Looking for circle data from existing sources")
+        
+        # Initialize circle metadata structure
+        circle_metadata = {}
+        
+        # Option 1: Check if we have 'updated_circles' in globals or locals
+        updated_circles = None
+        if 'updated_circles' in locals():
+            updated_circles = locals().get('updated_circles')
+        elif 'updated_circles' in globals():
+            updated_circles = globals().get('updated_circles')
+            
+        if updated_circles is not None and hasattr(updated_circles, 'iterrows'):
+            if hasattr(updated_circles, 'columns') and 'circle_id' in updated_circles.columns:
                 # Convert to our metadata format
-                circle_metadata = {}
-                for _, row in circles_df.iterrows():
+                for _, row in updated_circles.iterrows():
                     circle_id = row['circle_id']
                     circle_metadata[circle_id] = {
                         'subregion': row.get('subregion', ''),
@@ -478,13 +484,42 @@ def post_process_continuing_members(results, unmatched_participants, participant
             try:
                 # Try to import from known locations
                 try:
-                    from utils.metadata_manager import CircleMetadataManager
-                    circle_manager = CircleMetadataManager()
-                    if hasattr(circle_manager, 'get_all_circles'):
-                        circle_metadata = circle_manager.get_all_circles()
-                        print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from CircleMetadataManager")
-                    else:
-                        print("  ⚠️ CircleMetadataManager doesn't have expected methods")
+                    # Try different possible import paths
+                    metadata_manager_found = False
+                    
+                    # First try utils.metadata_manager
+                    try:
+                        try:
+                            from utils.metadata_manager import CircleMetadataManager as UtilsCircleMetadataManager
+                        except ImportError:
+                            # Define a dummy class to avoid ImportError
+                            class UtilsCircleMetadataManager:
+                                def __init__(self):
+                                    pass
+                                def get_all_circles(self):
+                                    return {}
+                        circle_manager = UtilsCircleMetadataManager()
+                        if hasattr(circle_manager, 'get_all_circles'):
+                            circle_metadata = circle_manager.get_all_circles()
+                            print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from utils.metadata_manager")
+                            metadata_manager_found = True
+                    except ImportError:
+                        pass
+                        
+                    # If not found, try direct import
+                    if not metadata_manager_found:
+                        try:
+                            from metadata_manager import CircleMetadataManager as DirectCircleMetadataManager
+                            circle_manager = DirectCircleMetadataManager()
+                            if hasattr(circle_manager, 'get_all_circles'):
+                                circle_metadata = circle_manager.get_all_circles()
+                                print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from metadata_manager")
+                                metadata_manager_found = True
+                        except ImportError:
+                            pass
+                            
+                    if not metadata_manager_found:
+                        print("  ⚠️ Could not find any CircleMetadataManager implementation")
                 except ImportError:
                     print("  ⚠️ Could not import CircleMetadataManager - using fallback defaults")
             except Exception as e:
@@ -582,11 +617,11 @@ def post_process_continuing_members(results, unmatched_participants, participant
     
     # Print statistics about the circle fixes
     print(f"\n📊 CIRCLE FIX STATISTICS:")
-    print(f"  - Total circles fixed: {fixed_circles['total']}")
-    print(f"  - Fixed using metadata: {fixed_circles['from_metadata']}")
+    print(f"  - Total circles fixed: {fixed_circles.get('total', 0)}")
+    print(f"  - Fixed using metadata: {fixed_circles.get('from_metadata', 0)}")
     print(f"  - Fixed using Peninsula-specific rules: {fixed_circles.get('peninsula', 0)}")
-    print(f"  - Fixed using region defaults: {fixed_circles['from_defaults']}")
-    print(f"  - Errors during fixes: {fixed_circles['errors']}")
+    print(f"  - Fixed using region defaults: {fixed_circles.get('from_defaults', 0)}")
+    print(f"  - Errors during fixes: {fixed_circles.get('errors', 0)}")
     
     # Print summary statistics
     print(f"\n📊 POST-PROCESSING SUMMARY:")
@@ -596,7 +631,7 @@ def post_process_continuing_members(results, unmatched_participants, participant
     print(f"  - Added to results (from unmatched): {added_to_results}")
     print(f"  - Removed from unmatched: {removed_from_unmatched}")
     print(f"  - Problem cases: {problem_cases}")
-    print(f"  - Peninsula circles fixed: {peninsula_fixes}")
+    print(f"  - Peninsula circles fixed: {fixed_circles.get('peninsula', 0)}")
     
     # Final counts
     final_results_count = len(updated_results)
@@ -683,6 +718,7 @@ def ensure_current_continuing_matched(results, unmatched, participants_df, circl
         
         if is_matched:
             # Find this participant's match result
+            assigned_circle = None
             for r in updated_results:
                 if r.get('participant_id') == p_id:
                     assigned_circle = r.get('proposed_NEW_circles_id')
@@ -692,7 +728,7 @@ def ensure_current_continuing_matched(results, unmatched, participants_df, circl
             expected_circle = find_current_circle_id(row)
             
             # Check if correctly matched to their expected circle
-            if expected_circle and assigned_circle == expected_circle:
+            if expected_circle and assigned_circle and assigned_circle == expected_circle:
                 matched_to_correct_circle = True
                 already_matched += 1
             else:
