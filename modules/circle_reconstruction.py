@@ -812,22 +812,29 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                                     if len(parts) >= 2:
                                         region_code = parts[1]
                                     
-                                    # Use valid mappings from our SPECIAL_REGION_MAPPINGS
-                                    if region_code in SPECIAL_REGION_MAPPINGS:
-                                        # Get list of valid subregions for this region
-                                        valid_subregions = SPECIAL_REGION_MAPPINGS[region_code]['subregions']
-                                        # Use consistent mapping based on circle number
-                                        idx = circle_num % len(valid_subregions)
-                                        correct_subregion = valid_subregions[idx]
-                                        print(f"  📊 Using normalized subregion '{correct_subregion}' for {region_code} circle based on mapping")
+                                    # IMPROVED: Use actual subregion data or a generic fallback
+                                    # Try to find actual subregion data in members of this circle first
+                                    from_data = members_df.copy()
+                                    if not from_data.empty and 'Current_Subregion' in from_data.columns:
+                                        # Look for non-null subregions from existing members
+                                        valid_subregions = from_data[from_data['Current_Subregion'].notna()]['Current_Subregion'].unique()
+                                        if len(valid_subregions) > 0:
+                                            # Use the first available subregion
+                                            correct_subregion = str(valid_subregions[0])
+                                            print(f"  ✅ Using ACTUAL subregion '{correct_subregion}' from circle member data")
+                                        else:
+                                            # No data available, use generic fallback
+                                            correct_subregion = "Unknown"
+                                            print(f"  ⚠️ No actual subregion data found, using 'Unknown'")
                                     else:
-                                        # Fallback to first Peninsula subregion
-                                        correct_subregion = SPECIAL_REGION_MAPPINGS['PSA']['subregions'][0]
-                                        print(f"  📊 Fallback: Using normalized subregion '{correct_subregion}' for Peninsula circle")
+                                        # No member data available, use region name + 'Area' as fallback
+                                        region_name = REGION_CODE_TO_NAME.get(region_code, "Unknown Region")
+                                        correct_subregion = "Unknown"
+                                        print(f"  ⚠️ No member data available, using 'Unknown' for {region_name}")
                                 else:
-                                    # If no circle number, use first valid subregion
-                                    correct_subregion = SPECIAL_REGION_MAPPINGS['PSA']['subregions'][0]
-                                    print(f"  📊 Using first normalized subregion '{correct_subregion}' for Peninsula circle")
+                                    # If no circle number, use a generic value
+                                    correct_subregion = "Unknown"
+                                    print(f"  ⚠️ No valid circle number, using 'Unknown' as subregion")
                         
                         # Use the corrected subregion
                         extracted_props['subregion'] = correct_subregion
@@ -877,22 +884,28 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                                     if len(parts) >= 2:
                                         region_code = parts[1]
                                     
-                                    # Use valid mappings from our SPECIAL_REGION_MAPPINGS
-                                    if region_code in SPECIAL_REGION_MAPPINGS:
-                                        # Get list of valid meeting times for this region
-                                        valid_times = SPECIAL_REGION_MAPPINGS[region_code]['meeting_times']
-                                        # Use consistent mapping based on circle number
-                                        idx = circle_num % len(valid_times)
-                                        correct_time = valid_times[idx]
-                                        print(f"  📊 Using normalized meeting time '{correct_time}' for {region_code} circle based on mapping")
+                                    # IMPROVED: Use actual meeting time data or a generic fallback
+                                    # Try to find actual meeting time data in members of this circle first
+                                    from_data = members_df.copy()
+                                    if not from_data.empty and 'Current_DayTime' in from_data.columns:
+                                        # Look for non-null meeting times from existing members
+                                        valid_times = from_data[from_data['Current_DayTime'].notna()]['Current_DayTime'].unique()
+                                        if len(valid_times) > 0:
+                                            # Use the first available meeting time
+                                            correct_time = str(valid_times[0])
+                                            print(f"  ✅ Using ACTUAL meeting time '{correct_time}' from circle member data")
+                                        else:
+                                            # No data available, use generic fallback
+                                            correct_time = "Varies (Evenings)"
+                                            print(f"  ⚠️ No actual meeting time found, using 'Varies (Evenings)'")
                                     else:
-                                        # Fallback to first Peninsula meeting time
-                                        correct_time = SPECIAL_REGION_MAPPINGS['PSA']['meeting_times'][0]
-                                        print(f"  📊 Fallback: Using normalized meeting time '{correct_time}' for Peninsula circle")
+                                        # No member data available, use generic fallback
+                                        correct_time = "Varies (Evenings)"
+                                        print(f"  ⚠️ No member data available, using 'Varies (Evenings)' for meeting time")
                                 else:
-                                    # If no circle number, use first valid meeting time
-                                    correct_time = SPECIAL_REGION_MAPPINGS['PSA']['meeting_times'][0]
-                                    print(f"  📊 Using first normalized meeting time '{correct_time}' for Peninsula circle")
+                                    # If no circle number, use generic meeting time
+                                    correct_time = "Varies (Evenings)"
+                                    print(f"  ⚠️ No valid circle number, using default meeting time")
                             else:
                                 # No valid circle ID format - use default time from PSA
                                 correct_time = "Wednesday (Evenings)"  # Most common meeting time
@@ -1044,20 +1057,21 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             if region_code in SPECIAL_REGION_CODES:
                 special_region_code = region_code
         
-        # If no direct match, check region name for matches (fallback)
+        # IMPROVED: Use the actual region data instead of hardcoded mappings
         if special_region_code is None:
             region_value = extracted_props.get('region', '')
             if isinstance(region_value, str):
-                for code, mapping in SPECIAL_REGION_MAPPINGS.items():
-                    if mapping['region'] == region_value:
+                # Check if this is a known region from our mapping
+                for code, name in REGION_CODE_TO_NAME.items():
+                    if name == region_value:
                         special_region_code = code
-                        print(f"  🔍 DETECTED SPECIAL REGION: Found {mapping['region']} for circle {circle_id}")
+                        print(f"  🔍 Found region code '{code}' for region '{region_value}' (circle {circle_id})")
                         break
         
-        # Handle special region circles with enhanced metadata
+        # For special regions, preserve the original metadata where available
         if special_region_code:
-            region_mapping = SPECIAL_REGION_MAPPINGS[special_region_code]
-            print(f"  🔍 ENHANCED SPECIAL REGION CHECK: Circle {circle_id} is a {region_mapping['region']} circle")
+            region_name = REGION_CODE_TO_NAME.get(special_region_code, "Unknown Region")
+            print(f"  🔍 Circle {circle_id} is in region: {region_name}")
             
             try:
                 # Handle both NEW and existing circle IDs
