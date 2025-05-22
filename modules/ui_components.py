@@ -3912,7 +3912,9 @@ def render_debug_tab():
             
             # Circle size distribution
             if 'member_count' in circles_df.columns:
-                circle_sizes = circles_df['member_count'].value_counts().sort_index()
+                # Filter out circles with zero members before creating histogram
+                filtered_circles = circles_df[circles_df['member_count'] > 0]
+                circle_sizes = filtered_circles['member_count'].value_counts().sort_index()
                 
                 st.subheader("Circle Size Distribution")
                 
@@ -4074,8 +4076,10 @@ def render_results_overview():
     if 'member_count' in matched_df.columns:
         st.subheader("Circle Size Distribution")
         
+        # Filter out circles with zero members before creating histogram
+        filtered_matched = matched_df[matched_df['member_count'] > 0]
         # Count circles by size
-        size_counts = matched_df['member_count'].value_counts().sort_index()
+        size_counts = filtered_matched['member_count'].value_counts().sort_index()
         
         # Create a DataFrame for plotting
         size_df = pd.DataFrame({
@@ -4316,7 +4320,9 @@ def render_circle_table():
         print(f"  Displaying columns: {available_cols}")
         
         if available_cols:
-            display_df = circles_df[available_cols].copy()
+            # Filter out circles with zero members before displaying the table
+            filtered_circles_df = circles_df[circles_df['member_count'] > 0] if 'member_count' in circles_df.columns else circles_df
+            display_df = filtered_circles_df[available_cols].copy()
             
             # Rename columns for display
             display_df.columns = [col.replace('_', ' ').title() for col in available_cols]
@@ -4905,8 +4911,10 @@ def render_visualizations():
         
         # Circle size distribution
         if 'member_count' in circles_df.columns:
+            # Filter out circles with zero members before creating histogram
+            filtered_circles = circles_df[circles_df['member_count'] > 0]
             # Count circles by size
-            size_counts = circles_df['member_count'].value_counts().sort_index()
+            size_counts = filtered_circles['member_count'].value_counts().sort_index()
             
             # Create a DataFrame for plotting
             size_df = pd.DataFrame({
