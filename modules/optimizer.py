@@ -1644,19 +1644,34 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             results.append(participant)
             processed_ids.add(encoded_id)
         
-        # Add the circle to circles list
-        circle_dict = {
-            'circle_id': circle_id,
-            'region': region,
-            'subregion': circle_data['subregion'],
-            'meeting_time': circle_data['meeting_time'],
-            'member_count': len(circle_data['members']),
-            'new_members': 0,  # No new members in continuing circles
-            'always_hosts': circle_data['always_hosts'],
-            'sometimes_hosts': circle_data['sometimes_hosts'],
-            'members': circle_data['members'],
-            'max_additions': circle_data.get('max_additions', 0)  # Include max_additions from the circle_data
-        }
+        # Add the circle to circles list with enhanced metadata
+        circle_dict = generate_circle_metadata(
+            circle_id=circle_id,
+            members_list=circle_data['members'],
+            region=region,
+            subregion=circle_data['subregion'],
+            meeting_time=circle_data['meeting_time'],
+            max_additions=circle_data.get('max_additions', 0),
+            debug_mode=debug_mode
+        )
+        
+        # Add additional fields
+        circle_dict['is_existing'] = True
+        circle_dict['new_members'] = 0  # No new members in continuing circles
+        circle_dict['always_hosts'] = circle_data['always_hosts']
+        circle_dict['sometimes_hosts'] = circle_data['sometimes_hosts']
+        
+        # Special region handling for problematic regions in continuing circles
+        if 'MXC' in circle_id:
+            circle_dict['region'] = 'Mexico City'
+            circle_dict['subregion'] = 'Mexico City'
+        elif 'NBO' in circle_id:
+            circle_dict['region'] = 'Nairobi'
+            circle_dict['subregion'] = 'Nairobi'
+        elif 'NAP' in circle_id:
+            circle_dict['region'] = 'Napa-Sonoma'
+            circle_dict['subregion'] = 'Napa Valley'
+            
         circles.append(circle_dict)
     
     # Step 2.5: Handle small existing circles (2-4 members)
