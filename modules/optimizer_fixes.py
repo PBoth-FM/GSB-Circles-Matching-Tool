@@ -451,14 +451,11 @@ def post_process_continuing_members(results, unmatched_participants, participant
     # This is defined at function level to avoid global namespace pollution
     circle_metadata = {}
     
-    # Try to load from already executed reconstruction code first
-    # Circle metadata will be populated from there if available
+    # Try to get circle metadata from various sources
+    circle_metadata = {}
+    print("  🔄 Looking for circle data from existing sources")
+    
     try:
-        print("  🔄 Looking for circle data from existing sources")
-        
-        # Initialize circle metadata structure
-        circle_metadata = {}
-        
         # Option 1: Check if we have 'updated_circles' in globals or locals
         updated_circles = None
         if 'updated_circles' in locals():
@@ -479,51 +476,99 @@ def post_process_continuing_members(results, unmatched_participants, participant
             else:
                 print("  ⚠️ Found circles df but it doesn't have expected structure")
         else:
-            # If not, try to import the metadata manager
-            print("  🔄 Looking for CircleMetadataManager")
-            try:
-                # Try to import from known locations
-                try:
-                    # Try different possible import paths
-                    metadata_manager_found = False
+            print("  ⚠️ No existing circles data found in memory")
+            
+        # Option 2: Try to import CircleMetadataManager if we don't have enough circle data
+        if len(circle_metadata) < 5:  # Arbitrary threshold - need enough continuing circles
+            print("  🔄 Checking for CircleMetadataManager")
+            
+            # Define a dummy CircleMetadataManager class in case import fails
+            class DummyCircleManager:
+                def __init__(self):
+                    pass
+                def get_all_circles(self):
+                    return {}
                     
-                    # First try utils.metadata_manager
-                    try:
-                        try:
-                            from utils.metadata_manager import CircleMetadataManager as UtilsCircleMetadataManager
-                        except ImportError:
-                            # Define a dummy class to avoid ImportError
-                            class UtilsCircleMetadataManager:
-                                def __init__(self):
-                                    pass
-                                def get_all_circles(self):
-                                    return {}
-                        circle_manager = UtilsCircleMetadataManager()
-                        if hasattr(circle_manager, 'get_all_circles'):
-                            circle_metadata = circle_manager.get_all_circles()
-                            print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from utils.metadata_manager")
-                            metadata_manager_found = True
-                    except ImportError:
+            # First try utils.metadata_manager
+            try:
+                # Define a class to avoid unbound errors
+                class DefaultCircleMetadataManager:
+                    def __init__(self):
                         pass
-                        
-                    # If not found, try direct import
-                    if not metadata_manager_found:
-                        try:
-                            from metadata_manager import CircleMetadataManager as DirectCircleMetadataManager
-                            circle_manager = DirectCircleMetadataManager()
-                            if hasattr(circle_manager, 'get_all_circles'):
-                                circle_metadata = circle_manager.get_all_circles()
-                                print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from metadata_manager")
-                                metadata_manager_found = True
-                        except ImportError:
+                    def get_all_circles(self):
+                        return {}
+                
+                # Try to import the real one
+                try:
+                    from utils.metadata_manager import CircleMetadataManager
+                except ImportError:
+                    # Use our local definition instead
+                    CircleMetadataManager = DefaultCircleMetadataManager
+                    
+                circle_manager = CircleMetadataManager()
+                if hasattr(circle_manager, 'get_all_circles'):
+                    metadata_from_manager = circle_manager.get_all_circles()
+                    if metadata_from_manager and len(metadata_from_manager) > 0:
+                        circle_metadata = metadata_from_manager
+                        print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from utils.metadata_manager")
+                    else:
+                        print("  ⚠️ CircleMetadataManager returned empty data")
+                else:
+                    print("  ⚠️ CircleMetadataManager found but missing get_all_circles method")
+            except ImportError:
+                # If not found in utils, try direct import
+                try:
+                    # This import path might not exist but we'll try anyway
+                    # Use dummy manager as fallback
+                    circle_manager = DummyCircleManager()
+                    
+                    # Define a helper class
+                    class DirectCircleManager:
+                        def __init__(self):
                             pass
-                            
-                    if not metadata_manager_found:
-                        print("  ⚠️ Could not find any CircleMetadataManager implementation")
+                        def get_all_circles(self):
+                            return {}
+                    
+                    # Try to find a module in the path that might have it
+                    try:
+                        # Add some paths to help find modules
+                        import sys
+                        if "." not in sys.path:
+                            sys.path.append(".")
+                        
+                        # Look for potential metadata manager modules
+                        potential_modules = ["metadata_manager", "utils.metadata_manager", 
+                                            "circle_manager", "utils.circle_manager"]
+                        
+                        for module_name in potential_modules:
+                            try:
+                                # Try to dynamically import
+                                module = __import__(module_name, fromlist=[''])
+                                if hasattr(module, 'CircleMetadataManager'):
+                                    circle_manager = module.CircleMetadataManager()
+                                    print(f"  ✅ Found CircleMetadataManager in {module_name}")
+                                    break
+                            except (ImportError, ModuleNotFoundError):
+                                # Just continue to next potential module
+                                pass
+                    except Exception as e:
+                        # Just silently continue if anything goes wrong
+                        pass
+                    if hasattr(circle_manager, 'get_all_circles'):
+                        metadata_from_manager = circle_manager.get_all_circles()
+                        if metadata_from_manager and len(metadata_from_manager) > 0:
+                            circle_metadata = metadata_from_manager
+                            print(f"  ✅ Retrieved metadata for {len(circle_metadata)} circles from metadata_manager")
+                        else:
+                            print("  ⚠️ CircleMetadataManager returned empty data")
+                    else:
+                        print("  ⚠️ CircleMetadataManager found but missing get_all_circles method")
                 except ImportError:
                     print("  ⚠️ Could not import CircleMetadataManager - using fallback defaults")
+                except Exception as e:
+                    print(f"  ⚠️ Error with direct CircleMetadataManager: {str(e)}")
             except Exception as e:
-                print(f"  ⚠️ Error with CircleMetadataManager: {str(e)}")
+                print(f"  ⚠️ Error with utils CircleMetadataManager: {str(e)}")
     except Exception as e:
         # Fallback to empty metadata if all else fails
         print(f"  ⚠️ Error retrieving circle metadata: {str(e)}")
