@@ -376,21 +376,30 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         circle_id = circle['circle_id']
                         circle_metadata[circle_id] = circle.to_dict()
                         
-                        # Store the members list separately
-                        if 'members' in circle and not pd.isna(circle['members']):
-                            # Ensure we have the members as a list
-                            if isinstance(circle['members'], list):
-                                circle_members[circle_id] = circle['members']
-                            elif isinstance(circle['members'], str):
-                                try:
-                                    # Try to parse if it's a string representation of a list
-                                    import ast
-                                    members_list = ast.literal_eval(circle['members'])
-                                    if isinstance(members_list, list):
-                                        circle_members[circle_id] = members_list
-                                except:
-                                    # If parsing fails, handle as a special case
-                                    print(f"  ⚠️ Could not parse members list for circle {circle_id}")
+                        # Store the members list separately - with safe handling for pandas Series
+                        if 'members' in circle:
+                            member_val = circle['members']
+                            
+                            # Get a scalar representation if it's a pandas Series
+                            if hasattr(member_val, 'iloc') and len(member_val) > 0:
+                                member_val = member_val.iloc[0]
+                            
+                            # Safe check if value is not NA
+                            if not (pd.isna(member_val) if not isinstance(member_val, pd.Series) 
+                                  else member_val.isna().all()):
+                                # Ensure we have the members as a list
+                                if isinstance(member_val, list):
+                                    circle_members[circle_id] = member_val
+                                elif isinstance(member_val, str):
+                                    try:
+                                        # Try to parse if it's a string representation of a list
+                                        import ast
+                                        members_list = ast.literal_eval(member_val)
+                                        if isinstance(members_list, list):
+                                            circle_members[circle_id] = members_list
+                                    except Exception as e:
+                                        # If parsing fails, handle as a special case
+                                        print(f"  ⚠️ Could not parse members list for circle {circle_id}: {str(e)}")
                         
                         # Special handling for problematic regions
                         if 'MXC' in circle_id:
