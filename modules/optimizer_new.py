@@ -278,6 +278,81 @@ test_participants = ['73177784103', '50625303450', '99999000001']  # Example par
 test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-SEA-01']  # Test circles
 
 # Define a general safe_string_match function at module level for use everywhere
+def calculate_circle_diversity_score(participant_ids, results_df):
+    """
+    Calculate the total diversity score for a circle based on participant demographic data.
+    Diversity score = sum of unique buckets across all 5 diversity categories.
+    
+    Args:
+        participant_ids: List of participant Encoded IDs in the circle
+        results_df: DataFrame containing participant demographic data
+        
+    Returns:
+        int: Total diversity score (sum of vintage, employment, industry, racial identity, children scores)
+    """
+    if not participant_ids or results_df is None or len(participant_ids) == 0:
+        return 0
+    
+    # Initialize sets to track unique categories
+    unique_vintages = set()
+    unique_employment = set()
+    unique_industry = set()
+    unique_racial_identity = set()
+    unique_children = set()
+    
+    # Extract diversity data for each participant
+    for participant_id in participant_ids:
+        # Find participant data
+        participant_data = results_df[results_df['Encoded ID'] == participant_id]
+        if participant_data.empty:
+            continue  # Ignore participants not found in results
+        
+        participant_row = participant_data.iloc[0]
+        
+        # Class Vintage diversity
+        if 'Class_Vintage' in participant_data.columns:
+            vintage = participant_row['Class_Vintage']
+            if pd.notna(vintage):
+                unique_vintages.add(vintage)
+        
+        # Employment diversity  
+        if 'Employment_Category' in participant_data.columns:
+            employment = participant_row['Employment_Category']
+            if pd.notna(employment):
+                unique_employment.add(employment)
+        
+        # Industry diversity
+        if 'Industry_Category' in participant_data.columns:
+            industry = participant_row['Industry_Category']
+            if pd.notna(industry):
+                unique_industry.add(industry)
+        
+        # Racial Identity diversity
+        if 'Racial_Identity_Category' in participant_data.columns:
+            racial_identity = participant_row['Racial_Identity_Category']
+            if pd.notna(racial_identity):
+                unique_racial_identity.add(racial_identity)
+        
+        # Children diversity
+        if 'Children_Category' in participant_data.columns:
+            children = participant_row['Children_Category']
+            if pd.notna(children):
+                unique_children.add(children)
+    
+    # Calculate individual category scores (number of unique buckets)
+    vintage_score = len(unique_vintages)
+    employment_score = len(unique_employment)
+    industry_score = len(unique_industry)
+    racial_identity_score = len(unique_racial_identity)
+    children_score = len(unique_children)
+    
+    # Total diversity score is sum of all category scores
+    total_diversity_score = (vintage_score + employment_score + industry_score + 
+                           racial_identity_score + children_score)
+    
+    return total_diversity_score
+
+
 def safe_string_match(value1, value2):
     """
     Safely compare two values that might be strings, numbers, or NaN.
@@ -2830,12 +2905,51 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             else:
                 print(f"❌ ERROR: Variable for Seattle test participant DOES NOT exist in the model!")
     
-    # Combined objective function
-    total_obj = match_obj + very_small_circle_bonus + small_circle_bonus + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus
+    # Component 6: Diversity bonus - 1 point per unique demographic bucket in each circle
+    # This encourages demographic diversity when preference scores are equal
+    diversity_bonus = 0
     
-    # [DEBUG INFO] Log information about optimization proceeding normally
-    # No special test case handling, just record what's happening
-    print(f"📊 Optimization proceeding normally without special case handling")
+    # Calculate diversity bonus for each circle
+    if debug_mode:
+        print(f"\n🌈 CALCULATING DIVERSITY BONUS:")
+    
+    # For each circle, estimate the diversity contribution
+    for c_id in all_circle_ids:
+        # Get all participants that could be assigned to this circle
+        circle_participants = [p_id for p_id in participants if (p_id, c_id) in x]
+        
+        if circle_participants and len(circle_participants) > 1:  # Only apply to circles with multiple people
+            # Calculate the potential diversity score for this circle
+            circle_diversity_score = calculate_circle_diversity_score(circle_participants, remaining_df)
+            
+            # Add diversity contribution weighted by circle activation
+            if circle_diversity_score > 0:
+                # Use the circle activation variable (y) to weight the diversity bonus
+                # This way diversity only counts when the circle is actually used
+                diversity_bonus += circle_diversity_score * y[c_id]
+                        
+                if debug_mode and c_id in ['IP-BOS-04', 'IP-BOS-05', 'IP-SIN-01', 'IP-SEA-01']:
+                    print(f"  Circle {c_id}: potential diversity score = {circle_diversity_score}")
+
+    if debug_mode:
+        print(f"🌈 Total diversity bonus variable created with {len(all_circle_ids)} circles evaluated")
+
+    # Combined objective function
+    total_obj = match_obj + very_small_circle_bonus + small_circle_bonus + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus + diversity_bonus
+    
+    # [DEBUG INFO] Log information about optimization objective function
+    if debug_mode:
+        print(f"\n🎯 OBJECTIVE FUNCTION COMPONENTS:")
+        print(f"  Base assignment score: 1000 points per participant matched")
+        print(f"  Very small circle bonus: 800 points per participant assigned to 2-3 member circles")
+        print(f"  Small circle bonus: 50 points per participant assigned to 4-member circles") 
+        print(f"  Existing circle bonus: 500 points per participant assigned to existing circles")
+        print(f"  Preference satisfaction: Up to 60 points per participant for location/time matches")
+        print(f"  New circle penalty: -100 points per new circle created")
+        print(f"  Diversity bonus: 1 point per unique demographic bucket in each circle")
+        print(f"  Special test bonus: Variable points for specific test cases")
+    
+    print(f"📊 Optimization proceeding with enhanced diversity-aware objective function")
     
     # Special debug for test cases
     if debug_mode:
