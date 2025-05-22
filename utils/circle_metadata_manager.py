@@ -756,8 +756,26 @@ class CircleMetadataManager:
         return base_data
     
     def get_circles_dataframe(self) -> pd.DataFrame:
-        """Get all circle data as a pandas DataFrame"""
-        return pd.DataFrame(self.get_all_circles())
+        """Get all circle data as a pandas DataFrame, filtering out circles with zero members"""
+        all_circles = self.get_all_circles()
+        
+        # Filter out circles with zero members
+        filtered_circles = []
+        zero_member_count = 0
+        
+        for circle in all_circles:
+            member_count = circle.get('member_count', 0)
+            if member_count > 0:
+                filtered_circles.append(circle)
+            else:
+                zero_member_count += 1
+        
+        # Log the filtering for debugging
+        if zero_member_count > 0:
+            self.logger.info(f"Filtered out {zero_member_count} circles with zero members")
+            print(f"🔧 CircleMetadataManager: Filtered out {zero_member_count} circles with zero members")
+        
+        return pd.DataFrame(filtered_circles)
     
     def update_circle(self, circle_id: str, **kwargs) -> None:
         """Update specific fields for a circle"""
