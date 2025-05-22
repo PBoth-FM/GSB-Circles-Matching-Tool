@@ -1664,6 +1664,22 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         print(f"    {i+1}. {circle['circle_id']}: {circle.get('member_count', 'Unknown')} members, "
                               f"metadata_source={circle.get('metadata_source', 'Unknown')}")
             
+            # Apply final normalization to all subregion values in the DataFrame
+            if not circles_df.empty and 'subregion' in circles_df.columns:
+                print("\n🔄 FINAL NORMALIZATION: Ensuring all subregion values are normalized")
+                # Store original values for logging
+                original_values = circles_df['subregion'].copy()
+                
+                # Apply normalization to all subregion values
+                circles_df['subregion'] = circles_df['subregion'].apply(normalize_subregion)
+                
+                # Count how many values were normalized
+                normalized_count = (original_values != circles_df['subregion']).sum()
+                if normalized_count > 0:
+                    print(f"  ✅ Normalized {normalized_count} subregion values in final DataFrame")
+                else:
+                    print("  ✓ All subregion values were already normalized")
+            
             # This manager object will be available for use by caller, but we still return the DataFrame
             # for backward compatibility with existing code
             return circles_df
@@ -1672,5 +1688,21 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     except Exception as e:
         print(f"  ⚠️ Error creating CircleMetadataManager: {str(e)}")
         print("  Continuing with DataFrame return only")
+    
+    # Apply final normalization to all subregion values in the DataFrame
+    if not circles_df.empty and 'subregion' in circles_df.columns:
+        print("\n🔄 FINAL NORMALIZATION: Ensuring all subregion values are normalized")
+        # Store original values for logging
+        original_values = circles_df['subregion'].copy()
+        
+        # Apply normalization to all subregion values
+        circles_df['subregion'] = circles_df['subregion'].apply(normalize_subregion)
+        
+        # Count how many values were normalized
+        normalized_count = (original_values != circles_df['subregion']).sum()
+        if normalized_count > 0:
+            print(f"  ✅ Normalized {normalized_count} subregion values in final DataFrame")
+        else:
+            print("  ✓ All subregion values were already normalized")
     
     return circles_df
