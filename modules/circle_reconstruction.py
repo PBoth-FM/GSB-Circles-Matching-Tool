@@ -256,8 +256,45 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     Returns:
         DataFrame: Updated circles dataframe with all assigned circles
     """
-    # Debug flag to track Peninsula (PSA) region circles specifically
-    DEBUG_PENINSULA_CIRCLES = True
+    # Debug flag to track special regions that need enhanced handling
+    DEBUG_SPECIAL_REGIONS = True
+    
+    # Define special region codes that need enhanced metadata handling
+    SPECIAL_REGION_CODES = ['PSA', 'NAP', 'MXC', 'NBO', 'SAN', 'SPO']
+    
+    # Define mappings for special region circles
+    SPECIAL_REGION_MAPPINGS = {
+        'PSA': {
+            'region': 'Peninsula',
+            'subregions': ["Palo Alto", "Menlo Park", "Mountain View/Los Altos", "Redwood City/San Carlos", "Mid-Peninsula"],
+            'meeting_times': ["Monday (Evenings)", "Tuesday (Evenings)", "Wednesday (Evenings)", "Thursday (Evenings)"]
+        },
+        'NAP': {
+            'region': 'Napa',
+            'subregions': ["Napa", "Napa Valley", "North Bay"],
+            'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
+        },
+        'MXC': {
+            'region': 'Mexico City',
+            'subregions': ["Mexico City", "Polanco", "Santa Fe"],
+            'meeting_times': ["Tuesday (Evenings)", "Thursday (Evenings)"]
+        },
+        'NBO': {
+            'region': 'Nairobi',
+            'subregions': ["Nairobi", "Karen", "Westlands"],
+            'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
+        },
+        'SAN': {
+            'region': 'San Diego',
+            'subregions': ["La Jolla", "Downtown", "North County"],
+            'meeting_times': ["Tuesday (Evenings)", "Thursday (Evenings)"]
+        },
+        'SPO': {
+            'region': 'Sao Paulo',
+            'subregions': ["Sao Paulo", "Pinheiros", "Jardins"],
+            'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
+        }
+    }
     print("\n🔄 RECONSTRUCTING CIRCLES FROM PARTICIPANT RESULTS")
     print("🔍 ENHANCED DIAGNOSTICS: Starting comprehensive circle reconstruction")
     
