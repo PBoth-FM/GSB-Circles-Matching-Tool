@@ -4639,8 +4639,8 @@ def apply_metadata_reconstruction_fix(results, circles):
     
     print(f"🔧 DIAGNOSTIC: Metadata reconstruction fix complete!")
     
-    return results, circles
-    print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
-    return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
+    # Return the complete tuple expected by the calling code
+    # Use empty defaults for missing values to maintain compatibility
+    return results, circles, [], {}, {}
 
 # East Bay debug function was removed to focus exclusively on Seattle test case
