@@ -5,6 +5,46 @@ appear correctly in UI components.
 
 import pandas as pd
 import numpy as np
+import os
+
+# Cache for normalization tables to avoid repeated loading
+_subregion_normalization_cache = None
+
+def load_subregion_normalization_table():
+    """
+    Load the subregion normalization table from CSV.
+    Uses a cache to avoid reloading the file multiple times.
+    
+    Returns:
+        DataFrame with subregion normalization mapping
+    """
+    global _subregion_normalization_cache
+    
+    if _subregion_normalization_cache is not None:
+        return _subregion_normalization_cache
+    
+    # Look for the normalization file in possible locations
+    possible_paths = [
+        "attached_assets/Circles-SubregionNormalization.csv",  # Development path
+        "./Circles-SubregionNormalization.csv",                # Root directory
+        "../Circles-SubregionNormalization.csv",               # Parent directory
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            try:
+                print(f"  📂 Loading subregion normalization from {path}")
+                norm_df = pd.read_csv(path)
+                # Create a mapping dictionary
+                mapping = dict(zip(norm_df['All unique variations'], norm_df['Normalized']))
+                _subregion_normalization_cache = mapping
+                return mapping
+            except Exception as e:
+                print(f"  ⚠️ Error loading subregion normalization from {path}: {str(e)}")
+    
+    print("  ⚠️ Could not find subregion normalization table, using identity normalization")
+    _subregion_normalization_cache = {}  # Empty mapping as fallback
+    return {}
 
 def safe_isna(val):
     """
@@ -469,19 +509,25 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                             else:
                                 print(f"  ⚠️ Value is NA for circle {circle_id}")
                         
-                        # Special handling for problematic regions
+                        # Set region based on region code but always apply normalization for subregions
                         if 'MXC' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Mexico City'
+                            # Use normalized value from mapping - 'Mexico City' is correct per normalization table
                             circle_metadata[circle_id]['subregion'] = 'Mexico City'
                         elif 'NBO' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Nairobi'
+                            # Use normalized value from mapping - 'Nairobi' is correct per normalization table
                             circle_metadata[circle_id]['subregion'] = 'Nairobi'
                         elif 'NAP' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Napa-Sonoma'
-                            circle_metadata[circle_id]['subregion'] = 'Napa Valley'
+                            # Use normalized value from mapping instead of hardcoded 'Napa Valley'
+                            circle_metadata[circle_id]['subregion'] = 'Napa/Sonoma'
                         elif 'PSA' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Peninsula'
-                            # Keep the original subregion for Peninsula
+                        elif 'SPO' in circle_id:
+                            circle_metadata[circle_id]['region'] = 'Sao Paulo'
+                            # Use normalized value from mapping instead of any custom value
+                            circle_metadata[circle_id]['subregion'] = 'Sao Paulo'
         
         if not has_optimizer_metadata:
             print("  ⚠️ No optimizer metadata found in original_circles, proceeding with standard reconstruction")
