@@ -1230,11 +1230,31 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         extracted_props['region'] = 'Peninsula'
                 
             except Exception as e:
-                print(f"  ⚠️ Error processing {region_mapping['region']} circle: {str(e)}")
-                # Apply default fix for this special region
-                extracted_props['subregion'] = region_mapping['subregions'][0]
-                extracted_props['meeting_time'] = region_mapping['meeting_times'][0]
-                extracted_props['region'] = region_mapping['region']
+                region_name = REGION_CODE_TO_NAME.get(special_region_code, "Unknown")
+                print(f"  ⚠️ Error processing {region_name} circle: {str(e)}")
+                
+                # Use actual participant data for defaults if possible
+                if members_df is not None and not members_df.empty:
+                    # Try to get region/subregion from members
+                    if 'Current_Subregion' in members_df.columns and members_df['Current_Subregion'].notna().any():
+                        extracted_props['subregion'] = members_df['Current_Subregion'].dropna().iloc[0]
+                    else:
+                        extracted_props['subregion'] = "Unknown"
+                        
+                    if 'Current_Region' in members_df.columns and members_df['Current_Region'].notna().any():
+                        extracted_props['region'] = members_df['Current_Region'].dropna().iloc[0]
+                    else:
+                        extracted_props['region'] = region_name
+                        
+                    if 'Current_Meeting_Time' in members_df.columns and members_df['Current_Meeting_Time'].notna().any():
+                        extracted_props['meeting_time'] = members_df['Current_Meeting_Time'].dropna().iloc[0]
+                    else:
+                        extracted_props['meeting_time'] = "Unknown"
+                else:
+                    # No valid member data, use basic defaults
+                    extracted_props['subregion'] = "Unknown"
+                    extracted_props['meeting_time'] = "Unknown"
+                    extracted_props['region'] = region_name
         
         # Set the extracted properties in circle metadata
         circle_metadata[circle_id]['region'] = extracted_props['region']
