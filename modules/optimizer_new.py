@@ -813,8 +813,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             if circle_size == 4:
                                 final_max_additions = max(1, final_max_additions)
                             
-                            # Ensure we don't exceed 8 total members for any circle
-                            final_max_additions = min(final_max_additions, 8 - circle_size)
+                            # Ensure we don't exceed 10 total members for any circle
+                            final_max_additions = min(final_max_additions, 10 - circle_size)
                             
                             if final_max_additions > 0:
                                 print(f"  🔷 UNIVERSAL FIX APPLIED: Small circle {circle_id} with {circle_size} members")
@@ -3102,17 +3102,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         max_additions = circle_metadata[c_id]['max_additions']
         current_member_count = viable_circles[c_id]['member_count']
         
-        # CRITICAL FIX: Enforce maximum size of 8 for continuing circles
-        # If circle already has more than 8 members, don't allow any new members
-        # If adding members would exceed 8, limit additions accordingly
-        if current_member_count >= 8:
-            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} already has {current_member_count} members (≥8)")
+        # UPDATED FIX: Enforce maximum size of 10 for continuing circles
+        # If circle already has more than 10 members, don't allow any new members
+        # If adding members would exceed 10, limit additions accordingly
+        if current_member_count >= 10:
+            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} already has {current_member_count} members (≥10)")
             print(f"  Forcing max_additions to 0 (was {max_additions})")
             max_additions = 0
-        elif current_member_count + max_additions > 8:
+        elif current_member_count + max_additions > 10:
             old_max = max_additions
-            max_additions = 8 - current_member_count
-            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} would exceed 8 members")
+            max_additions = 10 - current_member_count
+            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} would exceed 10 members")
             print(f"  Adjusting max_additions from {old_max} to {max_additions}")
             
         # Add special debug for test circles

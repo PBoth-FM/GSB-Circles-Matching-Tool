@@ -1380,7 +1380,7 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     print(f"  Preserved max_additions={max_additions} for circle {circle_id}")
                 else:
                     # Calculate max_additions based on continuing circle rules
-                    # 1. For continuing circles, never exceed a total of 8 members
+                    # 1. For continuing circles, never exceed a total of 10 members
                     # 2. For small circles (<5 members), add enough to reach 5 regardless of preferences
                     
                     if total_members < 5:
@@ -1388,8 +1388,8 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         max_additions = 5 - total_members
                         print(f"  Small circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
                     else:
-                        # Regular continuing circle - never exceed 8 total
-                        max_additions = max(0, 8 - total_members)
+                        # Regular continuing circle - never exceed 10 total
+                        max_additions = max(0, 10 - total_members)
                         print(f"  Continuing circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
                     
                     circle_metadata[circle_id]['max_additions'] = max_additions
