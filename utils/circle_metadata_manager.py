@@ -146,6 +146,7 @@ class CircleMetadataManager:
         # Apply normalizations
         self.normalize_host_values()
         self.normalize_numeric_fields()
+        self.normalize_subregion_values()  # Added subregion normalization
         self.fill_missing_metadata()
         
         self.logger.info("Circle metadata normalization complete")
