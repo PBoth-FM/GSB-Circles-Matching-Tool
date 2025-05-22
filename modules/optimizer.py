@@ -274,6 +274,52 @@ def generate_circle_metadata(circle_id, members_list, region=None, subregion=Non
     
     return metadata
 
+def generate_circle_metadata(circle_id, members_list, region=None, subregion=None, meeting_time=None, max_additions=0, debug_mode=False):
+    """
+    Generate standardized metadata for a circle to be used by the CircleMetadataManager.
+    
+    Args:
+        circle_id: Unique ID for the circle
+        members_list: List of encoded IDs of members in the circle
+        region: Region of the circle
+        subregion: Subregion of the circle
+        meeting_time: Meeting time of the circle
+        max_additions: Maximum number of additions allowed to the circle
+        debug_mode: Whether to print debug information
+        
+    Returns:
+        Dictionary with standardized metadata
+    """
+    # Create base metadata
+    metadata = {
+        'circle_id': circle_id,
+        'members': members_list.copy() if isinstance(members_list, list) else [],
+        'member_count': len(members_list) if isinstance(members_list, list) else 0,
+        'region': region or '',
+        'subregion': subregion or '',
+        'meeting_time': meeting_time or '',
+        'max_additions': max_additions,
+        'metadata_source': 'optimizer',  # Mark this as coming directly from optimizer
+        'is_continuing': '-NEW-' not in circle_id,  # Determine if this is a continuing circle
+    }
+    
+    # Add special region handling for problematic regions
+    if 'MXC' in circle_id:
+        metadata['region'] = 'Mexico City'
+        metadata['subregion'] = 'Mexico City' 
+    elif 'NBO' in circle_id:
+        metadata['region'] = 'Nairobi'
+        metadata['subregion'] = 'Nairobi'
+    elif 'NAP' in circle_id:
+        metadata['region'] = 'Napa-Sonoma'
+        metadata['subregion'] = 'Napa Valley'
+    
+    if debug_mode:
+        print(f"Generated metadata for circle {circle_id}: region={metadata['region']}, " + 
+              f"subregion={metadata['subregion']}, meeting_time={metadata['meeting_time']}")
+    
+    return metadata
+
 def run_matching_algorithm(data, config):
     """
     Run the optimization algorithm to match participants into circles
