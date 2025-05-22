@@ -4416,11 +4416,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         
         # Update circles metadata
         for circle in circles:
-            old_circle_id = circle.get('circle_id')
-            if old_circle_id and old_circle_id in post_process_mapping:
-                new_circle_id = post_process_mapping[old_circle_id]
-                circle['circle_id'] = new_circle_id
-                print(f"    Circle Metadata: {old_circle_id} → {new_circle_id}")
+            # Ensure circle is a dictionary, not a string
+            if isinstance(circle, dict):
+                old_circle_id = circle.get('circle_id')
+                if old_circle_id and old_circle_id in post_process_mapping:
+                    new_circle_id = post_process_mapping[old_circle_id]
+                    circle['circle_id'] = new_circle_id
+                    print(f"    Circle Metadata: {old_circle_id} → {new_circle_id}")
+            else:
+                print(f"    Warning: Skipping non-dictionary circle object: {circle}")
     
     # Step 5: Ensure CircleMetadataManager has all circles (regardless of renaming)
     if hasattr(st, 'session_state') and hasattr(st.session_state, 'circle_metadata_manager'):
