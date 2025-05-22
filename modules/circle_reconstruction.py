@@ -985,7 +985,6 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 circle_metadata[circle_id]['proposed_NEW_Region'] = extracted_props.get('region', '')
                 circle_metadata[circle_id]['proposed_NEW_Subregion'] = extracted_props.get('subregion', '')
                 circle_metadata[circle_id]['proposed_NEW_DayTime'] = extracted_props.get('meeting_time', '')
-                    print(f"  ✅ FIXED: Set region from '{current_region}' to '{region_mapping['region']}'")
                 
                 # Special handling for Peninsula and Phoenix confusion
                 if special_region_code == 'PSA':
