@@ -339,14 +339,9 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
-    """
-    Optimize matching within a single region using the refactored circle ID-based model.
-    This function is wrapped in comprehensive error handling to prevent unpacking errors.
-    """
-    try:
-        # Import or define is_time_compatible here to ensure it's available in this scope
-        # This fixes the "cannot access local variable" error in optimize mode
-        from modules.data_processor import is_time_compatible
+    # Import or define is_time_compatible here to ensure it's available in this scope
+    # This fixes the "cannot access local variable" error in optimize mode
+    from modules.data_processor import is_time_compatible
     
     # Import our new fixes module for CURRENT-CONTINUING members and optimize mode
     from modules.optimizer_fixes import (
@@ -4351,11 +4346,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # POST-PROCESSING SEQUENTIAL RENAMING: Comprehensive fix for missing circles and sequential naming
     # This ensures all circles appear in both Results CSV and UI, with sequential naming as a bonus
-    print(f"\n🔄 DIAGNOSTIC: POST-PROCESSING STARTED - SEQUENTIAL RENAMING AND DATA SYNCHRONIZATION")
-    print(f"🔄 DIAGNOSTIC: Session state available: {hasattr(st, 'session_state')}")
-    if hasattr(st, 'session_state'):
-        print(f"🔄 DIAGNOSTIC: CircleMetadataManager available: {hasattr(st.session_state, 'circle_metadata_manager')}")
-    print(f"🔄 DIAGNOSTIC: Processing {len(updated_results)} updated results and {len(circles)} circles")
+    print(f"\n🔄 POST-PROCESSING: SEQUENTIAL RENAMING AND DATA SYNCHRONIZATION")
     
     # Step 1: Extract all new circles from the results data
     new_circles_in_results = {}
@@ -4451,7 +4442,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     manager.add_circle(new_circle_id, old_circle_data)
                     circles_updated += 1
         
-        # Then, ensure all circles from results are in the manager with complete metadata
+        # Then, ensure all circles from results are in the manager
         for result_circle_id, members in new_circles_in_results.items():
             # Use the renamed ID if it exists
             circle_id = post_process_mapping.get(result_circle_id, result_circle_id)
@@ -4460,69 +4451,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Find matching circle in our circles list
                 circle_data = None
                 for circle in circles:
-                    if isinstance(circle, dict) and circle.get('circle_id') == circle_id:
+                    if circle.get('circle_id') == circle_id:
                         circle_data = circle
                         break
-                
-                # If not found in circles list, reconstruct metadata from results data
-                if not circle_data:
-                    # Get metadata from the first participant in this circle
-                    sample_participant = None
-                    for result in updated_results:
-                        if result.get('proposed_NEW_circles_id') == circle_id:
-                            sample_participant = result
-                            break
-                    
-                    if sample_participant:
-                        # Reconstruct circle metadata from participant data
-                        circle_data = {
-                            'circle_id': circle_id,
-                            'members': members,
-                            'member_count': len(members),
-                            'region': sample_participant.get('proposed_NEW_Region', 'Unknown'),
-                            'subregion': sample_participant.get('proposed_NEW_Subregion', 'Unknown'),
-                            'meeting_time': sample_participant.get('proposed_NEW_DayTime', 'Unknown'),
-                            'max_additions': 0,  # New circles are typically full
-                            'metadata_source': 'post_processing_reconstruction',
-                            'is_continuing': False,
-                            'is_existing': False,
-                            'is_new_circle': True,
-                            'new_members': len(members),
-                            'always_hosts': 0,  # Will be calculated later if needed
-                            'sometimes_hosts': 0,  # Will be calculated later if needed
-                            'continuing_members': 0
-                        }
-                        print(f"    Reconstructed metadata for {circle_id}: subregion={circle_data['subregion']}, meeting_time={circle_data['meeting_time']}")
                 
                 if circle_data:
                     manager.add_circle(circle_id, circle_data)
                     circles_added += 1
                     print(f"    Added missing circle to manager: {circle_id}")
-            else:
-                # Circle exists but might have incomplete metadata - validate and fix
-                existing_data = manager.get_circle(circle_id)
-                if existing_data and (existing_data.get('subregion') == 'Unknown' or existing_data.get('meeting_time') == 'Unknown'):
-                    # Find a participant to get the correct metadata
-                    sample_participant = None
-                    for result in updated_results:
-                        if result.get('proposed_NEW_circles_id') == circle_id:
-                            sample_participant = result
-                            break
-                    
-                    if sample_participant:
-                        # Update the incomplete metadata
-                        updates_made = []
-                        if existing_data.get('subregion') == 'Unknown' and sample_participant.get('proposed_NEW_Subregion', 'Unknown') != 'Unknown':
-                            manager.update_circle(circle_id, subregion=sample_participant.get('proposed_NEW_Subregion'))
-                            updates_made.append(f"subregion={sample_participant.get('proposed_NEW_Subregion')}")
-                        
-                        if existing_data.get('meeting_time') == 'Unknown' and sample_participant.get('proposed_NEW_DayTime', 'Unknown') != 'Unknown':
-                            manager.update_circle(circle_id, meeting_time=sample_participant.get('proposed_NEW_DayTime'))
-                            updates_made.append(f"meeting_time={sample_participant.get('proposed_NEW_DayTime')}")
-                        
-                        if updates_made:
-                            print(f"    Updated metadata for {circle_id}: {', '.join(updates_made)}")
-                            circles_updated += 1
         
         if circles_updated > 0:
             print(f"  ✅ Updated {circles_updated} circles in CircleMetadataManager")
@@ -4532,130 +4468,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"  ✅ Post-processing complete: All circles should now be visible in both Results CSV and UI")
     
     # Return the final logs copy with updated results
-
-def apply_metadata_reconstruction_fix(results, circles):
-    """
-    Apply metadata reconstruction fix to ensure CircleMetadataManager has complete data.
-    This is the new post-processing function that gets called from app.py.
-    
-    Args:
-        results: List of participant results
-        circles: List of circle metadata
-        
-    Returns:
-        Updated results and circles with proper metadata synchronization
-    """
-    import streamlit as st
-    import copy
-    
-    print(f"🔧 DIAGNOSTIC: Starting metadata reconstruction fix...")
-    print(f"🔧 DIAGNOSTIC: Received {len(results) if results else 0} results")
-    print(f"🔧 DIAGNOSTIC: Received {len(circles) if circles else 0} circles")
-    print(f"🔧 DIAGNOSTIC: Session state available: {hasattr(st, 'session_state')}")
-    if hasattr(st, 'session_state'):
-        print(f"🔧 DIAGNOSTIC: CircleMetadataManager available: {hasattr(st.session_state, 'circle_metadata_manager')}")
-    
-    if not results or not hasattr(st, 'session_state') or not hasattr(st.session_state, 'circle_metadata_manager'):
-        print(f"🔧 DIAGNOSTIC: Skipping metadata fix - missing required data or session state")
-        return results, circles
-    
-    manager = st.session_state.circle_metadata_manager
-    
-    # Step 1: Extract all new circles from the results data
-    new_circles_in_results = {}
-    for result in results:
-        circle_id = result.get('proposed_NEW_circles_id')
-        if circle_id and 'NEW' in circle_id and circle_id != 'UNMATCHED':
-            if circle_id not in new_circles_in_results:
-                new_circles_in_results[circle_id] = []
-            new_circles_in_results[circle_id].append(result.get('Encoded ID'))
-    
-    print(f"  Found {len(new_circles_in_results)} new circles in results data:")
-    for circle_id, members in new_circles_in_results.items():
-        print(f"    {circle_id}: {len(members)} members")
-    
-    # Step 2: For each new circle, ensure it has proper metadata in CircleMetadataManager
-    circles_added = 0
-    circles_updated = 0
-    
-    for circle_id, members in new_circles_in_results.items():
-        if not manager.has_circle(circle_id):
-            # Circle doesn't exist in manager - reconstruct metadata from results
-            sample_participant = None
-            for result in results:
-                if result.get('proposed_NEW_circles_id') == circle_id:
-                    sample_participant = result
-                    break
-            
-            if sample_participant:
-                # Reconstruct circle metadata from participant data
-                circle_data = {
-                    'circle_id': circle_id,
-                    'members': members,
-                    'member_count': len(members),
-                    'region': sample_participant.get('proposed_NEW_Region', 'Unknown'),
-                    'subregion': sample_participant.get('proposed_NEW_Subregion', 'Unknown'),
-                    'meeting_time': sample_participant.get('proposed_NEW_DayTime', 'Unknown'),
-                    'max_additions': 0,  # New circles are typically full
-                    'metadata_source': 'metadata_reconstruction_fix',
-                    'is_continuing': False,
-                    'is_existing': False,
-                    'is_new_circle': True,
-                    'new_members': len(members),
-                    'always_hosts': 0,
-                    'sometimes_hosts': 0,
-                    'continuing_members': 0
-                }
-                
-                manager.add_circle(circle_id, circle_data)
-                circles_added += 1
-                print(f"    ✅ Added circle {circle_id}: subregion={circle_data['subregion']}, meeting_time={circle_data['meeting_time']}")
-                
-        else:
-            # Circle exists but might have incomplete metadata - validate and fix
-            existing_data = manager.get_circle(circle_id)
-            if existing_data and (existing_data.get('subregion') == 'Unknown' or existing_data.get('meeting_time') == 'Unknown'):
-                # Find a participant to get the correct metadata
-                sample_participant = None
-                for result in results:
-                    if result.get('proposed_NEW_circles_id') == circle_id:
-                        sample_participant = result
-                        break
-                
-                if sample_participant:
-                    # Update the incomplete metadata
-                    updates_made = []
-                    if existing_data.get('subregion') == 'Unknown' and sample_participant.get('proposed_NEW_Subregion', 'Unknown') != 'Unknown':
-                        manager.update_circle(circle_id, subregion=sample_participant.get('proposed_NEW_Subregion'))
-                        updates_made.append(f"subregion={sample_participant.get('proposed_NEW_Subregion')}")
-                    
-                    if existing_data.get('meeting_time') == 'Unknown' and sample_participant.get('proposed_NEW_DayTime', 'Unknown') != 'Unknown':
-                        manager.update_circle(circle_id, meeting_time=sample_participant.get('proposed_NEW_DayTime'))
-                        updates_made.append(f"meeting_time={sample_participant.get('proposed_NEW_DayTime')}")
-                    
-                    if updates_made:
-                        print(f"    ✅ Updated metadata for {circle_id}: {', '.join(updates_made)}")
-                        circles_updated += 1
-    
-    if circles_added > 0:
-        print(f"  ✅ Added {circles_added} circles to CircleMetadataManager")
-    if circles_updated > 0:
-        print(f"  ✅ Updated {circles_updated} circles in CircleMetadataManager")
-    
-        print(f"🔧 DIAGNOSTIC: Metadata reconstruction fix complete!")
-        
-        # Return the complete tuple expected by the calling code
-        # Use empty defaults for missing values to maintain compatibility
-        return results, circles, [], {}, {}
-        
-    except Exception as e:
-        print(f"❌ CRITICAL ERROR in optimize_region_v2 for region {region}: {str(e)}")
-        print(f"❌ Error type: {type(e).__name__}")
-        import traceback
-        print(f"❌ Full traceback:\n{traceback.format_exc()}")
-        
-        # Return safe default values to prevent unpacking errors
-        print(f"🔧 Returning empty results to prevent system crash...")
-        return [], [], [], {}, {}
+    print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
+    return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
 
 # East Bay debug function was removed to focus exclusively on Seattle test case
