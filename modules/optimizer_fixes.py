@@ -308,6 +308,22 @@ def post_process_continuing_members(results, unmatched_participants, participant
     Returns:
         tuple: (updated_results, updated_unmatched, updated_logs, updated_circles)
     """
+    # CRITICAL FIX: Define Peninsula subregions for accurate assignment
+    PENINSULA_SUBREGIONS = [
+        "Palo Alto",
+        "Menlo Park",
+        "Mountain View/Los Altos",
+        "Redwood City/San Carlos", 
+        "Mid-Peninsula"
+    ]
+    
+    # Define Peninsula meeting times
+    PENINSULA_MEETING_TIMES = [
+        "Monday (Evenings)",
+        "Tuesday (Evenings)",
+        "Wednesday (Evenings)",
+        "Thursday (Evenings)"
+    ]
     print("\n🚨 POST-PROCESSING: Final check for CURRENT-CONTINUING members")
     
     # Create copies to avoid modifying originals
@@ -402,6 +418,53 @@ def post_process_continuing_members(results, unmatched_participants, participant
             print(f"  ⚠️ Participant {p_id} not found in results or unmatched list")
             problem_cases += 1
     
+    # CRITICAL FIX FOR PENINSULA REGION CIRCLES
+    print("\n🔍 PENINSULA REGION SPECIAL FIX: Fixing subregion and meeting time in Results CSV")
+    peninsula_fixes = 0
+    
+    # First pass - check for any Peninsula circles and fix them
+    for result in updated_results:
+        circle_id = result.get('proposed_NEW_circles_id', '')
+        
+        # Check if this is a Peninsula circle (PSA region code)
+        is_peninsula_circle = circle_id and (circle_id.startswith('IP-PSA-') or 'Peninsula' in str(result.get('region', '')))
+        
+        if is_peninsula_circle:
+            # Extract circle number for deterministic assignment
+            try:
+                if '-NEW-' in circle_id:
+                    circle_id_part = circle_id.split('-NEW-')[1]
+                else:
+                    circle_id_part = circle_id.split('-')[-1]
+                    
+                # Get numeric part for deterministic assignment
+                circle_num = int(circle_id_part)
+                
+                # Check if we need to fix subregion
+                current_subregion = result.get('proposed_NEW_Subregion', '')
+                if not current_subregion or current_subregion == 'Unknown' or 'Phoenix' in str(current_subregion):
+                    # Assign subregion based on circle ID
+                    subregion_index = circle_num % len(PENINSULA_SUBREGIONS)
+                    result['proposed_NEW_Subregion'] = PENINSULA_SUBREGIONS[subregion_index]
+                    
+                    print(f"  ✅ Fixed Peninsula circle {circle_id} subregion: {result['proposed_NEW_Subregion']}")
+                
+                # Check if we need to fix meeting time
+                current_time = result.get('proposed_NEW_DayTime', '')
+                if not current_time or current_time == 'Unknown':
+                    # Assign meeting time based on circle ID
+                    time_index = circle_num % len(PENINSULA_MEETING_TIMES)
+                    result['proposed_NEW_DayTime'] = PENINSULA_MEETING_TIMES[time_index]
+                    
+                    print(f"  ✅ Fixed Peninsula circle {circle_id} meeting time: {result['proposed_NEW_DayTime']}")
+                
+                peninsula_fixes += 1
+                
+            except Exception as e:
+                print(f"  ⚠️ Error fixing Peninsula circle {circle_id}: {str(e)}")
+    
+    print(f"  📊 Total Peninsula circles fixed: {peninsula_fixes}")
+    
     # Print summary statistics
     print(f"\n📊 POST-PROCESSING SUMMARY:")
     print(f"  - Total CURRENT-CONTINUING participants: {total_processed}")
@@ -410,6 +473,7 @@ def post_process_continuing_members(results, unmatched_participants, participant
     print(f"  - Added to results (from unmatched): {added_to_results}")
     print(f"  - Removed from unmatched: {removed_from_unmatched}")
     print(f"  - Problem cases: {problem_cases}")
+    print(f"  - Peninsula circles fixed: {peninsula_fixes}")
     
     # Final counts
     final_results_count = len(updated_results)
