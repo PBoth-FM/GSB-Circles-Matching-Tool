@@ -4346,7 +4346,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # POST-PROCESSING SEQUENTIAL RENAMING: Comprehensive fix for missing circles and sequential naming
     # This ensures all circles appear in both Results CSV and UI, with sequential naming as a bonus
-    print(f"\n🔄 POST-PROCESSING: SEQUENTIAL RENAMING AND DATA SYNCHRONIZATION")
+    print(f"\n🔄 DIAGNOSTIC: POST-PROCESSING STARTED - SEQUENTIAL RENAMING AND DATA SYNCHRONIZATION")
+    print(f"🔄 DIAGNOSTIC: Session state available: {hasattr(st, 'session_state')}")
+    if hasattr(st, 'session_state'):
+        print(f"🔄 DIAGNOSTIC: CircleMetadataManager available: {hasattr(st.session_state, 'circle_metadata_manager')}")
+    print(f"🔄 DIAGNOSTIC: Processing {len(updated_results)} updated results and {len(circles)} circles")
     
     # Step 1: Extract all new circles from the results data
     new_circles_in_results = {}
