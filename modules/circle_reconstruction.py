@@ -1352,8 +1352,8 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 circle_metadata[circle_id]['member_count'] = total_members
                 print(f"  ✅ FIXED: Set member_count to match total unique members ({total_members}) for circle {circle_id}")
                 
-                # CRITICAL CHECK: Enforce 8-member limit for continuing circles
-                if total_members > 8:
+                # CRITICAL CHECK: Enforce 10-member limit for continuing circles
+                if total_members > 10:
                     print(f"  ⚠️ WARNING: Circle {circle_id} exceeds maximum size with {total_members} members!")
                     print(f"    This includes {unique_continuing} continuing members and {unique_new} new members")
                     if unique_new > 0:
@@ -1364,15 +1364,15 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     # Use the existing max_additions value from optimization
                     max_additions = original_circle_info[circle_id]['max_additions']
                     
-                    # CRITICAL FIX: Enforce the 8-member limit
+                    # UPDATED FIX: Enforce the 10-member limit
                     # Even if optimizer allowed more, we need to correct it here
-                    if total_members >= 8:
+                    if total_members >= 10:
                         # Already at or over capacity, force max_additions to 0
                         print(f"  ⚠️ FIXING: Circle {circle_id} is at/over capacity. Setting max_additions to 0 (was {max_additions})")
                         max_additions = 0
-                    elif total_members + max_additions > 8:
+                    elif total_members + max_additions > 10:
                         # Would exceed capacity, adjust max_additions
-                        corrected_max = 8 - total_members
+                        corrected_max = 10 - total_members
                         print(f"  ⚠️ FIXING: Circle {circle_id} would exceed capacity. Adjusting max_additions from {max_additions} to {corrected_max}")
                         max_additions = corrected_max
                     
