@@ -4344,6 +4344,52 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     else:
         print(f"  ℹ️ No additional participants were matched during post-processing")
     
+    # COMPREHENSIVE FIX: Update Results CSV and CircleMetadataManager with sequential circle renaming
+    # This ensures both data sources stay synchronized when circles are renamed
+    if 'circle_id_mapping' in locals() and circle_id_mapping:
+        print(f"\n🔄 APPLYING COMPREHENSIVE SEQUENTIAL RENAMING TO ALL DATA SOURCES:")
+        print(f"  Renaming {len(circle_id_mapping)} circles")
+        
+        # 1. Update the Results CSV data (updated_results)
+        for result in updated_results:
+            old_circle_id = result.get('proposed_NEW_circles_id')
+            if old_circle_id and old_circle_id in circle_id_mapping:
+                new_circle_id = circle_id_mapping[old_circle_id]
+                result['proposed_NEW_circles_id'] = new_circle_id
+                print(f"    Updated Results CSV: {old_circle_id} → {new_circle_id}")
+        
+        # 2. Update the circles data (metadata for CircleMetadataManager)
+        for circle in circles:
+            old_circle_id = circle.get('circle_id')
+            if old_circle_id and old_circle_id in circle_id_mapping:
+                new_circle_id = circle_id_mapping[old_circle_id]
+                circle['circle_id'] = new_circle_id
+                print(f"    Updated Circle Metadata: {old_circle_id} → {new_circle_id}")
+        
+        # 3. Update the CircleMetadataManager in session state if it exists
+        if hasattr(st, 'session_state') and hasattr(st.session_state, 'circle_metadata_manager'):
+            manager = st.session_state.circle_metadata_manager
+            circles_updated = 0
+            
+            # Get all circle IDs that need renaming
+            for old_circle_id, new_circle_id in circle_id_mapping.items():
+                if manager.has_circle(old_circle_id):
+                    # Get the old circle data
+                    old_circle_data = manager.get_circle(old_circle_id)
+                    if old_circle_data:
+                        # Remove the old circle
+                        manager.remove_circle(old_circle_id)
+                        # Add it back with the new ID
+                        old_circle_data['circle_id'] = new_circle_id
+                        manager.add_circle(new_circle_id, old_circle_data)
+                        circles_updated += 1
+                        print(f"    Updated CircleMetadataManager: {old_circle_id} → {new_circle_id}")
+            
+            if circles_updated > 0:
+                print(f"  ✅ Successfully updated {circles_updated} circles in CircleMetadataManager")
+        
+        print(f"  ✅ Sequential renaming applied to all data sources")
+    
     # Return the final logs copy with updated results
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
     return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
