@@ -376,20 +376,43 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                         circle_id = circle['circle_id']
                         circle_metadata[circle_id] = circle.to_dict()
                         
-                        # Store the members list separately - with safe handling for pandas Series
+                        # Store the members list separately - with completely separate handling for pandas Series vs scalar values
                         if 'members' in circle:
                             member_val = circle['members']
                             
-                            # Get a scalar representation if it's a pandas Series
-                            if hasattr(member_val, 'iloc') and len(member_val) > 0:
-                                member_val = member_val.iloc[0]
+                            # Handle pandas Series objects
+                            if isinstance(member_val, pd.Series):
+                                # Check if all values are NA
+                                if not member_val.isna().all():
+                                    # Get first non-NA value
+                                    non_na_values = member_val.dropna()
+                                    if len(non_na_values) > 0:
+                                        member_val = non_na_values.iloc[0]
+                                        
+                                        # Process the scalar value we extracted
+                                        if isinstance(member_val, list):
+                                            circle_members[circle_id] = member_val
+                                            print(f"  ✅ Extracted list from Series for circle {circle_id}")
+                                        elif isinstance(member_val, str):
+                                            try:
+                                                # Try to parse if it's a string representation of a list
+                                                import ast
+                                                members_list = ast.literal_eval(member_val)
+                                                if isinstance(members_list, list):
+                                                    circle_members[circle_id] = members_list
+                                                    print(f"  ✅ Parsed members list from Series string for circle {circle_id}")
+                                            except Exception as e:
+                                                print(f"  ⚠️ Could not parse Series members list for circle {circle_id}: {str(e)}")
+                                    else:
+                                        print(f"  ⚠️ No non-NA values found in Series for circle {circle_id}")
+                                else:
+                                    print(f"  ⚠️ All NA values in Series for circle {circle_id}")
                             
-                            # Safe check if value is not NA
-                            if not (pd.isna(member_val) if not isinstance(member_val, pd.Series) 
-                                  else member_val.isna().all()):
-                                # Ensure we have the members as a list
+                            # Handle scalar values directly
+                            elif not pd.isna(member_val):
                                 if isinstance(member_val, list):
                                     circle_members[circle_id] = member_val
+                                    print(f"  ✅ Using scalar list for circle {circle_id}")
                                 elif isinstance(member_val, str):
                                     try:
                                         # Try to parse if it's a string representation of a list
@@ -397,9 +420,11 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                                         members_list = ast.literal_eval(member_val)
                                         if isinstance(members_list, list):
                                             circle_members[circle_id] = members_list
+                                            print(f"  ✅ Parsed members list from scalar string for circle {circle_id}")
                                     except Exception as e:
-                                        # If parsing fails, handle as a special case
-                                        print(f"  ⚠️ Could not parse members list for circle {circle_id}: {str(e)}")
+                                        print(f"  ⚠️ Could not parse scalar members list for circle {circle_id}: {str(e)}")
+                            else:
+                                print(f"  ⚠️ NA scalar value for members in circle {circle_id}")
                         
                         # Special handling for problematic regions
                         if 'MXC' in circle_id:
