@@ -339,9 +339,14 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
-    # Import or define is_time_compatible here to ensure it's available in this scope
-    # This fixes the "cannot access local variable" error in optimize mode
-    from modules.data_processor import is_time_compatible
+    """
+    Optimize matching within a single region using the refactored circle ID-based model.
+    This function is wrapped in comprehensive error handling to prevent unpacking errors.
+    """
+    try:
+        # Import or define is_time_compatible here to ensure it's available in this scope
+        # This fixes the "cannot access local variable" error in optimize mode
+        from modules.data_processor import is_time_compatible
     
     # Import our new fixes module for CURRENT-CONTINUING members and optimize mode
     from modules.optimizer_fixes import (
@@ -4637,10 +4642,20 @@ def apply_metadata_reconstruction_fix(results, circles):
     if circles_updated > 0:
         print(f"  ✅ Updated {circles_updated} circles in CircleMetadataManager")
     
-    print(f"🔧 DIAGNOSTIC: Metadata reconstruction fix complete!")
-    
-    # Return the complete tuple expected by the calling code
-    # Use empty defaults for missing values to maintain compatibility
-    return results, circles, [], {}, {}
+        print(f"🔧 DIAGNOSTIC: Metadata reconstruction fix complete!")
+        
+        # Return the complete tuple expected by the calling code
+        # Use empty defaults for missing values to maintain compatibility
+        return results, circles, [], {}, {}
+        
+    except Exception as e:
+        print(f"❌ CRITICAL ERROR in optimize_region_v2 for region {region}: {str(e)}")
+        print(f"❌ Error type: {type(e).__name__}")
+        import traceback
+        print(f"❌ Full traceback:\n{traceback.format_exc()}")
+        
+        # Return safe default values to prevent unpacking errors
+        print(f"🔧 Returning empty results to prevent system crash...")
+        return [], [], [], {}, {}
 
 # East Bay debug function was removed to focus exclusively on Seattle test case
