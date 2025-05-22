@@ -16,7 +16,7 @@ def load_subregion_normalization_table():
     Uses a cache to avoid reloading the file multiple times.
     
     Returns:
-        DataFrame with subregion normalization mapping
+        Dictionary with subregion normalization mapping
     """
     global _subregion_normalization_cache
     
@@ -45,6 +45,41 @@ def load_subregion_normalization_table():
     print("  ⚠️ Could not find subregion normalization table, using identity normalization")
     _subregion_normalization_cache = {}  # Empty mapping as fallback
     return {}
+
+def normalize_subregion(subregion):
+    """
+    Normalize a subregion value using the subregion normalization table.
+    
+    Args:
+        subregion: The subregion value to normalize
+        
+    Returns:
+        Normalized subregion value
+    """
+    if subregion is None:
+        return None
+    
+    # Convert to string if not already
+    if not isinstance(subregion, str):
+        subregion = str(subregion)
+    
+    # Load the normalization table
+    normalization_table = load_subregion_normalization_table()
+    
+    # Try to find the value in the normalization table
+    normalized_value = normalization_table.get(subregion, subregion)
+    
+    # Log if we're making a change
+    if normalized_value != subregion:
+        print(f"  ✅ Normalized subregion from '{subregion}' to '{normalized_value}'")
+        
+    return normalized_value
+
+def clear_normalization_cache():
+    """Clear the normalization cache to force reloading from file."""
+    global _subregion_normalization_cache
+    _subregion_normalization_cache = None
+    print("  🔄 Cleared normalization cache")
 
 def safe_isna(val):
     """
@@ -339,6 +374,8 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     This is crucial after post-processing to ensure that all circles, 
     including those with post-processed participants, are properly represented.
     
+    This function normalizes all subregion values using the standardized normalization tables.
+    
     Args:
         results: List of participant results with assignments
         original_circles: Original circles dataframe (optional)
@@ -347,6 +384,9 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     Returns:
         DataFrame: Updated circles dataframe with all assigned circles
     """
+    # Clear normalization cache to ensure fresh data is loaded
+    clear_normalization_cache()
+    print("  🔄 Starting circle reconstruction with fresh normalization tables")
     # Debug flag to track special regions that need enhanced handling
     DEBUG_SPECIAL_REGIONS = True
     
@@ -509,25 +549,32 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                             else:
                                 print(f"  ⚠️ Value is NA for circle {circle_id}")
                         
-                        # Set region based on region code but always apply normalization for subregions
+                        # Set region based on region code but always normalize subregions
                         if 'MXC' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Mexico City'
-                            # Use normalized value from mapping - 'Mexico City' is correct per normalization table
-                            circle_metadata[circle_id]['subregion'] = 'Mexico City'
+                            # Use normalized value from mapping
+                            circle_metadata[circle_id]['subregion'] = normalize_subregion('Mexico City')
                         elif 'NBO' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Nairobi'
-                            # Use normalized value from mapping - 'Nairobi' is correct per normalization table
-                            circle_metadata[circle_id]['subregion'] = 'Nairobi'
+                            # Use normalized value from mapping
+                            circle_metadata[circle_id]['subregion'] = normalize_subregion('Nairobi')
                         elif 'NAP' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Napa-Sonoma'
                             # Use normalized value from mapping instead of hardcoded 'Napa Valley'
-                            circle_metadata[circle_id]['subregion'] = 'Napa/Sonoma'
+                            circle_metadata[circle_id]['subregion'] = normalize_subregion('Napa/Sonoma')
                         elif 'PSA' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Peninsula'
+                            # Normalize existing subregion if present
+                            if 'subregion' in circle_metadata[circle_id]:
+                                circle_metadata[circle_id]['subregion'] = normalize_subregion(circle_metadata[circle_id]['subregion'])
                         elif 'SPO' in circle_id:
                             circle_metadata[circle_id]['region'] = 'Sao Paulo'
-                            # Use normalized value from mapping instead of any custom value
-                            circle_metadata[circle_id]['subregion'] = 'Sao Paulo'
+                            # Use normalized value from mapping
+                            circle_metadata[circle_id]['subregion'] = normalize_subregion('Sao Paulo')
+                        
+                        # Always normalize any existing subregion values
+                        if 'subregion' in circle_metadata[circle_id]:
+                            circle_metadata[circle_id]['subregion'] = normalize_subregion(circle_metadata[circle_id]['subregion'])
         
         if not has_optimizer_metadata:
             print("  ⚠️ No optimizer metadata found in original_circles, proceeding with standard reconstruction")
