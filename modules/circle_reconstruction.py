@@ -810,13 +810,31 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 extracted_props['meeting_time'] = 'Unknown'
                 print(f"  ⚠️ Using fallback value 'Unknown' for meeting_time")
         
-        # Enhanced check for Peninsula circles - always set correct values
-        is_peninsula_circle = circle_id.startswith('IP-PSA-') or 'Peninsula' in extracted_props.get('region', '')
+        # Enhanced check for special region circles - always set correct values
+        special_region_code = None
         
-        if is_peninsula_circle:
-            print(f"  🔍 ENHANCED PENINSULA CHECK: Circle {circle_id} is a Peninsula circle")
+        # First check for direct circle ID matches
+        parts = circle_id.split('-')
+        if len(parts) >= 3 and parts[0] == 'IP':
+            region_code = parts[1]
+            if region_code in SPECIAL_REGION_CODES:
+                special_region_code = region_code
+        
+        # If no direct match, check region name for matches (fallback)
+        if special_region_code is None:
+            region_value = extracted_props.get('region', '')
+            if isinstance(region_value, str):
+                for code, mapping in SPECIAL_REGION_MAPPINGS.items():
+                    if mapping['region'] == region_value:
+                        special_region_code = code
+                        print(f"  🔍 DETECTED SPECIAL REGION: Found {mapping['region']} for circle {circle_id}")
+                        break
+        
+        # Handle special region circles with enhanced metadata
+        if special_region_code:
+            region_mapping = SPECIAL_REGION_MAPPINGS[special_region_code]
+            print(f"  🔍 ENHANCED SPECIAL REGION CHECK: Circle {circle_id} is a {region_mapping['region']} circle")
             
-            # Define Peninsula subregions deterministically based on circle ID
             try:
                 # Handle both NEW and existing circle IDs
                 if '-NEW-' in circle_id:
@@ -825,50 +843,60 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     circle_id_part = circle_id.split('-')[-1]
                 
                 # Get numeric part of ID for deterministic assignment
-                circle_num = int(circle_id_part) % 5
+                # If not a number, use string hash
+                try:
+                    circle_num = int(circle_id_part)
+                except ValueError:
+                    # Use hash of string if not an integer
+                    circle_num = sum(ord(c) for c in circle_id)
                 
-                peninsula_subregions = [
-                    "Palo Alto", 
-                    "Menlo Park", 
-                    "Mountain View/Los Altos", 
-                    "Redwood City/San Carlos", 
-                    "Mid-Peninsula"
-                ]
+                # Get subregion list for this region
+                available_subregions = region_mapping['subregions']
+                subregion_index = circle_num % len(available_subregions)
                 
                 # Get current subregion for logging
                 current_subregion = extracted_props.get('subregion', 'Unknown')
                 
-                # ALWAYS set Peninsula subregion, not just when it's Unknown or Phoenix
-                # This aggressive approach ensures we never have incorrect values
-                extracted_props['subregion'] = peninsula_subregions[circle_num]
+                # ALWAYS set the subregion for deterministic consistency, not just when unknown
+                extracted_props['subregion'] = available_subregions[subregion_index]
                 
-                print(f"  🛠️ PENINSULA FIX: Changed circle {circle_id} subregion from '{current_subregion}' to '{extracted_props['subregion']}'")
+                print(f"  🛠️ SPECIAL REGION FIX: Changed circle {circle_id} subregion from '{current_subregion}' to '{extracted_props['subregion']}'")
                 
-                # Set meeting time for Peninsula circles if unknown
-                if extracted_props.get('meeting_time') == 'Unknown' or not extracted_props.get('meeting_time'):
+                # Set meeting time if unknown or empty
+                current_meeting_time = extracted_props.get('meeting_time', 'Unknown')
+                if current_meeting_time == 'Unknown' or not current_meeting_time:
                     # Use circle number to set a varied default
-                    evening_days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
-                    time_index = int(circle_id_part) % 4
-                    extracted_props['meeting_time'] = f"{evening_days[time_index]} (Evenings)"
-                    print(f"  ✅ FIXED: Set Peninsula circle meeting time to '{extracted_props['meeting_time']}'")
+                    available_times = region_mapping['meeting_times']
+                    time_index = circle_num % len(available_times)
+                    extracted_props['meeting_time'] = available_times[time_index]
+                    print(f"  ✅ FIXED: Set {region_mapping['region']} circle meeting time to '{extracted_props['meeting_time']}'")
                 
-                # Double-check for any Phoenix references anywhere in metadata
-                if any('Phoenix' in str(val) for val in extracted_props.values()):
-                    print(f"  ⚠️ CRITICAL: Found Phoenix reference in Peninsula circle metadata after fixes")
-                    
-                    # Force-check all fields
-                    for key, val in extracted_props.items():
-                        if 'Phoenix' in str(val):
-                            print(f"  🛠️ Final cleanup: Found Phoenix in '{key}': {val}")
-                    
-                    # Make sure region is correct
-                    extracted_props['region'] = 'Peninsula'
+                # Set the region correctly
+                current_region = extracted_props.get('region', 'Unknown')
+                if current_region == 'Unknown' or current_region != region_mapping['region']:
+                    extracted_props['region'] = region_mapping['region']
+                    print(f"  ✅ FIXED: Set region from '{current_region}' to '{region_mapping['region']}'")
+                
+                # Special handling for Peninsula and Phoenix confusion
+                if special_region_code == 'PSA':
+                    # Double-check for any Phoenix references anywhere in metadata
+                    if any('Phoenix' in str(val) for val in extracted_props.values()):
+                        print(f"  ⚠️ CRITICAL: Found Phoenix reference in Peninsula circle metadata after fixes")
+                        
+                        # Force-check all fields
+                        for key, val in extracted_props.items():
+                            if 'Phoenix' in str(val):
+                                print(f"  🛠️ Final cleanup: Found Phoenix in '{key}': {val}")
+                        
+                        # Make sure region is correct
+                        extracted_props['region'] = 'Peninsula'
                 
             except Exception as e:
-                print(f"  ⚠️ Error processing Peninsula circle: {str(e)}")
-                # Apply default fix
-                extracted_props['subregion'] = "Mid-Peninsula"
-                extracted_props['meeting_time'] = "Monday (Evenings)"
+                print(f"  ⚠️ Error processing {region_mapping['region']} circle: {str(e)}")
+                # Apply default fix for this special region
+                extracted_props['subregion'] = region_mapping['subregions'][0]
+                extracted_props['meeting_time'] = region_mapping['meeting_times'][0]
+                extracted_props['region'] = region_mapping['region']
         
         # Set the extracted properties in circle metadata
         circle_metadata[circle_id]['region'] = extracted_props['region']
