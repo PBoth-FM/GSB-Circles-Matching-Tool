@@ -4344,51 +4344,124 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     else:
         print(f"  ℹ️ No additional participants were matched during post-processing")
     
-    # COMPREHENSIVE FIX: Update Results CSV and CircleMetadataManager with sequential circle renaming
-    # This ensures both data sources stay synchronized when circles are renamed
-    if 'circle_id_mapping' in locals() and circle_id_mapping:
-        print(f"\n🔄 APPLYING COMPREHENSIVE SEQUENTIAL RENAMING TO ALL DATA SOURCES:")
-        print(f"  Renaming {len(circle_id_mapping)} circles")
+    # POST-PROCESSING SEQUENTIAL RENAMING: Comprehensive fix for missing circles and sequential naming
+    # This ensures all circles appear in both Results CSV and UI, with sequential naming as a bonus
+    print(f"\n🔄 POST-PROCESSING: SEQUENTIAL RENAMING AND DATA SYNCHRONIZATION")
+    
+    # Step 1: Extract all new circles from the results data
+    new_circles_in_results = {}
+    for result in updated_results:
+        circle_id = result.get('proposed_NEW_circles_id')
+        if circle_id and 'NEW' in circle_id and circle_id != 'UNMATCHED':
+            if circle_id not in new_circles_in_results:
+                new_circles_in_results[circle_id] = []
+            new_circles_in_results[circle_id].append(result['Encoded ID'])
+    
+    print(f"  Found {len(new_circles_in_results)} new circles in results data:")
+    for circle_id, members in new_circles_in_results.items():
+        print(f"    {circle_id}: {len(members)} members")
+    
+    # Step 2: Group new circles by region and create sequential renaming mapping
+    circles_by_region = {}
+    post_process_mapping = {}
+    
+    for circle_id in new_circles_in_results.keys():
+        # Extract region from circle ID (format: IP-BOS-NEW-28 -> BOS)
+        parts = circle_id.split('-')
+        if len(parts) >= 3 and parts[1] == 'NEW':
+            format_prefix = parts[0]  # IP or VO
+            region_code = parts[2]    # BOS, NYC, etc.
+        elif len(parts) >= 4 and parts[2] == 'NEW':
+            format_prefix = parts[0]  # IP or VO
+            region_code = parts[1]    # BOS, NYC, etc.
+        else:
+            # Fallback parsing
+            region_code = 'UNKNOWN'
+            format_prefix = 'IP'
         
-        # 1. Update the Results CSV data (updated_results)
+        if region_code not in circles_by_region:
+            circles_by_region[region_code] = []
+        circles_by_region[region_code].append({
+            'old_id': circle_id,
+            'format_prefix': format_prefix,
+            'region_code': region_code,
+            'member_count': len(new_circles_in_results[circle_id])
+        })
+    
+    # Step 3: Create sequential IDs for each region
+    for region_code, region_circles in circles_by_region.items():
+        # Sort by member count (descending) to maintain some consistency
+        region_circles.sort(key=lambda x: x['member_count'], reverse=True)
+        
+        for idx, circle_info in enumerate(region_circles, start=1):
+            old_id = circle_info['old_id']
+            format_prefix = circle_info['format_prefix']
+            new_id = f"{format_prefix}-{region_code}-NEW-{str(idx).zfill(2)}"
+            
+            if old_id != new_id:
+                post_process_mapping[old_id] = new_id
+                print(f"    Sequential rename: {old_id} → {new_id}")
+    
+    # Step 4: Apply the sequential renaming to all data sources
+    if post_process_mapping:
+        print(f"\n  Applying sequential renaming to {len(post_process_mapping)} circles:")
+        
+        # Update Results CSV data
         for result in updated_results:
             old_circle_id = result.get('proposed_NEW_circles_id')
-            if old_circle_id and old_circle_id in circle_id_mapping:
-                new_circle_id = circle_id_mapping[old_circle_id]
+            if old_circle_id and old_circle_id in post_process_mapping:
+                new_circle_id = post_process_mapping[old_circle_id]
                 result['proposed_NEW_circles_id'] = new_circle_id
-                print(f"    Updated Results CSV: {old_circle_id} → {new_circle_id}")
+                print(f"    Results CSV: {old_circle_id} → {new_circle_id}")
         
-        # 2. Update the circles data (metadata for CircleMetadataManager)
+        # Update circles metadata
         for circle in circles:
             old_circle_id = circle.get('circle_id')
-            if old_circle_id and old_circle_id in circle_id_mapping:
-                new_circle_id = circle_id_mapping[old_circle_id]
+            if old_circle_id and old_circle_id in post_process_mapping:
+                new_circle_id = post_process_mapping[old_circle_id]
                 circle['circle_id'] = new_circle_id
-                print(f"    Updated Circle Metadata: {old_circle_id} → {new_circle_id}")
+                print(f"    Circle Metadata: {old_circle_id} → {new_circle_id}")
+    
+    # Step 5: Ensure CircleMetadataManager has all circles (regardless of renaming)
+    if hasattr(st, 'session_state') and hasattr(st.session_state, 'circle_metadata_manager'):
+        manager = st.session_state.circle_metadata_manager
+        circles_added = 0
+        circles_updated = 0
         
-        # 3. Update the CircleMetadataManager in session state if it exists
-        if hasattr(st, 'session_state') and hasattr(st.session_state, 'circle_metadata_manager'):
-            manager = st.session_state.circle_metadata_manager
-            circles_updated = 0
-            
-            # Get all circle IDs that need renaming
-            for old_circle_id, new_circle_id in circle_id_mapping.items():
-                if manager.has_circle(old_circle_id):
-                    # Get the old circle data
-                    old_circle_data = manager.get_circle(old_circle_id)
-                    if old_circle_data:
-                        # Remove the old circle
-                        manager.remove_circle(old_circle_id)
-                        # Add it back with the new ID
-                        old_circle_data['circle_id'] = new_circle_id
-                        manager.add_circle(new_circle_id, old_circle_data)
-                        circles_updated += 1
-                        print(f"    Updated CircleMetadataManager: {old_circle_id} → {new_circle_id}")
-            
-            if circles_updated > 0:
-                print(f"  ✅ Successfully updated {circles_updated} circles in CircleMetadataManager")
+        # First, apply any renaming
+        for old_circle_id, new_circle_id in post_process_mapping.items():
+            if manager.has_circle(old_circle_id):
+                old_circle_data = manager.get_circle(old_circle_id)
+                if old_circle_data:
+                    manager.remove_circle(old_circle_id)
+                    old_circle_data['circle_id'] = new_circle_id
+                    manager.add_circle(new_circle_id, old_circle_data)
+                    circles_updated += 1
         
-        print(f"  ✅ Sequential renaming applied to all data sources")
+        # Then, ensure all circles from results are in the manager
+        for result_circle_id, members in new_circles_in_results.items():
+            # Use the renamed ID if it exists
+            circle_id = post_process_mapping.get(result_circle_id, result_circle_id)
+            
+            if not manager.has_circle(circle_id):
+                # Find matching circle in our circles list
+                circle_data = None
+                for circle in circles:
+                    if circle.get('circle_id') == circle_id:
+                        circle_data = circle
+                        break
+                
+                if circle_data:
+                    manager.add_circle(circle_id, circle_data)
+                    circles_added += 1
+                    print(f"    Added missing circle to manager: {circle_id}")
+        
+        if circles_updated > 0:
+            print(f"  ✅ Updated {circles_updated} circles in CircleMetadataManager")
+        if circles_added > 0:
+            print(f"  ✅ Added {circles_added} missing circles to CircleMetadataManager")
+    
+    print(f"  ✅ Post-processing complete: All circles should now be visible in both Results CSV and UI")
     
     # Return the final logs copy with updated results
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
