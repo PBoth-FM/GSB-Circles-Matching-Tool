@@ -364,18 +364,47 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         # Check if there's optimizer metadata in the original circles
         has_optimizer_metadata = False
         if isinstance(original_circles, pd.DataFrame) and not original_circles.empty:
-            # Check for metadata_source column which would indicate optimizer metadata
-            if 'metadata_source' in original_circles.columns:
-                optimizer_circles = original_circles[original_circles['metadata_source'] == 'optimizer']
-                if not optimizer_circles.empty:
-                    print(f"  ✅ Found {len(optimizer_circles)} circles with optimizer metadata")
-                    has_optimizer_metadata = True
-                    
-                    # Use the optimizer's circle metadata as our starting point
-                    for _, circle in optimizer_circles.iterrows():
+            # Consider ALL circles from the optimizer as having standardized metadata
+            # This ensures we use the enhanced metadata from all circle creation points
+            if len(original_circles) > 0:
+                print(f"  ✅ Using enhanced metadata from {len(original_circles)} optimizer-generated circles")
+                has_optimizer_metadata = True
+                
+                # Use the optimizer's circle metadata as our starting point
+                for _, circle in original_circles.iterrows():
+                    if 'circle_id' in circle:
                         circle_id = circle['circle_id']
                         circle_metadata[circle_id] = circle.to_dict()
-                        print(f"  ✅ Loaded optimizer metadata for circle {circle_id}")
+                        
+                        # Store the members list separately
+                        if 'members' in circle and not pd.isna(circle['members']):
+                            # Ensure we have the members as a list
+                            if isinstance(circle['members'], list):
+                                circle_members[circle_id] = circle['members']
+                            elif isinstance(circle['members'], str):
+                                try:
+                                    # Try to parse if it's a string representation of a list
+                                    import ast
+                                    members_list = ast.literal_eval(circle['members'])
+                                    if isinstance(members_list, list):
+                                        circle_members[circle_id] = members_list
+                                except:
+                                    # If parsing fails, handle as a special case
+                                    print(f"  ⚠️ Could not parse members list for circle {circle_id}")
+                        
+                        # Special handling for problematic regions
+                        if 'MXC' in circle_id:
+                            circle_metadata[circle_id]['region'] = 'Mexico City'
+                            circle_metadata[circle_id]['subregion'] = 'Mexico City'
+                        elif 'NBO' in circle_id:
+                            circle_metadata[circle_id]['region'] = 'Nairobi'
+                            circle_metadata[circle_id]['subregion'] = 'Nairobi'
+                        elif 'NAP' in circle_id:
+                            circle_metadata[circle_id]['region'] = 'Napa-Sonoma'
+                            circle_metadata[circle_id]['subregion'] = 'Napa Valley'
+                        elif 'PSA' in circle_id:
+                            circle_metadata[circle_id]['region'] = 'Peninsula'
+                            # Keep the original subregion for Peninsula
         
         if not has_optimizer_metadata:
             print("  ⚠️ No optimizer metadata found in original_circles, proceeding with standard reconstruction")
@@ -1198,6 +1227,11 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             
     # Convert circle metadata to DataFrame
     circles_df = pd.DataFrame(list(circle_metadata.values()))
+    
+    # Add metadata_source to indicate these circles have enhanced optimizer metadata
+    if use_standardized_metadata and not circles_df.empty:
+        circles_df['metadata_source'] = 'optimizer'
+        print(f"  ✅ Added metadata_source='optimizer' to {len(circles_df)} circles")
     
     # If we have results, do final verification and fix of member counts based on actual members list
     print("\n🔍 CRITICAL VERIFICATION: Double-checking member counts against actual members list")
