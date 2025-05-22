@@ -1842,19 +1842,34 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 results.append(participant)
                 processed_ids.add(encoded_id)
         
-        # Add the circle to circles list
-        circle_dict = {
-            'circle_id': circle_id,
-            'region': region,
-            'subregion': circle_data['subregion'],
-            'meeting_time': circle_data['meeting_time'],
-            'member_count': len(circle_data['members']),
-            'new_members': circle_data['new_members'],  # Number of newly added members
-            'always_hosts': circle_data['always_hosts'],
-            'sometimes_hosts': circle_data['sometimes_hosts'],
-            'members': circle_data['members'],
-            'max_additions': circle_data.get('max_additions', 0)  # Include max_additions from the circle_data
-        }
+        # Add the circle to circles list with enhanced metadata
+        circle_dict = generate_circle_metadata(
+            circle_id=circle_id,
+            members_list=circle_data['members'],
+            region=region,
+            subregion=circle_data['subregion'],
+            meeting_time=circle_data['meeting_time'],
+            max_additions=circle_data.get('max_additions', 0),
+            debug_mode=debug_mode
+        )
+        
+        # Add additional fields
+        circle_dict['is_existing'] = True
+        circle_dict['new_members'] = circle_data['new_members']  # Number of newly added members
+        circle_dict['always_hosts'] = circle_data['always_hosts']
+        circle_dict['sometimes_hosts'] = circle_data['sometimes_hosts']
+        
+        # Special region handling for problematic regions in continuing circles
+        if 'MXC' in circle_id:
+            circle_dict['region'] = 'Mexico City'
+            circle_dict['subregion'] = 'Mexico City'
+        elif 'NBO' in circle_id:
+            circle_dict['region'] = 'Nairobi'
+            circle_dict['subregion'] = 'Nairobi'
+        elif 'NAP' in circle_id:
+            circle_dict['region'] = 'Napa-Sonoma'
+            circle_dict['subregion'] = 'Napa Valley'
+            
         circles.append(circle_dict)
     
     # For small circles that couldn't grow, set preferences from circle data
@@ -2738,8 +2753,36 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             circle_data['members'] = updated_members
             circle_data['member_count'] = len(updated_members)
             
-            # Add this circle to the circles list (it's already in existing_circles)
-            circles.append(circle_data)
+            # Create enhanced metadata for this circle
+            enhanced_metadata = generate_circle_metadata(
+                circle_id=circle_id,
+                members_list=updated_members,
+                region=region,
+                subregion=circle_data['subregion'],
+                meeting_time=circle_data['meeting_time'],
+                max_additions=circle_data.get('max_additions', 0),
+                debug_mode=debug_mode
+            )
+            
+            # Add additional fields
+            enhanced_metadata['is_existing'] = True
+            enhanced_metadata['new_members'] = len(new_members)
+            enhanced_metadata['always_hosts'] = circle_data.get('always_hosts', 0)
+            enhanced_metadata['sometimes_hosts'] = circle_data.get('sometimes_hosts', 0)
+            
+            # Special region handling for problematic regions in continuing circles
+            if 'MXC' in circle_id:
+                enhanced_metadata['region'] = 'Mexico City'
+                enhanced_metadata['subregion'] = 'Mexico City'
+            elif 'NBO' in circle_id:
+                enhanced_metadata['region'] = 'Nairobi'
+                enhanced_metadata['subregion'] = 'Nairobi'
+            elif 'NAP' in circle_id:
+                enhanced_metadata['region'] = 'Napa-Sonoma'
+                enhanced_metadata['subregion'] = 'Napa Valley'
+            
+            # Add this circle to the circles list with enhanced metadata
+            circles.append(enhanced_metadata)
             
         # DEBUG: Check if our example participants were assigned anywhere
         for p_id in ['73177784103', '50625303450']:
@@ -2765,13 +2808,16 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             # Generate circle ID using region code
             circle_id = generate_circle_id(region, subregion, j+1, is_new=True)
             
-            circle = {
-                'circle_id': circle_id,
-                'region': region,
-                'subregion': subregion,
-                'meeting_time': time_slot,
-                'members': []
-            }
+            # Use enhanced metadata function for new circles
+            circle = generate_circle_metadata(
+                circle_id=circle_id,
+                members_list=[],  # Start with empty members list
+                region=region,
+                subregion=subregion,
+                meeting_time=time_slot,
+                max_additions=0,  # New circles don't have additional capacity initially
+                debug_mode=debug_mode
+            )
             
             for p in participants:
                 if x[p, j].value() and abs(x[p, j].value() - 1) < 1e-5:  # Participant is assigned to this circle
