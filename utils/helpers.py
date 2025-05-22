@@ -94,6 +94,49 @@ def generate_download_link(df):
         # CRITICAL FIX: Apply the same metadata fixes to the CSV output
         # Check if we have unknown values in subregion or meeting time columns
         if 'proposed_NEW_Subregion' in output_df.columns or 'proposed_NEW_DayTime' in output_df.columns:
+            
+            # ENHANCED FIX: Normalize all subregion values using standardized normalization tables
+            try:
+                # Import normalize_subregion function from circle_reconstruction
+                from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
+                
+                # Clear the normalization cache to ensure fresh data
+                clear_normalization_cache()
+                print("\n🔄 NORMALIZING SUBREGION VALUES IN CSV EXPORT")
+                
+                # Track special problem regions for enhanced logging
+                problem_subregions = ['Napa Valley', 'North Spokane', 'Unknown']
+                normalized_count = 0
+                problem_fixed = 0
+                
+                # Apply normalization to proposed_NEW_Subregion column
+                if 'proposed_NEW_Subregion' in output_df.columns:
+                    # Create a separate Series for comparison
+                    original_values = output_df['proposed_NEW_Subregion'].copy()
+                    
+                    # Apply normalization
+                    output_df['proposed_NEW_Subregion'] = output_df['proposed_NEW_Subregion'].apply(
+                        lambda x: normalize_subregion(x) if pd.notnull(x) else x
+                    )
+                    
+                    # Count changes
+                    changed_mask = original_values != output_df['proposed_NEW_Subregion']
+                    normalized_count = changed_mask.sum()
+                    
+                    # Count problem region fixes
+                    if normalized_count > 0:
+                        for problem in problem_subregions:
+                            problem_mask = (original_values == problem) & changed_mask
+                            problem_count = problem_mask.sum()
+                            if problem_count > 0:
+                                problem_fixed += problem_count
+                                print(f"  ✅ Fixed {problem_count} instances of '{problem}' in CSV export")
+                        
+                    print(f"  Normalized {normalized_count} subregion values in CSV export")
+            
+            except Exception as e:
+                print(f"  ⚠️ Error normalizing subregion values in CSV: {str(e)}")
+            
             # Check for unknown values
             unknown_subregions = 0
             unknown_meeting_times = 0

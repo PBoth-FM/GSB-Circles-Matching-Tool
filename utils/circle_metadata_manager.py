@@ -453,6 +453,52 @@ class CircleMetadataManager:
                         self.logger.warning(f"Could not convert {field}='{circle[field]}' to int for {circle_id}, setting to 0")
                         circle[field] = 0
     
+    def normalize_subregion_values(self) -> None:
+        """
+        Normalize all subregion values using the standardized normalization tables.
+        This ensures consistent subregion naming throughout the application and CSV exports.
+        """
+        self.logger.info("Normalizing subregion values")
+        
+        # Import normalize_subregion function from circle_reconstruction
+        try:
+            from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
+            
+            # Clear the normalization cache to ensure fresh data
+            clear_normalization_cache()
+            print("\n🔄 SUBREGION NORMALIZATION: Normalizing all circle subregion values")
+            
+            # Track special problem regions for enhanced logging
+            problem_subregions = ['Napa Valley', 'North Spokane', 'Unknown']
+            normalized_count = 0
+            problem_fixed = 0
+            
+            # Process each circle
+            for circle_id, circle in self.circles.items():
+                if 'subregion' in circle and circle['subregion']:
+                    # Store original value for comparison
+                    original_value = circle['subregion']
+                    
+                    # Normalize the subregion
+                    normalized_value = normalize_subregion(original_value)
+                    
+                    # Update if different
+                    if original_value != normalized_value:
+                        circle['subregion'] = normalized_value
+                        normalized_count += 1
+                        
+                        # Special logging for problem regions
+                        if original_value in problem_subregions:
+                            problem_fixed += 1
+                            print(f"  ✅ Fixed problem subregion for {circle_id}: '{original_value}' → '{normalized_value}'")
+            
+            print(f"  Normalized {normalized_count} subregion values ({problem_fixed} were from known problem regions)")
+            self.logger.info(f"Normalized {normalized_count} subregion values ({problem_fixed} from problem regions)")
+            
+        except Exception as e:
+            print(f"  ⚠️ Error normalizing subregion values: {str(e)}")
+            self.logger.error(f"Error normalizing subregion values: {str(e)}")
+    
     def fill_missing_metadata(self) -> None:
         """Fill in missing metadata fields with default or derived values"""
         for circle_id, circle in self.circles.items():

@@ -4133,11 +4133,44 @@ def render_circle_table():
     # Get the data - from manager or directly from session state
     if manager:
         print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using CircleMetadataManager):")
+        
+        # Force normalization of subregion values in the CircleMetadataManager before getting the DataFrame
+        try:
+            # Make sure subregion values are normalized
+            manager.normalize_subregion_values()
+            print("  ✅ Applied subregion normalization in CircleMetadataManager")
+        except Exception as e:
+            print(f"  ⚠️ Error normalizing subregion values: {str(e)}")
+        
         circles_df = manager.get_circles_dataframe()
         print(f"  Retrieved {len(circles_df)} circles from CircleMetadataManager")
     else:
         print("\n🔍 CIRCLE COMPOSITION TABLE DEBUG (Using session state directly):")
         circles_df = st.session_state.matched_circles.copy()
+        
+        # Normalize subregion values directly in the DataFrame
+        try:
+            from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
+            
+            # Clear cache to ensure fresh normalization data
+            clear_normalization_cache()
+            
+            # Normalize subregion values
+            if 'subregion' in circles_df.columns:
+                # Store original values for comparison
+                original_values = circles_df['subregion'].copy()
+                
+                # Apply normalization
+                circles_df['subregion'] = circles_df['subregion'].apply(
+                    lambda x: normalize_subregion(x) if pd.notnull(x) else x
+                )
+                
+                # Count changes
+                changed = (original_values != circles_df['subregion']).sum()
+                if changed > 0:
+                    print(f"  ✅ Normalized {changed} subregion values in circles DataFrame")
+        except Exception as e:
+            print(f"  ⚠️ Error normalizing subregion values in UI: {str(e)}")
     
     # Add special diagnostic section for test circles
     with st.expander("Circle Inspector (Debug Tool)"):
