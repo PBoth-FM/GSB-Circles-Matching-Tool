@@ -1054,7 +1054,7 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         # Otherwise check the usual way
         elif len(parts) >= 3 and parts[0] == 'IP':
             region_code = parts[1]
-            if region_code in SPECIAL_REGION_CODES:
+            if region_code in REGION_CODE_TO_NAME:
                 special_region_code = region_code
         
         # IMPROVED: Use the actual region data instead of hardcoded mappings
