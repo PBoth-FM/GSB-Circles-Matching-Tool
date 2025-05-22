@@ -262,7 +262,7 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     # Define special region codes that need enhanced metadata handling
     SPECIAL_REGION_CODES = ['PSA', 'NAP', 'MXC', 'NBO', 'SAN', 'SPO']
     
-    # Define mappings for special region circles
+    # Define mappings for special region circles using NORMALIZED values from the mapping files
     SPECIAL_REGION_MAPPINGS = {
         'PSA': {
             'region': 'Peninsula',
@@ -270,28 +270,28 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             'meeting_times': ["Monday (Evenings)", "Tuesday (Evenings)", "Wednesday (Evenings)", "Thursday (Evenings)"]
         },
         'NAP': {
-            'region': 'Napa',
-            'subregions': ["Napa", "Napa Valley", "North Bay"],
+            'region': 'Napa-Sonoma', # Normalized from mapping file
+            'subregions': ["Napa/Sonoma"], # Normalized from mapping file
             'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
         },
         'MXC': {
             'region': 'Mexico City',
-            'subregions': ["Mexico City", "Polanco", "Santa Fe"],
+            'subregions': ["Mexico City"], # Normalized from mapping file - NOT "Santa Fe"
             'meeting_times': ["Tuesday (Evenings)", "Thursday (Evenings)"]
         },
         'NBO': {
             'region': 'Nairobi',
-            'subregions': ["Nairobi", "Karen", "Westlands"],
+            'subregions': ["Nairobi"], # Normalized from mapping file - NOT "Karen" 
             'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
         },
         'SAN': {
             'region': 'San Diego',
-            'subregions': ["La Jolla", "Downtown", "North County"],
+            'subregions': ["San Diego"], # Normalized from mapping file
             'meeting_times': ["Tuesday (Evenings)", "Thursday (Evenings)"]
         },
         'SPO': {
             'region': 'Sao Paulo',
-            'subregions': ["Sao Paulo", "Pinheiros", "Jardins"],
+            'subregions': ["Sao Paulo"], # Normalized from mapping file
             'meeting_times': ["Monday (Evenings)", "Wednesday (Evenings)"]
         }
     }
@@ -614,25 +614,35 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                                 print(f"  ✅ FIXED: Found correct subregion '{correct_subregion}' in {subregion_col}")
                                 break
                         
-                        # If no correct subregion found, use a default Peninsula subregion
+                        # If no correct subregion found, use a standardized approach with normalized values from mapping
                         if not correct_subregion:
-                            # Extract circle number to determine subregion (rough mapping)
-                            if circle_id.startswith('IP-PSA-'):
-                                circle_num = int(circle_id.split('-')[-1]) % 5
-                                if circle_num == 0:
-                                    correct_subregion = "Palo Alto"
-                                elif circle_num == 1:
-                                    correct_subregion = "Menlo Park"
-                                elif circle_num == 2:
-                                    correct_subregion = "Mountain View/Los Altos"
-                                elif circle_num == 3:
-                                    correct_subregion = "Redwood City/San Carlos"
+                            # Extract circle number to determine subregion consistently
+                            if circle_id and '-' in circle_id:
+                                parts = circle_id.split('-')
+                                if len(parts) >= 3 and parts[-1].isdigit():
+                                    circle_num = int(parts[-1])
+                                    
+                                    # Get region code from circle ID
+                                    region_code = 'PSA' # Default for Peninsula
+                                    if len(parts) >= 2:
+                                        region_code = parts[1]
+                                    
+                                    # Use valid mappings from our SPECIAL_REGION_MAPPINGS
+                                    if region_code in SPECIAL_REGION_MAPPINGS:
+                                        # Get list of valid subregions for this region
+                                        valid_subregions = SPECIAL_REGION_MAPPINGS[region_code]['subregions']
+                                        # Use consistent mapping based on circle number
+                                        idx = circle_num % len(valid_subregions)
+                                        correct_subregion = valid_subregions[idx]
+                                        print(f"  📊 Using normalized subregion '{correct_subregion}' for {region_code} circle based on mapping")
+                                    else:
+                                        # Fallback to first Peninsula subregion
+                                        correct_subregion = SPECIAL_REGION_MAPPINGS['PSA']['subregions'][0]
+                                        print(f"  📊 Fallback: Using normalized subregion '{correct_subregion}' for Peninsula circle")
                                 else:
-                                    correct_subregion = "Mid-Peninsula"
-                                print(f"  ⚠️ FALLBACK: Using default subregion '{correct_subregion}' based on circle ID")
-                            else:
-                                correct_subregion = "Palo Alto"  # Default to most common subregion
-                                print(f"  ⚠️ FALLBACK: Using default subregion 'Palo Alto' for Peninsula circle")
+                                    # If no circle number, use first valid subregion
+                                    correct_subregion = SPECIAL_REGION_MAPPINGS['PSA']['subregions'][0]
+                                    print(f"  📊 Using first normalized subregion '{correct_subregion}' for Peninsula circle")
                         
                         # Use the corrected subregion
                         extracted_props['subregion'] = correct_subregion
@@ -669,23 +679,39 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                                 print(f"  ✅ FIXED: Found correct meeting time '{correct_time}' in {time_col}")
                                 break
                         
-                        # If no correct time found, use a reasonable default based on circle ID
+                        # If no correct time found, use consistent meeting times from region mappings
                         if not correct_time:
-                            # Use circle number to set a varied default (rough mapping)
-                            if circle_id.startswith('IP-PSA-'):
-                                circle_num = int(circle_id.split('-')[-1]) % 4
-                                if circle_num == 0:
-                                    correct_time = "Monday (Evenings)"
-                                elif circle_num == 1:
-                                    correct_time = "Tuesday (Evenings)"
-                                elif circle_num == 2:
-                                    correct_time = "Wednesday (Evenings)"
+                            # Extract region code and circle number to determine meeting time consistently
+                            if circle_id and '-' in circle_id:
+                                parts = circle_id.split('-')
+                                if len(parts) >= 3 and parts[-1].isdigit():
+                                    circle_num = int(parts[-1])
+                                    
+                                    # Get region code from circle ID
+                                    region_code = 'PSA' # Default for Peninsula
+                                    if len(parts) >= 2:
+                                        region_code = parts[1]
+                                    
+                                    # Use valid mappings from our SPECIAL_REGION_MAPPINGS
+                                    if region_code in SPECIAL_REGION_MAPPINGS:
+                                        # Get list of valid meeting times for this region
+                                        valid_times = SPECIAL_REGION_MAPPINGS[region_code]['meeting_times']
+                                        # Use consistent mapping based on circle number
+                                        idx = circle_num % len(valid_times)
+                                        correct_time = valid_times[idx]
+                                        print(f"  📊 Using normalized meeting time '{correct_time}' for {region_code} circle based on mapping")
+                                    else:
+                                        # Fallback to first Peninsula meeting time
+                                        correct_time = SPECIAL_REGION_MAPPINGS['PSA']['meeting_times'][0]
+                                        print(f"  📊 Fallback: Using normalized meeting time '{correct_time}' for Peninsula circle")
                                 else:
-                                    correct_time = "Thursday (Evenings)"
-                                print(f"  ⚠️ FALLBACK: Using default meeting time '{correct_time}' based on circle ID")
+                                    # If no circle number, use first valid meeting time
+                                    correct_time = SPECIAL_REGION_MAPPINGS['PSA']['meeting_times'][0]
+                                    print(f"  📊 Using first normalized meeting time '{correct_time}' for Peninsula circle")
                             else:
+                                # No valid circle ID format - use default time from PSA
                                 correct_time = "Wednesday (Evenings)"  # Most common meeting time
-                                print(f"  ⚠️ FALLBACK: Using default meeting time 'Wednesday (Evenings)' for Peninsula circle")
+                                print(f"  📊 Fallback: Using standard meeting time 'Wednesday (Evenings)' for circle")
                         
                         # Use the corrected meeting time
                         extracted_props['meeting_time'] = correct_time
