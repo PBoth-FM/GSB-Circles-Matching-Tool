@@ -876,31 +876,115 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     # Use hash of string if not an integer
                     circle_num = sum(ord(c) for c in circle_id)
                 
-                # Get subregion list for this region
+                # Get normalized values from mappings
+                normalized_region = region_mapping['region']
                 available_subregions = region_mapping['subregions']
-                subregion_index = circle_num % len(available_subregions)
+                available_meeting_times = region_mapping['meeting_times']
                 
-                # Get current subregion for logging
-                current_subregion = extracted_props.get('subregion', 'Unknown')
+                # Always set region to normalized value
+                extracted_props['region'] = normalized_region
+                print(f"  ✅ SPECIAL REGION: Set normalized region='{normalized_region}' for {circle_id}")
                 
-                # ALWAYS set the subregion for deterministic consistency, not just when unknown
-                extracted_props['subregion'] = available_subregions[subregion_index]
+                # Different handling for CONTINUING vs NEW circles
+                if is_continuing_circle:
+                    print(f"  🔄 CONTINUING CIRCLE: {circle_id} - Preserving normalized metadata")
+                    
+                    # For continuing circles (like NAP, NBO, MXC), get current values for logging
+                    current_subregion = extracted_props.get('subregion', 'Unknown')
+                    current_meeting_time = extracted_props.get('meeting_time', 'Unknown')
+                    
+                    # Check if the current subregion needs fixing (missing, unknown, or has Phoenix)
+                    needs_subregion_fix = (
+                        current_subregion == 'Unknown' or 
+                        not current_subregion or 
+                        'Phoenix' in current_subregion
+                    )
+                    
+                    # For continuing circles, check if any member has valid subregion info
+                    if needs_subregion_fix:
+                        continuing_subregions = []
+                        for _, row in members_df.iterrows():
+                            if 'Status' in row and str(row['Status']).upper() == 'CURRENT-CONTINUING':
+                                for col in ['Current_Subregion', 'Requested_Subregion']:
+                                    if col in row and not pd.isna(row[col]) and row[col]:
+                                        subregion_val = str(row[col])
+                                        continuing_subregions.append(subregion_val)
+                                        break
+                        
+                        # Use first valid subregion from continuing members if available
+                        if continuing_subregions:
+                            extracted_props['subregion'] = continuing_subregions[0]
+                            print(f"  ✅ CONTINUING: Using member subregion '{extracted_props['subregion']}' for {circle_id}")
+                        else:
+                            # Otherwise use first normalized subregion for this region
+                            extracted_props['subregion'] = available_subregions[0]
+                            print(f"  ✅ CONTINUING: Using primary normalized subregion '{extracted_props['subregion']}' for {circle_id}")
+                    else:
+                        print(f"  ✅ CONTINUING: Keeping valid subregion '{current_subregion}' for {circle_id}")
+                    
+                    # Check if meeting time needs fixing (missing or unknown)
+                    needs_time_fix = (
+                        current_meeting_time == 'Unknown' or 
+                        not current_meeting_time
+                    )
+                    
+                    # For continuing circles, check if any member has valid meeting time
+                    if needs_time_fix:
+                        continuing_meeting_times = []
+                        for _, row in members_df.iterrows():
+                            if 'Status' in row and str(row['Status']).upper() == 'CURRENT-CONTINUING':
+                                for col in ['Current_DayTime', 'Current_Meeting_Day', 'Current Meeting Day']:
+                                    if col in row and not pd.isna(row[col]) and row[col]:
+                                        time_val = str(row[col])
+                                        continuing_meeting_times.append(time_val)
+                                        break
+                        
+                        # Use first valid meeting time from continuing members if available
+                        if continuing_meeting_times:
+                            from modules.data_processor import standardize_time_preference
+                            extracted_props['meeting_time'] = standardize_time_preference(continuing_meeting_times[0])
+                            print(f"  ✅ CONTINUING: Using member meeting time '{extracted_props['meeting_time']}' for {circle_id}")
+                        else:
+                            # Otherwise use deterministic meeting time based on circle ID
+                            time_index = circle_num % len(available_meeting_times)
+                            extracted_props['meeting_time'] = available_meeting_times[time_index]
+                            print(f"  ✅ CONTINUING: Using deterministic meeting time '{extracted_props['meeting_time']}' for {circle_id}")
+                    else:
+                        print(f"  ✅ CONTINUING: Keeping valid meeting time '{current_meeting_time}' for {circle_id}")
                 
-                print(f"  🛠️ SPECIAL REGION FIX: Changed circle {circle_id} subregion from '{current_subregion}' to '{extracted_props['subregion']}'")
+                else:
+                    # For NEW circles, use deterministic assignment for consistency
+                    print(f"  🆕 NEW CIRCLE: {circle_id} - Using deterministic normalized assignment")
+                    
+                    # For new circles, get current values for logging
+                    current_subregion = extracted_props.get('subregion', 'Unknown')
+                    current_meeting_time = extracted_props.get('meeting_time', 'Unknown')
+                    
+                    # For new circles, use deterministic subregion assignment
+                    subregion_index = circle_num % len(available_subregions)
+                    extracted_props['subregion'] = available_subregions[subregion_index]
+                    print(f"  ✅ NEW CIRCLE: Set normalized subregion '{extracted_props['subregion']}' for {circle_id}")
+                    
+                    # For new circles, set meeting time deterministically if needed
+                    if current_meeting_time == 'Unknown' or not current_meeting_time:
+                        time_index = circle_num % len(available_meeting_times)
+                        extracted_props['meeting_time'] = available_meeting_times[time_index]
+                        print(f"  ✅ NEW CIRCLE: Set meeting time '{extracted_props['meeting_time']}' for {circle_id}")
+                    else:
+                        print(f"  ✅ NEW CIRCLE: Keeping valid meeting time '{current_meeting_time}' for {circle_id}")
                 
-                # Set meeting time if unknown or empty
-                current_meeting_time = extracted_props.get('meeting_time', 'Unknown')
-                if current_meeting_time == 'Unknown' or not current_meeting_time:
-                    # Use circle number to set a varied default
-                    available_times = region_mapping['meeting_times']
-                    time_index = circle_num % len(available_times)
-                    extracted_props['meeting_time'] = available_times[time_index]
-                    print(f"  ✅ FIXED: Set {region_mapping['region']} circle meeting time to '{extracted_props['meeting_time']}'")
+                # This line is handled at the beginning of the special region code block
+                # We already set the region to the normalized value earlier, so this code is redundant
+                # But we'll keep a debug message for clarity
+                print(f"  ✅ FINAL CHECK: Region for {circle_id} is '{extracted_props.get('region', 'Unknown')}'")
+                print(f"  ✅ FINAL CHECK: Subregion for {circle_id} is '{extracted_props.get('subregion', 'Unknown')}'")
+                print(f"  ✅ FINAL CHECK: Meeting time for {circle_id} is '{extracted_props.get('meeting_time', 'Unknown')}'")
                 
-                # Set the region correctly
-                current_region = extracted_props.get('region', 'Unknown')
-                if current_region == 'Unknown' or current_region != region_mapping['region']:
-                    extracted_props['region'] = region_mapping['region']
+                # Set proposed_NEW fields to ensure they match our normalized values
+                # This is critical for continuing circles to have their original metadata preserved throughout the process
+                circle_metadata[circle_id]['proposed_NEW_Region'] = extracted_props.get('region', '')
+                circle_metadata[circle_id]['proposed_NEW_Subregion'] = extracted_props.get('subregion', '')
+                circle_metadata[circle_id]['proposed_NEW_DayTime'] = extracted_props.get('meeting_time', '')
                     print(f"  ✅ FIXED: Set region from '{current_region}' to '{region_mapping['region']}'")
                 
                 # Special handling for Peninsula and Phoenix confusion
