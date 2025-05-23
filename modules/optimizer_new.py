@@ -291,6 +291,13 @@ def generate_circle_options_from_preferences(remaining_df, region, debug_mode=Fa
     Returns:
         List of (subregion, time_slot) tuples representing potential circle options
     """
+    
+    # 🚀 CRITICAL DEBUG: Greenfield circle generation entry point
+    print(f"\n🚀🚀🚀 GENERATE_CIRCLE_OPTIONS_FROM_PREFERENCES CALLED! 🚀🚀🚀")
+    print(f"  Participants: {len(remaining_df)}")
+    print(f"  Region: {region}")
+    print(f"  Available columns: {remaining_df.columns.tolist()}")
+    
     if debug_mode:
         print(f"\n🔧 Generating circle options from {len(remaining_df)} participant preferences in {region}")
     
