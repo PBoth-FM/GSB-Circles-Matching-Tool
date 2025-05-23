@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-05-23 00:39:03",
+    "timestamp": "2025-05-23 01:10:04",
     "region": "all_regions",
     "total_logs": 180,
-    "added_logs": 39,
+    "added_logs": 3,
     "existing_logs": 180,
     "regions_processed": [
       "all_regions"
@@ -19,7 +19,7 @@
       "current_members": 7,
       "is_eligible": true,
       "reason": "Has capacity",
-      "is_test_circle": false,
+      "is_test_circle": true,
       "is_small_circle": false,
       "has_none_preference": false,
       "preference_overridden": false
@@ -28,29 +28,30 @@
       "circle_id": "IP-TEST-02",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "meeting_time": "Monday (Evenings)",
-      "max_additions": 3,
-      "current_members": 7,
-      "is_eligible": true,
-      "reason": "Has capacity",
-      "is_test_circle": false,
+      "meeting_time": "Tuesday (Evenings)",
+      "max_additions": 0,
+      "current_members": 10,
+      "is_eligible": false,
+      "reason": "No capacity (max_additions=0)",
+      "is_test_circle": true,
       "is_small_circle": false,
-      "has_none_preference": false,
+      "has_none_preference": true,
       "preference_overridden": false
     },
     "IP-TEST-03": {
       "circle_id": "IP-TEST-03",
       "region": "Test Region",
       "subregion": "Test Subregion",
-      "meeting_time": "Monday (Mornings)",
-      "max_additions": 2,
-      "current_members": 3,
+      "meeting_time": "Wednesday (Evenings)",
+      "max_additions": 6,
+      "current_members": 4,
       "is_eligible": true,
-      "reason": "Has capacity",
-      "is_test_circle": false,
+      "original_preference": "None",
+      "override_reason": "Small circle needs to reach viable size",
+      "is_test_circle": true,
       "is_small_circle": true,
-      "has_none_preference": false,
-      "preference_overridden": false
+      "has_none_preference": true,
+      "preference_overridden": true
     },
     "IP-ATL-1": {
       "circle_id": "IP-ATL-1",
