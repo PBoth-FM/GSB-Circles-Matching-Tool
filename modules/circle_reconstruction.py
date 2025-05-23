@@ -1604,7 +1604,22 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     
     # Enhanced debugging - show all tracked test circles
     for circle_id in test_circle_ids:
-        test_circle = circles_df[circles_df['circle_id'] == circle_id]
+        # Dynamic column detection to handle different DataFrame structures
+        circle_id_column = None
+        for col in circles_df.columns:
+            if 'circle' in col.lower() and 'id' in col.lower():
+                circle_id_column = col
+                break
+        
+        if circle_id_column:
+            test_circle = circles_df[circles_df[circle_id_column] == circle_id]
+        else:
+            # Fallback: look for any column containing the circle_id value
+            test_circle = pd.DataFrame()  # Empty DataFrame if no matching column found
+            for col in circles_df.columns:
+                if circles_df[col].astype(str).eq(circle_id).any():
+                    test_circle = circles_df[circles_df[col] == circle_id]
+                    break
         if not test_circle.empty:
             row = test_circle.iloc[0]
             print(f"  🔍 FINAL TEST CIRCLE: {circle_id}: {row['member_count']} members "
