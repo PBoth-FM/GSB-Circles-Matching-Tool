@@ -278,6 +278,60 @@ test_participants = ['73177784103', '50625303450', '99999000001']  # Example par
 test_circles = ['IP-SIN-01', 'IP-LON-04', 'IP-SEA-01']  # Test circles
 
 # Define a general safe_string_match function at module level for use everywhere
+def generate_circle_options_from_preferences(remaining_df, region, debug_mode=False):
+    """
+    Generate potential new circle options based on participant preferences.
+    Used when no existing circles are found (greenfield scenarios).
+    
+    Args:
+        remaining_df: DataFrame with participants needing placement
+        region: Region name for the participants
+        debug_mode: Whether to print debug information
+        
+    Returns:
+        List of (subregion, time_slot) tuples representing potential circle options
+    """
+    if debug_mode:
+        print(f"\n🔧 Generating circle options from {len(remaining_df)} participant preferences in {region}")
+    
+    # Extract unique location preferences
+    location_preferences = set()
+    for col in ['first_choice_location', 'second_choice_location', 'third_choice_location']:
+        if col in remaining_df.columns:
+            locations = remaining_df[col].dropna().unique()
+            location_preferences.update(locations)
+    
+    # Extract unique time preferences  
+    time_preferences = set()
+    for col in ['first_choice_time', 'second_choice_time', 'third_choice_time']:
+        if col in remaining_df.columns:
+            times = remaining_df[col].dropna().unique()
+            time_preferences.update(times)
+    
+    # Remove empty values
+    location_preferences = {loc for loc in location_preferences if loc and str(loc).strip()}
+    time_preferences = {time for time in time_preferences if time and str(time).strip()}
+    
+    if debug_mode:
+        print(f"🔧 Found {len(location_preferences)} unique location preferences: {list(location_preferences)}")
+        print(f"🔧 Found {len(time_preferences)} unique time preferences: {list(time_preferences)}")
+    
+    # Generate circle options as cross-product of locations and times
+    circle_options = []
+    for location in location_preferences:
+        for time_slot in time_preferences:
+            circle_options.append((location, time_slot))
+    
+    if debug_mode:
+        print(f"🔧 Created {len(circle_options)} potential circle options:")
+        for i, (loc, time) in enumerate(circle_options[:5]):  # Show first 5
+            print(f"  Option {i+1}: {loc} @ {time}")
+        if len(circle_options) > 5:
+            print(f"  ... and {len(circle_options) - 5} more options")
+    
+    return circle_options
+
+
 def calculate_circle_diversity_score(participant_ids, results_df):
     """
     Calculate the total diversity score for a circle based on participant demographic data.
@@ -1312,10 +1366,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"❌ Could not find circle ID column in region_df")
             print(f"Available columns: {region_df.columns.tolist()}")
     
-    # No synthetic circles are created when no real circles are found
-    if not existing_circles:
-        print(f"\n🔧 No real circles could be created - optimization will continue without existing circles")
-        # The algorithm will focus on creating new circles based on participants' preferences
+    # Generate new circle options when no existing circles are found (greenfield scenario)
+    new_circle_options = []
+    if not existing_circles and len(remaining_df) >= min_circle_size:
+        print(f"\n🔧 No existing circles found - generating new circle options from participant preferences")
+        new_circle_options = generate_circle_options_from_preferences(remaining_df, region, debug_mode)
+        print(f"🔧 Generated {len(new_circle_options)} potential new circle options")
+    elif not existing_circles:
+        print(f"\n🔧 No existing circles found, but insufficient participants ({len(remaining_df)}) to create new circles (min: {min_circle_size})")
     
     # For continuing participants not in circles, we need to handle them separately
     remaining_participants = []
@@ -1679,7 +1737,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     existing_circle_ids = list(viable_circles.keys())
     
     # Create synthetic IDs for potential new circles based on subregion and time
+    # Include both existing circle patterns and new circle options from preferences
     new_circle_candidates = [(subregion, time_slot) for subregion in subregions for time_slot in time_slots]
+    
+    # Add new circle options generated from participant preferences (greenfield scenarios)
+    if new_circle_options:
+        new_circle_candidates.extend(new_circle_options)
+        if debug_mode:
+            print(f"🔧 Enhanced new circle candidates: {len(new_circle_candidates)} total ({len(new_circle_options)} from preferences)")
     
     # Generate synthetic circle IDs for potential new circles
     new_circle_ids = []
