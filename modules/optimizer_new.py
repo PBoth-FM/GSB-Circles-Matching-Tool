@@ -1366,14 +1366,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"❌ Could not find circle ID column in region_df")
             print(f"Available columns: {region_df.columns.tolist()}")
     
-    # Generate new circle options when no existing circles are found (greenfield scenario)
+    # Initialize new_circle_options early (will be populated later after remaining_df is created)
     new_circle_options = []
-    if not existing_circles and len(remaining_df) >= min_circle_size:
-        print(f"\n🔧 No existing circles found - generating new circle options from participant preferences")
-        new_circle_options = generate_circle_options_from_preferences(remaining_df, region, debug_mode)
-        print(f"🔧 Generated {len(new_circle_options)} potential new circle options")
-    elif not existing_circles:
-        print(f"\n🔧 No existing circles found, but insufficient participants ({len(remaining_df)}) to create new circles (min: {min_circle_size})")
     
     # For continuing participants not in circles, we need to handle them separately
     remaining_participants = []
@@ -1394,10 +1388,19 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Create a DataFrame of just the remaining participants
     remaining_df = region_df[region_df['Encoded ID'].isin(remaining_participants)].copy()
     
+    # NOW generate new circle options when no existing circles are found (greenfield scenario)
+    if not existing_circles and len(remaining_df) >= min_circle_size:
+        print(f"\n🔧 No existing circles found - generating new circle options from participant preferences")
+        new_circle_options = generate_circle_options_from_preferences(remaining_df, region, debug_mode)
+        print(f"🔧 Generated {len(new_circle_options)} potential new circle options")
+    elif not existing_circles:
+        print(f"\n🔧 No existing circles found, but insufficient participants ({len(remaining_df)}) to create new circles (min: {min_circle_size})")
+    
     if debug_mode:
         print(f"After processing existing circles:")
         print(f"  {len(existing_circles)} viable circles with 5+ members")
         print(f"  {len(small_circles)} small circles with 2-4 members")
+        print(f"  {len(new_circle_options)} new circle options generated")
         print(f"  {len(remaining_participants)} participants remain to be matched")
     
     # Handle case with no participants to match
