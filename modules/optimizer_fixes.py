@@ -841,6 +841,11 @@ def ensure_current_continuing_matched(results, unmatched, participants_df, circl
     print(f"  - No circle found: {no_circle_found}")
     print(f"  - Invalid circle: {invalid_circle}")
     print(f"  - Total participants processed: {len(continuing_participants)}")
-    print(f"  - Final matched count: {already_matched + manually_matched} ({(already_matched + manually_matched)/len(continuing_participants):.1%})")
+    # Defensive fix: Handle case where there are no continuing participants (e.g., test datasets with all NEW participants)
+    if len(continuing_participants) > 0:
+        percentage = (already_matched + manually_matched) / len(continuing_participants)
+        print(f"  - Final matched count: {already_matched + manually_matched} ({percentage:.1%})")
+    else:
+        print(f"  - Final matched count: {already_matched + manually_matched} (no continuing participants in dataset)")
     
     return updated_results, updated_unmatched
