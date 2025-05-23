@@ -289,6 +289,19 @@ def run_matching_algorithm(data, config):
         Note: Circle eligibility logs are stored directly in st.session_state.circle_eligibility_logs
     """
     
+    # 🚀 CRITICAL DEBUG: Main algorithm entry point
+    print(f"\n🚀🚀🚀 RUN_MATCHING_ALGORITHM CALLED! 🚀🚀🚀")
+    print(f"  Data shape: {data.shape if data is not None else 'None'}")
+    print(f"  Config: {config}")
+    
+    # Check data structure
+    if data is not None and len(data) > 0:
+        print(f"  Regions found: {data['Current_Region'].value_counts().to_dict() if 'Current_Region' in data.columns else 'No Current_Region column'}")
+        print(f"  Status counts: {data['Status'].value_counts().to_dict() if 'Status' in data.columns else 'No Status column'}")
+    else:
+        print(f"  ❌ CRITICAL: Data is empty or None!")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    
     # CRITICAL FIX: Check for Seattle specific participants that should match with IP-SEA-01
     # This fix was determined after analyzing the core compatibility issue 
     print("\n🔴 CRITICAL COMPATIBILITY FIX FOR SEATTLE PARTICIPANTS")
