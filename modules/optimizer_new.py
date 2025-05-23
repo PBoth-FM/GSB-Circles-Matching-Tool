@@ -1369,6 +1369,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Initialize new_circle_options early and generate immediately for greenfield scenarios
     new_circle_options = []
     
+    # DEBUG: Check the conditions for circle generation
+    print(f"\n🔍 DEBUG - Circle generation conditions:")
+    print(f"  existing_circles count: {len(existing_circles) if existing_circles else 'None/Empty'}")
+    print(f"  region_df size: {len(region_df)}")
+    print(f"  min_circle_size: {min_circle_size}")
+    print(f"  Condition 'not existing_circles': {not existing_circles}")
+    print(f"  Condition 'len(region_df) >= min_circle_size': {len(region_df) >= min_circle_size}")
+    
     # Generate new circle options immediately if no existing circles (greenfield scenario)
     if not existing_circles and len(region_df) >= min_circle_size:
         print(f"\n🔧 No existing circles found - generating new circle options from participant preferences")
@@ -1376,6 +1384,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"🔧 Generated {len(new_circle_options)} potential new circle options")
     elif not existing_circles:
         print(f"\n🔧 No existing circles found, but insufficient participants ({len(region_df)}) to create new circles (min: {min_circle_size})")
+    else:
+        print(f"\n🔧 Existing circles found ({len(existing_circles)}), skipping new circle generation")
     
     # For continuing participants not in circles, we need to handle them separately
     remaining_participants = []
