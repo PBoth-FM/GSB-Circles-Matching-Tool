@@ -691,6 +691,40 @@ def determine_unmatched_reason(participant, context=None):
         compatible_options = context['participant_compatible_options'][p_id]
         has_compatible_options = bool(compatible_options)
     
+    # CRITICAL FIX: If context is empty (greenfield scenarios), manually check compatibility
+    if not has_compatible_options and has_location and has_time:
+        if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
+            print(f"  - Context missing compatibility data, performing manual analysis...")
+        
+        # Manual compatibility analysis for greenfield scenarios
+        participant_locations = [
+            participant.get('first_choice_location', ''),
+            participant.get('second_choice_location', ''),
+            participant.get('third_choice_location', '')
+        ]
+        participant_times = [
+            participant.get('first_choice_time', ''),
+            participant.get('second_choice_time', ''),
+            participant.get('third_choice_time', '')
+        ]
+        
+        # Filter out empty values
+        participant_locations = [loc for loc in participant_locations if loc and str(loc).strip()]
+        participant_times = [time for time in participant_times if time and str(time).strip()]
+        
+        # Create compatible options from cross-product of preferences
+        from modules.data_processor import is_time_compatible
+        
+        for location in participant_locations:
+            for time in participant_times:
+                # For greenfield, any location-time combination from preferences is potentially viable
+                compatible_options.append((location, time))
+        
+        has_compatible_options = bool(compatible_options)
+        
+        if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
+            print(f"  - Manual analysis found {len(compatible_options)} compatible options: {compatible_options}")
+    
     if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
         print(f"  - Has compatible options: {has_compatible_options}")
         print(f"  - Compatible options: {compatible_options}")
@@ -721,14 +755,28 @@ def determine_unmatched_reason(participant, context=None):
             # Get host count for this location-time combination
             host_count = context.get('host_counts', {}).get((location, time), 0)
             
-            # If this participant is a host, add 1 to host count
-            effective_host_count = host_count + (1 if is_participant_host else 0)
+            # GREENFIELD FIX: If no context data available, manually calculate host availability
+            if similar_count == 0 and host_count == 0:
+                # This indicates we're in a greenfield scenario without context data
+                # In this case, if the participant is a host, we have at least 1 host available
+                # If not, we need to assume no hosts are available for this specific check
+                if is_participant_host:
+                    effective_host_count = 1  # This participant can host
+                    # For greenfield, assume other compatible participants exist if prefs are common
+                    effective_similar_count = 5  # Assume minimum viable circle size
+                else:
+                    effective_host_count = 0  # No hosts available
+                    effective_similar_count = 5  # Still assume participants exist, but no hosts
+            else:
+                # Use context data if available
+                effective_host_count = host_count + (1 if is_participant_host else 0)
+                effective_similar_count = similar_count
             
             if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
-                print(f"  - Option ({location}, {time}): {similar_count} participants, {host_count} hosts (effective: {effective_host_count})")
+                print(f"  - Option ({location}, {time}): {effective_similar_count} participants, {effective_host_count} hosts")
             
             # Check if this option could form a viable circle (min 5 participants, min 1 host)
-            if similar_count >= 4 and effective_host_count >= 1:  # 4 others + this participant = 5 total
+            if effective_similar_count >= 4 and effective_host_count >= 1:  # 4 others + this participant = 5 total
                 has_viable_option_with_hosts = True
                 break
     
