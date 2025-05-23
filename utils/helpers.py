@@ -686,14 +686,57 @@ def determine_unmatched_reason(participant, context=None):
     
     # 4. No Compatible Options Check
     has_compatible_options = False
+    compatible_options = []
     if p_id in context.get('participant_compatible_options', {}):
-        has_compatible_options = bool(context['participant_compatible_options'][p_id])
+        compatible_options = context['participant_compatible_options'][p_id]
+        has_compatible_options = bool(compatible_options)
     
     if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
         print(f"  - Has compatible options: {has_compatible_options}")
+        print(f"  - Compatible options: {compatible_options}")
     
     if not has_compatible_options:
         return "No compatible location-time combinations"
+    
+    # 4.5. Host Validation for Compatible Options (Solution 1 Implementation)
+    # Check if compatible location-time combinations have sufficient hosts
+    from utils.data_standardization import normalize_host_status
+    
+    participant_host_status = normalize_host_status(participant.get('host', ''))
+    is_participant_host = participant_host_status in ['ALWAYS', 'SOMETIMES']
+    
+    if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
+        print(f"  - Participant host status: {participant_host_status} (is_host: {is_participant_host})")
+    
+    # Check if any compatible option has sufficient hosts for a new circle
+    has_viable_option_with_hosts = False
+    
+    for option in compatible_options:
+        if isinstance(option, tuple) and len(option) == 2:
+            location, time = option
+            
+            # Get count of similar participants for this location-time
+            similar_count = context.get('similar_participants', {}).get((location, time), 0)
+            
+            # Get host count for this location-time combination
+            host_count = context.get('host_counts', {}).get((location, time), 0)
+            
+            # If this participant is a host, add 1 to host count
+            effective_host_count = host_count + (1 if is_participant_host else 0)
+            
+            if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
+                print(f"  - Option ({location}, {time}): {similar_count} participants, {host_count} hosts (effective: {effective_host_count})")
+            
+            # Check if this option could form a viable circle (min 5 participants, min 1 host)
+            if similar_count >= 4 and effective_host_count >= 1:  # 4 others + this participant = 5 total
+                has_viable_option_with_hosts = True
+                break
+    
+    # If compatible options exist but none have sufficient hosts, return specific message
+    if not has_viable_option_with_hosts:
+        if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
+            print(f"  - No viable options with hosts found")
+        return "Insufficient hosts available"
     
     # 5. Very Limited Options Check - if there are very few compatible options
     # Only apply this if the participant has at least some preferences

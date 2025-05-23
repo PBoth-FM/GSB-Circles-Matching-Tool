@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "timestamp": "2025-05-23 01:40:23",
+    "timestamp": "2025-05-23 14:53:46",
     "region": "all_regions",
-    "total_logs": 180,
-    "added_logs": 39,
-    "existing_logs": 180,
+    "total_logs": 184,
+    "added_logs": 5,
+    "existing_logs": 182,
     "regions_processed": [
       "all_regions"
     ]
@@ -61,7 +61,8 @@
       "max_additions": 0,
       "current_members": 11,
       "is_eligible": false,
-      "reason": "No capacity (max_additions=0)",
+      "original_preference": "None",
+      "reason": "Co-leader requested no new members and circle is already viable",
       "is_test_circle": false,
       "is_small_circle": false,
       "has_none_preference": true,
@@ -2542,6 +2543,62 @@
       "reason": "Has capacity",
       "is_test_circle": false,
       "is_small_circle": false,
+      "has_none_preference": false,
+      "preference_overridden": false
+    },
+    "IP-PSA-NEW-01": {
+      "circle_id": "IP-PSA-NEW-01",
+      "region": "New York",
+      "subregion": "Brooklyn Heights/Downtown Brooklyn",
+      "meeting_time": "Unknown",
+      "max_additions": 10,
+      "current_members": 0,
+      "is_eligible": true,
+      "reason": "Has capacity (reconstructed from results)",
+      "is_test_circle": false,
+      "is_small_circle": true,
+      "has_none_preference": false,
+      "preference_overridden": false
+    },
+    "IP-PSA-NEW-02": {
+      "circle_id": "IP-PSA-NEW-02",
+      "region": "New York",
+      "subregion": "Upper East Side",
+      "meeting_time": "Unknown",
+      "max_additions": 10,
+      "current_members": 0,
+      "is_eligible": true,
+      "reason": "Has capacity (reconstructed from results)",
+      "is_test_circle": false,
+      "is_small_circle": true,
+      "has_none_preference": false,
+      "preference_overridden": false
+    },
+    "IP-CHI-NEW-01": {
+      "circle_id": "IP-CHI-NEW-01",
+      "region": "Chicago",
+      "subregion": "Unknown",
+      "meeting_time": "Unknown",
+      "max_additions": 10,
+      "current_members": 0,
+      "is_eligible": true,
+      "reason": "Has capacity (reconstructed from results)",
+      "is_test_circle": false,
+      "is_small_circle": true,
+      "has_none_preference": false,
+      "preference_overridden": false
+    },
+    "IP-CHI-NEW-02": {
+      "circle_id": "IP-CHI-NEW-02",
+      "region": "Chicago",
+      "subregion": "Unknown",
+      "meeting_time": "Unknown",
+      "max_additions": 10,
+      "current_members": 0,
+      "is_eligible": true,
+      "reason": "Has capacity (reconstructed from results)",
+      "is_test_circle": false,
+      "is_small_circle": true,
       "has_none_preference": false,
       "preference_overridden": false
     }
