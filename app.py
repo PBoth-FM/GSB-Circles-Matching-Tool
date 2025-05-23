@@ -88,6 +88,10 @@ def main():
 
 def run_optimization():
     """Run the optimization algorithm and store results in session state"""
+    
+    # 🚀 CRITICAL DEBUG: App optimization entry point
+    print(f"\n🚀🚀🚀 RUN_OPTIMIZATION CALLED IN APP.PY! 🚀🚀🚀")
+    
     # Reset debug logs at the start of each optimization run
     # We're no longer importing the global circle_eligibility_logs variable
     from modules.optimizer_new import debug_eligibility_logs
@@ -125,10 +129,21 @@ def run_optimization():
             
             # Use the original data without any test participants
             # Run the matching algorithm with enhanced return values for debugging
+            
+            # 🚀 CRITICAL DEBUG: About to call main algorithm
+            print(f"\n🚀 ABOUT TO CALL run_matching_algorithm!")
+            print(f"  Data shape: {st.session_state.processed_data.shape}")
+            print(f"  Config: {st.session_state.config}")
+            
+            from modules.optimizer import run_matching_algorithm
+            print(f"  ✅ Successfully imported run_matching_algorithm")
+            
             results, matched_circles, unmatched_participants = run_matching_algorithm(
                 st.session_state.processed_data,
                 st.session_state.config
             )
+            
+            print(f"  ✅ run_matching_algorithm completed successfully!")
             
             # Add extensive diagnostic logging to understand data structure
             print("\n🔬🔬🔬 DETAILED RESULT ANALYSIS 🔬🔬🔬")
