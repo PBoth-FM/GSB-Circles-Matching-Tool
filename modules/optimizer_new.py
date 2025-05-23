@@ -468,6 +468,14 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
+    # 🔍 CRITICAL DEBUG: Function entry point logging
+    print(f"\n🚀 OPTIMIZE_REGION_V2 CALLED!")
+    print(f"  Region: {region}")
+    print(f"  Participants: {len(region_df) if region_df is not None else 'None'}")
+    print(f"  Min circle size: {min_circle_size}")
+    print(f"  Existing circle handling: {existing_circle_handling}")
+    print(f"  Debug mode: {debug_mode}")
+    
     # Import or define is_time_compatible here to ensure it's available in this scope
     # This fixes the "cannot access local variable" error in optimize mode
     from modules.data_processor import is_time_compatible
