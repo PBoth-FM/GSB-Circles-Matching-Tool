@@ -1140,6 +1140,88 @@ def process_uploaded_file(uploaded_file):
                 else:
                     st.warning("No matching results available. Please run the matching algorithm first.")
                 
+                # NEW: Circle Composition from CSV - Direct from Results Data
+                st.subheader("Circle Composition from CSV")
+                
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    results_df = st.session_state.results.copy()
+                    
+                    # Check if we have the required columns
+                    required_cols = ['proposed_NEW_circles_id', 'Derived_Region', 'proposed_NEW_Subregion', 
+                                   'proposed_NEW_DayTime', 'Encoded ID', 'Status', 'co_leader_max_new_members', 
+                                   'host_status_standardized']
+                    
+                    missing_cols = [col for col in required_cols if col not in results_df.columns]
+                    
+                    if missing_cols:
+                        st.warning(f"Missing required columns for CSV table: {missing_cols}")
+                    else:
+                        # Filter out unmatched participants
+                        matched_results = results_df[
+                            (results_df['proposed_NEW_circles_id'].notna()) & 
+                            (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+                        ].copy()
+                        
+                        if len(matched_results) > 0:
+                            # Group by circle ID and aggregate data
+                            circle_groups = matched_results.groupby('proposed_NEW_circles_id')
+                            
+                            csv_circles_data = []
+                            
+                            for circle_id, group in circle_groups:
+                                # Calculate aggregated values
+                                member_count = len(group)
+                                new_members = len(group[group['Status'] == 'NEW'])
+                                
+                                # Get first values for region, subregion, meeting time (should be same for all members)
+                                region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
+                                subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
+                                meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
+                                
+                                # Calculate max additions (minimum of co_leader_max_new_members, treating None/blank as 0)
+                                max_additions_values = []
+                                for val in group['co_leader_max_new_members']:
+                                    if pd.isna(val) or val == '' or val == 'None':
+                                        max_additions_values.append(0)
+                                    else:
+                                        try:
+                                            max_additions_values.append(int(float(val)))
+                                        except (ValueError, TypeError):
+                                            max_additions_values.append(0)
+                                
+                                max_additions = min(max_additions_values) if max_additions_values else 0
+                                
+                                # Count host status
+                                always_hosts = len(group[group['host_status_standardized'] == 'ALWAYS'])
+                                sometimes_hosts = len(group[group['host_status_standardized'] == 'SOMETIMES'])
+                                
+                                csv_circles_data.append({
+                                    'Circle Id': circle_id,
+                                    'Region': region,
+                                    'Subregion': subregion,
+                                    'Meeting Time': meeting_time,
+                                    'Member Count': member_count,
+                                    'New Members': new_members,
+                                    'Max Additions': max_additions,
+                                    'Always Hosts': always_hosts,
+                                    'Sometimes Hosts': sometimes_hosts
+                                })
+                            
+                            # Create DataFrame and display
+                            if csv_circles_data:
+                                csv_circles_df = pd.DataFrame(csv_circles_data)
+                                csv_circles_df = csv_circles_df.sort_values('Circle Id')
+                                st.dataframe(csv_circles_df, use_container_width=True)
+                                
+                                # Show summary comparison
+                                st.info(f"📊 **CSV Table Summary:** {len(csv_circles_df)} circles displayed from direct CSV data")
+                            else:
+                                st.warning("No circle data could be generated from CSV results.")
+                        else:
+                            st.warning("No matched participants found in results data.")
+                else:
+                    st.warning("No results data available. Please run the matching algorithm first.")
+                
                 # Display unmatched participants
                 st.subheader("Unmatched Participants")
                 
