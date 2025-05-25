@@ -4680,7 +4680,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Convert updated_results to DataFrame for circle naming analysis
     results_df = pd.DataFrame(updated_results)
-    circles_df = pd.DataFrame(circles) if circles else None
+    
+    # Handle circles data safely - it might be a DataFrame or list
+    if isinstance(circles, pd.DataFrame):
+        circles_df = circles if not circles.empty else None
+    elif circles:  # Handle list case
+        circles_df = pd.DataFrame(circles)
+    else:
+        circles_df = None
     
     # Import and apply the circle naming fix
     from modules.circle_naming import fix_circle_naming_post_processing
