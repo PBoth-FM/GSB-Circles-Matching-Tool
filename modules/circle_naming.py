@@ -138,9 +138,10 @@ def generate_proper_circle_name(circle_id, members_data, results_df, existing_na
     # For Virtual circles, we need to extract the timezone part for the subregion code
     if format_code == "VO":
         # Extract timezone from subregion (e.g., "GMT-5 (Eastern...)" -> "GMT-5")
-        if "GMT" in subregion:
+        subregion_str = str(subregion) if subregion is not None else ""
+        if "GMT" in subregion_str:
             import re
-            gmt_match = re.search(r'GMT[+-]?\d*(?::\d+)?', subregion)
+            gmt_match = re.search(r'GMT[+-]?\d*(?::\d+)?', subregion_str)
             if gmt_match:
                 timezone = gmt_match.group(0)
                 # The region code for virtual should be something like AE-GMT+1 or AM-GMT-5
