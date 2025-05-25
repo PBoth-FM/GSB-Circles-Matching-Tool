@@ -4675,6 +4675,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     print(f"  ✅ Post-processing complete: All circles should now be visible in both Results CSV and UI")
     
+    # CIRCLE NAMING FIX: Apply proper circle naming based on member composition
+    print(f"\n🔄 CIRCLE NAMING FIX: Analyzing member composition for proper circle names")
+    
+    # Convert updated_results to DataFrame for circle naming analysis
+    results_df = pd.DataFrame(updated_results)
+    circles_df = pd.DataFrame(circles) if circles else None
+    
+    # Import and apply the circle naming fix
+    from modules.circle_naming import fix_circle_naming_post_processing
+    
+    # Apply the naming fix
+    fixed_results_df, fixed_circles_df, naming_changes = fix_circle_naming_post_processing(results_df, circles_df)
+    
+    # Convert back to list format for consistency with existing code
+    if not fixed_results_df.empty:
+        updated_results = fixed_results_df.to_dict('records')
+        print(f"  ✅ Updated results with proper circle names")
+    
+    if fixed_circles_df is not None and not fixed_circles_df.empty:
+        circles = fixed_circles_df.to_dict('records')
+        print(f"  ✅ Updated circles metadata with proper names")
+    
+    if naming_changes:
+        print(f"  ✅ Applied {len(naming_changes)} circle name fixes")
+        for old_name, new_name in naming_changes.items():
+            print(f"    {old_name} → {new_name}")
+    else:
+        print(f"  ℹ️ No circle naming changes needed")
+    
     # Return the final logs copy with updated results
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
     return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
