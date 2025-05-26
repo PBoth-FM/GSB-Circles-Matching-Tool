@@ -7,7 +7,79 @@ splitting them into correctly named circles based on participant data.
 import pandas as pd
 import re
 from typing import Dict, List, Tuple, Set
-from utils.normalization import determine_region_code
+
+
+def determine_region_code(region: str, subregion: str) -> str:
+    """
+    Determine the proper region code based on region and subregion.
+    
+    Args:
+        region: Region name
+        subregion: Subregion name
+        
+    Returns:
+        Appropriate region code
+    """
+    if not region or pd.isna(region):
+        region = ""
+    if not subregion or pd.isna(subregion):
+        subregion = ""
+    
+    region = str(region).strip()
+    subregion = str(subregion).strip()
+    
+    # Handle virtual regions
+    if 'Virtual-Only APAC+EMEA' in region or 'APAC+EMEA' in region:
+        return 'AE'
+    elif 'Virtual-Only Americas' in region or 'Americas' in region:
+        return 'AM'
+    
+    # Handle specific regions
+    region_mapping = {
+        'South Florida': 'SFL',
+        'Boston': 'BOS', 
+        'New York': 'NYC',
+        'Washington DC': 'WDC',
+        'Atlanta': 'ATL',
+        'Chicago': 'CHI',
+        'Houston': 'HOU',
+        'Austin': 'AUS',
+        'San Francisco': 'SFO',
+        'East Bay': 'EBA',
+        'Peninsula': 'PSA',
+        'Marin County': 'MAR',
+        'Napa-Sonoma': 'NAP',
+        'Los Angeles': 'LAX',
+        'Orange County': 'OC',
+        'San Diego': 'SD',
+        'Sacramento': 'SAC',
+        'Portland': 'POR',
+        'Seattle': 'SEA',
+        'Denver': 'DEN',
+        'Phoenix': 'PHX',
+        'Dallas': 'DAL',
+        'Minneapolis': 'MSP',
+        'Detroit': 'DET',
+        'Cleveland': 'CLE',
+        'Pittsburgh': 'PIT',
+        'Philadelphia': 'PHL',
+        'London': 'LON',
+        'Mumbai': 'BOM',
+        'Delhi': 'DEL',
+        'Bangalore': 'BLR',
+        'Singapore': 'SIN',
+        'Hong Kong': 'HKG',
+        'Tokyo': 'NRT',
+        'Sydney': 'SYD',
+        'Melbourne': 'MEL',
+        'São Paulo': 'GRU',
+        'Mexico City': 'MEX',
+        'Toronto': 'YYZ',
+        'Vancouver': 'YVR',
+        'Nairobi': 'NBO'
+    }
+    
+    return region_mapping.get(region, 'AE')
 
 
 def detect_unknown_circles(results_df: pd.DataFrame) -> List[str]:
