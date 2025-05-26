@@ -581,7 +581,7 @@ def process_uploaded_file(uploaded_file):
                 run_optimization()
                 
             # Display results if available
-            if st.session_state.results is not None:
+            if hasattr(st.session_state, 'results') and st.session_state.results is not None:
                 # We don't need to render the overview in the match tab
                 # render_results_overview() - removed to avoid duplicate charts
                 
