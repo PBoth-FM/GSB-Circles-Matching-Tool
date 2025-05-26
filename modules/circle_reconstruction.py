@@ -387,6 +387,56 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     # Clear normalization cache to ensure fresh data is loaded
     clear_normalization_cache()
     print("  🔄 Starting circle reconstruction with fresh normalization tables")
+    
+    # CRITICAL FIX: Detect and fix invalid circle IDs before processing
+    fixed_results = []
+    circle_id_fixes = {}
+    
+    for result in results:
+        if isinstance(result, dict):
+            result_copy = result.copy()
+            circle_id = result_copy.get('proposed_NEW_circles_id', '')
+            
+            # Check if this is an invalid circle ID that needs fixing
+            if isinstance(circle_id, str) and ('IP-UNKNOWN' in circle_id or 'IP-Invalid' in circle_id):
+                print(f"🔧 CRITICAL FIX: Detected invalid circle ID '{circle_id}'")
+                
+                # Get participant's region and subregion to determine correct ID
+                region = result_copy.get('Derived_Region', result_copy.get('Current_Region', ''))
+                subregion = result_copy.get('proposed_NEW_Subregion', result_copy.get('Current_Subregion', ''))
+                
+                # Generate correct circle ID based on region and subregion
+                if 'Virtual' in str(region):
+                    # This should be a virtual circle
+                    from utils.normalization import get_region_code_with_subregion
+                    region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
+                    
+                    # Extract the number from the old ID if possible
+                    import re
+                    number_match = re.search(r'-(\d+)$', circle_id)
+                    number = number_match.group(1) if number_match else '01'
+                    
+                    # Create proper virtual circle ID
+                    if 'NEW' in circle_id:
+                        new_circle_id = f"VO-{region_code}-NEW-{number}"
+                    else:
+                        new_circle_id = f"VO-{region_code}-{number}"
+                    
+                    print(f"  ✅ Fixed virtual circle: {circle_id} → {new_circle_id}")
+                    result_copy['proposed_NEW_circles_id'] = new_circle_id
+                    circle_id_fixes[circle_id] = new_circle_id
+                    
+            fixed_results.append(result_copy)
+        else:
+            fixed_results.append(result)
+    
+    if circle_id_fixes:
+        print(f"🔧 CRITICAL FIX APPLIED: Fixed {len(circle_id_fixes)} invalid circle IDs")
+        for old_id, new_id in circle_id_fixes.items():
+            print(f"  {old_id} → {new_id}")
+    
+    # Use the fixed results for further processing
+    results = fixed_results
     # REMOVED: Special region mappings that were causing incorrect hardcoded values
     # Instead, we'll rely on actual data from participant records and only use normalization
     # for formatting consistency, not replacing values.
