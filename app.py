@@ -1075,6 +1075,44 @@ def process_uploaded_file(uploaded_file):
                         # Update the circles DataFrame with the fixed version
                         circles_df = fixed_circles_df
                         
+                        # FINAL CRITICAL FIX: Directly correct any remaining invalid circle IDs
+                        print("\n🚨 FINAL CRITICAL FIX: Scanning for invalid circle IDs")
+                        if 'circle_id' in circles_df.columns:
+                            invalid_mask = circles_df['circle_id'].str.contains('IP-UNKNOWN', na=False)
+                            invalid_count = invalid_mask.sum()
+                            
+                            if invalid_count > 0:
+                                print(f"🔧 Found {invalid_count} circles with invalid IP-UNKNOWN pattern - applying direct correction")
+                                
+                                # Apply direct correction to invalid circle IDs
+                                for idx in circles_df[invalid_mask].index:
+                                    old_id = circles_df.loc[idx, 'circle_id']
+                                    region = circles_df.loc[idx, 'region'] if 'region' in circles_df.columns else 'Virtual-Only APAC+EMEA'
+                                    subregion = circles_df.loc[idx, 'subregion'] if 'subregion' in circles_df.columns else 'GMT'
+                                    
+                                    # Extract number from old ID
+                                    import re
+                                    number_match = re.search(r'-(\d+)$', old_id)
+                                    number = number_match.group(1) if number_match else '01'
+                                    
+                                    # Generate correct virtual circle ID
+                                    if 'APAC+EMEA' in str(region):
+                                        if 'GMT+3' in str(subregion):
+                                            new_id = f"VO-AE-GMT+3-NEW-{number}"
+                                        elif 'GMT+8' in str(subregion):
+                                            new_id = f"VO-AE-GMT+8-NEW-{number}"
+                                        else:
+                                            new_id = f"VO-AE-GMT-NEW-{number}"
+                                    else:
+                                        new_id = f"VO-AE-GMT-NEW-{number}"
+                                    
+                                    circles_df.loc[idx, 'circle_id'] = new_id
+                                    print(f"  🔧 Corrected: {old_id} → {new_id}")
+                                
+                                print(f"✅ Successfully corrected {invalid_count} invalid circle IDs")
+                            else:
+                                print("✅ No invalid circle IDs found!")
+                        
                         # Final verification
                         if 'subregion' in circles_df.columns:
                             unknown_count = circles_df[circles_df['subregion'] == 'Unknown'].shape[0]
