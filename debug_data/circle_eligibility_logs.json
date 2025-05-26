@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-05-26 15:09:02",
+    "timestamp": "2025-05-24 15:54:10",
     "region": "all_regions",
     "total_logs": 184,
-    "added_logs": 39,
+    "added_logs": 5,
     "existing_logs": 184,
     "regions_processed": [
       "all_regions"
@@ -61,7 +61,8 @@
       "max_additions": 0,
       "current_members": 11,
       "is_eligible": false,
-      "reason": "No capacity (max_additions=0)",
+      "original_preference": "None",
+      "reason": "Co-leader requested no new members and circle is already viable",
       "is_test_circle": false,
       "is_small_circle": false,
       "has_none_preference": true,
