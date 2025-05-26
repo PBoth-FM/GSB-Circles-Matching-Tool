@@ -3990,6 +3990,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         if p_id in circle_assignments:
             c_id = circle_assignments[p_id]
             
+            # PROPER CIRCLE ID FIX: Replace generic circle ID with proper one if available
+            if p_id in proper_circle_mapping:
+                proper_c_id = proper_circle_mapping[p_id]
+                print(f"  🔄 Using proper circle ID for {p_id}: {c_id} → {proper_c_id}")
+                c_id = proper_c_id
+            
             # Get the correct metadata - might need to look up original ID for renamed circles
             if c_id in circle_metadata:
                 meta = circle_metadata[c_id]
