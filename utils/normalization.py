@@ -285,9 +285,24 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
     if region in REGION_CODE_MAPPING:
         return REGION_CODE_MAPPING[region]
     
-    # If no mapping found, log a warning
+    # CRITICAL FIX: Never return 'UNKNOWN' for any circles - provide safe fallbacks
     print(f"⚠️ WARNING: Could not find region code for {region} (subregion: {subregion})")
-    return 'UNKNOWN'
+    
+    # Check if this might be a virtual circle case that slipped through
+    if region and 'Virtual' in str(region):
+        if 'APAC+EMEA' in str(region):
+            print(f"🔧 CRITICAL FIX: Detected virtual APAC+EMEA circle, using AE-GMT fallback")
+            return 'AE-GMT'
+        elif 'Americas' in str(region):
+            print(f"🔧 CRITICAL FIX: Detected virtual Americas circle, using AM-GMT fallback")
+            return 'AM-GMT'
+        else:
+            print(f"🔧 CRITICAL FIX: Detected virtual circle, using VO-GMT fallback")
+            return 'VO-GMT'
+    
+    # For in-person circles, use a safe city code
+    print(f"🔧 CRITICAL FIX: Using NYC fallback for in-person circle")
+    return 'NYC'
 
 def normalize_regions(region):
     """
