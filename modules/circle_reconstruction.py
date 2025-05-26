@@ -497,7 +497,7 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         print(f"  Results DataFrame columns: {results_df.columns.tolist()}")
         
         # Look for meeting time related columns
-        meeting_columns = [col for col in results_df.columns if 'meeting' in col.lower() or 'time' in col.lower() or 'day' in col.lower()]
+        meeting_columns = [col for col in results_df.columns if isinstance(col, str) and ('meeting' in col.lower() or 'time' in col.lower() or 'day' in col.lower())]
         print(f"  Meeting-related columns found: {meeting_columns}")
     else:
         # Already a DataFrame
