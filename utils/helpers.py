@@ -403,9 +403,25 @@ def generate_circle_id(region, subregion, index, is_new=True):
         region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
         print(f"🔍 Virtual circle detected: region={region}, subregion={subregion}")
         print(f"🔍 Using region code with subregion: {region_code}")
+        
+        # CRITICAL FIX: Never allow UNKNOWN or Invalid region codes for virtual circles
+        if region_code in ['UNKNOWN', 'Invalid', 'Unknown']:
+            print(f"⚠️ CRITICAL FIX: Invalid region code '{region_code}' for virtual circle, applying fallback")
+            if 'APAC+EMEA' in str(region):
+                region_code = 'AE-GMT'
+            elif 'Americas' in str(region):
+                region_code = 'AM-GMT-5'
+            else:
+                region_code = 'AE-GMT'
+            print(f"✅ Applied fallback region code: {region_code}")
     else:
         # For in-person circles, use the standard region code
         region_code = get_region_code(region)
+        
+        # CRITICAL FIX: Never allow UNKNOWN or Invalid region codes for any circles
+        if region_code in ['UNKNOWN', 'Invalid', 'Unknown']:
+            print(f"⚠️ CRITICAL FIX: Invalid region code '{region_code}', using fallback")
+            region_code = 'NYC'  # Safe fallback for in-person circles
         
     # Format: {Format}-{RegionCode}-NEW-{index} for new circles
     # For existing circles, the format is {Format}-{RegionCode}-{index}
