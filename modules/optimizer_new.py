@@ -37,6 +37,119 @@ os.makedirs(os.path.dirname(CIRCLE_ELIGIBILITY_LOGS_PATH), exist_ok=True)
 def debug_eligibility_logs(message):
     """Helper function to print standardized circle eligibility debug logs"""
     print(f"🔍 CIRCLE ELIGIBILITY DEBUG: {message}")
+
+def generate_proper_circle_ids_for_region(region_df, region, debug_mode=False):
+    """
+    Pre-generate proper circle IDs based on participant groupings before optimization.
+    This ensures circles get correct names from the start instead of generic IP-UNKNOWN names.
+    
+    Args:
+        region_df: DataFrame with participants from this region
+        region: Region name
+        debug_mode: Whether to print debug information
+        
+    Returns:
+        Dictionary mapping participant IDs to proper circle IDs
+    """
+    from modules.circle_naming import load_region_subregion_mapping
+    
+    print(f"\n🔄 PRE-GENERATING PROPER CIRCLE IDS for {region}")
+    
+    # Group participants by compatibility factors
+    participant_groups = {}
+    circle_counter_by_type = {}
+    
+    # Load region mapping for proper naming
+    region_mapping = load_region_subregion_mapping()
+    
+    # Analyze each participant to determine their natural grouping
+    for _, participant in region_df.iterrows():
+        if participant.get('Status') != 'NEW':
+            continue  # Only process NEW participants for new circles
+            
+        # Determine the participant's natural circle characteristics
+        derived_region = participant.get('Derived_Region', 'Unknown')
+        subregion = participant.get('proposed_NEW_Subregion', 'Unknown')
+        
+        # Normalize subregion
+        from modules.circle_reconstruction import normalize_subregion
+        normalized_subregion = normalize_subregion(subregion)
+        
+        # Determine format and region code
+        format_code = "VO" if str(derived_region).startswith('Virtual-Only') else "IP"
+        
+        if format_code == "VO":
+            # Extract region from "Virtual-Only REGION"
+            base_region = str(derived_region).replace('Virtual-Only ', '').strip()
+        else:
+            base_region = str(derived_region)
+            
+        # Create grouping key
+        group_key = (format_code, base_region, normalized_subregion)
+        
+        if group_key not in participant_groups:
+            participant_groups[group_key] = []
+        participant_groups[group_key].append(participant['Encoded ID'])
+    
+    # Generate proper circle IDs for each group
+    proper_circle_mapping = {}
+    
+    for group_key, participant_ids in participant_groups.items():
+        format_code, base_region, normalized_subregion = group_key
+        
+        # Find the appropriate region code from mapping
+        region_code = "UNKNOWN"
+        
+        # Try to find matching region code
+        for (map_format, map_region, map_subregion), code in region_mapping.items():
+            format_match = (str(map_format).startswith("Virtual") and format_code == "VO") or \
+                          (str(map_format).startswith("In Person") and format_code == "IP")
+            
+            if format_match and str(map_region).lower() == base_region.lower():
+                region_code = code
+                break
+        
+        # Generate circle type key for counter
+        if format_code == "VO":
+            # For virtual circles, include timezone in the key
+            if "GMT" in str(normalized_subregion):
+                import re
+                gmt_match = re.search(r'GMT[+-]?\d*(?::\d+)?', str(normalized_subregion))
+                if gmt_match:
+                    timezone = gmt_match.group(0)
+                    circle_type_key = f"{format_code}-{region_code.split('-')[0] if '-' in region_code else region_code}-{timezone}"
+                else:
+                    circle_type_key = f"{format_code}-{region_code}"
+            else:
+                circle_type_key = f"{format_code}-{region_code}"
+        else:
+            circle_type_key = f"{format_code}-{region_code}"
+        
+        # Get next counter for this circle type
+        if circle_type_key not in circle_counter_by_type:
+            circle_counter_by_type[circle_type_key] = 0
+        circle_counter_by_type[circle_type_key] += 1
+        
+        # Generate proper circle ID
+        if format_code == "VO" and "-" in region_code:
+            # Virtual format: VO-REGION-TIMEZONE-NEW-XX
+            proper_circle_id = f"{format_code}-{region_code}-NEW-{str(circle_counter_by_type[circle_type_key]).zfill(2)}"
+        else:
+            # In Person format: IP-REGIONCODE-NEW-XX
+            proper_circle_id = f"{format_code}-{region_code}-NEW-{str(circle_counter_by_type[circle_type_key]).zfill(2)}"
+        
+        # Map all participants in this group to this circle ID
+        for participant_id in participant_ids:
+            proper_circle_mapping[participant_id] = proper_circle_id
+        
+        if debug_mode:
+            print(f"  Generated circle ID: {proper_circle_id} for {len(participant_ids)} participants")
+            print(f"    Group: {group_key}")
+            print(f"    Region code: {region_code}")
+    
+    print(f"✅ Generated {len(set(proper_circle_mapping.values()))} proper circle IDs for {len(proper_circle_mapping)} NEW participants")
+    
+    return proper_circle_mapping
     
 # Function to save circle eligibility logs to file
 def save_circle_eligibility_logs_to_file(logs, region="all"):
@@ -1926,6 +2039,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
         if len(problem_participants) > 5:
             print(f"  ... and {len(problem_participants) - 5} more problematic participants")
+    
+    # ***************************************************************
+    # STEP 1.5: PRE-GENERATE PROPER CIRCLE IDS 
+    # ***************************************************************
+    
+    # Generate proper circle IDs based on participant composition BEFORE optimization
+    print(f"\n🔄 STEP 1.5: PRE-GENERATING PROPER CIRCLE IDS")
+    proper_circle_mapping = generate_proper_circle_ids_for_region(remaining_df, region, debug_mode)
     
     # ***************************************************************
     # STEP 2: DEFINE DECISION VARIABLES
