@@ -365,10 +365,17 @@ def generate_download_link(df):
     
     # CRITICAL FIX: Apply post-processing to fix any invalid circle IDs before CSV generation
     from utils.circle_id_postprocessor import has_unknown_circles, fix_unknown_circle_ids
+    import streamlit as st
     
     if has_unknown_circles(final_df):
         print("\n🔧 PRE-CSV PROCESSING: Applying circle ID corrections before CSV generation")
         final_df = fix_unknown_circle_ids(final_df)
+        
+        # CRITICAL: Update session state with corrected data so Circle Composition table matches
+        if hasattr(st.session_state, 'results') and st.session_state.results is not None:
+            print("🔧 UPDATING SESSION STATE: Applying same corrections to session state data")
+            st.session_state.results = fix_unknown_circle_ids(st.session_state.results)
+            print("✅ Session state updated - Circle Composition table will now show corrected data")
     
     # Convert to CSV and return
     csv_buffer = io.StringIO()
