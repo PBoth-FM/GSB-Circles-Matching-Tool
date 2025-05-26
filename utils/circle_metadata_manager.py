@@ -100,35 +100,53 @@ class CircleMetadataManager:
             else:
                 print(f"  ⚠️ {test_id} not found in optimizer data")
         
-        # Initialize circles dictionary from processed circles
+        # Initialize circles dictionary from processed circles with invalid ID correction
         self.circles = {}
+        circle_id_fixes = {}  # Track any ID corrections made
+        
         for circle in processed_circles:
             try:
                 # Safely get circle_id
-                circle_id = None
+                original_circle_id = None
                 if isinstance(circle, dict) and 'circle_id' in circle:
-                    circle_id = circle['circle_id']
+                    original_circle_id = circle['circle_id']
                 elif hasattr(circle, 'get'):
-                    circle_id = circle.get('circle_id')
+                    original_circle_id = circle.get('circle_id')
                 elif hasattr(circle, 'circle_id'):
-                    circle_id = circle.circle_id
+                    original_circle_id = circle.circle_id
                 
-                if circle_id:
-                    # Ensure we store a dictionary
+                if original_circle_id:
+                    # CRITICAL FIX: Detect and correct invalid circle IDs
+                    corrected_circle_id = self._fix_invalid_circle_id(original_circle_id, circle)
+                    
+                    if corrected_circle_id != original_circle_id:
+                        self.logger.info(f"🔧 CRITICAL FIX: Corrected invalid circle ID '{original_circle_id}' to '{corrected_circle_id}'")
+                        circle_id_fixes[original_circle_id] = corrected_circle_id
+                    
+                    # Ensure we store a dictionary with the corrected ID
                     if isinstance(circle, dict):
-                        self.circles[circle_id] = circle.copy()  # Create a deep copy to avoid reference issues
+                        circle_data = circle.copy()  # Create a deep copy to avoid reference issues
+                        circle_data['circle_id'] = corrected_circle_id  # Update with corrected ID
+                        self.circles[corrected_circle_id] = circle_data
                     else:
                         # Convert to dict if needed
                         self.logger.warning(f"Converting non-dict circle to dictionary: {circle}")
                         if hasattr(circle, '__dict__'):
-                            self.circles[circle_id] = circle.__dict__.copy()
+                            circle_data = circle.__dict__.copy()
+                            circle_data['circle_id'] = corrected_circle_id
+                            self.circles[corrected_circle_id] = circle_data
                         else:
-                            self.circles[circle_id] = {'circle_id': circle_id}
+                            self.circles[corrected_circle_id] = {'circle_id': corrected_circle_id}
                 else:
                     self.logger.warning(f"Found circle without circle_id: {circle}")
             except Exception as e:
                 self.logger.error(f"Error processing circle: {str(e)} - {circle}")
                 continue
+        
+        # If we made any circle ID corrections, update participant assignments
+        if circle_id_fixes:
+            self.logger.info(f"🔧 Applied {len(circle_id_fixes)} circle ID corrections")
+            self._update_participant_assignments(circle_id_fixes)
         
         self._initialized = True
         self.logger.info(f"Successfully initialized {len(self.circles)} circles")
@@ -150,6 +168,70 @@ class CircleMetadataManager:
         self.fill_missing_metadata()
         
         self.logger.info("Circle metadata normalization complete")
+    
+    def _fix_invalid_circle_id(self, circle_id: str, circle_data: dict) -> str:
+        """
+        Detect and fix invalid circle IDs like IP-UNKNOWN patterns.
+        
+        Args:
+            circle_id: The original circle ID
+            circle_data: Circle data containing region/subregion info
+            
+        Returns:
+            Corrected circle ID or original if no fix needed
+        """
+        if not isinstance(circle_id, str):
+            return circle_id
+        
+        # Check if this is an invalid pattern that needs fixing
+        if 'IP-UNKNOWN' in circle_id or 'IP-Invalid' in circle_id:
+            # Extract region and subregion from circle data
+            region = circle_data.get('region', '')
+            subregion = circle_data.get('subregion', '')
+            
+            # If we have Virtual region, this should be a virtual circle
+            if 'Virtual' in str(region):
+                # Import region code utilities
+                from utils.normalization import get_region_code_with_subregion
+                
+                # Get proper region code with timezone
+                region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
+                
+                # Extract the number from the old ID if possible
+                import re
+                number_match = re.search(r'-(\d+)$', circle_id)
+                number = number_match.group(1) if number_match else '01'
+                
+                # Create proper virtual circle ID
+                if 'NEW' in circle_id:
+                    corrected_id = f"VO-{region_code}-NEW-{number}"
+                else:
+                    corrected_id = f"VO-{region_code}-{number}"
+                
+                return corrected_id
+        
+        # No fix needed, return original ID
+        return circle_id
+    
+    def _update_participant_assignments(self, circle_id_fixes: dict) -> None:
+        """
+        Update participant assignments to use corrected circle IDs.
+        
+        Args:
+            circle_id_fixes: Dictionary mapping old circle IDs to new ones
+        """
+        if not hasattr(self, 'results_df') or self.results_df is None:
+            self.logger.warning("No results DataFrame available to update participant assignments")
+            return
+        
+        # Update the results DataFrame to use corrected circle IDs
+        for old_id, new_id in circle_id_fixes.items():
+            # Update the proposed_NEW_circles_id column if it exists
+            if 'proposed_NEW_circles_id' in self.results_df.columns:
+                mask = self.results_df['proposed_NEW_circles_id'] == old_id
+                if mask.any():
+                    self.results_df.loc[mask, 'proposed_NEW_circles_id'] = new_id
+                    self.logger.info(f"Updated {mask.sum()} participant assignments from {old_id} to {new_id}")
     
     def normalize_host_values(self) -> None:
         """Normalize host values to ensure consistent counting"""
