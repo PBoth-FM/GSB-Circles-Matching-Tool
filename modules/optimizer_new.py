@@ -1801,15 +1801,38 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Format the counter as a 2-digit number (01, 02, etc.)
         circle_num = str(counter).zfill(2)
         
-        # Get the appropriate region code
+        # Get the appropriate region code with enhanced validation
         if is_virtual and subregion:
             # For virtual circles, use the region code with timezone from subregion
             region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
+            
+            # CRITICAL FIX: Ensure we never use 'Invalid' or 'Unknown' for virtual circles
+            if region_code in ['Invalid', 'Unknown', 'UNKNOWN']:
+                print(f"⚠️ WARNING: Invalid region code '{region_code}' for virtual circle, using fallback")
+                # Use enhanced fallback based on region type
+                if 'APAC+EMEA' in region:
+                    region_code = 'AE-GMT'
+                elif 'Americas' in region:
+                    region_code = 'AM-GMT'
+                else:
+                    region_code = 'VO-GMT'
+                print(f"  Applied fallback region code: {region_code}")
+            
             if debug_mode:
                 print(f"  Virtual circle with subregion {subregion}, using region_code: {region_code}")
         else:
             # For in-person circles, use the standard region code
             region_code = get_region_code(region)
+            
+            # CRITICAL FIX: Ensure we never use 'Invalid' or 'Unknown' for any circles
+            if region_code in ['Invalid', 'Unknown', 'UNKNOWN']:
+                print(f"⚠️ WARNING: Invalid region code '{region_code}' for in-person circle, using fallback")
+                region_code = 'UNKNOWN'
+        
+        # CRITICAL FIX: Ensure format prefix matches the region code for virtual circles
+        if is_virtual and not format_prefix == "VO":
+            print(f"⚠️ CRITICAL FIX: Correcting format prefix from {format_prefix} to VO for virtual circle")
+            format_prefix = "VO"
         
         # Generate a unique ID for this potential new circle using the correct format
         circle_id = f"{format_prefix}-{region_code}-NEW-{circle_num}"
