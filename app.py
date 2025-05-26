@@ -421,8 +421,26 @@ def run_optimization():
 def process_uploaded_file(uploaded_file):
     """Process the uploaded CSV file with participant data"""
     try:
+        # CRITICAL FIX: Complete session state reset when new data is uploaded
+        print("\n🔄 COMPLETE SESSION STATE RESET - New data uploaded")
+        
+        # Clear ALL matching-related session state variables
+        session_keys_to_clear = [
+            'results', 'matched_circles', 'unmatched_participants',
+            'circle_manager', 'optimization_results', 'circle_eligibility_logs',
+            'match_statistics', 'total_diversity_score', 'seattle_debug_logs',
+            'processed_data', 'df', 'validation_errors', 'deduplication_messages'
+        ]
+        
+        for key in session_keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+                print(f"  ✅ Cleared session state: {key}")
+        
         # Force clear any cached values
         st.cache_data.clear()
+        print("  ✅ Cleared all cached data")
+        
         with st.spinner("Processing data..."):
             # Load and validate data
             df, validation_errors, deduplication_messages = load_data(uploaded_file)
