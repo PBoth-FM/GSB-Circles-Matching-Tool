@@ -1093,43 +1093,27 @@ def process_uploaded_file(uploaded_file):
                         # Update the circles DataFrame with the fixed version
                         circles_df = fixed_circles_df
                         
-                        # FINAL CRITICAL FIX: Directly correct any remaining invalid circle IDs
-                        print("\n🚨 FINAL CRITICAL FIX: Scanning for invalid circle IDs")
-                        if 'circle_id' in circles_df.columns:
-                            invalid_mask = circles_df['circle_id'].str.contains('IP-UNKNOWN', na=False)
-                            invalid_count = invalid_mask.sum()
-                            
-                            if invalid_count > 0:
-                                print(f"🔧 Found {invalid_count} circles with invalid IP-UNKNOWN pattern - applying direct correction")
+                        # FINAL POST-PROCESSING: Apply comprehensive circle ID corrections
+                        print("\n🔧 POST-PROCESSING: Applying comprehensive circle ID corrections to results data")
+                        from utils.circle_id_postprocessor import has_unknown_circles, fix_unknown_circle_ids
+                        
+                        # Check and fix the results dataframe first
+                        if hasattr(st.session_state, 'results') and st.session_state.results is not None:
+                            if has_unknown_circles(st.session_state.results):
+                                print("🔧 Applying post-processing fixes to results dataframe")
+                                st.session_state.results = fix_unknown_circle_ids(st.session_state.results)
                                 
-                                # Apply direct correction to invalid circle IDs
-                                for idx in circles_df[invalid_mask].index:
-                                    old_id = circles_df.loc[idx, 'circle_id']
-                                    region = circles_df.loc[idx, 'region'] if 'region' in circles_df.columns else 'Virtual-Only APAC+EMEA'
-                                    subregion = circles_df.loc[idx, 'subregion'] if 'subregion' in circles_df.columns else 'GMT'
-                                    
-                                    # Extract number from old ID
-                                    import re
-                                    number_match = re.search(r'-(\d+)$', old_id)
-                                    number = number_match.group(1) if number_match else '01'
-                                    
-                                    # Generate correct virtual circle ID
-                                    if 'APAC+EMEA' in str(region):
-                                        if 'GMT+3' in str(subregion):
-                                            new_id = f"VO-AE-GMT+3-NEW-{number}"
-                                        elif 'GMT+8' in str(subregion):
-                                            new_id = f"VO-AE-GMT+8-NEW-{number}"
-                                        else:
-                                            new_id = f"VO-AE-GMT-NEW-{number}"
-                                    else:
-                                        new_id = f"VO-AE-GMT-NEW-{number}"
-                                    
-                                    circles_df.loc[idx, 'circle_id'] = new_id
-                                    print(f"  🔧 Corrected: {old_id} → {new_id}")
-                                
-                                print(f"✅ Successfully corrected {invalid_count} invalid circle IDs")
+                                # Rebuild circles_df from the corrected results
+                                from modules.circle_reconstruction import reconstruct_circles_from_results
+                                if hasattr(st.session_state, 'matched_circles') and st.session_state.matched_circles is not None:
+                                    corrected_circles = reconstruct_circles_from_results(
+                                        st.session_state.results, 
+                                        st.session_state.matched_circles
+                                    )
+                                    circles_df = corrected_circles
+                                    print("✅ Rebuilt Circle Composition table from corrected results")
                             else:
-                                print("✅ No invalid circle IDs found!")
+                                print("✅ No invalid circle IDs found in results data")
                         
                         # Final verification
                         if 'subregion' in circles_df.columns:

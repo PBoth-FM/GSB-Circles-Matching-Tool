@@ -363,6 +363,13 @@ def generate_download_link(df):
     final_columns = [col for col in ordered_columns if col in output_df.columns]
     final_df = output_df[final_columns]
     
+    # CRITICAL FIX: Apply post-processing to fix any invalid circle IDs before CSV generation
+    from utils.circle_id_postprocessor import has_unknown_circles, fix_unknown_circle_ids
+    
+    if has_unknown_circles(final_df):
+        print("\n🔧 PRE-CSV PROCESSING: Applying circle ID corrections before CSV generation")
+        final_df = fix_unknown_circle_ids(final_df)
+    
     # Convert to CSV and return
     csv_buffer = io.StringIO()
     final_df.to_csv(csv_buffer, index=False)
