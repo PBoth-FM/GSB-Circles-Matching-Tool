@@ -108,28 +108,28 @@ def process_uploaded_file(uploaded_file):
         
         st.success(f"Data processed successfully! {final_count} participants loaded.")
         
-        # Display filtering summary if records were excluded
-        if excluded_count > 0:
-            st.subheader("📊 Data Filtering Summary")
-            col1, col2, col3 = st.columns(3)
+        # Display filtering summary using the actual filter counts from data loading
+        if hasattr(st.session_state, 'status_filter_counts') and st.session_state.status_filter_counts:
+            filter_counts = st.session_state.status_filter_counts
+            total_excluded = filter_counts.get('not_continuing', 0) + filter_counts.get('moving_out', 0)
             
-            with col1:
-                st.metric("Total Uploaded Records", initial_count)
-            with col2:
-                st.metric("Excluded Records", excluded_count, delta=f"-{excluded_count}")
-            with col3:
-                st.metric("Final Participants", final_count)
-            
-            # Show details of what was excluded by comparing initial vs final status counts
-            if initial_status_counts is not None:
-                final_status_counts = normalized_data['Status'].value_counts()
+            if total_excluded > 0:
+                st.subheader("📊 Data Filtering Summary")
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Total Uploaded Records", initial_count)
+                with col2:
+                    st.metric("Excluded Records", total_excluded, delta=f"-{total_excluded}")
+                with col3:
+                    st.metric("Final Participants", final_count)
+                
+                # Show details of what was excluded
                 st.write("**Excluded by status:**")
-                for status in initial_status_counts.index:
-                    initial_count_status = initial_status_counts[status]
-                    final_count_status = final_status_counts.get(status, 0)
-                    excluded_status = initial_count_status - final_count_status
-                    if excluded_status > 0:
-                        st.write(f"• {status}: {excluded_status} participants")
+                if filter_counts.get('not_continuing', 0) > 0:
+                    st.write(f"• Not Continuing: {filter_counts['not_continuing']} participants")
+                if filter_counts.get('moving_out', 0) > 0:
+                    st.write(f"• Moving Out: {filter_counts['moving_out']} participants")
         
         # Display data summary
         st.subheader("Data Summary")
@@ -160,25 +160,43 @@ def run_optimization():
     
     try:
         with st.spinner("Running optimization algorithm..."):
-            # Run the matching algorithm
-            results_df, circles_df, unmatched_df = run_matching_algorithm(
-                st.session_state.processed_data, 
-                st.session_state.config
-            )
+            import signal
             
-            # Store results in session state first
-            st.session_state.results = results_df
-            st.session_state.matched_circles = circles_df
-            st.session_state.unmatched_participants = unmatched_df
+            def timeout_handler(signum, frame):
+                raise TimeoutError("Optimization algorithm timed out after 5 minutes")
             
-            # Apply post-processing fixes to circle IDs if we have results
-            if results_df is not None and not results_df.empty:
-                try:
-                    fixed_results = fix_unknown_circle_ids(results_df)
-                    st.session_state.results = fixed_results
-                except Exception as fix_error:
-                    st.warning(f"Post-processing warning: {str(fix_error)}")
-                    # Continue with original results if post-processing fails
+            # Set a 5-minute timeout
+            signal.signal(signal.SIGALRM, timeout_handler)
+            signal.alarm(300)  # 5 minutes
+            
+            try:
+                # Run the matching algorithm
+                results_df, circles_df, unmatched_df = run_matching_algorithm(
+                    st.session_state.processed_data, 
+                    st.session_state.config
+                )
+                
+                # Cancel the timeout
+                signal.alarm(0)
+                
+                # Store results in session state first
+                st.session_state.results = results_df
+                st.session_state.matched_circles = circles_df
+                st.session_state.unmatched_participants = unmatched_df
+                
+                # Apply post-processing fixes to circle IDs if we have results
+                if results_df is not None and not results_df.empty:
+                    try:
+                        fixed_results = fix_unknown_circle_ids(results_df)
+                        st.session_state.results = fixed_results
+                    except Exception as fix_error:
+                        st.warning(f"Post-processing warning: {str(fix_error)}")
+                        # Continue with original results if post-processing fails
+                
+            except TimeoutError:
+                signal.alarm(0)  # Cancel the timeout
+                st.error("The optimization algorithm is taking too long and was stopped. This might indicate an issue with the data or algorithm parameters.")
+                return
             
         st.success("Optimization completed successfully!")
         st.rerun()
