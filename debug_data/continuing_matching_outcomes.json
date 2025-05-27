@@ -1,19 +1,19 @@
 {
-  "total_continuing_members": 4,
-  "matched_members": 4,
-  "unmatched_members": 0,
-  "matched_to_correct_circle": 4,
+  "total_continuing_members": 70,
+  "matched_members": 18,
+  "unmatched_members": 52,
+  "matched_to_correct_circle": 18,
   "matched_to_wrong_circle": 0,
   "members": [
     {
-      "participant_id": "66883222431",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "56560438326",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -23,25 +23,129 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "54277169564",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76113977745",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "43102958691",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63060331353",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-04",
+      "assigned_circle": "IP-LAX-04",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "64567903885",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "44282806276",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-03",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -51,25 +155,155 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-03",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72980485076",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "60603274029",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "52874007355",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75386376073",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "52874007355A",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-05",
+      "assigned_circle": "IP-LAX-05",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "67938698165",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "60526927149",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-08",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-08",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -79,25 +313,77 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-08",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "IP-LAX-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "48870776596",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "47704061072",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-05",
+      "assigned_circle": "IP-LAX-05",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "58244483490",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "74443044760",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-02",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-02",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -107,18 +393,1478 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-LAX-02",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "IP-LAX-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "43719936915",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "54558320926",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-05",
+      "assigned_circle": "IP-LAX-05",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
+    },
+    {
+      "participant_id": "59882949169",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58113759340",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "52248261169",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64646079909",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66900122131",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-05",
+      "assigned_circle": "IP-LAX-05",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "69350827156",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62778633236",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65455406542",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "42197194417",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "79132194578",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-04",
+      "assigned_circle": "IP-LAX-04",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "73853593165",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "69337128458",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "62855069585",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67719151180",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-04",
+      "assigned_circle": "IP-LAX-04",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "78171198108",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59777972209",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68711004514",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "54679471893",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "54588342746",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "47688314528",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "55621292174",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65680013496",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67247301615",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62646398054",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69514923243",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "55355569244",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58975733509",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "74450947855",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "52245636745",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "51095970036",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75033490455",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64287120340",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-04",
+      "assigned_circle": "IP-LAX-04",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "70522214950",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73709776718",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62814679302",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "38584277141",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70283919239",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "60617290839",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69279619773",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "53444998513",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "44618394554",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-05",
+      "assigned_circle": "IP-LAX-05",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "65471888720",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "48320790771",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62651497787",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "48336388200",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "44564832446",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70002410001",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "68665872374",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-04",
+      "assigned_circle": "IP-LAX-04",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "67916151977",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64094115825",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59884997015",
+      "status": "MATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-09",
+      "assigned_circle": "IP-LAX-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "66795512988",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62737636552",
+      "status": "UNMATCHED",
+      "region": "Los Angeles",
+      "circle_id": "IP-LAX-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-LAX-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-LAX-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     }
   ],
-  "match_rate": 1.0,
-  "correct_match_rate": 1.0,
-  "unmatched_reason_frequency": {}
+  "match_rate": 0.2571428571428571,
+  "correct_match_rate": 0.2571428571428571,
+  "unmatched_reason_frequency": {
+    "Unknown (participant not found in unmatched list)": 52
+  }
 }

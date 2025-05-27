@@ -991,33 +991,86 @@ def process_uploaded_file(uploaded_file):
                     # Create DataFrame and display with column resizing
                     composition_df = pd.DataFrame(circle_composition_data)
                     
-                    # SYSTEM UPGRADE: Using the centralized metadata manager for comprehensive fixing
-                    from utils.circle_metadata_manager import get_manager_from_session_state, initialize_or_update_manager
-                    import logging
+                    # Display the unified Circle Composition table with resizable columns
+                    st.dataframe(
+                        composition_df,
+                        use_container_width=True,
+                        column_config={
+                            "Circle Id": st.column_config.TextColumn(width="medium"),
+                            "Region": st.column_config.TextColumn(width="medium"),
+                            "Subregion": st.column_config.TextColumn(width="large"),
+                            "Meeting Time": st.column_config.TextColumn(width="large"),
+                            "Member Count": st.column_config.NumberColumn(width="small"),
+                            "New Members": st.column_config.NumberColumn(width="small"),
+                            "Max Additions": st.column_config.NumberColumn(width="small")
+                        }
+                    )
+                else:
+                    st.info("No circle data available for composition table")
+                
+                # Display unmatched participants
+                st.subheader("Unmatched Participants")
+                
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    results_df = st.session_state.results
                     
-                    # Get the metadata manager from session state
-                    print("\n🔄 GETTING CIRCLE DATA FROM METADATA MANAGER: Authoritative single source of truth")
-                    metadata_manager = get_manager_from_session_state(st.session_state)
+                    # Filter out participants with null Encoded IDs
+                    from utils.helpers import get_valid_participants
+                    results_df = get_valid_participants(results_df)
                     
-                    # Check if we got a valid manager
-                    if metadata_manager:
-                        # Replace the circles_df with the one from the manager to ensure consistency
-                        circles_df = metadata_manager.get_circles_dataframe()
-                        print(f"  ✅ Successfully retrieved circle data from metadata manager: {len(circles_df)} circles")
+                    # Filter unmatched participants
+                    unmatched_df = results_df[
+                        (results_df['proposed_NEW_circles_id'].isna()) | 
+                        (results_df['proposed_NEW_circles_id'] == 'UNMATCHED')
+                    ].copy()
+                    
+                    if len(unmatched_df) > 0:
+                        # Select relevant columns for display
+                        unmatched_display_cols = ['Encoded ID', 'First Name', 'Last Name', 'Derived_Region', 
+                                                'Subregion', 'Status', 'Meeting_Time', 'Location_Preference']
                         
-                        # CRITICAL FIX: Target circle diagnostics
-                        for test_id in ['IP-BOS-04', 'IP-BOS-05']:
-                            circle_data = metadata_manager.get_circle_data(test_id)
-                            if circle_data:
-                                print(f"\n🔍 TEST CIRCLE {test_id} VALIDATION FROM METADATA MANAGER:")
-                                for key in ['max_additions', 'always_hosts', 'sometimes_hosts', 'member_count', 'new_members', 'continuing_members']:
-                                    print(f"  {key}: {circle_data.get(key, 'Not Found')}")
+                        # Filter to existing columns
+                        existing_unmatched_cols = [col for col in unmatched_display_cols if col in unmatched_df.columns]
+                        
+                        if existing_unmatched_cols:
+                            unmatched_display = unmatched_df[existing_unmatched_cols].copy()
+                            
+                            # Rename columns for better display
+                            column_renames = {
+                                'Derived_Region': 'Region',
+                                'Meeting_Time': 'Meeting Time',
+                                'Location_Preference': 'Location Preference'
+                            }
+                            
+                            for old_name, new_name in column_renames.items():
+                                if old_name in unmatched_display.columns:
+                                    unmatched_display = unmatched_display.rename(columns={old_name: new_name})
+                            
+                            # Display with column resizing
+                            st.dataframe(
+                                unmatched_display,
+                                use_container_width=True,
+                                column_config={
+                                    "Encoded ID": st.column_config.TextColumn(width="small"),
+                                    "First Name": st.column_config.TextColumn(width="medium"),
+                                    "Last Name": st.column_config.TextColumn(width="medium"),
+                                    "Region": st.column_config.TextColumn(width="medium"),
+                                    "Subregion": st.column_config.TextColumn(width="large"),
+                                    "Status": st.column_config.TextColumn(width="medium"),
+                                    "Meeting Time": st.column_config.TextColumn(width="large"),
+                                    "Location Preference": st.column_config.TextColumn(width="large")
+                                }
+                            )
+                            
+                            st.info(f"Total unmatched participants: {len(unmatched_df)}")
+                        else:
+                            st.warning("Could not display unmatched participants - missing expected columns.")
                     else:
-                        print("  ⚠️ WARNING: Could not get metadata manager from session state")
-                    
-                    print("\n🔍 CIRCLE COMPOSITION DEBUG: Using centralized metadata manager")
-                    print(f"Circle DataFrame shape: {circles_df.shape if hasattr(circles_df, 'shape') else 'unknown'}")
-                    if hasattr(circles_df, 'columns'):
+                        st.success("🎉 All participants were successfully matched to circles!")
+                else:
+                    st.warning("No results data available for unmatched participants display.")
+                
+                # CSV Download Section
                         print(f"Available columns: {list(circles_df.columns)}")
                         
                         # Count how many subregion and meeting_time values are "Unknown"
@@ -1217,89 +1270,7 @@ def process_uploaded_file(uploaded_file):
                     else:
                         st.warning("Circle data doesn't contain the expected columns.")
                 else:
-                    st.warning("No matching results available. Please run the matching algorithm first.")
-                
-                # NEW: Circle Composition from CSV - Direct from Results Data
-                st.subheader("Circle Composition from CSV")
-                
-                if 'results' in st.session_state and st.session_state.results is not None:
-                    results_df = st.session_state.results.copy()
-                    
-                    # Check if we have the required columns
-                    required_cols = ['proposed_NEW_circles_id', 'Derived_Region', 'proposed_NEW_Subregion', 
-                                   'proposed_NEW_DayTime', 'Encoded ID', 'Status', 'co_leader_max_new_members', 
-                                   'host_status_standardized']
-                    
-                    missing_cols = [col for col in required_cols if col not in results_df.columns]
-                    
-                    if missing_cols:
-                        st.warning(f"Missing required columns for CSV table: {missing_cols}")
-                    else:
-                        # Filter out unmatched participants
-                        matched_results = results_df[
-                            (results_df['proposed_NEW_circles_id'].notna()) & 
-                            (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
-                        ].copy()
-                        
-                        if len(matched_results) > 0:
-                            # Group by circle ID and aggregate data
-                            circle_groups = matched_results.groupby('proposed_NEW_circles_id')
-                            
-                            csv_circles_data = []
-                            
-                            for circle_id, group in circle_groups:
-                                # Calculate aggregated values
-                                member_count = len(group)
-                                new_members = len(group[group['Status'] == 'NEW'])
-                                
-                                # Get first values for region, subregion, meeting time (should be same for all members)
-                                region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
-                                subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
-                                meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
-                                
-                                # Calculate max additions (minimum of co_leader_max_new_members, treating None/blank as 0)
-                                max_additions_values = []
-                                for val in group['co_leader_max_new_members']:
-                                    if pd.isna(val) or val == '' or val == 'None':
-                                        max_additions_values.append(0)
-                                    else:
-                                        try:
-                                            max_additions_values.append(int(float(val)))
-                                        except (ValueError, TypeError):
-                                            max_additions_values.append(0)
-                                
-                                max_additions = min(max_additions_values) if max_additions_values else 0
-                                
-                                # Count host status
-                                always_hosts = len(group[group['host_status_standardized'] == 'ALWAYS'])
-                                sometimes_hosts = len(group[group['host_status_standardized'] == 'SOMETIMES'])
-                                
-                                csv_circles_data.append({
-                                    'Circle Id': circle_id,
-                                    'Region': region,
-                                    'Subregion': subregion,
-                                    'Meeting Time': meeting_time,
-                                    'Member Count': member_count,
-                                    'New Members': new_members,
-                                    'Max Additions': max_additions,
-                                    'Always Hosts': always_hosts,
-                                    'Sometimes Hosts': sometimes_hosts
-                                })
-                            
-                            # Create DataFrame and display
-                            if csv_circles_data:
-                                csv_circles_df = pd.DataFrame(csv_circles_data)
-                                csv_circles_df = csv_circles_df.sort_values('Circle Id')
-                                st.dataframe(csv_circles_df, use_container_width=True)
-                                
-                                # Show summary comparison
-                                st.info(f"📊 **CSV Table Summary:** {len(csv_circles_df)} circles displayed from direct CSV data")
-                            else:
-                                st.warning("No circle data could be generated from CSV results.")
-                        else:
-                            st.warning("No matched participants found in results data.")
-                else:
-                    st.warning("No results data available. Please run the matching algorithm first.")
+                    st.info("No circle data available for composition table")
                 
                 # Display unmatched participants
                 st.subheader("Unmatched Participants")
