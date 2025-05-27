@@ -9,7 +9,6 @@ from modules.data_processor import process_data, normalize_data
 from modules.optimizer import run_matching_algorithm
 from modules.ui_components import (
     render_match_tab, 
-    render_details_tab, 
     render_debug_tab,
     render_demographics_tab,
     render_results_overview,
@@ -71,7 +70,7 @@ def main():
     
     # Create tabs for navigation, moved Demographics after Match per user request
     # Removed East Bay Debug tab to focus on Seattle testing
-    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Demographics", "Details", "Debug"])
+    tab1, tab2, tab3 = st.tabs(["Match", "Demographics", "Debug"])
     
     with tab1:
         # Use our custom match tab function instead of the imported one
@@ -81,9 +80,6 @@ def main():
         render_demographics_tab()
     
     with tab3:
-        render_details_tab()
-            
-    with tab4:
         render_debug_tab()
 
 def run_optimization():
