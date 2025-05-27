@@ -1023,55 +1023,42 @@ def process_uploaded_file(uploaded_file):
                 
                 # Display unmatched participants
                 st.subheader("Unmatched Participants")
-                        sample_count = 0
-                        for _, row in circles_df.iterrows():
-                            if ((row.get('subregion', '') == 'Unknown' or row.get('meeting_time', '') == 'Unknown') 
-                                and sample_count < 3):
-                                sample_count += 1
-                                circle_id = row.get('circle_id', 'Unknown')
-                                region = row.get('region', 'Unknown')
-                                subregion = row.get('subregion', 'Unknown')
-                                meeting_time = row.get('meeting_time', 'Unknown')
-                                print(f"Circle {circle_id} (Region: {region})")
-                                print(f"  Subregion: {subregion}")
-                                print(f"  Meeting Time: {meeting_time}")
-                                # Log all non-NA attributes to help with debugging
-                                print(f"  All data attributes:")
-                                for col, val in row.items():
-                                    # Handle array-like pd.isna() values by using .all() to check if all elements are NaN
-                                    is_valid_value = True
-                                    try:
-                                        # For array-like values, check if any are not NaN
-                                        if hasattr(pd.isna(val), '__iter__'):
-                                            is_valid_value = not pd.isna(val).all()
-                                        else:
-                                            is_valid_value = not pd.isna(val)
-                                    except Exception as e:
-                                        print(f"Warning: Error checking NaN for {col}: {str(e)}")
-                                        # Default to showing the value if there's an error
-                                        is_valid_value = True
-                                        
-                                    if is_valid_value and col not in ['circle_id', 'region', 'subregion', 'meeting_time']:
-                                        print(f"    {col}: {val}")
+                
+                if 'unmatched' in st.session_state and st.session_state.unmatched is not None:
+                    unmatched_df = st.session_state.unmatched
+                    if len(unmatched_df) > 0:
+                        st.dataframe(unmatched_df, use_container_width=True)
+                        st.info(f"📊 {len(unmatched_df)} participants could not be matched to circles")
+                    else:
+                        st.success("🎉 All participants were successfully matched to circles!")
+                else:
+                    st.warning("No unmatched participants data available. Please run the matching algorithm first.")
+
+                # Download section
+                st.subheader("Download Results")
+                
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    # Apply post-processing to fix any "IP-UNKNOWN" circle IDs before download
+                    from utils.circle_id_postprocessor import has_unknown_circles, fix_unknown_circle_ids
                     
-                    # COMPREHENSIVE FIX: Apply centralized metadata manager to fix Unknown values
-                    # First, check the results_df columns to debug why previous fix attempts failed
-                    if 'results' in st.session_state and st.session_state.results is not None:
-                        results_df = st.session_state.results
-                        
-                        # Examine results columns to understand why previous fixes failed
-                        print("\n🔍 DETAILED RESULTS DATA ANALYSIS:")
-                        print(f"Results DataFrame shape: {results_df.shape}")
-                        print(f"Results columns: {list(results_df.columns)}")
-                        
-                        # Check for specific columns that we expect to use for repairs
-                        interesting_cols = [
-                            'proposed_NEW_circles_id', 'assigned_circle', 'circle_id',
-                            'proposed_NEW_Subregion', 'proposed_NEW_DayTime', 'Current_Subregion', 
-                            'Current_Meeting_Time', 'Subregion', 'Meeting_Time'
-                        ]
-                        
-                        found_cols = [col for col in interesting_cols if col in results_df.columns]
+                    # Check and fix the results dataframe if needed
+                    results_for_download = st.session_state.results.copy()
+                    if has_unknown_circles(results_for_download):
+                        results_for_download = fix_unknown_circle_ids(results_for_download)
+                    
+                    # Generate CSV download
+                    csv_data = results_for_download.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download Results CSV",
+                        data=csv_data,
+                        file_name="circle_matching_results.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.warning("No results available for download. Please run the matching algorithm first.")
+
+            # Configuration and Settings tab
+            with tab4:
                         print(f"Found these interesting columns: {found_cols}")
                         
                         # Check what values exist in the identified columns
