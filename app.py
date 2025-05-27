@@ -865,28 +865,50 @@ def process_uploaded_file(uploaded_file):
                     unmatched_count = match_stats['unmatched_participants']
                     total_participants = match_stats['total_participants']
                     
+                    # UNIFIED REPORTING: Generate post-processed dataframe (same as CSV)
+                    def get_unified_dataframe():
+                        """Generate the same post-processed dataframe used for CSV export"""
+                        from utils.helpers import get_valid_participants
+                        from utils.circle_id_postprocessor import has_unknown_circles, fix_unknown_circle_ids
+                        
+                        # Get valid participants (same as CSV)
+                        filtered_results = get_valid_participants(st.session_state.results)
+                        
+                        # Apply post-processing corrections (same as CSV)
+                        if has_unknown_circles(filtered_results):
+                            filtered_results = fix_unknown_circle_ids(filtered_results)
+                        
+                        return filtered_results
+                    
+                    # Get the unified dataframe for all reporting
+                    unified_df = get_unified_dataframe()
+                    
+                    # Calculate statistics from unified dataframe
+                    circles_in_unified = unified_df[unified_df['proposed_NEW_circles_id'].notna()]
+                    unique_circles = circles_in_unified['proposed_NEW_circles_id'].nunique()
+                    matched_participants = len(circles_in_unified)
+                    total_participants = len(st.session_state.processed_data)
+                    match_rate = (matched_participants / total_participants) * 100 if total_participants > 0 else 0
+                    
                     # Create columns for the metrics (now 3 columns instead of 4)
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                            st.metric("Circles Created", match_stats['total_circles'])
+                        st.metric("Circles Created", unique_circles)
                     
                     with col2:
-                        # Use the standardized matched count
-                        st.metric("Participants Matched", match_stats['matched_participants'])
+                        st.metric("Participants Matched", matched_participants)
                         
                     with col3:
-                        # Use the standardized match rate
-                        st.metric("Match Success Rate", f"{match_stats['match_rate']:.1f}%")
+                        st.metric("Match Success Rate", f"{match_rate:.1f}%")
                 
                 # Create size histogram before the composition table
                 st.subheader("Circle Size Distribution")
-                if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and 'member_count' in st.session_state.matched_circles.columns:
-                    circles_df = st.session_state.matched_circles
-                    
-                    # Calculate size counts 
-                    size_counts = circles_df['member_count'].value_counts().sort_index()
+                # Use unified dataframe for histogram (same as CSV data)
+                if len(circles_in_unified) > 0:
+                    # Calculate circle sizes from unified dataframe
+                    circle_size_counts = circles_in_unified['proposed_NEW_circles_id'].value_counts()
+                    size_counts = circle_size_counts.value_counts().sort_index()
                     
                     # Create DataFrame for plotting
                     size_df = pd.DataFrame({
@@ -918,39 +940,56 @@ def process_uploaded_file(uploaded_file):
                     # Show the plot
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Show summary statistics
-                    avg_size = circles_df['member_count'].mean()
-                    median_size = circles_df['member_count'].median()
+                    # Show summary statistics using unified data
+                    circle_sizes = circle_size_counts.values
+                    avg_size = circle_sizes.mean()
+                    median_size = pd.Series(circle_sizes).median()
                     
                     col1, col2 = st.columns(2)
                     with col1:
                         st.metric("Average Circle Size", f"{avg_size:.1f}")
                     with col2:
                         st.metric("Median Circle Size", f"{median_size:.0f}")
+                else:
+                    st.info("No circle data available for size distribution")
 
+                # Create unified Circle Composition table using same data as CSV
                 st.subheader("Circle Composition")
                 
-                # Display circle table with specified columns
-                if ('matched_circles' in st.session_state and 
-                    st.session_state.matched_circles is not None and 
-                    (isinstance(st.session_state.matched_circles, list) or 
-                     not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty))):
+                if len(circles_in_unified) > 0:
+                    # Create Circle Composition table from unified dataframe (same as CSV)
+                    circle_composition_data = []
                     
-                    # Get the data - handle the case where matched_circles might be a list of dictionaries
-                    if isinstance(st.session_state.matched_circles, pd.DataFrame):
-                        circles_df = st.session_state.matched_circles.copy()
-                    elif isinstance(st.session_state.matched_circles, list):
-                        # Convert list of dictionaries to DataFrame
-                        try:
-                            circles_df = pd.DataFrame(st.session_state.matched_circles)
-                        except Exception as e:
-                            st.warning(f"Could not convert circles to DataFrame: {str(e)}")
-                            print(f"Error converting matched_circles to DataFrame: {str(e)}")
-                            circles_df = pd.DataFrame()  # Empty DataFrame as fallback
-                    else:
-                        # Unknown type
-                        st.warning(f"Unexpected matched_circles type: {type(st.session_state.matched_circles)}")
-                        circles_df = pd.DataFrame()  # Empty DataFrame as fallback
+                    # Group by circle to create composition summary
+                    for circle_id in unified_df['proposed_NEW_circles_id'].dropna().unique():
+                        circle_members = unified_df[unified_df['proposed_NEW_circles_id'] == circle_id]
+                        
+                        # Get circle metadata
+                        first_member = circle_members.iloc[0]
+                        region = first_member.get('proposed_NEW_Region', first_member.get('Derived_Region', 'Unknown'))
+                        subregion = first_member.get('proposed_NEW_Subregion', first_member.get('Subregion', 'Unknown'))
+                        meeting_time = first_member.get('proposed_NEW_DayTime', first_member.get('Meeting_Time', 'Unknown'))
+                        
+                        # Count members and new members
+                        member_count = len(circle_members)
+                        new_members = len(circle_members[circle_members['Status'].str.contains('NEW', na=False)])
+                        
+                        # Calculate max additions (minimum of co_leader_max_new_members)
+                        max_additions_values = circle_members['co_leader_max_new_members'].dropna()
+                        max_additions = int(max_additions_values.min()) if len(max_additions_values) > 0 else 0
+                        
+                        circle_composition_data.append({
+                            'Circle Id': circle_id,
+                            'Region': region,
+                            'Subregion': subregion,
+                            'Meeting Time': meeting_time,
+                            'Member Count': member_count,
+                            'New Members': new_members,
+                            'Max Additions': max_additions
+                        })
+                    
+                    # Create DataFrame and display with column resizing
+                    composition_df = pd.DataFrame(circle_composition_data)
                     
                     # SYSTEM UPGRADE: Using the centralized metadata manager for comprehensive fixing
                     from utils.circle_metadata_manager import get_manager_from_session_state, initialize_or_update_manager
