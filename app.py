@@ -75,8 +75,9 @@ def process_uploaded_file(uploaded_file):
             st.error("Failed to load data from uploaded file.")
             return None
             
-        # Track initial count for filtering summary
+        # Track initial count and status breakdown for filtering summary
         initial_count = len(df)
+        initial_status_counts = df['Status'].value_counts() if 'Status' in df.columns else None
         
         # Process and normalize data
         processed_data = process_data(df, debug_mode=st.session_state.config.get('debug_mode', False))
@@ -85,6 +86,14 @@ def process_uploaded_file(uploaded_file):
         # Track final count and calculate exclusions
         final_count = len(normalized_data)
         excluded_count = initial_count - final_count
+        
+        # Store filtering info for display
+        st.session_state.filtering_info = {
+            'initial_count': initial_count,
+            'final_count': final_count,
+            'excluded_count': excluded_count,
+            'initial_status_counts': initial_status_counts
+        }
         
         # Store in session state
         st.session_state.processed_data = normalized_data
@@ -111,14 +120,16 @@ def process_uploaded_file(uploaded_file):
             with col3:
                 st.metric("Final Participants", final_count)
             
-            # Show details of what was excluded
-            if 'Status' in df.columns:
-                excluded_data = df[~df.index.isin(normalized_data.index)]
-                if not excluded_data.empty:
-                    status_counts = excluded_data['Status'].value_counts()
-                    st.write("**Excluded by status:**")
-                    for status, count in status_counts.items():
-                        st.write(f"• {status}: {count} participants")
+            # Show details of what was excluded by comparing initial vs final status counts
+            if initial_status_counts is not None:
+                final_status_counts = normalized_data['Status'].value_counts()
+                st.write("**Excluded by status:**")
+                for status in initial_status_counts.index:
+                    initial_count_status = initial_status_counts[status]
+                    final_count_status = final_status_counts.get(status, 0)
+                    excluded_status = initial_count_status - final_count_status
+                    if excluded_status > 0:
+                        st.write(f"• {status}: {excluded_status} participants")
         
         # Display data summary
         st.subheader("Data Summary")
@@ -143,7 +154,7 @@ def process_uploaded_file(uploaded_file):
 
 def run_optimization():
     """Run the optimization algorithm and store results in session state"""
-    if st.session_state.processed_data is None:
+    if not hasattr(st.session_state, 'processed_data') or st.session_state.processed_data is None:
         st.error("No data available. Please upload and process data first.")
         return
     
@@ -155,22 +166,27 @@ def run_optimization():
                 st.session_state.config
             )
             
-            # Apply post-processing fixes to circle IDs
-            if results_df is not None and not results_df.empty:
-                results_df = fix_unknown_circle_ids(results_df)
-                # Update session state with corrected data
-                st.session_state.results = results_df
-            
-            # Store results in session state
+            # Store results in session state first
             st.session_state.results = results_df
             st.session_state.matched_circles = circles_df
             st.session_state.unmatched_participants = unmatched_df
+            
+            # Apply post-processing fixes to circle IDs if we have results
+            if results_df is not None and not results_df.empty:
+                try:
+                    fixed_results = fix_unknown_circle_ids(results_df)
+                    st.session_state.results = fixed_results
+                except Exception as fix_error:
+                    st.warning(f"Post-processing warning: {str(fix_error)}")
+                    # Continue with original results if post-processing fails
             
         st.success("Optimization completed successfully!")
         st.rerun()
         
     except Exception as e:
         st.error(f"Error during optimization: {str(e)}")
+        import traceback
+        st.error(f"Full error details: {traceback.format_exc()}")
 
 def create_circle_composition_table(results_df):
     """Create the Circle Composition table from results CSV data"""
