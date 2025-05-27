@@ -1,15 +1,15 @@
 {
-  "total_continuing_members": 35,
+  "total_continuing_members": 4,
   "members": [
     {
-      "participant_id": "65295972784",
+      "participant_id": "66883222431",
       "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-LON-05",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -19,19 +19,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-LON-05",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "2182871894541",
+      "participant_id": "64567903885",
       "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-LON-05",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -41,19 +41,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-LON-05",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "77047387940",
+      "participant_id": "67938698165",
       "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-LON-04",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -63,19 +63,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-LON-04",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "56250169775",
+      "participant_id": "58244483490",
       "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-03",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-LON-03",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -85,689 +85,7 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "58112109134",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "69980201807",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "72135688955",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "73834307625",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "46754685631",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "72959638799",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "73699298904",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "72961626999",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "64815593841",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "73706466365",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "320973760868",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "73707033002",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "65841664097",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "64952491352",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "48083041815",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "72534929456",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "71465287797",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "70726333503",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "228575675041",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "51448209489",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "73836415117",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "66113192571",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "65648152591",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "60554145607",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-03",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-03",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "75408484857",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "64564026895",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "68349509990",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "67407431243",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-04",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-04",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "69641541760",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-05",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-05",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "76616713997",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "71298139823",
-      "status": "CURRENT-CONTINUING",
-      "region": "London",
-      "circle_id": "IP-LON-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-LON-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-LON-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     }
@@ -777,6 +95,6 @@
   "aggressive_method_success_rate": 1.0,
   "any_method_success_rate": 1.0,
   "column_frequency": {
-    "Current_Circle_ID": 35
+    "Current_Circle_ID": 4
   }
 }

@@ -1,19 +1,19 @@
 {
-  "total_continuing_members": 11,
-  "matched_members": 0,
-  "unmatched_members": 11,
-  "matched_to_correct_circle": 0,
+  "total_continuing_members": 4,
+  "matched_members": 4,
+  "unmatched_members": 0,
+  "matched_to_correct_circle": 4,
   "matched_to_wrong_circle": 0,
   "members": [
     {
-      "participant_id": "70630353148",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
+      "participant_id": "66883222431",
+      "status": "MATCHED",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -23,23 +23,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
     },
     {
-      "participant_id": "52177560777",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
+      "participant_id": "64567903885",
+      "status": "MATCHED",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -49,23 +51,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
     },
     {
-      "participant_id": "59599014327",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
+      "participant_id": "67938698165",
+      "status": "MATCHED",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -75,23 +79,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
     },
     {
-      "participant_id": "55648351576",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
+      "participant_id": "58244483490",
+      "status": "MATCHED",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -101,200 +107,18 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-ATL-1",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "65677190252",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "49803272219",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "74633862255",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "63612305378",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "57102878932",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "69348948307",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
-    },
-    {
-      "participant_id": "64120399829",
-      "status": "UNMATCHED",
-      "region": "Atlanta",
-      "circle_id": "IP-ATL-1",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-ATL-1",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-ATL-1",
-      "assigned_circle": "UNMATCHED",
-      "matched_correctly": false,
-      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
     }
   ],
-  "match_rate": 0.0,
-  "correct_match_rate": 0.0,
-  "unmatched_reason_frequency": {
-    "Unknown (participant not found in unmatched list)": 11
-  }
+  "match_rate": 1.0,
+  "correct_match_rate": 1.0,
+  "unmatched_reason_frequency": {}
 }
