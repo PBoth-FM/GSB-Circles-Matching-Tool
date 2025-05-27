@@ -1059,46 +1059,13 @@ def process_uploaded_file(uploaded_file):
 
             # Configuration and Settings tab
             with tab4:
-                        print(f"Found these interesting columns: {found_cols}")
-                        
-                        # Check what values exist in the identified columns
-                        if found_cols:
-                            print("Sample values from key columns:")
-                            for col in found_cols[:5]:  # Show first 5 columns max
-                                print(f"  Column '{col}':")
-                                # Get unique non-null values
-                                values = results_df[col].dropna().unique()
-                                if len(values) > 0:
-                                    # Show up to 5 sample values
-                                    print(f"    Sample values: {values[:5]}")
-                                else:
-                                    print(f"    No non-null values found")
-                        
-                        # Now apply the comprehensive fix using our metadata manager
-                        # Set up logging to capture detailed output
-                        logging.basicConfig(level=logging.INFO)
-                        
-                        # CRITICAL FIX: Use our metadata manager for comprehensive fixing
-                        if metadata_manager:
-                            print("\n🔧 APPLYING COMPREHENSIVE METADATA FIX using CircleMetadataManager")
-                            
-                            # Update metadata from results
-                            metadata_manager.results_df = results_df
-                            
-                            # Normalize and validate circle data
-                            metadata_manager.normalize_metadata()
-                            metadata_manager.validate_circles()
-                            
-                            # Get the updated data as a DataFrame
-                            fixed_circles_df = metadata_manager.get_circles_dataframe()
-                            print(f"  ✅ Successfully applied comprehensive metadata fix to {len(fixed_circles_df)} circles")
-                        else:
-                            print("  ⚠️ WARNING: Cannot apply comprehensive fix - no metadata manager available")
-                            # Fallback to the original circles_df
-                            fixed_circles_df = circles_df
-                        
-                        # Update the circles DataFrame with the fixed version
-                        circles_df = fixed_circles_df
+                st.header("Configuration and Settings")
+                
+                # Add configuration content here
+                st.info("Configuration options will be added here.")
+
+if __name__ == "__main__":
+    main()
                         
                         # FINAL POST-PROCESSING: Apply comprehensive circle ID corrections
                         print("\n🔧 POST-PROCESSING: Applying comprehensive circle ID corrections to results data")
