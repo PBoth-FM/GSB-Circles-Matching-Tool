@@ -11,7 +11,7 @@ import io
 from modules.data_loader import load_data, map_column_names, normalize_status_values, validate_data, deduplicate_encoded_ids
 from modules.data_processor import process_data, normalize_data
 from modules.optimizer import run_matching_algorithm
-from utils.circle_id_postprocessor import apply_post_processing_fixes
+from utils.circle_id_postprocessor import fix_unknown_circle_ids
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -119,7 +119,7 @@ def run_optimization():
             
             # Apply post-processing fixes to circle IDs
             if results_df is not None and not results_df.empty:
-                results_df = apply_post_processing_fixes(results_df)
+                results_df = fix_unknown_circle_ids(results_df)
                 # Update session state with corrected data
                 st.session_state.results = results_df
             
@@ -225,15 +225,15 @@ def create_circle_composition_table(results_df):
                 use_container_width=True,
                 hide_index=True,
                 column_config={
-                    'Circle ID': st.column_config.TextColumn(width=150),
-                    'Region': st.column_config.TextColumn(width=100),
-                    'Subregion': st.column_config.TextColumn(width=120),
-                    'Meeting Time': st.column_config.TextColumn(width=150),
-                    'Member Count': st.column_config.NumberColumn(width=100),
-                    'New Members': st.column_config.NumberColumn(width=100),
-                    'Max Additions': st.column_config.NumberColumn(width=100),
-                    'Always Hosts': st.column_config.NumberColumn(width=100),
-                    'Sometimes Hosts': st.column_config.NumberColumn(width=120)
+                    'Circle ID': st.column_config.TextColumn(width="medium"),
+                    'Region': st.column_config.TextColumn(width="small"),
+                    'Subregion': st.column_config.TextColumn(width="medium"),
+                    'Meeting Time': st.column_config.TextColumn(width="medium"),
+                    'Member Count': st.column_config.NumberColumn(width="small"),
+                    'New Members': st.column_config.NumberColumn(width="small"),
+                    'Max Additions': st.column_config.NumberColumn(width="small"),
+                    'Always Hosts': st.column_config.NumberColumn(width="small"),
+                    'Sometimes Hosts': st.column_config.NumberColumn(width="medium")
                 }
             )
         
