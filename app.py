@@ -39,6 +39,12 @@ def initialize_session_state():
     
     if 'results' not in st.session_state:
         st.session_state.results = None
+        
+    if 'matched_circles' not in st.session_state:
+        st.session_state.matched_circles = None
+        
+    if 'unmatched_participants' not in st.session_state:
+        st.session_state.unmatched_participants = None
 
 def clear_session_state():
     """Clear all matching-related session state"""
@@ -59,7 +65,11 @@ def process_uploaded_file(uploaded_file):
         clear_session_state()
         
         # Load and validate data
-        df, validation_errors = load_data(uploaded_file)
+        result = load_data(uploaded_file)
+        if len(result) == 2:
+            df, validation_errors = result
+        else:
+            df, validation_errors, _ = result  # Handle extra return value
         
         if df is None:
             st.error("Failed to load data from uploaded file.")
