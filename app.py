@@ -928,29 +928,96 @@ def process_uploaded_file(uploaded_file):
                     with col2:
                         st.metric("Median Circle Size", f"{median_size:.0f}")
 
+                # Circle Composition - Using CSV data for consistency
                 st.subheader("Circle Composition")
                 
-                # Display circle table with specified columns
-                if ('matched_circles' in st.session_state and 
-                    st.session_state.matched_circles is not None and 
-                    (isinstance(st.session_state.matched_circles, list) or 
-                     not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty))):
+                # Use CSV data source to ensure all displays show corrected circle IDs
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    results_df = st.session_state.results.copy()
                     
-                    # Get the data - handle the case where matched_circles might be a list of dictionaries
-                    if isinstance(st.session_state.matched_circles, pd.DataFrame):
-                        circles_df = st.session_state.matched_circles.copy()
-                    elif isinstance(st.session_state.matched_circles, list):
-                        # Convert list of dictionaries to DataFrame
-                        try:
-                            circles_df = pd.DataFrame(st.session_state.matched_circles)
-                        except Exception as e:
-                            st.warning(f"Could not convert circles to DataFrame: {str(e)}")
-                            print(f"Error converting matched_circles to DataFrame: {str(e)}")
-                            circles_df = pd.DataFrame()  # Empty DataFrame as fallback
+                    # Check if we have the required columns
+                    required_cols = ['proposed_NEW_circles_id', 'Derived_Region', 'proposed_NEW_Subregion', 
+                                   'proposed_NEW_DayTime', 'Encoded ID', 'Status', 'co_leader_max_new_members', 
+                                   'host_status_standardized']
+                    
+                    missing_cols = [col for col in required_cols if col not in results_df.columns]
+                    
+                    if missing_cols:
+                        st.warning(f"Missing required columns for Circle Composition table: {missing_cols}")
                     else:
-                        # Unknown type
-                        st.warning(f"Unexpected matched_circles type: {type(st.session_state.matched_circles)}")
-                        circles_df = pd.DataFrame()  # Empty DataFrame as fallback
+                        # Filter out unmatched participants
+                        matched_results = results_df[
+                            (results_df['proposed_NEW_circles_id'].notna()) & 
+                            (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+                        ].copy()
+                        
+                        if len(matched_results) > 0:
+                            # Group by circle ID and aggregate data
+                            circle_groups = matched_results.groupby('proposed_NEW_circles_id')
+                            
+                            csv_circles_data = []
+                            
+                            for circle_id, group in circle_groups:
+                                # Calculate aggregated values
+                                member_count = len(group)
+                                new_members = len(group[group['Status'] == 'NEW'])
+                                
+                                # Get first values for region, subregion, meeting time (should be same for all members)
+                                region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
+                                subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
+                                meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
+                                
+                                # Calculate max additions (minimum of co_leader_max_new_members, treating None/blank as 0)
+                                max_additions_values = []
+                                for val in group['co_leader_max_new_members']:
+                                    if pd.isna(val) or val == '' or val == 'None':
+                                        max_additions_values.append(0)
+                                    else:
+                                        try:
+                                            max_additions_values.append(int(float(val)))
+                                        except (ValueError, TypeError):
+                                            max_additions_values.append(0)
+                                
+                                max_additions = min(max_additions_values) if max_additions_values else 0
+                                
+                                # Count host status
+                                always_hosts = len(group[group['host_status_standardized'] == 'ALWAYS'])
+                                sometimes_hosts = len(group[group['host_status_standardized'] == 'SOMETIMES'])
+                                
+                                csv_circles_data.append({
+                                    'Circle Id': circle_id,
+                                    'Region': region,
+                                    'Subregion': subregion,
+                                    'Meeting Time': meeting_time,
+                                    'Member Count': member_count,
+                                    'New Members': new_members,
+                                    'Max Additions': max_additions
+                                })
+                            
+                            # Create DataFrame and display with resizable columns
+                            if csv_circles_data:
+                                circles_df = pd.DataFrame(csv_circles_data)
+                                circles_df = circles_df.sort_values('Circle Id')
+                                
+                                # Enable column resizing with use_container_width=True and height for manual resizing
+                                st.dataframe(
+                                    circles_df, 
+                                    use_container_width=True,
+                                    height=400,
+                                    column_config={
+                                        "Circle Id": st.column_config.TextColumn("Circle Id", width="medium"),
+                                        "Region": st.column_config.TextColumn("Region", width="medium"),
+                                        "Subregion": st.column_config.TextColumn("Subregion", width="large"),
+                                        "Meeting Time": st.column_config.TextColumn("Meeting Time", width="medium"),
+                                        "Member Count": st.column_config.NumberColumn("Member Count", width="small"),
+                                        "New Members": st.column_config.NumberColumn("New Members", width="small"),
+                                        "Max Additions": st.column_config.NumberColumn("Max Additions", width="small")
+                                    }
+                                )
+                            else:
+                                st.warning("No circle data could be generated from results.")
+                        else:
+                            st.warning("No matched participants found in results data.")
                     
                     # SYSTEM UPGRADE: Using the centralized metadata manager for comprehensive fixing
                     from utils.circle_metadata_manager import get_manager_from_session_state, initialize_or_update_manager
