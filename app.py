@@ -51,7 +51,7 @@ def main():
         
         if uploaded_file is not None:
             # Load and process data
-            data, errors = load_data(uploaded_file)
+            data, errors, dedup_messages = load_data(uploaded_file)
             
             if errors:
                 st.error("Data validation errors:")
