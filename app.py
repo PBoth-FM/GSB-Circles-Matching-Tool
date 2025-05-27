@@ -880,53 +880,81 @@ def process_uploaded_file(uploaded_file):
                         # Use the standardized match rate
                         st.metric("Match Success Rate", f"{match_stats['match_rate']:.1f}%")
                 
-                # Create size histogram before the composition table
+                # Create size histogram using CSV data - moved after CSV table generation
                 st.subheader("Circle Size Distribution")
-                if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None and 'member_count' in st.session_state.matched_circles.columns:
-                    circles_df = st.session_state.matched_circles
+                
+                # Use the CSV circles data that was just generated above
+                if 'results' in st.session_state and st.session_state.results is not None:
+                    results_df = st.session_state.results.copy()
                     
-                    # Calculate size counts 
-                    size_counts = circles_df['member_count'].value_counts().sort_index()
+                    # Check if we have the required columns
+                    required_cols = ['proposed_NEW_circles_id']
                     
-                    # Create DataFrame for plotting
-                    size_df = pd.DataFrame({
-                        'Circle Size': size_counts.index,
-                        'Number of Circles': size_counts.values
-                    })
-                    
-                    # Create histogram using plotly with Stanford cardinal red color
-                    fig = px.bar(
-                        size_df,
-                        x='Circle Size',
-                        y='Number of Circles',
-                        title='Distribution of Circle Sizes',
-                        text='Number of Circles',  # Display count values on bars
-                        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
-                    )
-                    
-                    # Customize layout
-                    fig.update_traces(textposition='outside')
-                    fig.update_layout(
-                        xaxis=dict(
-                            title="Number of Members",
-                            tickmode='linear',
-                            dtick=1  # Force integer labels
-                        ),
-                        yaxis_title="Number of Circles"
-                    )
-                    
-                    # Show the plot
-                    st.plotly_chart(fig, use_container_width=True)
-                    
-                    # Show summary statistics
-                    avg_size = circles_df['member_count'].mean()
-                    median_size = circles_df['member_count'].median()
-                    
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.metric("Average Circle Size", f"{avg_size:.1f}")
-                    with col2:
-                        st.metric("Median Circle Size", f"{median_size:.0f}")
+                    if all(col in results_df.columns for col in required_cols):
+                        # Filter out unmatched participants
+                        matched_results = results_df[
+                            (results_df['proposed_NEW_circles_id'].notna()) & 
+                            (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+                        ].copy()
+                        
+                        if len(matched_results) > 0:
+                            # Group by circle ID and count members
+                            circle_sizes = matched_results.groupby('proposed_NEW_circles_id').size()
+                            
+                            # Filter out zero-member circles (though there shouldn't be any)
+                            circle_sizes = circle_sizes[circle_sizes > 0]
+                            
+                            if len(circle_sizes) > 0:
+                                # Calculate size distribution
+                                size_counts = circle_sizes.value_counts().sort_index()
+                                
+                                # Create DataFrame for plotting
+                                size_df = pd.DataFrame({
+                                    'Circle Size': size_counts.index,
+                                    'Number of Circles': size_counts.values
+                                })
+                                
+                                # Create histogram using plotly with Stanford cardinal red color
+                                fig = px.bar(
+                                    size_df,
+                                    x='Circle Size',
+                                    y='Number of Circles',
+                                    title='Distribution of Circle Sizes',
+                                    text='Number of Circles',  # Display count values on bars
+                                    color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+                                )
+                                
+                                # Customize layout
+                                fig.update_traces(textposition='outside')
+                                fig.update_layout(
+                                    xaxis=dict(
+                                        title="Number of Members",
+                                        tickmode='linear',
+                                        dtick=1  # Force integer labels
+                                    ),
+                                    yaxis_title="Number of Circles"
+                                )
+                                
+                                # Show the plot
+                                st.plotly_chart(fig, use_container_width=True)
+                                
+                                # Show summary statistics
+                                avg_size = circle_sizes.mean()
+                                median_size = circle_sizes.median()
+                                
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.metric("Average Circle Size", f"{avg_size:.1f}")
+                                with col2:
+                                    st.metric("Median Circle Size", f"{median_size:.0f}")
+                            else:
+                                st.warning("No circles with members found.")
+                        else:
+                            st.warning("No matched participants found.")
+                    else:
+                        st.warning("Required columns not available for circle size analysis.")
+                else:
+                    st.warning("No results data available for circle size analysis.")
 
                 # Circle Composition from CSV - Direct from Results Data
                 st.subheader("Circle Composition from CSV")
