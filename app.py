@@ -301,7 +301,7 @@ def results_tab():
     """Display the Results tab content"""
     st.header("Matching Results")
     
-    if st.session_state.results is None:
+    if not hasattr(st.session_state, 'results') or st.session_state.results is None:
         st.info("No results available. Please upload data and run the matching algorithm first.")
         return
     
@@ -311,7 +311,7 @@ def results_tab():
     # Download section
     st.subheader("Download Results")
     
-    if st.session_state.results is not None:
+    if hasattr(st.session_state, 'results') and st.session_state.results is not None:
         # Convert to CSV
         csv_buffer = io.StringIO()
         st.session_state.results.to_csv(csv_buffer, index=False)
