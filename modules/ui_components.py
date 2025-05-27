@@ -7,6 +7,44 @@ from plotly.subplots import make_subplots
 import io
 import base64
 
+def reconstruct_circles_from_results(results_df):
+    """
+    Reconstruct circles data from results DataFrame - same logic used in Circle Composition table.
+    
+    Parameters:
+    results_df (DataFrame): DataFrame containing participant data with circle assignments
+    
+    Returns:
+    DataFrame: Reconstructed circles data with circle_id, member_count, and members list
+    """
+    if results_df is None or len(results_df) == 0:
+        return pd.DataFrame()
+    
+    # Filter out unmatched participants
+    matched_results = results_df[
+        (results_df['proposed_NEW_circles_id'].notna()) & 
+        (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+    ].copy()
+    
+    if len(matched_results) == 0:
+        return pd.DataFrame()
+    
+    # Group by circle ID and create circle data
+    circle_groups = matched_results.groupby('proposed_NEW_circles_id')
+    
+    circles_data = []
+    for circle_id, group in circle_groups:
+        # Get member IDs
+        member_ids = group['Encoded ID'].dropna().tolist()
+        
+        circles_data.append({
+            'circle_id': circle_id,
+            'member_count': len(member_ids),
+            'members': member_ids
+        })
+    
+    return pd.DataFrame(circles_data)
+
 def calculate_total_diversity_score(matched_circles_df, results_df):
     """
     Calculate the total diversity score by summing all individual category diversity scores from the detailed tabs.
@@ -21,25 +59,28 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
     - Children diversity score
     
     Parameters:
-    matched_circles_df (DataFrame): DataFrame containing circle data
+    matched_circles_df (DataFrame): DataFrame containing circle data (can be None)
     results_df (DataFrame): DataFrame containing participant data
     
     Returns:
     int: Total diversity score (sum of all category scores)
     """
-    if matched_circles_df is None or results_df is None:
+    if results_df is None:
         return 0
     
-    # Debug information
-    original_circle_count = len(matched_circles_df) if hasattr(matched_circles_df, '__len__') else 0
-    print(f"DEBUG - Match page diversity scores starting with {original_circle_count} circles")
+    # Use reconstructed circles from results data for consistency
+    reconstructed_circles = reconstruct_circles_from_results(results_df)
     
-    # Calculate the individual category scores using the same methods as in the detailed tabs
-    vintage_score = calculate_vintage_diversity_score(matched_circles_df, results_df)
-    employment_score = calculate_employment_diversity_score(matched_circles_df, results_df)
-    industry_score = calculate_industry_diversity_score(matched_circles_df, results_df)  
-    ri_score = calculate_racial_identity_diversity_score(matched_circles_df, results_df)
-    children_score = calculate_children_diversity_score(matched_circles_df, results_df)
+    # Debug information
+    reconstructed_count = len(reconstructed_circles)
+    print(f"DEBUG - Match page diversity scores using {reconstructed_count} reconstructed circles")
+    
+    # Calculate the individual category scores using the reconstructed circles
+    vintage_score = calculate_vintage_diversity_score(reconstructed_circles, results_df)
+    employment_score = calculate_employment_diversity_score(reconstructed_circles, results_df)
+    industry_score = calculate_industry_diversity_score(reconstructed_circles, results_df)  
+    ri_score = calculate_racial_identity_diversity_score(reconstructed_circles, results_df)
+    children_score = calculate_children_diversity_score(reconstructed_circles, results_df)
     
     # Log the individual scores for debugging
     total_score = vintage_score + employment_score + industry_score + ri_score + children_score

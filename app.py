@@ -869,8 +869,20 @@ def process_uploaded_file(uploaded_file):
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-                            st.metric("Circles Created", match_stats['total_circles'])
+                        # Count circles from the same data source as Circle Composition table
+                        if 'results' in st.session_state and st.session_state.results is not None:
+                            # Get unique circle IDs from results, excluding UNMATCHED
+                            results_for_circles = st.session_state.results.copy()
+                            if 'proposed_NEW_circles_id' in results_for_circles.columns:
+                                # Count all unique circles (including zero-member circles)
+                                all_circle_ids = results_for_circles['proposed_NEW_circles_id'].dropna()
+                                unique_circles = all_circle_ids[all_circle_ids != 'UNMATCHED'].unique()
+                                circles_count = len(unique_circles)
+                                st.metric("Circles Created", circles_count)
+                            else:
+                                st.metric("Circles Created", 0)
+                        else:
+                            st.metric("Circles Created", 0)
                     
                     with col2:
                         # Use the standardized matched count
