@@ -158,53 +158,65 @@ def run_optimization():
         st.error("No data available. Please upload and process data first.")
         return
     
+    # Create progress tracking
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
     try:
-        with st.spinner("Running optimization algorithm..."):
-            import signal
-            
-            def timeout_handler(signum, frame):
-                raise TimeoutError("Optimization algorithm timed out after 5 minutes")
-            
-            # Set a 5-minute timeout
-            signal.signal(signal.SIGALRM, timeout_handler)
-            signal.alarm(300)  # 5 minutes
-            
+        status_text.text("Starting optimization algorithm...")
+        progress_bar.progress(10)
+        
+        # Run the matching algorithm with better error handling
+        status_text.text("Running matching algorithm...")
+        progress_bar.progress(30)
+        
+        results_df, circles_df, unmatched_df = run_matching_algorithm(
+            st.session_state.processed_data, 
+            st.session_state.config
+        )
+        
+        progress_bar.progress(70)
+        status_text.text("Processing results...")
+        
+        # Store results in session state first
+        st.session_state.results = results_df
+        st.session_state.matched_circles = circles_df
+        st.session_state.unmatched_participants = unmatched_df
+        
+        progress_bar.progress(90)
+        status_text.text("Applying post-processing fixes...")
+        
+        # Apply post-processing fixes to circle IDs if we have results
+        if results_df is not None and not results_df.empty:
             try:
-                # Run the matching algorithm
-                results_df, circles_df, unmatched_df = run_matching_algorithm(
-                    st.session_state.processed_data, 
-                    st.session_state.config
-                )
-                
-                # Cancel the timeout
-                signal.alarm(0)
-                
-                # Store results in session state first
-                st.session_state.results = results_df
-                st.session_state.matched_circles = circles_df
-                st.session_state.unmatched_participants = unmatched_df
-                
-                # Apply post-processing fixes to circle IDs if we have results
-                if results_df is not None and not results_df.empty:
-                    try:
-                        fixed_results = fix_unknown_circle_ids(results_df)
-                        st.session_state.results = fixed_results
-                    except Exception as fix_error:
-                        st.warning(f"Post-processing warning: {str(fix_error)}")
-                        # Continue with original results if post-processing fails
-                
-            except TimeoutError:
-                signal.alarm(0)  # Cancel the timeout
-                st.error("The optimization algorithm is taking too long and was stopped. This might indicate an issue with the data or algorithm parameters.")
-                return
-            
+                fixed_results = fix_unknown_circle_ids(results_df)
+                st.session_state.results = fixed_results
+            except Exception as fix_error:
+                st.warning(f"Post-processing warning: {str(fix_error)}")
+                # Continue with original results if post-processing fails
+        
+        progress_bar.progress(100)
+        status_text.text("Optimization completed!")
+        
+        # Clean up progress indicators
+        progress_bar.empty()
+        status_text.empty()
+        
         st.success("Optimization completed successfully!")
         st.rerun()
         
     except Exception as e:
+        # Clean up progress indicators on error
+        progress_bar.empty()
+        status_text.empty()
+        
         st.error(f"Error during optimization: {str(e)}")
-        import traceback
-        st.error(f"Full error details: {traceback.format_exc()}")
+        
+        # Show detailed error for debugging
+        if st.session_state.config.get('debug_mode', False):
+            import traceback
+            with st.expander("Debug Details"):
+                st.code(traceback.format_exc())
 
 def create_circle_composition_table(results_df):
     """Create the Circle Composition table from results CSV data"""
