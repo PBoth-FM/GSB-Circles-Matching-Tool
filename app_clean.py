@@ -38,7 +38,7 @@ def main():
     st.title("🔄 Circle Matching System")
     st.markdown("---")
     
-    # Sidebar for file upload
+    # Sidebar for file upload and configuration
     with st.sidebar:
         st.header("Configuration")
         
@@ -51,7 +51,7 @@ def main():
         
         if uploaded_file is not None:
             # Load and process data
-            data, errors, dedup_messages = load_data(uploaded_file)
+            data, errors = load_data(uploaded_file)
             
             if errors:
                 st.error("Data validation errors:")
@@ -63,36 +63,60 @@ def main():
                 # Store in session state
                 st.session_state.raw_data = data
                 
-                # Auto-run matching algorithm with fixed parameters
-                with st.spinner("Running matching algorithm..."):
-                    try:
-                        # Process data
-                        processed_data = process_data(data)
-                        normalized_data = normalize_data(processed_data)
-                        
-                        # Fixed configuration parameters
-                        config = {
-                            'min_circle_size': 5,  # Always 5 for new circles
-                            'enable_host_requirement': True,  # Will be handled per circle type
-                            'existing_circle_handling': 'optimize'  # Always optimize
-                        }
-                        
-                        # Run matching
-                        results, matched_circles, unmatched = run_matching_algorithm(
-                            normalized_data, config
-                        )
-                        
-                        # Store results
-                        st.session_state.results = results
-                        st.session_state.matched_circles = matched_circles
-                        st.session_state.unmatched = unmatched
-                        
-                        st.success("✅ Matching completed successfully!")
-                        st.rerun()
-                        
-                    except Exception as e:
-                        st.error(f"Error running matching algorithm: {str(e)}")
-                        st.write("Please check your data and try again.")
+                # Configuration options
+                st.subheader("Matching Parameters")
+                
+                min_circle_size = st.slider(
+                    "Minimum circle size",
+                    min_value=3,
+                    max_value=10,
+                    value=5,
+                    help="Minimum number of participants per circle"
+                )
+                
+                enable_host_requirement = st.checkbox(
+                    "Require host in each circle",
+                    value=True,
+                    help="Ensure each circle has at least one willing host"
+                )
+                
+                existing_circle_handling = st.selectbox(
+                    "Existing circle handling",
+                    options=['preserve', 'dissolve', 'optimize'],
+                    index=0,
+                    help="How to handle participants already in circles"
+                )
+                
+                # Run matching button
+                if st.button("🚀 Run Matching Algorithm", type="primary"):
+                    with st.spinner("Running optimization..."):
+                        try:
+                            # Process data
+                            processed_data = process_data(data)
+                            normalized_data = normalize_data(processed_data)
+                            
+                            # Configuration
+                            config = {
+                                'min_circle_size': min_circle_size,
+                                'enable_host_requirement': enable_host_requirement,
+                                'existing_circle_handling': existing_circle_handling
+                            }
+                            
+                            # Run matching
+                            results, matched_circles, unmatched = run_matching_algorithm(
+                                normalized_data, config
+                            )
+                            
+                            # Store results
+                            st.session_state.results = results
+                            st.session_state.matched_circles = matched_circles
+                            st.session_state.unmatched = unmatched
+                            
+                            st.success("✅ Matching completed successfully!")
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"Error running matching algorithm: {str(e)}")
     
     # Main content area
     if 'results' in st.session_state and st.session_state.results is not None:
@@ -190,17 +214,9 @@ def main():
                     member_count = len(circle_members)
                     new_members = len(circle_members[circle_members['Status'].str.contains('NEW', na=False)])
                     
-                    # Calculate max additions (handle string "None" values)
+                    # Calculate max additions
                     max_additions_values = circle_members['co_leader_max_new_members'].dropna()
-                    # Filter out string "None" values and convert to numeric
-                    numeric_values = []
-                    for val in max_additions_values:
-                        if val != 'None' and str(val).lower() != 'none':
-                            try:
-                                numeric_values.append(int(float(val)))
-                            except (ValueError, TypeError):
-                                continue
-                    max_additions = min(numeric_values) if numeric_values else 0
+                    max_additions = int(max_additions_values.min()) if len(max_additions_values) > 0 else 0
                     
                     circle_composition_data.append({
                         'Circle Id': circle_id,

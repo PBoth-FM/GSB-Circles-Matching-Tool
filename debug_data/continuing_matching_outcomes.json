@@ -1,19 +1,19 @@
 {
-  "total_continuing_members": 4,
-  "matched_members": 4,
-  "unmatched_members": 0,
-  "matched_to_correct_circle": 4,
+  "total_continuing_members": 57,
+  "matched_members": 18,
+  "unmatched_members": 39,
+  "matched_to_correct_circle": 18,
   "matched_to_wrong_circle": 0,
   "members": [
     {
-      "participant_id": "66883222431",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "74789438905",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -23,25 +23,103 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "VO-AE-GMT+1-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "48078210489",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "44746832274",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70758701399",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-04",
+      "assigned_circle": "VO-AE-GMT+1-04",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "64567903885",
+      "participant_id": "54769109890",
       "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-04",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-04",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -51,25 +129,25 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-04",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "VO-AE-GMT+1-04",
+      "assigned_circle": "VO-AE-GMT+1-04",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "67938698165",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "73170825403",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-02",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -79,25 +157,51 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-02",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57473648409",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-02",
+      "assigned_circle": "VO-AE-GMT+8-02",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
     },
     {
-      "participant_id": "58244483490",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "68671429393",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-07",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-07",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -107,18 +211,1322 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "VO-AE-GMT+1-07",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
+      "expected_circle": "VO-AE-GMT+1-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "41960926670",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "240489257730",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-04",
+      "assigned_circle": "VO-AE-GMT+1-04",
       "matched_correctly": true,
       "location_score": 3,
       "time_score": 3,
       "total_score": 6
+    },
+    {
+      "participant_id": "77047089710",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "60604675710",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-06",
+      "assigned_circle": "VO-AE-GMT+1-06",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "60605242347",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+10-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+10-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67701038678",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69982528001",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-03",
+      "assigned_circle": "VO-AE-GMT+1-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "58114335918",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73788300677",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-04",
+      "assigned_circle": "VO-AE-GMT+1-04",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "74608960050",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65453000820",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59113177775",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66540695335",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-06",
+      "assigned_circle": "VO-AE-GMT+1-06",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "62830018265",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64806637000",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-02",
+      "assigned_circle": "VO-AE-GMT+8-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "48849542620",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+10-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+10-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "49917275607",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+10-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+10-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67253206569",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70533547690",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68582626440",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67263316566",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-02",
+      "assigned_circle": "VO-AE-GMT+8-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "59876885159",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-03",
+      "assigned_circle": "VO-AE-GMT+1-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "73719349901",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67943380376",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "71474304284",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62813039037",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64909705288",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-03",
+      "assigned_circle": "VO-AE-GMT+1-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "67254836893",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "55631133764",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75341134582",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "51908567258",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63151162270",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72534402583",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68651537452",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-04",
+      "assigned_circle": "VO-AE-GMT+1-04",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "73186343304",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-06",
+      "assigned_circle": "VO-AE-GMT+1-06",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "79113575085",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+10-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+10-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57070312216",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64827642333",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68349748574",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-03",
+      "assigned_circle": "VO-AE-GMT+1-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "66809559621",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "228492667691",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "74610709666",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75398742677",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+10-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+10-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+10-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66815742923",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-02",
+      "assigned_circle": "VO-AE-GMT+8-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "57056215878",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-06",
+      "assigned_circle": "VO-AE-GMT+1-06",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "64998021132",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70539263765",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-08",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "53466570483",
+      "status": "MATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+1-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+1-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+1-06",
+      "assigned_circle": "VO-AE-GMT+1-06",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "69996385755",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only APAC+EMEA",
+      "circle_id": "VO-AE-GMT+8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AE-GMT+8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AE-GMT+8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     }
   ],
-  "match_rate": 1.0,
-  "correct_match_rate": 1.0,
-  "unmatched_reason_frequency": {}
+  "match_rate": 0.3157894736842105,
+  "correct_match_rate": 0.3157894736842105,
+  "unmatched_reason_frequency": {
+    "Unknown (participant not found in unmatched list)": 39
+  }
 }
