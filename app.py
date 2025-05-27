@@ -557,17 +557,21 @@ def process_uploaded_file(uploaded_file):
             with col2:
                 current_continuing = len(normalized_data[normalized_data['Status'] == 'CURRENT-CONTINUING'])
                 st.metric("Current Continuing", current_continuing)
+                
             
             with col3:
                 new_participants = len(normalized_data[normalized_data['Status'] == 'NEW'])
                 st.metric("New Participants", new_participants)
+                
             
             st.subheader("Configuration")
             # Keep only Debug Mode and set other options to fixed values
             st.session_state.config['min_circle_size'] = 5  # Fixed value
+            
             # Always use 'optimize' mode (no UI option to change this)
             st.session_state.config['existing_circle_handling'] = 'optimize'
             st.session_state.config['enable_host_requirement'] = True  # Fixed value
+            
             
             # Only show Debug Mode as a configurable option
             st.session_state.config['debug_mode'] = st.checkbox(
@@ -580,15 +584,36 @@ def process_uploaded_file(uploaded_file):
             if st.button("Run Matching Algorithm", key="match_run_algorithm_button"):
                 run_optimization()
                 
+                
             # Display results if available
             if hasattr(st.session_state, 'results') and st.session_state.results is not None:
                 # We don't need to render the overview in the match tab
                 # render_results_overview() - removed to avoid duplicate charts
+                pass
+                
                 
                 # Display stats about the matching
                 if 'results' in st.session_state and st.session_state.results is not None:
-                    results_df = st.session_state.results
-                    total_participants = len(results_df)
+                    pass
+                
+    except Exception as e:
+        st.error(f"Error processing file: {str(e)}")
+        print(f"Error in process_uploaded_file: {str(e)}")
+        return None
+
+
+def match_tab_callback():
+    """Display the Match tab content"""
+    st.header("Circle Matching")
+    
+    if st.session_state.processed_data is None:
+        st.info("Please upload and process data first in the Data Upload tab.")
+        return
+    
+    # Display matching results if available
+    if hasattr(st.session_state, 'results') and st.session_state.results is not None:
+        results_df = st.session_state.results
+        total_participants = len(results_df)
                     
                     # EXTENSIVE DIAGNOSTIC LOGGING FOR PARTICIPANT COUNT ISSUE
                     print("\n🔍🔍🔍 MATCH COUNT DIAGNOSTICS 🔍🔍🔍")
