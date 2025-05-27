@@ -1001,8 +1001,7 @@ def process_uploaded_file(uploaded_file):
                                 csv_circles_df = csv_circles_df.sort_values('Circle Id')
                                 st.dataframe(csv_circles_df, use_container_width=True)
                                 
-                                # Show summary comparison
-                                st.info(f"📊 **CSV Table Summary:** {len(csv_circles_df)} circles displayed from direct CSV data")
+                                
                             else:
                                 st.warning("No circle data could be generated from CSV results.")
                         else:
