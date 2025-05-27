@@ -75,9 +75,16 @@ def process_uploaded_file(uploaded_file):
             st.error("Failed to load data from uploaded file.")
             return None
             
+        # Track initial count for filtering summary
+        initial_count = len(df)
+        
         # Process and normalize data
         processed_data = process_data(df, debug_mode=st.session_state.config.get('debug_mode', False))
         normalized_data = normalize_data(processed_data, debug_mode=st.session_state.config.get('debug_mode', False))
+        
+        # Track final count and calculate exclusions
+        final_count = len(normalized_data)
+        excluded_count = initial_count - final_count
         
         # Store in session state
         st.session_state.processed_data = normalized_data
@@ -90,14 +97,35 @@ def process_uploaded_file(uploaded_file):
             if len(validation_errors) > 5:
                 st.write(f"...and {len(validation_errors) - 5} more issues.")
         
-        st.success(f"Data processed successfully! {len(normalized_data)} participants loaded.")
+        st.success(f"Data processed successfully! {final_count} participants loaded.")
+        
+        # Display filtering summary if records were excluded
+        if excluded_count > 0:
+            st.subheader("📊 Data Filtering Summary")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Total Uploaded Records", initial_count)
+            with col2:
+                st.metric("Excluded Records", excluded_count, delta=f"-{excluded_count}")
+            with col3:
+                st.metric("Final Participants", final_count)
+            
+            # Show details of what was excluded
+            if 'Status' in df.columns:
+                excluded_data = df[~df.index.isin(normalized_data.index)]
+                if not excluded_data.empty:
+                    status_counts = excluded_data['Status'].value_counts()
+                    st.write("**Excluded by status:**")
+                    for status, count in status_counts.items():
+                        st.write(f"• {status}: {count} participants")
         
         # Display data summary
         st.subheader("Data Summary")
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.metric("Total Participants", len(normalized_data))
+            st.metric("Total Participants", final_count)
         
         with col2:
             current_continuing = len(normalized_data[normalized_data['Status'] == 'CURRENT-CONTINUING'])
