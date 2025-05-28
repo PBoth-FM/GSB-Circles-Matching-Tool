@@ -1965,7 +1965,7 @@ def render_employment_analysis(data):
         cols.append('Total')
         
         # Show the table
-        st.dataframe(status_employment[cols], use_container_width=True)
+        st.dataframe(status_employment[cols])
         
         # Create a stacked bar chart
         fig = px.bar(
@@ -2141,7 +2141,7 @@ def render_industry_analysis(data):
         cols.append('Total')
         
         # Show the table
-        st.dataframe(status_industry[cols], use_container_width=True)
+        st.dataframe(status_industry[cols])
         
         # Create a stacked bar chart
         fig = px.bar(
@@ -2309,7 +2309,7 @@ def render_class_vintage_analysis(data):
         cols.append('Total')
         
         # Show the table
-        st.dataframe(status_vintage[cols], use_container_width=True)
+        st.dataframe(status_vintage[cols])
         
         # Create a stacked bar chart
         fig = px.bar(

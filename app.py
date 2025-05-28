@@ -1035,7 +1035,7 @@ def process_uploaded_file(uploaded_file):
                             if csv_circles_data:
                                 csv_circles_df = pd.DataFrame(csv_circles_data)
                                 csv_circles_df = csv_circles_df.sort_values('Circle Id')
-                                st.dataframe(csv_circles_df, use_container_width=True)
+                                st.dataframe(csv_circles_df)
                                 
                                 
                             else:
