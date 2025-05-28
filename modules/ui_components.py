@@ -5741,7 +5741,10 @@ def render_children_diversity_histogram():
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True, key="children_diversity_histogram")
+    # Show the plot - FIX: Use dynamic unique key to prevent duplicates
+    import time
+    unique_key = f"children_diversity_hist_v1_{int(time.time() * 1000)}"
+    st.plotly_chart(fig, use_container_width=True, key=unique_key)
     
     # Show a table with the data
     st.caption("Data table:")
@@ -6322,8 +6325,10 @@ def render_racial_identity_diversity_histogram():
         yaxis_title="Number of Circles"
     )
     
-    # Show the plot - FIX: Use unique key
-    st.plotly_chart(fig, use_container_width=True, key="racial_identity_diversity_hist_fixed")
+    # Show the plot - FIX: Use dynamic unique key to prevent duplicates
+    import time
+    unique_key = f"racial_identity_diversity_hist_{int(time.time() * 1000)}"
+    st.plotly_chart(fig, use_container_width=True, key=unique_key)
     
     # Show debug information
     if circles_with_parsing_errors:
@@ -6540,7 +6545,10 @@ def render_children_diversity_histogram():
     )
     
     # Show the plot
-    st.plotly_chart(fig, use_container_width=True, key="children_diversity_hist_fixed")
+    # Show the plot - FIX: Use dynamic unique key to prevent duplicates
+    import time
+    unique_key = f"children_diversity_hist_v2_{int(time.time() * 1000)}"
+    st.plotly_chart(fig, use_container_width=True, key=unique_key)
     
     # Show debug information
     if circles_with_parsing_errors:
