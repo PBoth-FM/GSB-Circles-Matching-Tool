@@ -5536,7 +5536,7 @@ def render_children_diversity_histogram():
     if 'children_score' not in circles_df.columns:
         circles_df['children_score'] = 0
     
-    # SOLUTION: Use the existing demographic processor for proper normalization
+    # SOLUTION 2: Force normalization right before histogram calculation
     from modules.demographic_processor import ensure_demographic_categories
     
     # Ensure all demographic categories are properly normalized
@@ -5544,6 +5544,12 @@ def render_children_diversity_histogram():
     
     # Update session state with properly categorized results
     st.session_state.results = results_df
+    
+    # DEBUG: Verify normalized columns exist
+    if 'Children_Category' in results_df.columns:
+        st.caption(f"✅ Children_Category column found with {results_df['Children_Category'].notna().sum()} non-null values")
+    else:
+        st.caption("❌ Children_Category column missing after normalization")
     
     # Filter out circles with no members
     if 'member_count' not in circles_df.columns:
@@ -6160,6 +6166,21 @@ def render_racial_identity_diversity_histogram():
     # Create score columns if they don't exist
     if 'racial_identity_score' not in circles_df.columns:
         circles_df['racial_identity_score'] = 0
+    
+    # SOLUTION 2: Force normalization right before histogram calculation
+    from modules.demographic_processor import ensure_demographic_categories
+    
+    # Ensure all demographic categories are properly normalized
+    results_df = ensure_demographic_categories(results_df)
+    
+    # Update session state with properly categorized results
+    st.session_state.results = results_df
+    
+    # DEBUG: Verify normalized columns exist
+    if 'Racial_Identity_Category' in results_df.columns:
+        st.caption(f"✅ Racial_Identity_Category column found with {results_df['Racial_Identity_Category'].notna().sum()} non-null values")
+    else:
+        st.caption("❌ Racial_Identity_Category column missing after normalization")
     
     # DEBUG: Show total circles at the start
     total_initial_circles = len(circles_df)
