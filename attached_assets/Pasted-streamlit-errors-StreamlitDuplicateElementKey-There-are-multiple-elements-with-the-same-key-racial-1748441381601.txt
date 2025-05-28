@@ -1,0 +1,28 @@
+streamlit.errors.StreamlitDuplicateElementKey: There are multiple elements with the same key='racial_identity_diversity_histogram'. To fix this, please make sure that the key argument is unique for each element you create.
+
+Traceback:
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/exec_code.py", line 121, in exec_func_with_error_handling
+    result = func()
+             ^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/scriptrunner/script_runner.py", line 640, in code_to_exec
+    exec(code, module.__dict__)
+File "/home/runner/workspace/app.py", line 1231, in <module>
+    main()
+File "/home/runner/workspace/app.py", line 80, in main
+    render_demographics_tab()
+File "/home/runner/workspace/modules/ui_components.py", line 911, in render_demographics_tab
+    render_racial_identity_analysis(filtered_data)
+File "/home/runner/workspace/modules/ui_components.py", line 6935, in render_racial_identity_analysis
+    render_racial_identity_diversity_histogram()
+File "/home/runner/workspace/modules/ui_components.py", line 6577, in render_racial_identity_diversity_histogram
+    st.plotly_chart(fig, use_container_width=True, key="racial_identity_diversity_histogram")
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/runtime/metrics_util.py", line 410, in wrapped_func
+    result = non_optional_func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/plotly_chart.py", line 509, in plotly_chart
+    plotly_chart_proto.id = compute_and_register_element_id(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/lib/utils.py", line 239, in compute_and_register_element_id
+    _register_element_id(ctx, element_type, element_id)
+File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/streamlit/elements/lib/utils.py", line 140, in _register_element_id
+    raise StreamlitDuplicateElementKey(user_key)
