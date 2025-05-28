@@ -6098,7 +6098,111 @@ def render_racial_identity_diversity_histogram():
     st.session_state.matched_circles = circles_df
     print(f"RACIAL IDENTITY HISTOGRAM UPDATE - Updated session state matched_circles with calculated racial identity scores for {len(circles_df)} circles")
 
-# Duplicate function removed - using the version from ui_components_add.py
+def render_children_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different children categories they contain
+    """
+    # Check for results data first (single source of truth)
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze children diversity.")
+        return
+    
+    # Always use Results DataFrame to populate matched_circles
+    from modules.demographic_processor import create_circles_dataframe_from_results, ensure_demographic_categories
+    
+    # Always reconstruct circles from Results DataFrame for consistency
+    circles_df = create_circles_dataframe_from_results(st.session_state.results)
+    
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Get the results data and ensure proper categorization
+    results_df = st.session_state.results.copy()
+    results_df = ensure_demographic_categories(results_df)
+    
+    # Filter out circles with no members
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique children categories per circle
+    circle_children_counts = {}
+    
+    # Process each circle - use direct lookup method
+    for _, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        
+        # Get members directly from results data by circle assignment
+        circle_members = results_df[results_df['proposed_NEW_circles_id'] == circle_id]
+        
+        if circle_members.empty:
+            circle_children_counts[circle_id] = 0
+            continue
+        
+        # Track unique children categories in this circle
+        unique_children_categories = set()
+        
+        # Look up children data for each member using the normalized Children_Category
+        for _, member_row in circle_members.iterrows():
+            if 'Children_Category' in member_row.index:
+                children_category = member_row['Children_Category']
+                if not pd.isna(children_category):
+                    category_value = str(children_category).strip()
+                    if category_value:
+                        unique_children_categories.add(category_value)
+        
+        # Store the count of unique children categories for this circle
+        circle_children_counts[circle_id] = len(unique_children_categories)
+    
+    # Create histogram data from the children counts
+    if not circle_children_counts:
+        st.warning("No children data available for circles.")
+        return
+        
+    # Count circles by number of unique children categories
+    diversity_counts = pd.Series(circle_children_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Children Categories': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
+    st.subheader("Children Diversity Within Circles")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Children Categories',
+        y='Number of Circles',
+        title=f'Distribution of Circles by Number of Children Categories',
+        text='Number of Circles',
+        color_discrete_sequence=['#8C1515']
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Children Categories",
+            tickmode='linear',
+            dtick=1,
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot with unique key
+    import time
+    unique_key = f"children_diversity_hist_{int(time.time() * 1000)}"
+    st.plotly_chart(fig, use_container_width=True, key=unique_key)
+    
+    # Show data table
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
 
 def render_racial_identity_analysis(data):
     """Render the Racial Identity analysis visualizations"""
