@@ -1953,14 +1953,8 @@ def render_employment_analysis(data):
         "Employed full-time for wages", "Self-employed", "All Else"
     ]
     
-    # FIRST: Display diversity within circles IF we have matched circles
-    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
-            render_employment_diversity_histogram()
-        else:
-            st.info("Run the matching algorithm to see the Employment diversity within circles.")
-    else:
-        st.info("Run the matching algorithm to see the Employment diversity within circles.")
+    # FIRST: Always try to display diversity within circles - the histogram function has proper fallback logic
+    render_employment_diversity_histogram()
     
     # SECOND: Display Distribution of Employment
     st.subheader("Distribution of Employment")
@@ -2135,14 +2129,8 @@ def render_industry_analysis(data):
         "Technology", "Consulting", "Finance / Investment / Private Equity", "All Else"
     ]
     
-    # FIRST: Display diversity within circles IF we have matched circles
-    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
-            render_industry_diversity_histogram()
-        else:
-            st.info("Run the matching algorithm to see the Industry diversity within circles.")
-    else:
-        st.info("Run the matching algorithm to see the Industry diversity within circles.")
+    # FIRST: Always try to display diversity within circles - the histogram function has proper fallback logic
+    render_industry_diversity_histogram()
     
     # SECOND: Display Distribution of Industry
     st.subheader("Distribution of Industry")
@@ -2309,14 +2297,8 @@ def render_class_vintage_analysis(data):
         "31-40 yrs", "41-50 yrs", "51-60 yrs", "61+ yrs"
     ]
     
-    # FIRST: Display diversity within circles IF we have matched circles
-    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
-        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
-            render_vintage_diversity_histogram()
-        else:
-            st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
-    else:
-        st.info("Run the matching algorithm to see the Class Vintage diversity within circles.")
+    # FIRST: Always try to display diversity within circles - the histogram function has proper fallback logic
+    render_vintage_diversity_histogram()
     
     # SECOND: Display Distribution of Class Vintage
     st.subheader("Distribution of Class Vintage")
