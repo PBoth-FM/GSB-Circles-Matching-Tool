@@ -581,11 +581,25 @@ def calculate_matching_statistics(results_df, matched_circles_df):
         except Exception as e:
             print(f"Warning: Could not generate circles from results for verification: {e}")
 
+    # Calculate total circles
+    total_circles = 0
+    if matched_circles_df is not None and not matched_circles_df.empty:
+        # Count circles from matched_circles_df
+        if 'circle_id' in matched_circles_df.columns:
+            total_circles = len(matched_circles_df['circle_id'].unique())
+        else:
+            total_circles = len(matched_circles_df)
+    elif 'proposed_NEW_circles_id' in valid_results.columns:
+        # Count unique circles from Results DataFrame (excluding 'UNMATCHED')
+        unique_circles = valid_results[valid_results['proposed_NEW_circles_id'] != 'UNMATCHED']['proposed_NEW_circles_id'].unique()
+        total_circles = len(unique_circles)
+
     return {
         'total_participants': total_participants,
         'matched_participants': matched_participants,
         'unmatched_participants': unmatched_participants,
         'match_rate': match_rate,
+        'total_circles': total_circles,
         'details_matched_count': details_matched_count,
         'match_discrepancy': match_discrepancy,
         'data_source': data_source
