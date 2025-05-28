@@ -6414,9 +6414,198 @@ def render_racial_identity_diversity_histogram():
     # Get the results data
     results_df = st.session_state.results.copy()
     
-    # Create histogram logic would continue here...
+    # Create score columns if they don't exist
+    if 'racial_identity_score' not in circles_df.columns:
+        circles_df['racial_identity_score'] = 0
+    
+    # DEBUG: Show total circles at the start
+    total_initial_circles = len(circles_df)
+    st.caption(f"🔍 **Demographics DEBUG:** Starting with {total_initial_circles} total circles")
+    
+    # Check for member_count column
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        return
+    
+    # Filter out circles with no members
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique racial identities per circle
+    circle_racial_identity_counts = {}
+    circle_racial_identity_diversity_scores = {}
+    circles_with_parsing_errors = []
+    circles_with_no_racial_data = []
+    
+    # Create debug information for specific circles
+    debug_circles = ['VO-AE-GMT+1-01', 'VO-AE-GMT+8-01', 'VO-AM-GMT-5-01']
+    
+    # Process each circle
+    for idx, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        is_debug_circle = circle_id in debug_circles
+        has_parsing_error = False
+        
+        try:
+            # Parse the members list
+            members_str = circle_row['members']
+            if pd.isna(members_str) or members_str == '' or members_str == '[]':
+                if is_debug_circle:
+                    print(f"RACIAL IDENTITY DEBUG - {circle_id}: Empty members list")
+                circle_racial_identity_counts[circle_id] = 0
+                circles_df.at[idx, 'racial_identity_score'] = 0
+                continue
+            
+            # Convert string representation to actual list
+            if isinstance(members_str, str):
+                if members_str.startswith('[') and members_str.endswith(']'):
+                    members_str = members_str[1:-1]  # Remove brackets
+                    if members_str.strip():  # If there's content after removing brackets
+                        # Split by comma and clean up
+                        member_ids = [mid.strip().strip("'\"") for mid in members_str.split(',')]
+                        member_ids = [mid for mid in member_ids if mid]  # Remove empty strings
+                    else:
+                        member_ids = []
+                else:
+                    # Single member without brackets
+                    member_ids = [members_str.strip().strip("'\"")]
+            else:
+                member_ids = []
+            
+            if not member_ids:
+                if is_debug_circle:
+                    print(f"RACIAL IDENTITY DEBUG - {circle_id}: No valid member IDs found")
+                circle_racial_identity_counts[circle_id] = 0
+                circles_df.at[idx, 'racial_identity_score'] = 0
+                continue
+            
+            if is_debug_circle:
+                print(f"RACIAL IDENTITY DEBUG - {circle_id}: Found {len(member_ids)} members: {member_ids[:3]}...")
+            
+            # Track unique racial identity categories in this circle
+            unique_racial_identities = set()
+            
+            # Look up racial identity for each member
+            for member_id in member_ids:
+                # Find this member in the results data
+                member_data = results_df[results_df['Encoded ID'] == member_id]
+                
+                if not member_data.empty:
+                    # Try to get racial identity from various possible column names
+                    racial_identity = None
+                    for col in ['Racial Identity', 'Racial_Identity', 'Racial_Identity_Category']:
+                        if col in member_data.columns:
+                            racial_identity = member_data[col].iloc[0]
+                            if pd.notna(racial_identity):
+                                break
+                    
+                    if racial_identity and pd.notna(racial_identity):
+                        unique_racial_identities.add(str(racial_identity).strip())
+                        if is_debug_circle:
+                            print(f"RACIAL IDENTITY DEBUG - {circle_id}: Member {member_id} has racial identity: {racial_identity}")
+            
+            # Store the count of unique racial identities for this circle
+            count = len(unique_racial_identities)
+            circle_racial_identity_counts[circle_id] = count
+            circle_racial_identity_diversity_scores[circle_id] = count
+            circles_df.at[idx, 'racial_identity_score'] = count
+            
+            if is_debug_circle:
+                print(f"RACIAL IDENTITY DEBUG - {circle_id}: Final count = {count}, Categories: {unique_racial_identities}")
+        
+        except Exception as e:
+            print(f"RACIAL IDENTITY ERROR processing circle {circle_id}: {str(e)}")
+            has_parsing_error = True
+            circles_with_parsing_errors.append(circle_id)
+            circle_racial_identity_counts[circle_id] = 0
+            circles_df.at[idx, 'racial_identity_score'] = 0
+            
+            if is_debug_circle:
+                print(f"RACIAL IDENTITY DEBUG - {circle_id}: Error occurred, set score to 0")
+            
+        # Track circles with no racial identity data
+        if circle_id not in circle_racial_identity_counts or circle_racial_identity_counts[circle_id] == 0:
+            circles_df.at[idx, 'racial_identity_score'] = 0
+            
+            if is_debug_circle:
+                print(f"RACIAL IDENTITY DEBUG - {circle_id}: No racial identity data found, set score to 0")
+            
+            if not has_parsing_error:
+                circles_with_no_racial_data.append(circle_id)
+    
+    # Create histogram data from the racial identity counts
+    if not circle_racial_identity_counts:
+        st.warning("No racial identity data available for circles.")
+        return
+        
+    # Count circles by number of unique racial identity categories
+    diversity_counts = pd.Series(circle_racial_identity_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Racial Identity Categories': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
     st.subheader("Racial Identity Diversity Within Circles")
-    st.info("Racial Identity diversity histogram will be implemented here.")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Racial Identity Categories',
+        y='Number of Circles',
+        title=f'Distribution of Circles by Number of Racial Identity Categories (Total: {len(circles_df)} circles)',
+        text='Number of Circles',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Racial Identity Categories",
+            tickmode='linear',
+            dtick=1,  # Force integer labels
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True, key="racial_identity_diversity_histogram")
+    
+    # Show debug information
+    if circles_with_parsing_errors:
+        st.caption(f"⚠️ {len(circles_with_parsing_errors)} circles had parsing errors but are still included with 0 diversity score")
+    
+    if circles_with_no_racial_data:
+        st.caption(f"ℹ️ {len(circles_with_no_racial_data)} circles had no racial identity data but are still included with 0 diversity score")
+    
+    # Process histogram data from the racial identity counts
+    total_included = len(circle_racial_identity_counts)
+    st.caption(f"✅ Including {total_included} total circles in the analysis (out of {total_initial_circles} initial circles)")
+    
+    # Show data table
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
+    
+    # Calculate and display summary statistics
+    if circle_racial_identity_diversity_scores:
+        avg_diversity = sum(circle_racial_identity_diversity_scores.values()) / len(circle_racial_identity_diversity_scores)
+        max_diversity = max(circle_racial_identity_diversity_scores.values())
+        
+        st.caption(f"📊 **Summary:** Average diversity score: {avg_diversity:.2f}, Maximum diversity score: {max_diversity}")
+        
+        # Count circles with maximum diversity (most diverse)
+        max_diversity_circles = [cid for cid, score in circle_racial_identity_diversity_scores.items() if score == max_diversity]
+        if max_diversity_circles and max_diversity > 1:
+            st.caption(f"🏆 {len(max_diversity_circles)} circles achieved maximum racial identity diversity")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"RACIAL IDENTITY HISTOGRAM UPDATE - Updated session state matched_circles with calculated racial identity scores for {len(circles_df)} circles")
 
 def render_children_diversity_histogram():
     """
@@ -6433,6 +6622,227 @@ def render_children_diversity_histogram():
     
     # Always reconstruct circles from Results DataFrame for consistency
     circles_df = create_circles_dataframe_from_results(st.session_state.results)
+    
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Update session state with reconstructed circles to ensure consistency
+    st.session_state.matched_circles = circles_df
+    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
+    
+    # Get the results data
+    results_df = st.session_state.results.copy()
+    
+    # Create score columns if they don't exist
+    if 'children_score' not in circles_df.columns:
+        circles_df['children_score'] = 0
+    
+    # DEBUG: Show total circles at the start
+    total_initial_circles = len(circles_df)
+    st.caption(f"🔍 **Demographics DEBUG:** Starting with {total_initial_circles} total circles")
+    
+    # Check for member_count column
+    if 'member_count' not in circles_df.columns:
+        st.warning("Circles data does not have member_count column")
+        return
+    
+    # Filter out circles with no members
+    circles_df = circles_df[circles_df['member_count'] > 0]
+    
+    if len(circles_df) == 0:
+        st.warning("No circles with members available for analysis.")
+        return
+    
+    # Dictionary to track unique children categories per circle
+    circle_children_counts = {}
+    circle_children_diversity_scores = {}
+    circles_with_parsing_errors = []
+    circles_with_no_children_data = []
+    
+    # Create debug information for specific circles
+    debug_circles = ['VO-AE-GMT+1-01', 'VO-AE-GMT+8-01', 'VO-AM-GMT-5-01']
+    
+    # Process each circle
+    for idx, circle_row in circles_df.iterrows():
+        circle_id = circle_row['circle_id']
+        is_debug_circle = circle_id in debug_circles
+        has_parsing_error = False
+        
+        try:
+            # Parse the members list
+            members_str = circle_row['members']
+            if pd.isna(members_str) or members_str == '' or members_str == '[]':
+                if is_debug_circle:
+                    print(f"CHILDREN DEBUG - {circle_id}: Empty members list")
+                circle_children_counts[circle_id] = 0
+                circles_df.at[idx, 'children_score'] = 0
+                continue
+            
+            # Convert string representation to actual list
+            if isinstance(members_str, str):
+                if members_str.startswith('[') and members_str.endswith(']'):
+                    members_str = members_str[1:-1]  # Remove brackets
+                    if members_str.strip():  # If there's content after removing brackets
+                        # Split by comma and clean up
+                        member_ids = [mid.strip().strip("'\"") for mid in members_str.split(',')]
+                        member_ids = [mid for mid in member_ids if mid]  # Remove empty strings
+                    else:
+                        member_ids = []
+                else:
+                    # Single member without brackets
+                    member_ids = [members_str.strip().strip("'\"")]
+            else:
+                member_ids = []
+            
+            if not member_ids:
+                if is_debug_circle:
+                    print(f"CHILDREN DEBUG - {circle_id}: No valid member IDs found")
+                circle_children_counts[circle_id] = 0
+                circles_df.at[idx, 'children_score'] = 0
+                continue
+            
+            if is_debug_circle:
+                print(f"CHILDREN DEBUG - {circle_id}: Found {len(member_ids)} members: {member_ids[:3]}...")
+            
+            # Track unique children categories in this circle
+            unique_children_categories = set()
+            
+            # Look up children data for each member
+            for member_id in member_ids:
+                # Find this member in the results data
+                member_data = results_df[results_df['Encoded ID'] == member_id]
+                
+                if not member_data.empty:
+                    # Try to get children data from various possible column names
+                    children_data = None
+                    for col in ['Children', 'children', 'Has_Children', 'Has Children']:
+                        if col in member_data.columns:
+                            children_data = member_data[col].iloc[0]
+                            if pd.notna(children_data):
+                                break
+                    
+                    if children_data and pd.notna(children_data):
+                        # Normalize children data to categories
+                        children_str = str(children_data).strip().lower()
+                        if children_str in ['yes', 'y', 'true', '1']:
+                            unique_children_categories.add('Has Children')
+                        elif children_str in ['no', 'n', 'false', '0']:
+                            unique_children_categories.add('No Children')
+                        else:
+                            # Try to parse as a number for specific counts
+                            try:
+                                children_count = float(children_str)
+                                if children_count == 0:
+                                    unique_children_categories.add('No Children')
+                                elif children_count >= 1:
+                                    unique_children_categories.add('Has Children')
+                            except:
+                                # If it's text, use it as is
+                                unique_children_categories.add(str(children_data).strip())
+                        
+                        if is_debug_circle:
+                            print(f"CHILDREN DEBUG - {circle_id}: Member {member_id} has children data: {children_data}")
+            
+            # Store the count of unique children categories for this circle
+            count = len(unique_children_categories)
+            circle_children_counts[circle_id] = count
+            circle_children_diversity_scores[circle_id] = count
+            circles_df.at[idx, 'children_score'] = count
+            
+            if is_debug_circle:
+                print(f"CHILDREN DEBUG - {circle_id}: Final count = {count}, Categories: {unique_children_categories}")
+        
+        except Exception as e:
+            print(f"CHILDREN ERROR processing circle {circle_id}: {str(e)}")
+            has_parsing_error = True
+            circles_with_parsing_errors.append(circle_id)
+            circle_children_counts[circle_id] = 0
+            circles_df.at[idx, 'children_score'] = 0
+            
+            if is_debug_circle:
+                print(f"CHILDREN DEBUG - {circle_id}: Error occurred, set score to 0")
+            
+        # Track circles with no children data
+        if circle_id not in circle_children_counts or circle_children_counts[circle_id] == 0:
+            circles_df.at[idx, 'children_score'] = 0
+            
+            if is_debug_circle:
+                print(f"CHILDREN DEBUG - {circle_id}: No children data found, set score to 0")
+            
+            if not has_parsing_error:
+                circles_with_no_children_data.append(circle_id)
+    
+    # Create histogram data from the children counts
+    if not circle_children_counts:
+        st.warning("No children data available for circles.")
+        return
+        
+    # Count circles by number of unique children categories
+    diversity_counts = pd.Series(circle_children_counts).value_counts().sort_index()
+    
+    # Create a DataFrame for plotting
+    plot_df = pd.DataFrame({
+        'Number of Children Categories': diversity_counts.index,
+        'Number of Circles': diversity_counts.values
+    })
+    
+    st.subheader("Children Diversity Within Circles")
+    
+    # Create histogram using plotly with Stanford cardinal red color
+    fig = px.bar(
+        plot_df,
+        x='Number of Children Categories',
+        y='Number of Circles',
+        title=f'Distribution of Circles by Number of Children Categories (Total: {len(circles_df)} circles)',
+        text='Number of Circles',  # Display count values on bars
+        color_discrete_sequence=['#8C1515']  # Stanford Cardinal red
+    )
+    
+    # Customize layout
+    fig.update_traces(textposition='outside')
+    fig.update_layout(
+        xaxis=dict(
+            title="Number of Different Children Categories",
+            tickmode='linear',
+            dtick=1,  # Force integer labels
+        ),
+        yaxis_title="Number of Circles"
+    )
+    
+    # Show the plot
+    st.plotly_chart(fig, use_container_width=True, key="children_diversity_histogram")
+    
+    # Show debug information
+    if circles_with_parsing_errors:
+        st.caption(f"⚠️ {len(circles_with_parsing_errors)} circles had parsing errors but are still included with 0 diversity score")
+    
+    if circles_with_no_children_data:
+        st.caption(f"ℹ️ {len(circles_with_no_children_data)} circles had no children data but are still included with 0 diversity score")
+    
+    # Process histogram data from the children counts
+    total_included = len(circle_children_counts)
+    st.caption(f"✅ Including {total_included} total circles in the analysis (out of {total_initial_circles} initial circles)")
+    
+    # Show data table
+    st.caption("Data table:")
+    st.dataframe(plot_df, hide_index=True)
+    
+    # Calculate and display summary statistics
+    if circle_children_diversity_scores:
+        avg_diversity = sum(circle_children_diversity_scores.values()) / len(circle_children_diversity_scores)
+        max_diversity = max(circle_children_diversity_scores.values())
+        
+        st.caption(f"📊 **Summary:** Average diversity score: {avg_diversity:.2f}, Maximum diversity score: {max_diversity}")
+        
+        # Count circles with maximum diversity (most diverse)
+        max_diversity_circles = [cid for cid, score in circle_children_diversity_scores.items() if score == max_diversity]
+        if max_diversity_circles and max_diversity > 1:
+            st.caption(f"🏆 {len(max_diversity_circles)} circles achieved maximum children diversity")
+    
+    # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
+    st.session_state.matched_circles = circles_df
+    print(f"CHILDREN HISTOGRAM UPDATE - Updated session state matched_circles with calculated children scores for {len(circles_df)} circles")
     
     if circles_df.empty:
         st.warning("No circles found in Results DataFrame for analysis.")
