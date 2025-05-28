@@ -1,4 +1,6 @@
-# Duplicate function removed - now importing from main ui_components module to avoid duplicates
+import streamlit as st
+import pandas as pd
+import plotly.express as px
 
 def render_racial_identity_analysis(data):
     """Render the Racial Identity analysis visualizations"""
