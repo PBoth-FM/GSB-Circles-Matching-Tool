@@ -6843,21 +6843,6 @@ def render_children_diversity_histogram():
     # CRITICAL FIX: Update the session state with our modified circles_df that now has diversity scores
     st.session_state.matched_circles = circles_df
     print(f"CHILDREN HISTOGRAM UPDATE - Updated session state matched_circles with calculated children scores for {len(circles_df)} circles")
-    
-    if circles_df.empty:
-        st.warning("No circles found in Results DataFrame for analysis.")
-        return
-    
-    # Update session state with reconstructed circles to ensure consistency
-    st.session_state.matched_circles = circles_df
-    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
-    
-    # Get the results data
-    results_df = st.session_state.results.copy()
-    
-    # Create histogram logic would continue here...
-    st.subheader("Children Diversity Within Circles")
-    st.info("Children diversity histogram will be implemented here.")
 
 def render_racial_identity_analysis(data):
     """Render the Racial Identity analysis visualizations"""
