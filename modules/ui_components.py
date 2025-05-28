@@ -5536,43 +5536,14 @@ def render_children_diversity_histogram():
     if 'children_score' not in circles_df.columns:
         circles_df['children_score'] = 0
     
-    # Check if Children_Category doesn't exist, add it from the Children column
-    if 'Children_Category' not in results_df.columns:
-        # Find the Children column in the results dataframe
-        children_col = None
-        for col in results_df.columns:
-            if "children" in col.lower():
-                children_col = col
-                break
-        
-        if children_col:
-            # Define function to categorize children status
-            def categorize_children(children_value):
-                if pd.isna(children_value):
-                    return None
-                    
-                children_value = str(children_value).strip()
-                
-                # No children category
-                if "No children" in children_value:
-                    return "No children"
-                
-                # First time <=5s
-                if any(term in children_value for term in ["Children 5 and under", "Children under 5", "Pregnant"]):
-                    return "First time <=5s"
-                
-                # First time 6-18s
-                if any(term in children_value for term in ["Children 6 through 17", "Children 6-18"]) and not any(term in children_value for term in ["Adult Children", "Adult children"]):
-                    return "First time 6-18s"
-                
-                # Adult children / all else
-                return "Adult children / all else"
-            
-            # Apply the categorization function to create the column in results_df
-            results_df['Children_Category'] = results_df[children_col].apply(categorize_children)
-            
-            # Update session state with the modified results dataframe
-            st.session_state.results = results_df
+    # SOLUTION: Use the existing demographic processor for proper normalization
+    from modules.demographic_processor import ensure_demographic_categories
+    
+    # Ensure all demographic categories are properly normalized
+    results_df = ensure_demographic_categories(results_df)
+    
+    # Update session state with properly categorized results
+    st.session_state.results = results_df
     
     # Filter out circles with no members
     if 'member_count' not in circles_df.columns:
@@ -6238,26 +6209,24 @@ def render_racial_identity_diversity_histogram():
             # Track unique racial identity categories in this circle
             unique_racial_identities = set()
             
-            # Look up racial identity for each member
+            # Look up racial identity for each member using the normalized Racial_Identity_Category
             for _, member_row in circle_members.iterrows():
-                # Try to get racial identity from various possible column names
-                racial_identity = None
-                for col in ['Racial Identity', 'Racial_Identity', 'Racial_Identity_Category']:
-                    if col in member_row.index:
-                        value = member_row[col]
-                        # FIX: Safely handle pandas values
-                        if not pd.isna(value):
-                            # Convert to scalar value if it's a pandas type
-                            if hasattr(value, 'item'):
-                                racial_identity = value.item()
-                            else:
-                                racial_identity = value
-                            break
-                
-                if racial_identity is not None and str(racial_identity).strip():
-                    unique_racial_identities.add(str(racial_identity).strip())
-                    if is_debug_circle:
-                        print(f"RACIAL IDENTITY DEBUG - {circle_id}: Member has racial identity: {racial_identity}")
+                # Use the properly normalized Racial_Identity_Category column
+                if 'Racial_Identity_Category' in member_row.index:
+                    racial_identity_category = member_row['Racial_Identity_Category']
+                    # FIX: Safely handle pandas values
+                    if not pd.isna(racial_identity_category):
+                        # Convert to scalar value if it's a pandas type
+                        if hasattr(racial_identity_category, 'item'):
+                            category_value = racial_identity_category.item()
+                        else:
+                            category_value = racial_identity_category
+                        
+                        if category_value is not None and str(category_value).strip():
+                            unique_racial_identities.add(str(category_value).strip())
+                            
+                            if is_debug_circle:
+                                print(f"RACIAL IDENTITY DEBUG - {circle_id}: Member has racial identity category: {category_value}")
             
             # Store the count of unique racial identities for this circle
             count = len(unique_racial_identities)
@@ -6440,43 +6409,24 @@ def render_children_diversity_histogram():
             # Track unique children categories in this circle
             unique_children_categories = set()
             
-            # Look up children data for each member
+            # Look up children data for each member using the normalized Children_Category
             for _, member_row in circle_members.iterrows():
-                # Try to get children data from various possible column names
-                children_data = None
-                for col in ['Children', 'children', 'Has_Children', 'Has Children']:
-                    if col in member_row.index:
-                        value = member_row[col]
-                        # FIX: Safely handle pandas values
-                        if not pd.isna(value):
-                            # Convert to scalar value if it's a pandas type
-                            if hasattr(value, 'item'):
-                                children_data = value.item()
-                            else:
-                                children_data = value
-                            break
-                
-                if children_data is not None and str(children_data).strip():
-                    # Normalize children data to categories
-                    children_str = str(children_data).strip().lower()
-                    if children_str in ['yes', 'y', 'true', '1']:
-                        unique_children_categories.add('Has Children')
-                    elif children_str in ['no', 'n', 'false', '0']:
-                        unique_children_categories.add('No Children')
-                    else:
-                        # Try to parse as a number for specific counts
-                        try:
-                            children_count = float(children_str)
-                            if children_count == 0:
-                                unique_children_categories.add('No Children')
-                            elif children_count >= 1:
-                                unique_children_categories.add('Has Children')
-                        except:
-                            # If it's text, use it as is
-                            unique_children_categories.add(str(children_data).strip())
-                    
-                    if is_debug_circle:
-                        print(f"CHILDREN DEBUG - {circle_id}: Member has children data: {children_data}")
+                # Use the properly normalized Children_Category column
+                if 'Children_Category' in member_row.index:
+                    children_category = member_row['Children_Category']
+                    # FIX: Safely handle pandas values
+                    if not pd.isna(children_category):
+                        # Convert to scalar value if it's a pandas type
+                        if hasattr(children_category, 'item'):
+                            category_value = children_category.item()
+                        else:
+                            category_value = children_category
+                        
+                        if category_value is not None and str(category_value).strip():
+                            unique_children_categories.add(str(category_value).strip())
+                            
+                            if is_debug_circle:
+                                print(f"CHILDREN DEBUG - {circle_id}: Member has children category: {category_value}")
             
             # Store the count of unique children categories for this circle
             count = len(unique_children_categories)

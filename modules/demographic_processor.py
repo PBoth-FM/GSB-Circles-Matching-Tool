@@ -144,12 +144,24 @@ def categorize_children(children_series: pd.Series) -> pd.Series:
         
         children_str = str(children).lower().strip()
         
-        if children_str in ['yes', 'true', '1'] or 'yes' in children_str:
-            return "Has Children"
-        elif children_str in ['no', 'false', '0'] or 'no' in children_str:
-            return "No Children"
-        else:
-            return "Unknown"
+        # No children category
+        if "no children" in children_str or children_str in ['no', 'false', '0']:
+            return "No children"
+        
+        # First time <=5s
+        if any(term in children_str for term in ["children 5 and under", "children under 5", "pregnant", "first time <5"]):
+            return "First time <5"
+        
+        # First time 6-18s  
+        if any(term in children_str for term in ["children 6 through 17", "children 6-18", "first time 6-18"]) and not any(term in children_str for term in ["adult children", "adult"]):
+            return "First time 6-18"
+        
+        # Adult children / all else
+        if any(term in children_str for term in ["adult children", "adult", "all else"]) or children_str in ['yes', 'true', '1'] or 'yes' in children_str:
+            return "Adult children / all else"
+        
+        # Default to adult children / all else for any other children data
+        return "Adult children / all else"
     
     return children_series.apply(get_children_category)
 
