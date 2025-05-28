@@ -67,43 +67,23 @@ def calculate_total_diversity_score(matched_circles_df, results_df):
     if results_df is None:
         return 0
     
-    # Import enhanced demographic processing
+    # SOLUTION 3: Always use Results DataFrame directly for consistency
     from modules.demographic_processor import calculate_all_diversity_scores_from_results, get_all_circles_from_results
     
-    # Check if we have circles data, if not use Results DataFrame
-    use_results_fallback = False
-    if (matched_circles_df is None or 
-        (hasattr(matched_circles_df, 'empty') and matched_circles_df.empty)):
-        use_results_fallback = True
-        print("DEBUG - Using Results DataFrame for diversity score calculation (matched_circles not available)")
+    print("DEBUG - Using Results DataFrame for diversity score calculation (Solution 3)")
     
-    if use_results_fallback:
-        # Use Results DataFrame directly
-        all_diversity_scores = calculate_all_diversity_scores_from_results(results_df)
-        circle_ids = get_all_circles_from_results(results_df)
-        
-        # Calculate totals across all circles
-        vintage_score = sum(scores.get('vintage', 0) for scores in all_diversity_scores.values())
-        employment_score = sum(scores.get('employment', 0) for scores in all_diversity_scores.values())
-        industry_score = sum(scores.get('industry', 0) for scores in all_diversity_scores.values())
-        ri_score = sum(scores.get('racial_identity', 0) for scores in all_diversity_scores.values())
-        children_score = sum(scores.get('children', 0) for scores in all_diversity_scores.values())
-        
-        print(f"DEBUG - Results DataFrame diversity scores using {len(circle_ids)} circles")
-    else:
-        # Use existing calculation method with matched_circles
-        reconstructed_circles = reconstruct_circles_from_results(results_df)
-        
-        # Debug information
-        reconstructed_count = len(reconstructed_circles)
-        print(f"DEBUG - Match page diversity scores using {reconstructed_count} reconstructed circles")
-        
-        # Calculate the individual category scores using the reconstructed circles
-        vintage_score = calculate_vintage_diversity_score(reconstructed_circles, results_df)
-        employment_score = calculate_employment_diversity_score(reconstructed_circles, results_df)
-        industry_score = calculate_industry_diversity_score(reconstructed_circles, results_df)  
-        ri_score = calculate_racial_identity_diversity_score(reconstructed_circles, results_df)
-        children_score = calculate_children_diversity_score(reconstructed_circles, results_df)
+    # Always use Results DataFrame directly
+    all_diversity_scores = calculate_all_diversity_scores_from_results(results_df)
+    circle_ids = get_all_circles_from_results(results_df)
+    
+    # Calculate totals across all circles
+    vintage_score = sum(scores.get('vintage', 0) for scores in all_diversity_scores.values())
+    employment_score = sum(scores.get('employment', 0) for scores in all_diversity_scores.values())
+    industry_score = sum(scores.get('industry', 0) for scores in all_diversity_scores.values())
+    ri_score = sum(scores.get('racial_identity', 0) for scores in all_diversity_scores.values())
+    children_score = sum(scores.get('children', 0) for scores in all_diversity_scores.values())
+    
+    print(f"DEBUG - Results DataFrame diversity scores using {len(circle_ids)} circles")
     
     # Log the individual scores for debugging
     total_score = vintage_score + employment_score + industry_score + ri_score + children_score
@@ -946,32 +926,21 @@ def render_vintage_diversity_histogram():
         st.warning("No results data available to analyze vintage diversity.")
         return
     
-    # Check if we have matched_circles data, if not use Results DataFrame
-    use_results_fallback = False
-    if ('matched_circles' not in st.session_state or 
-        st.session_state.matched_circles is None or
-        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
-        use_results_fallback = True
-        st.info("Using Results DataFrame for diversity analysis (matched_circles not available)")
-    
-    # Import demographic processor functions
+    # SOLUTION 3: Always use Results DataFrame to populate matched_circles
     from modules.demographic_processor import create_circles_dataframe_from_results
     
-    if use_results_fallback:
-        # Create circles dataframe from results
-        circles_df = create_circles_dataframe_from_results(st.session_state.results)
-        
-        if circles_df.empty:
-            st.warning("No circles found in Results DataFrame for analysis.")
-            return
-            
-        st.caption(f"🔄 Generated {len(circles_df)} circles from Results DataFrame")
-    else:
-        # Use existing matched_circles
-        circles_df = st.session_state.matched_circles.copy()
+    # Always reconstruct circles from Results DataFrame for consistency
+    circles_df = create_circles_dataframe_from_results(st.session_state.results)
     
-    # Get the circle data
-    circles_df = st.session_state.matched_circles.copy()
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Update session state with reconstructed circles to ensure consistency
+    st.session_state.matched_circles = circles_df
+    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
+    
+    # Get the results data
     results_df = st.session_state.results.copy()
     
     # Create score columns if they don't exist
@@ -1258,32 +1227,21 @@ def render_employment_diversity_histogram():
         st.warning("No results data available to analyze employment diversity.")
         return
     
-    # Check if we have matched_circles data, if not use Results DataFrame
-    use_results_fallback = False
-    if ('matched_circles' not in st.session_state or 
-        st.session_state.matched_circles is None or
-        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
-        use_results_fallback = True
-        st.info("Using Results DataFrame for diversity analysis (matched_circles not available)")
-    
-    # Import demographic processor functions
+    # SOLUTION 3: Always use Results DataFrame to populate matched_circles
     from modules.demographic_processor import create_circles_dataframe_from_results
     
-    if use_results_fallback:
-        # Create circles dataframe from results
-        circles_df = create_circles_dataframe_from_results(st.session_state.results)
-        
-        if circles_df.empty:
-            st.warning("No circles found in Results DataFrame for analysis.")
-            return
-            
-        st.caption(f"🔄 Generated {len(circles_df)} circles from Results DataFrame")
-    else:
-        # Use existing matched_circles
-        circles_df = st.session_state.matched_circles.copy()
+    # Always reconstruct circles from Results DataFrame for consistency
+    circles_df = create_circles_dataframe_from_results(st.session_state.results)
     
-    # Get the circle data
-    circles_df = st.session_state.matched_circles.copy()
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Update session state with reconstructed circles to ensure consistency
+    st.session_state.matched_circles = circles_df
+    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
+    
+    # Get the results data
     results_df = st.session_state.results.copy()
     
     # DEBUG: Show total circles at the start
@@ -1568,32 +1526,21 @@ def render_industry_diversity_histogram():
         st.warning("No results data available to analyze industry diversity.")
         return
     
-    # Check if we have matched_circles data, if not use Results DataFrame
-    use_results_fallback = False
-    if ('matched_circles' not in st.session_state or 
-        st.session_state.matched_circles is None or
-        (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty)):
-        use_results_fallback = True
-        st.info("Using Results DataFrame for diversity analysis (matched_circles not available)")
-    
-    # Import demographic processor functions
+    # SOLUTION 3: Always use Results DataFrame to populate matched_circles
     from modules.demographic_processor import create_circles_dataframe_from_results
     
-    if use_results_fallback:
-        # Create circles dataframe from results
-        circles_df = create_circles_dataframe_from_results(st.session_state.results)
-        
-        if circles_df.empty:
-            st.warning("No circles found in Results DataFrame for analysis.")
-            return
-            
-        st.caption(f"🔄 Generated {len(circles_df)} circles from Results DataFrame")
-    else:
-        # Use existing matched_circles
-        circles_df = st.session_state.matched_circles.copy()
+    # Always reconstruct circles from Results DataFrame for consistency
+    circles_df = create_circles_dataframe_from_results(st.session_state.results)
     
-    # Get the circle data
-    circles_df = st.session_state.matched_circles.copy()
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Update session state with reconstructed circles to ensure consistency
+    st.session_state.matched_circles = circles_df
+    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
+    
+    # Get the results data
     results_df = st.session_state.results.copy()
     
     # DEBUG: Show total circles at the start
@@ -5370,6 +5317,9 @@ def render_children_analysis(data):
     """Render the Children analysis visualizations"""
     st.subheader("Children Analysis")
     
+    # Always try to display diversity within circles first
+    render_children_diversity_histogram()
+    
     # Check if data is None
     if data is None:
         st.warning("No data available for analysis. Please upload participant data.")
@@ -6437,9 +6387,74 @@ def render_circles_detail():
     st.session_state.matched_circles = circles_df
     print(f"DIVERSITY UPDATE - Updated session state matched_circles with diversity scores for {len(circles_df)} circles")
 
+def render_racial_identity_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different racial identity categories they contain
+    """
+    # Check for results data first (single source of truth)
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze racial identity diversity.")
+        return
+    
+    # SOLUTION 3: Always use Results DataFrame to populate matched_circles
+    from modules.demographic_processor import create_circles_dataframe_from_results
+    
+    # Always reconstruct circles from Results DataFrame for consistency
+    circles_df = create_circles_dataframe_from_results(st.session_state.results)
+    
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Update session state with reconstructed circles to ensure consistency
+    st.session_state.matched_circles = circles_df
+    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
+    
+    # Get the results data
+    results_df = st.session_state.results.copy()
+    
+    # Create histogram logic would continue here...
+    st.subheader("Racial Identity Diversity Within Circles")
+    st.info("Racial Identity diversity histogram will be implemented here.")
+
+def render_children_diversity_histogram():
+    """
+    Create a histogram showing the distribution of circles based on 
+    the number of different children categories they contain
+    """
+    # Check for results data first (single source of truth)
+    if 'results' not in st.session_state or st.session_state.results is None:
+        st.warning("No results data available to analyze children diversity.")
+        return
+    
+    # SOLUTION 3: Always use Results DataFrame to populate matched_circles
+    from modules.demographic_processor import create_circles_dataframe_from_results
+    
+    # Always reconstruct circles from Results DataFrame for consistency
+    circles_df = create_circles_dataframe_from_results(st.session_state.results)
+    
+    if circles_df.empty:
+        st.warning("No circles found in Results DataFrame for analysis.")
+        return
+    
+    # Update session state with reconstructed circles to ensure consistency
+    st.session_state.matched_circles = circles_df
+    st.caption(f"🔄 Reconstructed {len(circles_df)} circles from Results DataFrame")
+    
+    # Get the results data
+    results_df = st.session_state.results.copy()
+    
+    # Create histogram logic would continue here...
+    st.subheader("Children Diversity Within Circles")
+    st.info("Children diversity histogram will be implemented here.")
+
 def render_racial_identity_analysis(data):
     """Render the Racial Identity analysis visualizations"""
     st.subheader("Racial Identity Analysis")
+    
+    # Always try to display diversity within circles first
+    render_racial_identity_diversity_histogram()
     
     # Check if data is None
     if data is None:
