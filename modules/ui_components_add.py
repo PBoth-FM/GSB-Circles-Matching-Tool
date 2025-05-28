@@ -84,10 +84,20 @@ def render_racial_identity_analysis(data):
     # Define the proper order for Racial Identity Categories
     racial_identity_order = ["White", "Asian", "All Else"]
     
-    # Note: Racial Identity diversity within circles histogram is handled by the main Demographics tab
-    # We only show the participant distribution here to avoid duplicate plots
+    # Check if we should show the diversity histogram
+    if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+        if not (hasattr(st.session_state.matched_circles, 'empty') and st.session_state.matched_circles.empty):
+            # Only show if not already rendered (to prevent duplicates)
+            histogram_key = "racial_identity_diversity_rendered"
+            if histogram_key not in st.session_state or not st.session_state[histogram_key]:
+                from modules.ui_components import render_racial_identity_diversity_histogram
+                render_racial_identity_diversity_histogram()
+        else:
+            st.info("Run the matching algorithm to see the Racial Identity diversity within circles.")
+    else:
+        st.info("Run the matching algorithm to see the Racial Identity diversity within circles.")
     
-    # SECOND: Display Distribution of Racial Identity
+    # Display Distribution of Racial Identity
     st.subheader("Distribution of Racial Identity")
     
     # Count by Racial Identity Category
