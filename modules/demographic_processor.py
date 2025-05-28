@@ -222,3 +222,162 @@ def get_all_circles_from_results(results_df: pd.DataFrame) -> List[str]:
     circle_ids = results_df['proposed_NEW_circles_id'].dropna()
     unique_circles = circle_ids[circle_ids != 'UNMATCHED'].unique().tolist()
     return unique_circles
+
+def calculate_all_diversity_scores_from_results(results_df: pd.DataFrame) -> Dict[str, Dict[str, int]]:
+    """
+    Calculate diversity scores for all circles and all categories using Results DataFrame.
+    
+    Args:
+        results_df: Results DataFrame containing participant data
+        
+    Returns:
+        Dictionary mapping circle IDs to their diversity scores by category
+    """
+    # Ensure demographic categories exist
+    results_df = ensure_demographic_categories(results_df)
+    
+    # Get all circles
+    circle_ids = get_all_circles_from_results(results_df)
+    
+    # Categories to calculate
+    categories = {
+        'vintage': 'Class_Vintage',
+        'employment': 'Employment_Category', 
+        'industry': 'Industry_Category',
+        'racial_identity': 'Racial_Identity_Category',
+        'children': 'Children_Category'
+    }
+    
+    # Calculate scores for each circle
+    diversity_scores = {}
+    for circle_id in circle_ids:
+        circle_scores = {}
+        for category_name, column_name in categories.items():
+            score = calculate_circle_diversity_from_results(results_df, circle_id, column_name)
+            circle_scores[category_name] = score
+        diversity_scores[circle_id] = circle_scores
+    
+    return diversity_scores
+
+def reconstruct_circle_metadata_from_results(results_df: pd.DataFrame, circle_id: str) -> Dict[str, Any]:
+    """
+    Reconstruct comprehensive circle metadata from Results DataFrame.
+    
+    Args:
+        results_df: Results DataFrame containing participant data
+        circle_id: ID of the circle to reconstruct metadata for
+        
+    Returns:
+        Dictionary containing comprehensive circle metadata
+    """
+    # Get members for this circle
+    member_ids = get_circle_members_from_results(results_df, circle_id)
+    
+    if not member_ids:
+        return {
+            'circle_id': circle_id,
+            'member_count': 0,
+            'members': [],
+            'region': 'Unknown',
+            'subregion': 'Unknown', 
+            'meeting_time': 'Unknown',
+            'always_hosts': 0,
+            'sometimes_hosts': 0,
+            'max_additions': 0
+        }
+    
+    # Get member data
+    member_data = results_df[results_df['Encoded ID'].isin(member_ids)]
+    
+    # Extract metadata from the first member (assuming consistent within circle)
+    first_member = member_data.iloc[0]
+    
+    # Get region and subregion
+    region = first_member.get('proposed_NEW_Region', first_member.get('Current_Region', 'Unknown'))
+    subregion = first_member.get('proposed_NEW_Subregion', first_member.get('Current_Subregion', 'Unknown'))
+    meeting_time = first_member.get('proposed_NEW_DayTime', first_member.get('Current_Meeting_Time', 'Unknown'))
+    
+    # Calculate host counts using standardized host status
+    from utils.data_standardization import normalize_host_status
+    
+    always_hosts = 0
+    sometimes_hosts = 0
+    
+    # Find host column
+    host_col = None
+    for col in ['host', 'Host', 'willing_to_host']:
+        if col in member_data.columns:
+            host_col = col
+            break
+    
+    if host_col:
+        for _, member in member_data.iterrows():
+            host_status = normalize_host_status(member[host_col])
+            if host_status == 'ALWAYS':
+                always_hosts += 1
+            elif host_status == 'SOMETIMES':
+                sometimes_hosts += 1
+    
+    # Determine max_additions (simplified logic for now)
+    max_additions = max(0, 10 - len(member_ids))  # Assume target size of 10
+    
+    return {
+        'circle_id': circle_id,
+        'member_count': len(member_ids),
+        'members': member_ids,
+        'region': region,
+        'subregion': subregion,
+        'meeting_time': meeting_time,
+        'always_hosts': always_hosts,
+        'sometimes_hosts': sometimes_hosts,
+        'max_additions': max_additions,
+        'new_members': 0,  # Will be calculated based on status
+        'is_new_circle': False  # Will be determined by circle naming
+    }
+
+def create_circles_dataframe_from_results(results_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create a comprehensive circles DataFrame from Results DataFrame.
+    This serves as a complete replacement for matched_circles when it's empty.
+    
+    Args:
+        results_df: Results DataFrame containing participant data
+        
+    Returns:
+        DataFrame with comprehensive circle data
+    """
+    # Ensure demographic categories exist
+    results_df = ensure_demographic_categories(results_df)
+    
+    # Get all circles
+    circle_ids = get_all_circles_from_results(results_df)
+    
+    if not circle_ids:
+        return pd.DataFrame()
+    
+    # Calculate diversity scores for all circles
+    all_diversity_scores = calculate_all_diversity_scores_from_results(results_df)
+    
+    # Build circle data
+    circles_data = []
+    for circle_id in circle_ids:
+        # Get comprehensive metadata
+        metadata = reconstruct_circle_metadata_from_results(results_df, circle_id)
+        
+        # Add diversity scores
+        if circle_id in all_diversity_scores:
+            scores = all_diversity_scores[circle_id]
+            metadata.update({
+                'vintage_score': scores.get('vintage', 0),
+                'employment_score': scores.get('employment', 0),
+                'industry_score': scores.get('industry', 0),
+                'racial_identity_score': scores.get('racial_identity', 0),
+                'children_score': scores.get('children', 0)
+            })
+        
+        # Add metadata source
+        metadata['metadata_source'] = 'results_dataframe'
+        
+        circles_data.append(metadata)
+    
+    return pd.DataFrame(circles_data)
