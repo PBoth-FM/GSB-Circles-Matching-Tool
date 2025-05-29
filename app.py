@@ -1002,18 +1002,40 @@ def process_uploaded_file(uploaded_file):
                                 subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
                                 meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
                                 
-                                # Calculate max additions (minimum of co_leader_max_new_members, treating None/blank as 0)
-                                max_additions_values = []
-                                for val in group['co_leader_max_new_members']:
-                                    if pd.isna(val) or val == '' or val == 'None':
-                                        max_additions_values.append(0)
-                                    else:
-                                        try:
-                                            max_additions_values.append(int(float(val)))
-                                        except (ValueError, TypeError):
-                                            max_additions_values.append(0)
+                                # SOLUTION 1: Use stored optimization results instead of recalculating
+                                # Get max_additions from the circle metadata manager if available
+                                max_additions = 0  # Default fallback
                                 
-                                max_additions = min(max_additions_values) if max_additions_values else 0
+                                # Try to get from CircleMetadataManager
+                                if 'circle_metadata_manager' in st.session_state and st.session_state.circle_metadata_manager:
+                                    manager = st.session_state.circle_metadata_manager
+                                    if hasattr(manager, 'circles') and circle_id in manager.circles:
+                                        stored_max_additions = manager.circles[circle_id].get('max_additions', None)
+                                        if stored_max_additions is not None:
+                                            max_additions = stored_max_additions
+                                            print(f"✅ Using stored max_additions={max_additions} for circle {circle_id}")
+                                        else:
+                                            print(f"⚠️ No max_additions found in manager for circle {circle_id}")
+                                    else:
+                                        print(f"⚠️ Circle {circle_id} not found in metadata manager")
+                                
+                                # If we still don't have a value, try to get from matched_circles
+                                if max_additions == 0 and 'matched_circles' in st.session_state:
+                                    matched_circles = st.session_state.matched_circles
+                                    if isinstance(matched_circles, pd.DataFrame) and not matched_circles.empty:
+                                        # Look for this circle in the matched_circles DataFrame
+                                        circle_row = matched_circles[matched_circles['circle_id'] == circle_id]
+                                        if not circle_row.empty and 'max_additions' in matched_circles.columns:
+                                            stored_max_additions = circle_row['max_additions'].iloc[0]
+                                            if pd.notna(stored_max_additions):
+                                                max_additions = int(stored_max_additions)
+                                                print(f"✅ Using max_additions={max_additions} from matched_circles for circle {circle_id}")
+                                
+                                # Final fallback: if we still have 0 but there are new members assigned, 
+                                # set max_additions to at least match the new members count
+                                if max_additions == 0 and new_members > 0:
+                                    max_additions = new_members
+                                    print(f"⚠️ Fallback: Setting max_additions={max_additions} to match new_members for circle {circle_id}")
                                 
                                 # Count host status
                                 always_hosts = len(group[group['host_status_standardized'] == 'ALWAYS'])
