@@ -11,10 +11,8 @@ https://docs.google.com/document/d/1N0rjRWCO_aKpYxlUXbSXEPEWSMWHUABktOzc4RAejHI/
 
 ## Contact
 
-If you have questions, feel free to reach out to:  
+If you have questions, feel free to reach out to the creator:  
 **Patricia Bothwell (GSB '05)**  
 📧 pbothwell@fastmail.com
 
 ---
-
-*This file can be easily edited to add more documentation as needed.*
