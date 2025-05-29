@@ -65,12 +65,29 @@ set_flag('enable_metadata_validation', True)  # Enable validation in Debug tab
 set_flag('use_standardized_member_lists', True)  # Ensure consistent member list format
 set_flag('use_standardized_host_status', True)  # Normalize host status values
 
+def render_documentation_tab():
+    """Render the documentation tab content"""
+    st.subheader("Documentation")
+    
+    # Read and display the documentation file
+    try:
+        with open('documentation.md', 'r') as f:
+            documentation_content = f.read()
+        
+        # Display the markdown content
+        st.markdown(documentation_content)
+        
+    except FileNotFoundError:
+        st.error("Documentation file not found. Please ensure documentation.md exists in the project root.")
+    except Exception as e:
+        st.error(f"Error loading documentation: {str(e)}")
+
 def main():
     st.title("GSB Circles Matching Tool")
     
     # Create tabs for navigation, moved Demographics after Match per user request
-    # Removed East Bay Debug tab to focus on Seattle testing
-    tab1, tab2, tab3 = st.tabs(["Match", "Demographics", "Debug"])
+    # Added Documentation tab between Demographics and Debug
+    tab1, tab2, tab3, tab4 = st.tabs(["Match", "Demographics", "Documentation", "Debug"])
     
     with tab1:
         # Use our custom match tab function instead of the imported one
@@ -80,6 +97,9 @@ def main():
         render_demographics_tab()
     
     with tab3:
+        render_documentation_tab()
+    
+    with tab4:
         render_debug_tab()
 
 def run_optimization():
