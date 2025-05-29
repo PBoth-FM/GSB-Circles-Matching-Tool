@@ -440,11 +440,12 @@ def post_process_continuing_members(results, unmatched_participants, participant
     
     # Region-specific subregion mappings - used only as fallbacks if metadata not available
     REGION_SUBREGION_DEFAULTS = {
-        'IP-MXC': ['Polanco', 'Santa Fe', 'Condesa', 'Interlomas'],
-        'IP-NAP': ['North Naples', 'Downtown Naples', 'Pelican Bay'],
-        'IP-NBO': ['Marin County', 'Napa Valley', 'Sonoma'],
-        'IP-SAN': ['Marina/Russian Hill', 'SOMA/South Beach', 'Pacific Heights', 'Mission/Potrero Hill'],
-        'IP-SPO': ['Downtown Spokane', 'South Hill', 'North Spokane']
+    #    'IP-MXC': ['Polanco', 'Santa Fe', 'Condesa', 'Interlomas'],
+    #    'IP-NAP': ['North Naples', 'Downtown Naples', 'Pelican Bay'],
+    #    'IP-NBO': ['Marin County', 'Napa Valley', 'Sonoma'],
+    #    'IP-SAN': ['Marina/Russian Hill', 'SOMA/South Beach', 'Pacific Heights', 'Mission/Potrero Hill'],
+    #    'IP-SPO': ['Downtown Spokane', 'South Hill', 'North Spokane']
+    # Patricia commented out this section to avoid hardcoding subregions
     }
     
     # Import CircleMetadataManager only if needed for this function
