@@ -65,8 +65,9 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
        - If "Co-Leader Response: CL in 2025?" is "No" → proposed_NEW_Coleader = "No"
        - Otherwise → proposed_NEW_Coleader = "Yes"
     
-    2. For all other participants (non-CURRENT-CONTINUING):
-       - Always → proposed_NEW_Coleader = "Yes" (regardless of volunteering response)
+    2. For non-CURRENT-CONTINUING participants:
+       - If "(Non CLs) Volunteering to Co-Lead?" is "Yes" → proposed_NEW_Coleader = "Yes"
+       - Otherwise → proposed_NEW_Coleader = "No"
     
     3. Each circle must have at least 2 co-leaders:
        - If fewer than 2, set ALL participants in that circle as co-leaders
@@ -168,13 +169,12 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
             if volunteered:
                 df.at[idx, 'proposed_NEW_Coleader'] = 'Yes'
             else:
-                # CLARIFICATION NEEDED: Original spec says both conditions = "Yes"
-                # Setting to "No" for non-volunteers (change this if all should be "Yes")
                 df.at[idx, 'proposed_NEW_Coleader'] = 'No'
             
             if debug_mode and non_continuing_processed <= 5:  # Limit debug output
                 volunteer_status = "volunteered" if volunteered else "did not volunteer"
-                print(f"  Non-CONTINUING {participant_id}: Status='{status}', {volunteer_status} → Yes")
+                result = "Yes" if volunteered else "No"
+                print(f"  Non-CONTINUING {participant_id}: Status='{status}', {volunteer_status} → {result}")
     
     if debug_mode:
         print(f"  Processed {continuing_processed} CURRENT-CONTINUING participants")
