@@ -1087,9 +1087,18 @@ def process_uploaded_file(uploaded_file):
                                 primary_members = group.copy()
                                 original_count = len(group)
                                 
-                                # Ensure we only count unique participant IDs
+                                # Filter out null/nan Encoded IDs and ensure unique participant IDs
                                 if 'Encoded ID' in primary_members.columns:
-                                    # Remove any duplicate Encoded IDs within this circle
+                                    # First, remove participants with null/nan Encoded IDs
+                                    before_null_filter = len(primary_members)
+                                    primary_members = primary_members[primary_members['Encoded ID'].notna()]
+                                    after_null_filter = len(primary_members)
+                                    
+                                    if before_null_filter != after_null_filter:
+                                        null_count = before_null_filter - after_null_filter
+                                        print(f"🔧 CIRCLE COMPOSITION FIX: {circle_id} - Filtered out {null_count} participants with null/nan Encoded IDs")
+                                    
+                                    # Then, remove any duplicate Encoded IDs within this circle
                                     before_dedup = len(primary_members)
                                     primary_members = primary_members.drop_duplicates(subset=['Encoded ID'], keep='first')
                                     after_dedup = len(primary_members)
