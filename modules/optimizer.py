@@ -2581,8 +2581,9 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         # Minimum size constraint - only if the circle is active (y[j] = 1)
         prob += pulp.lpSum(x[p, j] for p in participants) >= min_circle_size * y[j], f"Min_circle_size_{j}"
         
-        # Maximum size constraint - 10 participants for new circles
-        max_size = 10
+        # Maximum size constraint - configurable participants for new circles
+        import streamlit as st
+        max_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
         prob += pulp.lpSum(x[p, j] for p in participants) <= max_size * y[j], f"Max_circle_size_{j}"
     
     # Constraint: existing circle max additions
