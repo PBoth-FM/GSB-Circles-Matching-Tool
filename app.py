@@ -1083,55 +1083,9 @@ def process_uploaded_file(uploaded_file):
                             csv_circles_data = []
                             
                             for circle_id, group in circle_groups:
-                                # FIXED: Proper member counting logic with deduplication
-                                primary_members = group.copy()
-                                original_count = len(group)
-                                
-                                # Filter out null/nan Encoded IDs and ensure unique participant IDs
-                                if 'Encoded ID' in primary_members.columns:
-                                    # First, remove participants with null/nan Encoded IDs
-                                    before_null_filter = len(primary_members)
-                                    primary_members = primary_members[primary_members['Encoded ID'].notna()]
-                                    after_null_filter = len(primary_members)
-                                    
-                                    if before_null_filter != after_null_filter:
-                                        null_count = before_null_filter - after_null_filter
-                                        print(f"🔧 CIRCLE COMPOSITION FIX: {circle_id} - Filtered out {null_count} participants with null/nan Encoded IDs")
-                                    
-                                    # Then, remove any duplicate Encoded IDs within this circle
-                                    before_dedup = len(primary_members)
-                                    primary_members = primary_members.drop_duplicates(subset=['Encoded ID'], keep='first')
-                                    after_dedup = len(primary_members)
-                                    
-                                    if before_dedup != after_dedup:
-                                        print(f"🔧 CIRCLE COMPOSITION FIX: {circle_id} - Removed {before_dedup - after_dedup} duplicate IDs")
-                                
-                                # Calculate aggregated values using deduplicated members
-                                member_count = len(primary_members)
-                                new_members = len(primary_members[primary_members['Status'] == 'NEW'])
-                                
-                                # Enhanced debug for specific circles to identify discrepancy source
-                                if circle_id == 'IP-MAR-02':
-                                    print(f"🔍 IP-MAR-02 DETAILED DEBUG:")
-                                    print(f"  Original group size: {original_count}")
-                                    print(f"  After deduplication: {member_count}")
-                                    print(f"  Raw_Status values: {list(group['Raw_Status'].unique())}")
-                                    print(f"  Status values: {list(group['Status'].unique())}")
-                                    print(f"  All Encoded IDs in group: {list(group['Encoded ID'].values)}")
-                                    print(f"  Final Encoded IDs after dedup: {list(primary_members['Encoded ID'].values)}")
-                                    
-                                    # Check for any rows with same Encoded ID
-                                    if original_count != member_count:
-                                        duplicates = group[group.duplicated(subset=['Encoded ID'], keep=False)]
-                                        if not duplicates.empty:
-                                            print(f"  FOUND DUPLICATES:")
-                                            for dup_id in duplicates['Encoded ID'].unique():
-                                                dup_rows = group[group['Encoded ID'] == dup_id]
-                                                print(f"    Encoded ID {dup_id} appears {len(dup_rows)} times")
-                                                for idx, (_, row) in enumerate(dup_rows.iterrows()):
-                                                    print(f"      Row {idx+1}: Status={row['Status']}, Raw_Status={row['Raw_Status']}")
-                                        else:
-                                            print(f"  No duplicates found, investigating other causes...")
+                                # Calculate aggregated values
+                                member_count = len(group)
+                                new_members = len(group[group['Status'] == 'NEW'])
                                 
                                 # Get first values for region, subregion, meeting time (should be same for all members)
                                 region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
