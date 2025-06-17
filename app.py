@@ -294,6 +294,32 @@ def run_optimization():
                 print(f"⚠️ Error applying metadata fixes: {str(e)}")
                 print("  Continuing with original results")
                 
+            # Apply co-leader assignment logic before storing results
+            print("\n🎯 APPLYING CO-LEADER ASSIGNMENT LOGIC")
+            try:
+                from modules.co_leader_assignment import assign_co_leaders, validate_co_leader_assignments
+                
+                # Apply co-leader assignment to results
+                results_with_co_leaders = assign_co_leaders(results, debug_mode=st.session_state.config.get('debug_mode', False))
+                
+                # Validate the assignments
+                validation = validate_co_leader_assignments(results_with_co_leaders)
+                
+                if validation['valid']:
+                    print("  ✅ Co-leader assignments completed successfully")
+                    print(f"  📊 Statistics: {validation['statistics']}")
+                    results = results_with_co_leaders
+                else:
+                    print("  ⚠️ Co-leader assignment validation issues:")
+                    for issue in validation['issues']:
+                        print(f"    - {issue}")
+                    # Still use the results with co-leader assignments, but log the issues
+                    results = results_with_co_leaders
+                    
+            except Exception as e:
+                print(f"  ⚠️ Error in co-leader assignment: {str(e)}")
+                print("  Continuing with original results without co-leader assignments")
+            
             # Store results in session state
             st.session_state.results = results
             st.session_state.unmatched_participants = unmatched_participants
