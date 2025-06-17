@@ -239,125 +239,116 @@ def generate_download_link(df):
 
                 print(f"  UI matched count: {len(ui_ids)}, CSV matched count: {len(csv_ids)}")
 
-    # Define the column order according to specifications
-    ordered_columns = []
+    # STEP 1: Remove specified columns by name
+    columns_to_remove = ['region', 'participant_id']
+    print(f"\n🔧 CSV COLUMN PROCESSING:")
+    print(f"  Removing specified columns: {columns_to_remove}")
+    
+    for col_to_remove in columns_to_remove:
+        if col_to_remove in output_df.columns:
+            output_df = output_df.drop(columns=[col_to_remove])
+            print(f"  ✅ Removed column: '{col_to_remove}'")
+        else:
+            print(f"  ⚠️ Column not found for removal: '{col_to_remove}'")
 
-    # First column should be Status
-    if 'Status' in output_df.columns:
-        ordered_columns.append('Status')
-
-    # Keep Raw_Status next to Status if available
-    if 'Raw_Status' in output_df.columns:
-        ordered_columns.append('Raw_Status')
-
-    # Next column should be Encoded ID
-    if 'Encoded ID' in output_df.columns:
-        ordered_columns.append('Encoded ID')
-
-    # Next come the specified columns in order
-    priority_columns = [
+    # STEP 2: Define the exact column order as specified
+    desired_column_order = [
+        'Status',
+        'Raw_Status',
+        'Encoded ID',
         'proposed_NEW_circles_id',
         'unmatched_reason',
         'proposed_NEW_Subregion',
         'proposed_NEW_DayTime',
-        'proposed_NEW_host',
-        'proposed_NEW_co_leader',
-        'max_additions'  # Added to include the max_additions data
+        'proposed_NEW_Coleader',
+        'host_status_standardized',
+        'host',
+        'Current Co-Leader?',
+        '(Non CLs) Volunteering to Co-Lead?',
+        'Co-Leader Response:  CL in 2025?',
+        'co_leader_max_new_members',
+        'Derived_Region',
+        'Region_Code',
+        'Requested_Region',
+        'Region Edit Made by tar',
+        'If already in 2 Circles, list both regions',
+        'If asking to join 2nd Circle, what is the 2nd region?',
+        'If Can\'t Place In-Person, Open to Virtual-Only?',
+        'first_choice_location',
+        'second_choice_location',
+        'third_choice_location',
+        'location_score',
+        'first_choice_time',
+        'second_choice_time',
+        'third_choice_time',
+        'time_score',
+        'total_score',
+        'GSB Degree',
+        'GSB_Class_Numeric',
+        'GSB Class Year',
+        'Class_Vintage',
+        'Employment Status',
+        'Industry Sector',
+        'Racial Identity',
+        'Relationship Status',
+        'Children',
+        'Sexual Orientation',
+        'Gender Identity',
+        'Special Needs?',
+        'Current_Circle_ID',
+        'Current_Region',
+        'Current_Subregion',
+        'Current/ Continuing Meeting Day',
+        'Current/ Continuing Meeting Time',
+        'Days & Times Additional Info',
+        'Additional Comments From Form',
+        'Co-Leader Response: Anything You are Looking for in New Members',
+        'Co-Leader Response: Day(s)',
+        'Co-Leader Response: Hosts',
+        'Co-Leader Response: Meeting Format',
+        'Co-Leader Response: Times',
+        'Last (Family) Name',
+        'First (Given) Name',
+        'Preferred Email',
+        'Mobile Phone',
+        'Home City',
+        'Home Country',
+        'Home Phone',
+        'Home State',
+        'Business City',
+        'Business Country',
+        'Business Phone',
+        'Business State',
+        'Completed Form? Y/P'
     ]
 
-    for col in priority_columns:
+    # STEP 3: Check which columns exist and log missing ones
+    print(f"  Checking for expected columns:")
+    ordered_columns = []
+    missing_columns = []
+    
+    for col in desired_column_order:
         if col in output_df.columns:
             ordered_columns.append(col)
-
-    # Identify name and email columns to place them in the right spot
-    name_email_columns = []
-    if 'Last (Family) Name' in output_df.columns:
-        name_email_columns.append('Last (Family) Name')
-    if 'First (Given) Name' in output_df.columns:
-        name_email_columns.append('First (Given) Name')
-    if 'Preferred Email' in output_df.columns:
-        name_email_columns.append('Preferred Email')
-
-    # Find GSB Class and Class Vintage columns to place them together
-    gsb_class_column = None
-    gsb_vintage_column = None
-
-    # Look for GSB Class column with improved detection logic
-    # First try for the exact column name that we know is used in the input data
-    if 'GSB Class Year' in output_df.columns:
-        gsb_class_column = 'GSB Class Year'
-        print(f"Found exact GSB Class Year column")
+            print(f"  ✅ Found: '{col}'")
+        else:
+            missing_columns.append(col)
+            print(f"  ⚠️ Missing: '{col}'")
+    
+    if missing_columns:
+        print(f"  Total missing columns: {len(missing_columns)}")
     else:
-        # Fallback to case-insensitive search with better pattern matching
-        for col in output_df.columns:
-            if any(term in col.lower().replace(" ", "") for term in ['gsbclass', 'gsb class']):
-                gsb_class_column = col
-                print(f"Found GSB Class column via pattern match: '{col}'")
-                break
+        print(f"  ✅ All expected columns found!")
 
-    # Class Vintage column - ensure it's included
-    if 'Class_Vintage' in output_df.columns:
-        gsb_vintage_column = 'Class_Vintage'
-        print(f"Found Class_Vintage column")
-
-    # Debug to verify column inclusion
-    if gsb_class_column:
-        print(f"Will include GSB Class column: '{gsb_class_column}'")
-        # Check if it has data
-        non_null_values = output_df[gsb_class_column].notna().sum()
-        print(f"- GSB Class column has {non_null_values} non-null values out of {len(output_df)}")
-
-    if gsb_vintage_column:
-        print(f"Will include Class Vintage column: '{gsb_vintage_column}'")
-        # Check if it has data
-        non_null_values = output_df[gsb_vintage_column].notna().sum()
-        print(f"- Class Vintage column has {non_null_values} non-null values out of {len(output_df)}")
-
-    # All other columns (except name/email columns and GSB class columns that we'll place later)
+    # STEP 4: Add any remaining columns that weren't in the desired order
     remaining_columns = [col for col in output_df.columns 
                         if col not in ordered_columns 
-                        and col not in name_email_columns
-                        and col != gsb_class_column
-                        and col != gsb_vintage_column]
-
-    # Add remaining columns alphabetically for consistency
-    ordered_columns.extend(sorted(remaining_columns))
-
-    # Now insert the name/email columns just before the Preferred Email
-    if 'Preferred Email' in output_df.columns:
-        email_index = ordered_columns.index('Preferred Email') if 'Preferred Email' in ordered_columns else len(ordered_columns)
-
-        # If Found, remove Preferred Email from ordered_columns first
-        if 'Preferred Email' in ordered_columns:
-            ordered_columns.remove('Preferred Email')
-
-        # Insert name columns followed by Preferred Email at the right position
-        for col in name_email_columns:
-            if col != 'Preferred Email' and col in output_df.columns:
-                ordered_columns.insert(email_index, col)
-                email_index += 1
-
-        # Add Preferred Email back at the right position
-        if 'Preferred Email' in output_df.columns:
-            ordered_columns.insert(email_index, 'Preferred Email')
-
-    # Add GSB Class and Class Vintage columns in the right order if they exist
-    if gsb_class_column and gsb_class_column not in ordered_columns:
-        # Add GSB Class column first
-        ordered_columns.append(gsb_class_column)
-
-        # Add Class Vintage right after GSB Class column if it exists
-        if gsb_vintage_column and gsb_vintage_column not in ordered_columns:
-            gsb_class_index = ordered_columns.index(gsb_class_column)
-            ordered_columns.insert(gsb_class_index + 1, gsb_vintage_column)
-    elif gsb_vintage_column and gsb_vintage_column not in ordered_columns:
-        # If we only have Class Vintage but no GSB Class, just add it
-        ordered_columns.append(gsb_vintage_column)
-
-    # Make sure we haven't lost any columns
-    for col in output_df.columns:
-        if col not in ordered_columns and not col.startswith('Unnamed:'):
-            ordered_columns.append(col)
+                        and not col.startswith('Unnamed:')]
+    
+    if remaining_columns:
+        print(f"  Additional columns not in specified order: {remaining_columns}")
+        # Add them at the end, sorted alphabetically
+        ordered_columns.extend(sorted(remaining_columns))
 
     # Create a new DataFrame with only the columns that exist
     final_columns = [col for col in ordered_columns if col in output_df.columns]
