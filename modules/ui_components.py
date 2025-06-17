@@ -54,6 +54,19 @@ def reconstruct_circles_from_results(results_df):
         # Get member IDs
         member_ids = group['Encoded ID'].dropna().tolist()
         
+        # Debug logging specifically for IP-MAR-02
+        if circle_id == 'IP-MAR-02':
+            print(f"🔍 DEBUG IP-MAR-02 Circle Composition member counting:")
+            print(f"  Circle ID: {circle_id}")
+            print(f"  Raw group size: {len(group)}")
+            print(f"  Member IDs found: {member_ids}")
+            print(f"  Final member count: {len(member_ids)}")
+            print(f"  Sample participant data from group:")
+            for idx, (_, row) in enumerate(group.head(3).iterrows()):
+                encoded_id = row.get('Encoded ID', 'Missing')
+                status = row.get('Status', 'Missing')
+                print(f"    Participant {idx + 1}: ID={encoded_id}, Status={status}")
+        
         circles_data.append({
             'circle_id': circle_id,
             'member_count': len(member_ids),
