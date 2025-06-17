@@ -26,18 +26,25 @@ def format_time_elapsed(seconds):
         seconds = seconds % 60
         return f"{int(hours)} hr {int(minutes)} min {int(seconds)} sec"
 
-def generate_download_link(df):
+def generate_download_link(results_df):
     """
-    Generate a downloadable link for a DataFrame with properly ordered columns
+    Generate a CSV download link for the results DataFrame.
+    This function filters out invalid participants and creates properly formatted CSV data.
 
     Args:
-        df: Pandas DataFrame to convert
+        results_df: DataFrame containing optimization results
 
     Returns:
-        CSV data as string with reordered columns
+        str: CSV content as string for download
     """
-    # Create a copy to avoid modifying the original DataFrame
-    output_df = df.copy()
+    if results_df is None or len(results_df) == 0:
+        return "No data available"
+
+    print(f"\n🔍🔍🔍 CSV GENERATION DEBUG 🔍🔍🔍")
+    print(f"Input DataFrame shape: {results_df.shape}")
+
+    # Create a deep copy to ensure we don't modify the original data in any way
+    output_df = results_df.copy(deep=True)
 
     # Sort by Derived_Region and proposed_NEW_circles_id, with nulls at end
     if 'Derived_Region' in output_df.columns and 'proposed_NEW_circles_id' in output_df.columns:
@@ -243,7 +250,7 @@ def generate_download_link(df):
     columns_to_remove = ['region', 'participant_id']
     print(f"\n🔧 CSV COLUMN PROCESSING:")
     print(f"  Removing specified columns: {columns_to_remove}")
-    
+
     for col_to_remove in columns_to_remove:
         if col_to_remove in output_df.columns:
             output_df = output_df.drop(columns=[col_to_remove])
@@ -326,7 +333,7 @@ def generate_download_link(df):
     print(f"  Checking for expected columns:")
     ordered_columns = []
     missing_columns = []
-    
+
     for col in desired_column_order:
         if col in output_df.columns:
             ordered_columns.append(col)
@@ -334,7 +341,7 @@ def generate_download_link(df):
         else:
             missing_columns.append(col)
             print(f"  ⚠️ Missing: '{col}'")
-    
+
     if missing_columns:
         print(f"  Total missing columns: {len(missing_columns)}")
     else:
@@ -344,7 +351,7 @@ def generate_download_link(df):
     remaining_columns = [col for col in output_df.columns 
                         if col not in ordered_columns 
                         and not col.startswith('Unnamed:')]
-    
+
     if remaining_columns:
         print(f"  Additional columns not in specified order: {remaining_columns}")
         # Add them at the end, sorted alphabetically
@@ -492,7 +499,7 @@ def get_valid_participants(participants_df):
         (participants_df[id_col].astype(str) != 'NaN') &
         (participants_df[id_col].astype(str).str.strip() != '')
     )
-    
+
     valid_df = participants_df[valid_mask]
 
     # Log the filtering process for debugging
@@ -953,41 +960,41 @@ def determine_unmatched_reason(participant, context=None):
 def is_valid_member_id(member_id):
     """
     Check if a member ID is valid (not nan, None, empty, etc.)
-    
+
     Args:
         member_id: The member ID to validate
-        
+
     Returns:
         bool: True if valid, False otherwise
     """
     if member_id is None or pd.isna(member_id):
         return False
-    
+
     # Convert to string for checking
     member_id_str = str(member_id).strip()
-    
+
     # Check for various invalid formats
     if (member_id_str == '' or 
         member_id_str.lower() == 'nan' or 
         member_id_str == 'None' or
         member_id_str == 'null'):
         return False
-    
+
     return True
 
 def clean_member_list(member_list):
     """
     Clean a list of member IDs by removing invalid entries
-    
+
     Args:
         member_list: List of member IDs (can be list, string, or other)
-        
+
     Returns:
         List of valid member IDs
     """
     if not member_list:
         return []
-    
+
     # Handle string representation of lists
     if isinstance(member_list, str):
         try:
@@ -997,11 +1004,11 @@ def clean_member_list(member_list):
                 return [member_list] if is_valid_member_id(member_list) else []
         except:
             return [member_list] if is_valid_member_id(member_list) else []
-    
+
     # Handle actual lists
     if isinstance(member_list, list):
         return [member_id for member_id in member_list if is_valid_member_id(member_id)]
-    
+
     # Handle single values
     return [member_list] if is_valid_member_id(member_list) else []
 
