@@ -957,8 +957,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             if circle_size == 4:
                                 final_max_additions = max(1, final_max_additions)
                             
-                            # Ensure we don't exceed 10 total members for any circle
-                            final_max_additions = min(final_max_additions, 10 - circle_size)
+                            # Ensure we don't exceed configurable maximum total members for any circle
+                            import streamlit as st
+                            max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+                            final_max_additions = min(final_max_additions, max_circle_size - circle_size)
                             
                             if final_max_additions > 0:
                                 print(f"  🔷 UNIVERSAL FIX APPLIED: Small circle {circle_id} with {circle_size} members")
@@ -1651,9 +1653,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"Found {len(existing_circles)} total existing circles")
         print(f"Adding {len(viable_circles)} circles with capacity (max_additions > 0) to optimization")
     
-    # Track circles at capacity (10 members)
+    # Track circles at capacity (configurable maximum members)
+    import streamlit as st
+    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
     for circle in circles:
-        if circle.get('member_count', 0) >= 10:
+        if circle.get('member_count', 0) >= max_circle_size:
             optimization_context['full_circles'].append(circle.get('circle_id'))
     
     # Track circles needing hosts
@@ -1874,7 +1878,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'subregion': new_circle_metadata[circle_id]['subregion'],
             'meeting_time': new_circle_metadata[circle_id]['meeting_time'],
             'region': new_circle_metadata[circle_id]['region'],
-            'max_additions': 10,  # New circles can have up to 10 members
+            'max_additions': max_circle_size,  # New circles can have up to configurable maximum members
             'is_existing': False,
             'current_members': 0
         }
