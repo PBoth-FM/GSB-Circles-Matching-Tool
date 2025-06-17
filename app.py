@@ -921,7 +921,7 @@ def process_uploaded_file(uploaded_file):
                             print(f"  FULL RECORD DUMP:")
                             non_null_attrs = {}
                             for col, val in row.items():
-                                if pd.notna(val) and not col.startswith('Unnamed')):
+                                if pd.notna(val) and not col.startswith('Unnamed'):
                                     non_null_attrs[col] = val
 
                             # Print the attribute keys first
