@@ -3337,17 +3337,38 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         max_additions = circle_metadata[c_id]['max_additions']
         current_member_count = viable_circles[c_id]['member_count']
         
-        # UPDATED FIX: Enforce maximum size of 10 for continuing circles
-        # If circle already has more than 10 members, don't allow any new members
-        # If adding members would exceed 10, limit additions accordingly
-        if current_member_count >= 10:
-            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} already has {current_member_count} members (≥10)")
+        # Get configurable maximum circle size
+        import streamlit as st
+        configured_max_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+        
+        # Check if this circle has only continuing members (should be preserved as-is)
+        circle_members = viable_circles[c_id].get('members', [])
+        has_only_continuing = True
+        
+        # Check if circle has any NEW members by examining member status
+        for member_id in circle_members:
+            # Find this member in the original data to check their status
+            member_rows = remaining_df[remaining_df['Encoded ID'] == member_id]
+            if not member_rows.empty:
+                member_status = member_rows.iloc[0].get('Status', '')
+                if member_status == 'NEW':
+                    has_only_continuing = False
+                    break
+        
+        # UPDATED FIX: Enforce configurable maximum size with continuing-only exception
+        # Exception: Preserve continuing-only circles regardless of size
+        if has_only_continuing and current_member_count > configured_max_size:
+            print(f"✅ PRESERVING: Circle {c_id} has only continuing members ({current_member_count} members)")
+            print(f"  Allowing to exceed configured maximum of {configured_max_size}")
+            # Keep existing max_additions as-is for continuing-only circles
+        elif current_member_count >= configured_max_size:
+            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} already has {current_member_count} members (≥{configured_max_size})")
             print(f"  Forcing max_additions to 0 (was {max_additions})")
             max_additions = 0
-        elif current_member_count + max_additions > 10:
+        elif current_member_count + max_additions > configured_max_size:
             old_max = max_additions
-            max_additions = 10 - current_member_count
-            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} would exceed 10 members")
+            max_additions = configured_max_size - current_member_count
+            print(f"🚨 CRITICAL SIZE CONSTRAINT: Circle {c_id} would exceed {configured_max_size} members")
             print(f"  Adjusting max_additions from {old_max} to {max_additions}")
             
         # Add special debug for test circles
@@ -3370,8 +3391,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         else:
             print(f"⚠️ WARNING: No valid variables created for circle {c_id}, skipping capacity constraint")
     
-    # For new circles: max_circle_size (10)
-    max_circle_size = 10
+    # For new circles: use configurable maximum size
+    import streamlit as st
+    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
     for c_id in new_circle_ids:
         # DEFENSIVE FIX: Only use variables that exist in the model
         circle_vars = [x[(p_id, c_id)] for p_id in participants if (p_id, c_id) in x]
