@@ -51,21 +51,42 @@ def reconstruct_circles_from_results(results_df):
     
     circles_data = []
     for circle_id, group in circle_groups:
-        # Get member IDs
-        member_ids = group['Encoded ID'].dropna().tolist()
+        # Get member IDs with enhanced filtering for NaN, None, and invalid values
+        raw_member_ids = group['Encoded ID'].tolist()
+        
+        # Filter out NaN, None, empty strings, and 'nan' string values
+        member_ids = []
+        filtered_count = 0
+        
+        for member_id in raw_member_ids:
+            # Convert to string for consistent checking
+            member_id_str = str(member_id) if member_id is not None else ''
+            
+            # Check if this is a valid ID
+            if (member_id is not None and 
+                not pd.isna(member_id) and 
+                member_id_str.strip() != '' and
+                member_id_str.lower() != 'nan' and
+                member_id_str != 'None'):
+                member_ids.append(member_id)
+            else:
+                filtered_count += 1
         
         # Debug logging specifically for IP-MAR-02
         if circle_id == 'IP-MAR-02':
             print(f"🔍 DEBUG IP-MAR-02 Circle Composition member counting:")
             print(f"  Circle ID: {circle_id}")
             print(f"  Raw group size: {len(group)}")
-            print(f"  Member IDs found: {member_ids}")
+            print(f"  Raw member IDs: {raw_member_ids}")
+            print(f"  Filtered out {filtered_count} invalid/NaN member IDs")
+            print(f"  Valid member IDs found: {member_ids}")
             print(f"  Final member count: {len(member_ids)}")
             print(f"  Sample participant data from group:")
-            for idx, (_, row) in enumerate(group.head(3).iterrows()):
+            for idx, (_, row) in enumerate(group.head(5).iterrows()):
                 encoded_id = row.get('Encoded ID', 'Missing')
                 status = row.get('Status', 'Missing')
-                print(f"    Participant {idx + 1}: ID={encoded_id}, Status={status}")
+                is_valid = encoded_id in member_ids if encoded_id != 'Missing' else False
+                print(f"    Participant {idx + 1}: ID={encoded_id}, Status={status}, Valid={is_valid}")
         
         circles_data.append({
             'circle_id': circle_id,
