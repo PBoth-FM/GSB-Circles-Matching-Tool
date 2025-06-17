@@ -7,6 +7,23 @@ from plotly.subplots import make_subplots
 import io
 import base64
 
+def render_same_person_constraint_validation():
+    """Render validation results for same-person constraint violations."""
+    if 'same_person_violations' in st.session_state and st.session_state.same_person_violations:
+        st.error("Same-Person Constraint Violations Detected")
+        st.write("The following circles contain multiple participants with the same base Encoded ID:")
+        
+        for violation in st.session_state.same_person_violations:
+            with st.expander(f"Circle {violation['circle_id']} - Base ID {violation['base_encoded_id']}", expanded=True):
+                st.write(f"**Base Encoded ID:** {violation['base_encoded_id']}")
+                st.write(f"**Circle:** {violation['circle_id']}")
+                st.write(f"**Number of variants:** {violation['count']}")
+                st.write(f"**Participant IDs:** {', '.join(violation['duplicate_participants'])}")
+                st.warning("These participants represent the same person and should not be in the same circle.")
+    else:
+        st.success("Same-Person Constraint Validation Passed")
+        st.write("No participants with the same base Encoded ID were found in the same circle.")
+
 def reconstruct_circles_from_results(results_df):
     """
     Reconstruct circles data from results DataFrame - same logic used in Circle Composition table.

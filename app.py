@@ -320,6 +320,32 @@ def run_optimization():
                 print(f"  ⚠️ Error in co-leader assignment: {str(e)}")
                 print("  Continuing with original results without co-leader assignments")
             
+            # Validate same-person constraint (prevent participants with same base ID in same circle)
+            print("\n🔒 VALIDATING SAME-PERSON CONSTRAINT")
+            try:
+                from modules.same_person_constraint_test import validate_same_person_constraint
+                
+                validation_result = validate_same_person_constraint(results)
+                print(f"  {validation_result['message']}")
+                
+                if not validation_result['valid']:
+                    print("  ⚠️ Same-person constraint violations found:")
+                    for violation in validation_result['violations']:
+                        print(f"    Circle {violation['circle_id']}: Base ID {violation['base_encoded_id']} appears {violation['count']} times")
+                        print(f"      Participants: {violation['duplicate_participants']}")
+                    
+                    # Store validation results for display in UI
+                    if 'same_person_violations' not in st.session_state:
+                        st.session_state.same_person_violations = []
+                    st.session_state.same_person_violations = validation_result['violations']
+                else:
+                    # Clear any previous violations
+                    if 'same_person_violations' in st.session_state:
+                        st.session_state.same_person_violations = []
+                    
+            except Exception as e:
+                print(f"  ⚠️ Error validating same-person constraint: {str(e)}")
+            
             # Store results in session state
             st.session_state.results = results
             st.session_state.unmatched_participants = unmatched_participants
@@ -1010,6 +1036,11 @@ def process_uploaded_file(uploaded_file):
                 else:
                     st.warning("No results data available for circle size analysis.")
 
+                # Same-Person Constraint Validation
+                st.subheader("Same-Person Constraint Validation")
+                from modules.ui_components import render_same_person_constraint_validation
+                render_same_person_constraint_validation()
+                
                 # Circle Composition from CSV - Direct from Results Data
                 st.subheader("Circle Composition from CSV")
                 
