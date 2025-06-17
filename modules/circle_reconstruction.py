@@ -688,9 +688,39 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             # Re-fetch the members with the updated circle ID
             members_df = matched_df[matched_df[circle_column] == circle_id]
         
-        # CRITICAL FIX: Remove duplicate member IDs by using a set to ensure uniqueness
-        member_ids_set = set(members_df[id_column].tolist())
+        # CRITICAL FIX: Remove duplicate member IDs and filter out invalid IDs (nan, None, empty)
+        raw_member_ids = members_df[id_column].tolist()
+        
+        # Filter out invalid member IDs
+        valid_member_ids = []
+        invalid_count = 0
+        
+        for member_id in raw_member_ids:
+            # Convert to string for consistent checking
+            member_id_str = str(member_id) if member_id is not None else ''
+            
+            # Check if this is a valid ID
+            if (member_id is not None and 
+                not pd.isna(member_id) and 
+                member_id_str.strip() != '' and
+                member_id_str.lower() != 'nan' and
+                member_id_str != 'None'):
+                valid_member_ids.append(member_id)
+            else:
+                invalid_count += 1
+                
+        # Remove duplicates while preserving order
+        member_ids_set = set(valid_member_ids)
         member_ids = list(member_ids_set)
+        
+        if invalid_count > 0:
+            print(f"  🧹 Cleaned {invalid_count} invalid member IDs from circle {circle_id}")
+            print(f"  📊 Valid unique members: {len(member_ids)} (was {len(raw_member_ids)} total)")
+        
+        # Log any duplicates removed
+        duplicates_removed = len(valid_member_ids) - len(member_ids)
+        if duplicates_removed > 0:
+            print(f"  🔄 Removed {duplicates_removed} duplicate member IDs from circle {circle_id}")
         
         # Count unique members by status for accurate member counts
         new_members = 0

@@ -483,30 +483,38 @@ def get_valid_participants(participants_df):
     # Handle both column name formats (for flexibility)
     id_col = 'Encoded ID' if 'Encoded ID' in participants_df.columns else 'Encoded_ID'
 
-    # Filter out null IDs and convert to string to handle numeric IDs properly
-    valid_df = participants_df[participants_df[id_col].notna() & 
-                           (participants_df[id_col].astype(str) != 'None') &
-                           (participants_df[id_col].astype(str) != '')]
+    # Enhanced filtering to exclude nan, None, empty strings, and 'nan' strings
+    valid_mask = (
+        participants_df[id_col].notna() & 
+        (participants_df[id_col].astype(str) != 'None') &
+        (participants_df[id_col].astype(str) != '') &
+        (participants_df[id_col].astype(str).str.lower() != 'nan') &
+        (participants_df[id_col].astype(str) != 'NaN') &
+        (participants_df[id_col].astype(str).str.strip() != '')
+    )
+    
+    valid_df = participants_df[valid_mask]
 
     # Log the filtering process for debugging
     removed_count = len(participants_df) - len(valid_df)
     if removed_count > 0:
-        print(f"⚠️ Filtered {removed_count} participants with null or empty Encoded IDs")
+        print(f"⚠️ Filtered {removed_count} participants with null, nan, or empty Encoded IDs")
 
         # Detailed information on removed participants with circle assignments
         if 'proposed_NEW_circles_id' in participants_df.columns:
-            null_id_mask = participants_df[id_col].isna() | (participants_df[id_col].astype(str) == 'None') | (participants_df[id_col].astype(str) == '')
-            null_id_with_circle = participants_df[null_id_mask & 
+            invalid_mask = ~valid_mask
+            null_id_with_circle = participants_df[invalid_mask & 
                                               (participants_df['proposed_NEW_circles_id'].notna()) & 
                                               (participants_df['proposed_NEW_circles_id'] != 'UNMATCHED')]
 
             if len(null_id_with_circle) > 0:
-                print(f"  ⚠️ {len(null_id_with_circle)} participants with null IDs were assigned to circles:")
+                print(f"  ⚠️ {len(null_id_with_circle)} participants with invalid IDs were assigned to circles:")
                 for _, row in null_id_with_circle.iterrows():
                     circle_id = row['proposed_NEW_circles_id']
                     participant_id = row.get('participant_id', 'Unknown')
+                    encoded_id = row.get(id_col, 'Unknown')
                     region = row.get('region', 'Unknown')
-                    print(f"  - Circle: {circle_id}, participant_id: {participant_id}, region: {region}")
+                    print(f"  - Circle: {circle_id}, encoded_id: {encoded_id}, participant_id: {participant_id}, region: {region}")
 
     return valid_df
 
@@ -941,6 +949,61 @@ def determine_unmatched_reason(participant, context=None):
     # 11. Default Reason - per client request, use a simpler message
     # This is our default if all other checks pass but participant is still unmatched
     return "Tool unable to find a match"
+
+def is_valid_member_id(member_id):
+    """
+    Check if a member ID is valid (not nan, None, empty, etc.)
+    
+    Args:
+        member_id: The member ID to validate
+        
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    if member_id is None or pd.isna(member_id):
+        return False
+    
+    # Convert to string for checking
+    member_id_str = str(member_id).strip()
+    
+    # Check for various invalid formats
+    if (member_id_str == '' or 
+        member_id_str.lower() == 'nan' or 
+        member_id_str == 'None' or
+        member_id_str == 'null'):
+        return False
+    
+    return True
+
+def clean_member_list(member_list):
+    """
+    Clean a list of member IDs by removing invalid entries
+    
+    Args:
+        member_list: List of member IDs (can be list, string, or other)
+        
+    Returns:
+        List of valid member IDs
+    """
+    if not member_list:
+        return []
+    
+    # Handle string representation of lists
+    if isinstance(member_list, str):
+        try:
+            if member_list.startswith('[') and member_list.endswith(']'):
+                member_list = eval(member_list)
+            else:
+                return [member_list] if is_valid_member_id(member_list) else []
+        except:
+            return [member_list] if is_valid_member_id(member_list) else []
+    
+    # Handle actual lists
+    if isinstance(member_list, list):
+        return [member_id for member_id in member_list if is_valid_member_id(member_id)]
+    
+    # Handle single values
+    return [member_list] if is_valid_member_id(member_list) else []
 
 def normalize_string(s):
     """
