@@ -3344,8 +3344,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         # Check if this is a continuing-only circle (all members are CURRENT-CONTINUING)
         circle_members_df = viable_circles[c_id].get('members', [])
         is_continuing_only = all(
-            participant_df[participant_df['Encoded ID'] == member_id]['Status'].iloc[0] == 'CURRENT-CONTINUING' 
-            if len(participant_df[participant_df['Encoded ID'] == member_id]) > 0 else True
+            remaining_df[remaining_df['Encoded ID'] == member_id]['Status'].iloc[0] == 'CURRENT-CONTINUING' 
+            if len(remaining_df[remaining_df['Encoded ID'] == member_id]) > 0 else True
             for member_id in circle_members_df
         ) if circle_members_df else False
         
