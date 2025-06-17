@@ -665,6 +665,13 @@ def run_matching_algorithm(data, config):
                             if debug_mode:
                                 print(f"  Invalid max new members value: {max_value}")
                 
+                # Get configurable maximum circle size
+                try:
+                    import streamlit as st
+                    max_circle_size = st.session_state.get('max_circle_size', 8)
+                except ImportError:
+                    max_circle_size = 8
+                
                 # Set max_additions based on rules
                 if has_none_preference:
                     # Any co-leader saying "None" means no new members
@@ -672,16 +679,20 @@ def run_matching_algorithm(data, config):
                     if debug_mode:
                         print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
                 elif max_additions is not None:
-                    # Use the minimum valid value provided by a co-leader
-                    final_max_additions = max_additions
+                    # Use co-leader preference BUT constrain by configurable maximum
+                    max_allowed_additions = max(0, max_circle_size - len(member_ids))
+                    final_max_additions = min(max_additions, max_allowed_additions)
                     if debug_mode:
-                        print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
+                        if max_additions > max_allowed_additions:
+                            print(f"  Circle {circle_id} co-leader wanted {max_additions} new members, but system max ({max_circle_size}) limits to {final_max_additions}")
+                        else:
+                            print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                 else:
-                    # Default to 8 total if no co-leader specified a value or no co-leaders exist
-                    final_max_additions = max(0, 8 - len(member_ids))
+                    # Default to configurable maximum if no co-leader specified a value or no co-leaders exist
+                    final_max_additions = max(0, max_circle_size - len(member_ids))
                     if debug_mode:
                         message = "No co-leader preference specified" if has_co_leader else "No co-leaders found"
-                        print(f"  {message} for circle {circle_id} - using default max total of 8")
+                        print(f"  {message} for circle {circle_id} - using default max total of {max_circle_size}")
                         print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more")
                 
                 # Create circle metadata

@@ -1,15 +1,15 @@
 {
-  "total_continuing_members": 16,
+  "total_continuing_members": 4,
   "members": [
     {
-      "participant_id": "69280355407",
+      "participant_id": "66883222431",
       "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -19,19 +19,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "72549791251",
+      "participant_id": "64567903885",
       "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -41,19 +41,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "73715641908",
+      "participant_id": "67938698165",
       "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -63,19 +63,19 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     },
     {
-      "participant_id": "68656010902",
+      "participant_id": "58244483490",
       "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SPO-01",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -85,271 +85,7 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "240489814426",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "70513476811",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "71471749447",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "60728341750",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "75405154622A",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "70507770677",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "76217900959",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "77022386325",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "72423570374",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "71588645666",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "385744724126",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "63155625779",
-      "status": "CURRENT-CONTINUING",
-      "region": "Sao Paulo",
-      "circle_id": "IP-SPO-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SPO-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SPO-02",
+        "value": "IP-SIN-01",
         "column": "Current_Circle_ID"
       }
     }
@@ -359,6 +95,6 @@
   "aggressive_method_success_rate": 1.0,
   "any_method_success_rate": 1.0,
   "column_frequency": {
-    "Current_Circle_ID": 16
+    "Current_Circle_ID": 4
   }
 }

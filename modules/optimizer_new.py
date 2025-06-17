@@ -1011,8 +1011,16 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         
 
                     elif max_additions is not None:
-                        # Use the minimum valid value provided by co-leaders
-                        final_max_additions = max_additions
+                        # Get configurable maximum circle size
+                        try:
+                            import streamlit as st
+                            max_circle_size = st.session_state.get('max_circle_size', 8)
+                        except ImportError:
+                            max_circle_size = 8
+                        
+                        # Use co-leader preference BUT constrain by configurable maximum
+                        max_allowed_additions = max(0, max_circle_size - len(members))
+                        final_max_additions = min(max_additions, max_allowed_additions)
                         
                         # Record this circle in the eligibility logs
                         circle_eligibility_logs[circle_id] = {
@@ -1028,14 +1036,24 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'is_test_circle': False,
                             'is_small_circle': len(members) < 5,
                             'has_none_preference': False,
-                            'preference_overridden': False
+                            'preference_overridden': max_additions > max_allowed_additions
                         }
                         
                         if debug_mode:
-                            print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
+                            if max_additions > max_allowed_additions:
+                                print(f"  Circle {circle_id} co-leader wanted {max_additions} new members, but system max ({max_circle_size}) limits to {final_max_additions}")
+                            else:
+                                print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                     else:
-                        # Default to 8 total if no co-leader specified a value or no co-leaders exist
-                        final_max_additions = max(0, 8 - len(members))
+                        # Get configurable maximum circle size
+                        try:
+                            import streamlit as st
+                            max_circle_size = st.session_state.get('max_circle_size', 8)
+                        except ImportError:
+                            max_circle_size = 8
+                        
+                        # Default to configurable maximum if no co-leader specified a value or no co-leaders exist
+                        final_max_additions = max(0, max_circle_size - len(members))
                         
                         # Record this circle in the eligibility logs
                         circle_eligibility_logs[circle_id] = {
@@ -1047,7 +1065,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                             'current_members': len(members),
                             'is_eligible': final_max_additions > 0,
                             'original_preference': 'Default',
-                            'preference_value': 8,  # CRITICAL FIX: Use integer instead of string to fix PyArrow error
+                            'preference_value': max_circle_size,  # Use configurable maximum instead of hardcoded 8
                             'is_test_circle': False,
                             'is_small_circle': len(members) < 5,
                             'has_none_preference': False,
