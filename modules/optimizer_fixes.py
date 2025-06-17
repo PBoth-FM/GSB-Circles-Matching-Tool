@@ -246,6 +246,13 @@ def optimize_circle_capacity(viable_circles, existing_circle_handling, min_circl
     Returns:
         dict: Updated viable circles with capacity adjustments
     """
+    # Get configurable maximum circle size
+    try:
+        import streamlit as st
+        max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+    except:
+        max_circle_size = 8
+    
     updated_circles = {}
     
     for circle_id, circle_info in viable_circles.items():
@@ -261,8 +268,6 @@ def optimize_circle_capacity(viable_circles, existing_circle_handling, min_circl
                 updated_info['max_additions'] = needed
         
         # In optimize mode, ensure all continuing circles can accept at least one new member
-        import streamlit as st
-        max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
         elif existing_circle_handling == 'optimize' and max_additions == 0 and current_members < max_circle_size:
             print(f"✅ Optimize mode override: {circle_id} now allows 1 new member")
             updated_info['max_additions'] = 1
