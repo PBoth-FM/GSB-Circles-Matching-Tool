@@ -3378,7 +3378,50 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             prob += y[c_id] == 0, f"disable_circle_{c_id}"
             print(f"⚠️ WARNING: No valid variables created for circle {c_id}, forcing y[{c_id}] = 0")
     
-    # Constraint 6: Host requirement for in-person circles (if enabled)
+    # Constraint 6: Prevent participants with same base Encoded ID from being in the same circle
+    # This handles cases where participants want to be in multiple circles and are listed with suffixes (A, B, etc.)
+    def get_base_encoded_id(encoded_id):
+        """Extract base Encoded ID by removing alphabetical suffixes like A, B, C"""
+        if not encoded_id:
+            return encoded_id
+        # Remove trailing alphabetical characters (case insensitive)
+        import re
+        # Match pattern: digits followed by optional alphabetical suffix
+        match = re.match(r'^(\d+)[A-Za-z]*$', str(encoded_id))
+        if match:
+            return match.group(1)
+        return str(encoded_id)  # Return as-is if no pattern match
+    
+    # Group participants by their base Encoded ID
+    base_id_groups = {}
+    for p_id in participants:
+        base_id = get_base_encoded_id(p_id)
+        if base_id not in base_id_groups:
+            base_id_groups[base_id] = []
+        base_id_groups[base_id].append(p_id)
+    
+    # Add constraints to prevent multiple participants with same base ID in same circle
+    same_person_constraints_added = 0
+    for base_id, participant_list in base_id_groups.items():
+        if len(participant_list) > 1:  # Only add constraints if there are multiple variants of the same person
+            if debug_mode:
+                print(f"🔒 Adding same-person constraint for base ID {base_id}: {participant_list}")
+            
+            # For each circle, ensure at most one participant from this group can be assigned
+            for c_id in all_circle_ids:
+                # Get variables for all participants in this group for this circle
+                group_vars = [x[(p_id, c_id)] for p_id in participant_list if (p_id, c_id) in x]
+                
+                if len(group_vars) > 1:  # Only add constraint if multiple variables exist
+                    prob += pulp.lpSum(group_vars) <= 1, f"same_person_{base_id}_{c_id}"
+                    same_person_constraints_added += 1
+    
+    if debug_mode and same_person_constraints_added > 0:
+        print(f"✅ Added {same_person_constraints_added} same-person constraints to prevent duplicate base IDs in same circles")
+    elif debug_mode:
+        print(f"ℹ️ No same-person constraints needed (no participants with duplicate base Encoded IDs found)")
+
+    # Constraint 7: Host requirement for in-person circles (if enabled)
     if enable_host_requirement:
         for c_id in all_circle_ids:
             # Only apply to in-person circles - using the correct naming format
@@ -3461,6 +3504,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"\n🔒 CONSTRAINTS SUMMARY:")
         print(f"  One circle per participant: {len(participants)} constraints")
         print(f"  Compatibility constraints: {sum(1 for v in compatibility.values() if v == 0)} constraints")
+        print(f"  Same-person constraints: {same_person_constraints_added} constraints")
         print(f"  Circle activation constraints: {len(participants) * len(new_circle_ids)} constraints")
         print(f"  Min/max size constraints: {len(all_circle_ids)} constraints")
         if enable_host_requirement:
