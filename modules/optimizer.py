@@ -672,13 +672,29 @@ def run_matching_algorithm(data, config):
                     if debug_mode:
                         print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
                 elif max_additions is not None:
-                    # Use the minimum valid value provided by a co-leader
-                    final_max_additions = max_additions
+                    # Use the minimum valid value provided by co-leaders
+                    # BUT cap it to respect the configured maximum circle size
+                    import streamlit as st
+                    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+                    current_members = len(member_ids)
+                    max_allowed_additions = max(0, max_circle_size - current_members)
+                    
+                    # Cap co-leader preference to respect configured maximum
+                    original_preference = max_additions
+                    final_max_additions = min(max_additions, max_allowed_additions)
+                    
+                    # Log when co-leader preference is overridden by maximum circle size
+                    preference_overridden = final_max_additions < original_preference
+                    if preference_overridden and debug_mode:
+                        print(f"  ⚠️ Co-leader preference capped: {circle_id} requested {original_preference} but limited to {final_max_additions} (max size: {max_circle_size})")
+                    
                     if debug_mode:
                         print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                 else:
-                    # Default to 8 total if no co-leader specified a value or no co-leaders exist
-                    final_max_additions = max(0, 8 - len(member_ids))
+                    # Default to configured maximum if no co-leader specified a value or no co-leaders exist
+                    import streamlit as st
+                    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+                    final_max_additions = max(0, max_circle_size - len(member_ids))
                     if debug_mode:
                         message = "No co-leader preference specified" if has_co_leader else "No co-leaders found"
                         print(f"  {message} for circle {circle_id} - using default max total of 8")
