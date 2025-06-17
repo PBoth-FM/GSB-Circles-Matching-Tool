@@ -465,6 +465,13 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
     print("\n🔄 RECONSTRUCTING CIRCLES FROM PARTICIPANT RESULTS")
     print("🔍 ENHANCED DIAGNOSTICS: Starting comprehensive circle reconstruction")
     
+    # Get configurable maximum circle size (default to 8 if not set)
+    try:
+        import streamlit as st
+        max_circle_size = st.session_state.get('max_circle_size', 8)
+    except ImportError:
+        max_circle_size = 8
+    
     # Check if we should use standardized metadata
     from utils.feature_flags import get_flag
     use_standardized_metadata = use_standardized_metadata or get_flag('use_optimizer_metadata')
@@ -1402,9 +1409,7 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 circle_metadata[circle_id]['member_count'] = total_members
                 print(f"  ✅ FIXED: Set member_count to match total unique members ({total_members}) for circle {circle_id}")
                 
-                # Get configurable maximum circle size (default to 8 if not set)
-                import streamlit as st
-                max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+
                 
                 # CRITICAL CHECK: Enforce configurable member limit for continuing circles
                 # Exception: preserve continuing-only circles that exceed the new limit

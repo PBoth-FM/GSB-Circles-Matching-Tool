@@ -1,19 +1,19 @@
 {
-  "total_continuing_members": 4,
-  "matched_members": 4,
-  "unmatched_members": 0,
-  "matched_to_correct_circle": 4,
+  "total_continuing_members": 16,
+  "matched_members": 0,
+  "unmatched_members": 16,
+  "matched_to_correct_circle": 0,
   "matched_to_wrong_circle": 0,
   "members": [
     {
-      "participant_id": "66883222431",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "69280355407",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -23,25 +23,23 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
     },
     {
-      "participant_id": "64567903885",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "72549791251",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -51,25 +49,23 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
     },
     {
-      "participant_id": "67938698165",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "73715641908",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -79,25 +75,23 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
     },
     {
-      "participant_id": "58244483490",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
+      "participant_id": "68656010902",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
       "circle_id_source": "Current_Circle_ID",
       "standard_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
       "hybrid_method": {
@@ -107,18 +101,330 @@
       },
       "aggressive_method": {
         "found": true,
-        "value": "IP-SIN-01",
+        "value": "IP-SPO-01",
         "column": "Current_Circle_ID"
       },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "240489814426",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "70513476811",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "71471749447",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "60728341750",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "75405154622A",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "70507770677",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "76217900959",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "77022386325",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "72423570374",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "71588645666",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "385744724126",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
+    },
+    {
+      "participant_id": "63155625779",
+      "status": "UNMATCHED",
+      "region": "Sao Paulo",
+      "circle_id": "IP-SPO-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SPO-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SPO-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "No location and/or time preferences"
     }
   ],
-  "match_rate": 1.0,
-  "correct_match_rate": 1.0,
-  "unmatched_reason_frequency": {}
+  "match_rate": 0.0,
+  "correct_match_rate": 0.0,
+  "unmatched_reason_frequency": {
+    "No location and/or time preferences": 16
+  }
 }
