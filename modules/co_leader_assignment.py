@@ -153,11 +153,28 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
                     print(f"  CURRENT-CONTINUING Non-Leader {participant_id}: → No")
         
         else:
-            # All non-CURRENT-CONTINUING participants become co-leaders
+            # For non-CURRENT-CONTINUING participants, check if they volunteered to co-lead
             non_continuing_processed += 1
-            df.at[idx, 'proposed_NEW_Coleader'] = 'Yes'
+            
+            # Check volunteering status
+            volunteering_col = column_map.get('volunteering_to_co_lead')
+            volunteered = False
+            
+            if volunteering_col and volunteering_col in df.columns:
+                volunteer_value = str(row.get(volunteering_col, '')).strip().lower()
+                volunteered = volunteer_value == 'yes'
+            
+            # Apply business rule: Check volunteering response
+            if volunteered:
+                df.at[idx, 'proposed_NEW_Coleader'] = 'Yes'
+            else:
+                # CLARIFICATION NEEDED: Original spec says both conditions = "Yes"
+                # Setting to "No" for non-volunteers (change this if all should be "Yes")
+                df.at[idx, 'proposed_NEW_Coleader'] = 'No'
+            
             if debug_mode and non_continuing_processed <= 5:  # Limit debug output
-                print(f"  Non-CONTINUING {participant_id}: Status='{status}' → Yes")
+                volunteer_status = "volunteered" if volunteered else "did not volunteer"
+                print(f"  Non-CONTINUING {participant_id}: Status='{status}', {volunteer_status} → Yes")
     
     if debug_mode:
         print(f"  Processed {continuing_processed} CURRENT-CONTINUING participants")
