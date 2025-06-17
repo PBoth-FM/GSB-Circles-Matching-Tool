@@ -637,6 +637,19 @@ def process_uploaded_file(uploaded_file):
             st.session_state.config['existing_circle_handling'] = 'optimize'
             st.session_state.config['enable_host_requirement'] = True  # Fixed value
             
+            # Initialize max_circle_size if not set
+            if 'max_circle_size' not in st.session_state:
+                st.session_state.max_circle_size = 8
+            
+            # Maximum Circle Size configuration
+            st.session_state.max_circle_size = st.number_input(
+                "Maximum Circle Size",
+                min_value=5,
+                max_value=10,
+                value=st.session_state.max_circle_size,
+                help="Note: this will not affect continuing participants"
+            )
+            
             # Only show Debug Mode as a configurable option
             st.session_state.config['debug_mode'] = st.checkbox(
                 "Debug Mode", 
@@ -1084,9 +1097,9 @@ def process_uploaded_file(uploaded_file):
                                 is_new_circle = "-NEW-" in circle_id
                                 
                                 if is_new_circle:
-                                    # New circles always have max_additions = 10 (maximum circle size)
-                                    max_additions = 10
-                                    print(f"✅ New circle {circle_id}: Setting max_additions=10 (maximum capacity)")
+                                    # New circles always have max_additions = configured maximum circle size
+                                    max_additions = st.session_state.get('max_circle_size', 8)
+                                    print(f"✅ New circle {circle_id}: Setting max_additions={max_additions} (maximum capacity)")
                                 else:
                                     # Continuing circle: use stored optimization results
                                     max_additions = 0  # Default fallback

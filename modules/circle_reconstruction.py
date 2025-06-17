@@ -1402,8 +1402,14 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 circle_metadata[circle_id]['member_count'] = total_members
                 print(f"  ✅ FIXED: Set member_count to match total unique members ({total_members}) for circle {circle_id}")
                 
-                # CRITICAL CHECK: Enforce 10-member limit for continuing circles
-                if total_members > 10:
+                # Get configurable maximum circle size (default to 8 if not set)
+                import streamlit as st
+                max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+                
+                # CRITICAL CHECK: Enforce configurable member limit for continuing circles
+                # Exception: preserve continuing-only circles that exceed the new limit
+                has_new_members = unique_new > 0
+                if total_members > max_circle_size and has_new_members:
                     print(f"  ⚠️ WARNING: Circle {circle_id} exceeds maximum size with {total_members} members!")
                     print(f"    This includes {unique_continuing} continuing members and {unique_new} new members")
                     if unique_new > 0:
@@ -1414,15 +1420,16 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     # Use the existing max_additions value from optimization
                     max_additions = original_circle_info[circle_id]['max_additions']
                     
-                    # UPDATED FIX: Enforce the 10-member limit
+                    # UPDATED FIX: Enforce the configurable member limit
                     # Even if optimizer allowed more, we need to correct it here
-                    if total_members >= 10:
+                    # Exception: preserve continuing-only circles that exceed the new limit
+                    if has_new_members and total_members >= max_circle_size:
                         # Already at or over capacity, force max_additions to 0
                         print(f"  ⚠️ FIXING: Circle {circle_id} is at/over capacity. Setting max_additions to 0 (was {max_additions})")
                         max_additions = 0
-                    elif total_members + max_additions > 10:
+                    elif has_new_members and total_members + max_additions > max_circle_size:
                         # Would exceed capacity, adjust max_additions
-                        corrected_max = 10 - total_members
+                        corrected_max = max_circle_size - total_members
                         print(f"  ⚠️ FIXING: Circle {circle_id} would exceed capacity. Adjusting max_additions from {max_additions} to {corrected_max}")
                         max_additions = corrected_max
                     
@@ -1430,25 +1437,30 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     print(f"  Preserved max_additions={max_additions} for circle {circle_id}")
                 else:
                     # Calculate max_additions based on continuing circle rules
-                    # 1. For continuing circles, never exceed a total of 10 members
+                    # 1. For continuing circles, never exceed configurable maximum
                     # 2. For small circles (<5 members), add enough to reach 5 regardless of preferences
+                    # Exception: preserve continuing-only circles that exceed the new limit
                     
                     if total_members < 5:
                         # Small circle - can add members to reach 5
                         max_additions = 5 - total_members
                         print(f"  Small circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
+                    elif not has_new_members and total_members > max_circle_size:
+                        # Continuing-only circle that exceeds new limit - preserve as-is
+                        max_additions = 0
+                        print(f"  Preserving continuing-only circle {circle_id}: {total_members} members (exceeds max {max_circle_size}), max_additions=0")
                     else:
-                        # Regular continuing circle - never exceed 10 total
-                        max_additions = max(0, 10 - total_members)
+                        # Regular continuing circle - never exceed configurable maximum
+                        max_additions = max(0, max_circle_size - total_members)
                         print(f"  Continuing circle {circle_id}: {total_members} members, calculated max_additions={max_additions}")
                     
                     circle_metadata[circle_id]['max_additions'] = max_additions
             else:
-                # New circle - different max size (10)
+                # New circle - use configurable max size
                 total_members = len(member_ids)
                 # CRITICAL FIX: For new circles, set consistent max additions
-                # Always set max_additions to 10 for new circles as requested
-                max_additions = 10
+                # Always set max_additions to configurable maximum for new circles
+                max_additions = max_circle_size
                 
                 # CRITICAL FIX: For new circles, member_count should match new_members
                 # These circles often show 1 (likely due to member counting issues)
