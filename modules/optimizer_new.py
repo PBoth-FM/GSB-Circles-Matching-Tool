@@ -4604,7 +4604,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     updated_results, updated_unmatched, updated_logs, reconstructed_circles = post_process_continuing_members(
         results, 
         unmatched, 
-        region_df,
+        remaining_df,
         final_logs
     )
     
