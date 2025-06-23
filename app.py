@@ -189,8 +189,19 @@ def run_optimization():
                     print(f"  Type of results: {type(results)}")
                     print(f"  Sample item type: {type(results[0]) if results and len(results) > 0 else 'No items'}")
 
+            # Convert results to DataFrame if it's a list
+            if isinstance(results, list) and results:
+                import pandas as pd
+                results = pd.DataFrame(results)
+                print(f"  Converted {len(results)} result records to DataFrame")
+            elif isinstance(results, list):
+                # Empty results
+                import pandas as pd
+                results = pd.DataFrame()
+                print(f"  No results to process")
+            
             # Check for duplicate Encoded IDs
-            if 'Encoded ID' in results.columns:
+            if isinstance(results, pd.DataFrame) and 'Encoded ID' in results.columns:
                 total_ids = len(results['Encoded ID'])
                 unique_ids = len(results['Encoded ID'].unique())
                 print(f"Total IDs: {total_ids}, Unique IDs: {unique_ids}")
@@ -204,7 +215,7 @@ def run_optimization():
                     print(f"✅ After de-duplication: {results.shape[0]} participants (was {total_ids})")
 
             # Count matched vs unmatched
-            if 'proposed_NEW_circles_id' in results.columns:
+            if isinstance(results, pd.DataFrame) and 'proposed_NEW_circles_id' in results.columns:
                 matched_in_results = len(results[results['proposed_NEW_circles_id'] != 'UNMATCHED'])
                 unmatched_in_results = len(results[results['proposed_NEW_circles_id'] == 'UNMATCHED'])
                 print(f"From results DataFrame - Matched: {matched_in_results}, Unmatched: {unmatched_in_results}")
