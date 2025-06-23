@@ -474,7 +474,7 @@ def get_unique_preferences(df, columns):
             values.extend(df[col].dropna().unique())
     return list(set(values))
 
-def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False):
+def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False, max_circle_size=None):
     # 🔍 CRITICAL DEBUG: Function entry point logging
     print(f"\n🚀 OPTIMIZE_REGION_V2 CALLED!")
     print(f"  Region: {region}")
@@ -565,6 +565,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         min_circle_size: Minimum number of participants per circle
         enable_host_requirement: Whether to enforce host requirements
         debug_mode: Whether to print debug information
+        max_circle_size: Maximum allowed circle size from configuration
         
     Returns:
         Tuple of (results list, circles list, unmatched list, debug_circles, circle_eligibility_logs)
@@ -2009,7 +2010,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Special logging if this is Seattle region
     if region == "Seattle":
         print(f"🔍 Processing Seattle region: {region}")
-        st.session_state.seattle_debug_logs.append(f"Processing Seattle region with '{existing_circle_handling}' mode")
+        st.session_state.seattle_debug_logs.append(f"Processing Seattle region in optimize mode")
     
     # ***************************************************************
     # CRITICAL FIX: PRE-ASSIGN CURRENT-CONTINUING MEMBERS TO THEIR CURRENT CIRCLES

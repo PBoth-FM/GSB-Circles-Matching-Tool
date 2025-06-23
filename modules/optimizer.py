@@ -962,8 +962,12 @@ def run_matching_algorithm(data, config):
     # Import our circle reconstruction function
     from modules.circle_reconstruction import reconstruct_circles_from_results
     
+    # Get max_circle_size from session state for reconstruction
+    import streamlit as st
+    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+    
     # Reconstruct circles from the final results
-    reconstructed_circles = reconstruct_circles_from_results(results_df, circles_df)
+    reconstructed_circles = reconstruct_circles_from_results(results_df, circles_df, max_circle_size=max_circle_size)
     
     # Check if reconstructed_circles is a DataFrame and not empty
     if isinstance(reconstructed_circles, pd.DataFrame) and not reconstructed_circles.empty:

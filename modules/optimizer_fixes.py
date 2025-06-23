@@ -697,8 +697,12 @@ def post_process_continuing_members(results, unmatched_participants, participant
     # Import our circle reconstruction function
     from modules.circle_reconstruction import reconstruct_circles_from_results
     
+    # Get max_circle_size from session state
+    import streamlit as st
+    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+    
     # Reconstruct the circles dataframe from the updated results
-    updated_circles = reconstruct_circles_from_results(updated_results)
+    updated_circles = reconstruct_circles_from_results(updated_results, max_circle_size=max_circle_size)
     print(f"  Reconstructed {len(updated_circles)} circles from {final_results_count} participants")
     
     # Return the updated results, unmatched, logs, and the reconstructed circles
