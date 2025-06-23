@@ -867,10 +867,10 @@ def run_matching_algorithm(data, config):
         globals()['all_regions_df'] = data
         
         # CRITICAL DEBUG: Check what existing circles we have before calling optimizer
-        if debug_mode:
-            print(f"\n🚨 BEFORE CALLING optimize_region_v2 for {region}:")
-            print(f"  ⚠️ optimize_region_v2 doesn't accept existing_circles parameter - this is the ROOT CAUSE!")
-            print(f"  This function only creates NEW virtual circles, never uses existing ones with capacity")
+        print(f"\n🚨 BEFORE CALLING optimize_region_v2 for {region}:")
+        print(f"  Debug mode: {debug_mode}")
+        print(f"  ⚠️ optimize_region_v2 doesn't accept existing_circles parameter - this is the ROOT CAUSE!")
+        print(f"  This function only creates NEW virtual circles, never uses existing ones with capacity")
 
         # Run optimization for this region using the new circle ID-based optimizer
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
