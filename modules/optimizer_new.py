@@ -570,6 +570,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     Returns:
         Tuple of (results list, circles list, unmatched list, debug_circles, circle_eligibility_logs)
     """
+    
+    # Ensure max_circle_size is available
+    if max_circle_size is None:
+        import streamlit as st
+        max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
     # Initialize Seattle debug logs if we're processing Seattle region
     if region == "Seattle":
         # Set a flag to indicate we're in Seattle region

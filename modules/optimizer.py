@@ -848,7 +848,7 @@ def run_matching_algorithm(data, config):
         
         # Run optimization for this region using the new circle ID-based optimizer
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
-            region, region_df, min_circle_size, enable_host_requirement, debug_mode
+            region, region_df, min_circle_size, enable_host_requirement, debug_mode, config.get('max_circle_size', 8)
         )
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
