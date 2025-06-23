@@ -684,7 +684,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     small_circles = {}     # Maps circle_id to circle data for small circles (2-4 members)
     current_circle_members = {}  # Maps circle_id to list of members
     
-    # Step 1: Identify existing circles based on existing_circle_handling mode
+    # Step 1: Identify existing circles in optimize mode
     # Print clear debug message about mode
     print(f"\n🔥 PROCESSING REGION '{region}' WITH optimize mode") 
     
@@ -2201,7 +2201,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # For Seattle regions, add special diagnostic info
     if region == "Seattle":
-        st.session_state.seattle_debug_logs.append(f"Processing Seattle with '{existing_circle_handling}' circle handling mode")
+        st.session_state.seattle_debug_logs.append(f"Processing Seattle with 'optimize' circle handling mode")
         st.session_state.seattle_debug_logs.append(f"Will track Seattle test participant {seattle_test_id} in normal matching process")
     
     # CRITICAL FIX: Pre-process all CURRENT-CONTINUING members first
@@ -3793,8 +3793,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                     # Check if preference scores played a role
                                     debug_entry += f"          Seattle score ({circle_score}) vs Assigned circle score ({assigned_score})\n"
                                     # Add information about circle handling mode
-                                    debug_entry += f"          Circle handling mode: {existing_circle_handling}\n"
-                                    debug_entry += f"          NEW participants can match with existing circles: {existing_circle_handling == 'optimize'}\n"
+                                    debug_entry += f"          Circle handling mode: optimize\n"
+                                    debug_entry += f"          NEW participants can match with existing circles: True\n"
                     else:
                         print(f"    ❌ No compatible participants found despite having capacity")
                         debug_entry += f"  ❌ No compatible participants found despite having capacity\n"
@@ -3847,7 +3847,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"  ⚠️ WARNING: Seattle circle {circle_id} had capacity for {max_additions} members but got none!")
                         print(f"    Meeting time: {circle_metadata[circle_id]['meeting_time']}")
                         print(f"    Subregion: {circle_metadata[circle_id]['subregion']}")
-                        print(f"    Circle handling mode: {existing_circle_handling}")
+                        print(f"    Circle handling mode: optimize")
                         
                         # Check how many compatible participants existed
                         compatible_participants = [p_id for p_id in participants 
@@ -4238,7 +4238,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     # Regular debug logging for Seattle region (removed verification check)
     if region == "Seattle":
-        print(f"\n🔍 PROCESSING SEATTLE REGION with mode: {existing_circle_handling}")
+        print(f"\n🔍 PROCESSING SEATTLE REGION with mode: optimize")
         print(f"  * Preserve mode means continuing members are kept together")
         print(f"  * Optimize mode means NEW participants can join CURRENT circles")
         print(f"  * Dissolve mode means all circles are dissolved and re-created")

@@ -133,7 +133,7 @@ def run_optimization():
     print(f"🔄 Using 'optimize' circle handling mode (fixed setting)")
 
     # Force the config to use optimize mode regardless of what's in session state
-    st.session_state.config['existing_circle_handling'] = 'optimize'
+    # Mode is hardcoded to optimize - no longer configurable
 
     # Update other config parameters from UI
     st.session_state.config['optimization_weight_location'] = st.session_state.get('location_weight', 5.0)
