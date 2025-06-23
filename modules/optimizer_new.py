@@ -2387,10 +2387,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Special handling for NEW participants - add debug logging
             is_new_participant = p_row.get('Status') == 'NEW'
             
-            # For NEW participants specifically matching with existing circles with 
-            # capacity, we need to directly compare with the circle meeting time
-            # rather than relying on continuing members' times (which are often empty)
-            if is_new_participant and c_id in existing_circle_ids:
+            # CRITICAL FIX: For NEW participants matching with existing circles
+            # Restore proper compatibility logic that was broken during mode cleanup
+            if is_new_participant and c_id in existing_circles:
+                # Check if this existing circle has capacity for new members
+                circle_capacity = circle_metadata[c_id]['max_additions']
+                if circle_capacity > 0:
                 # 🚨 CRITICAL FIX: ALWAYS force detailed debugging for Seattle IP-SEA-01
                 is_seattle_circle = region == "Seattle" and c_id == 'IP-SEA-01'
                 enable_detailed_debugging = is_test_case or is_seattle_circle
@@ -2534,19 +2536,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 is_compatible = True
                 print(f"  Forcing compatibility to: {is_compatible}")
                 
-            # CRITICAL FIX: Override compatibility for NEW participants with existing circles that have capacity
-            # This addresses the systematic incompatibility issue causing new circle creation
-            if not is_compatible and p_row.get('Status') == 'NEW' and c_id in existing_circles:
-                capacity = circle_metadata[c_id]['max_additions']
-                if capacity > 0:
-                    # Force compatibility for location matches or close time matches
-                    # This is a targeted fix to prevent unnecessary new circle creation
-                    if loc_match or ('evening' in str(time_slot).lower() and 
-                                    any('evening' in str(t).lower() for t in [p_row.get('first_choice_time', ''), 
-                                                                             p_row.get('second_choice_time', ''),
-                                                                             p_row.get('third_choice_time', '')] if t)):
-                        print(f"🔧 FORCED COMPATIBILITY: NEW participant {p_id} with existing circle {c_id} (capacity: {capacity})")
-                        is_compatible = True
+
             
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
