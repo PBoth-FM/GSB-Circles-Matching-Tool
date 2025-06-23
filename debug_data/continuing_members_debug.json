@@ -1,32 +1,9 @@
 {
-  "total_continuing_members": 1,
-  "members": [
-    {
-      "participant_id": "54775253428",
-      "status": "CURRENT-CONTINUING",
-      "region": "Seattle",
-      "circle_id": null,
-      "circle_id_source": "None found",
-      "standard_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      }
-    }
-  ],
-  "standard_method_success_rate": 0.0,
-  "hybrid_method_success_rate": 0.0,
-  "aggressive_method_success_rate": 0.0,
-  "any_method_success_rate": 0.0,
+  "total_continuing_members": 0,
+  "members": [],
+  "standard_method_success_rate": 0,
+  "hybrid_method_success_rate": 0,
+  "aggressive_method_success_rate": 0,
+  "any_method_success_rate": 0,
   "column_frequency": {}
 }
