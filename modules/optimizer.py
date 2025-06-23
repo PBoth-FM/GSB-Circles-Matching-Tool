@@ -2406,14 +2406,13 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"Participant {p} and Circle {circle_id} compatibility check:")
                     print(f"  Location match: {loc_match} (circle: {subregion} vs. participant prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']})")
                     print(f"  Time match: {time_match} (circle: {time_slot})")
-                    print(f"  Overall: {loc_match or time_match} (flexible compatibility)")
+                    print(f"  Overall: {loc_match and time_match}")
                 
-                # More flexible compatibility: allow if EITHER location OR time matches well
-                # This allows the optimizer to utilize existing circle capacity more effectively
-                is_compatible = (loc_match or time_match)  # Changed from AND to OR
+                # Both location and time must match for compatibility
+                is_compatible = (loc_match and time_match)
                 existing_circle_compatibility[(p, e)] = 1 if is_compatible else 0
                 
-                # Add compatibility constraint - only block if neither location nor time match
+                # Add compatibility constraint
                 if not is_compatible:
                     prob += z[p, e] == 0, f"Incompatible_existing_match_{p}_{e}"
                     
@@ -2583,8 +2582,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"  Variable z[{p}, {e}] exists: {(p, e) in z}")
                     print(f"  Is there a compatibility constraint restricting this match: {not is_compatible}")
                     
-                    # Compatibility should be determined by location OR time matches (flexible)
-                    print(f"  Final compatibility (location OR time): {location_match or time_match} (should match {is_compatible})")
+                    # Compatibility should be determined by location AND time matches
+                    print(f"  Final compatibility (location AND time): {location_match and time_match} (should match {is_compatible})")
                     
                     # Is this in the correct region?
                     print(f"  Same region: {p_row.get('Derived_Region', p_row.get('Requested_Region', 'Unknown')) == circle_data.get('region', 'Unknown')}")
@@ -2681,6 +2680,34 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             # Either one "Always" or two "Sometimes"
             prob += always_hosts + two_sometimes >= y[j], f"Host_requirement_{j}"
     
+    # Pre-solve debugging
+    if debug_mode and existing_circle_list:
+        print(f"\n🔍 PRE-SOLVE ANALYSIS:")
+        print(f"Existing circles available: {len(existing_circle_list)}")
+        print(f"NEW participants to assign: {len(participants)}")
+        
+        # Count compatible pairs
+        total_compatible_pairs = sum(1 for v in existing_circle_compatibility.values() if v == 1)
+        print(f"Total compatible participant-circle pairs: {total_compatible_pairs}")
+        
+        if total_compatible_pairs == 0:
+            print("⚠️ WARNING: NO compatible pairs found - this explains why no assignments happen!")
+            print("Checking sample participant preferences vs existing circles...")
+            
+            # Sample analysis
+            if len(participants) > 0 and len(existing_circle_list) > 0:
+                sample_p = participants[0]
+                sample_p_row = remaining_df[remaining_df['Encoded ID'] == sample_p].iloc[0]
+                circle_id, circle_data = existing_circle_list[0]
+                
+                print(f"Sample participant {sample_p}:")
+                print(f"  Location prefs: {sample_p_row['first_choice_location']}, {sample_p_row['second_choice_location']}, {sample_p_row['third_choice_location']}")
+                print(f"  Time prefs: {sample_p_row['first_choice_time']}, {sample_p_row['second_choice_time']}, {sample_p_row['third_choice_time']}")
+                
+                print(f"Sample circle {circle_id}:")
+                print(f"  Subregion: {circle_data['subregion']}")
+                print(f"  Time: {circle_data['meeting_time']}")
+        
     # Solve the problem
     start_time = time.time()
     solver = pulp.PULP_CBC_CMD(msg=debug_mode, timeLimit=60)
@@ -2690,6 +2717,31 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     if debug_mode:
         print(f"Optimization status: {pulp.LpStatus[prob.status]}")
         print(f"Optimization time: {solve_time:.2f} seconds")
+        
+        # Post-solve analysis
+        if existing_circle_list and prob.status == pulp.LpStatusOptimal:
+            assignments_to_existing = 0
+            for p in participants:
+                for e in range(len(existing_circle_list)):
+                    if (p, e) in z and z[p, e].value() and abs(z[p, e].value() - 1) < 1e-5:
+                        assignments_to_existing += 1
+            
+            print(f"🎯 RESULT: {assignments_to_existing} participants assigned to existing circles")
+            
+            if assignments_to_existing == 0:
+                print("❌ Still no assignments to existing circles - investigating why...")
+                # Check if any variables were set to 1
+                for p in participants[:3]:  # Check first 3 participants
+                    for e in range(len(existing_circle_list)):
+                        if (p, e) in z:
+                            val = z[p, e].value()
+                            compatible = existing_circle_compatibility.get((p, e), 0)
+                            circle_id, circle_data = existing_circle_list[e]
+                            max_additions = circle_data.get('max_additions', 0)
+                            print(f"  Participant {p} + Circle {circle_id}: z_value={val}, compatible={compatible}, max_additions={max_additions}")
+                            
+                            if compatible == 1 and max_additions > 0 and (val is None or val < 0.5):
+                                print(f"    ⚠️ This should have been assigned but wasn't - checking constraints...")
     
     # Process results - start with the results from previously processed participants (existing circles)
     results = []  # Initialize empty results list - we'll add entries for both existing circles and new circles
