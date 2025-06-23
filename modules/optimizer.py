@@ -532,6 +532,26 @@ def run_matching_algorithm(data, config):
         
         if debug_mode:
             print(f"DIRECT CONTINUATION: Found {len(continuing_df)} CURRENT-CONTINUING participants with circle IDs")
+            
+            # Debug: Show total CURRENT-CONTINUING participants
+            all_continuing = df[df['Status'] == 'CURRENT-CONTINUING']
+            print(f"DIRECT CONTINUATION: Total CURRENT-CONTINUING participants: {len(all_continuing)}")
+            
+            # Debug: Show sample of circle ID values
+            if len(continuing_df) > 0:
+                sample_ids = continuing_df[current_circle_col].head(5).tolist()
+                print(f"DIRECT CONTINUATION: Sample circle IDs: {sample_ids}")
+            else:
+                print(f"DIRECT CONTINUATION: ⚠️ No CURRENT-CONTINUING participants have circle IDs!")
+                # Check what values are in the circle ID column
+                all_circle_values = df[current_circle_col].dropna().unique()[:10]
+                print(f"DIRECT CONTINUATION: Sample values in {current_circle_col}: {list(all_circle_values)}")
+                
+                # Check if continuing participants have any circle ID values
+                continuing_with_any_value = all_continuing[current_circle_col].dropna()
+                print(f"DIRECT CONTINUATION: CURRENT-CONTINUING with any circle ID value: {len(continuing_with_any_value)}")
+                if len(continuing_with_any_value) > 0:
+                    print(f"DIRECT CONTINUATION: Sample continuing circle values: {continuing_with_any_value.head(3).tolist()}")
         
         if not continuing_df.empty:
             # Group participants by their current circle ID
