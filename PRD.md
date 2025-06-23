@@ -313,11 +313,39 @@ circle_metadata = {
 
 ### 3.3 Algorithm Specifications
 
-#### **Optimization Objective Function**
+#### **Complete Optimization Objective Function**
+```python
+total_obj = match_obj + very_small_circle_bonus + small_circle_bonus + 
+           existing_circle_bonus + pref_obj - new_circle_penalty + 
+           special_test_bonus + diversity_bonus
 ```
-Maximize: 1000 * (total_matched_participants) + Σ(preference_scores)
 
-Where preference_scores = location_weight * location_match + time_weight * time_match
+**Component Breakdown**:
+1. **Base Assignment (match_obj)**: `1000 * Σ(x[p,c])` - 1000 points per participant matched
+2. **Very Small Circle Bonus**: `800 * Σ(x[p,c])` for circles with 2-3 members  
+3. **Small Circle Bonus**: `50 * Σ(x[p,c])` for circles with exactly 4 members
+4. **Existing Circle Bonus**: `500 * Σ(x[p,c])` for any existing circle assignment
+5. **Preference Scores (pref_obj)**: Location (30/20/10) + Time (30/20/10) points for 1st/2nd/3rd choice matches
+6. **New Circle Penalty**: Negative points to discourage new circle creation
+7. **Diversity Bonus**: Weighted by circle activation variables `y[c]`
+
+#### **Preference Scoring Implementation**
+```python
+# Location scoring - exact string matching
+if p_row['first_choice_location'] == subregion:
+    loc_score = 30
+elif p_row['second_choice_location'] == subregion:
+    loc_score = 20
+elif p_row['third_choice_location'] == subregion:
+    loc_score = 10
+
+# Time scoring - using is_time_compatible()
+if is_time_compatible(first_choice, time_slot):
+    time_score = 30
+elif is_time_compatible(second_choice, time_slot):
+    time_score = 20
+elif is_time_compatible(third_choice, time_slot):
+    time_score = 10
 ```
 
 #### **Constraint Equations**
@@ -326,6 +354,7 @@ Where preference_scores = location_weight * location_match + time_weight * time_
 3. **Minimum Size**: `Σ(x[p,c]) ≥ min_size * y[c]` for new circles
 4. **Host Requirement**: `always_hosts + (sometimes_hosts ≥ 2) ≥ y[c]` for new circles
 5. **Compatibility**: `x[p,c] = 0` if participant p incompatible with circle c
+6. **CURRENT-CONTINUING Pre-assignment**: Force assignment to existing circles before optimization
 
 ### 3.4 Performance Requirements
 
@@ -407,27 +436,53 @@ Tab 4: Debug (Advanced Users)
 #### **Time Compatibility Logic**
 ```python
 # Implementation in modules/data_processor.py
-def is_time_compatible(time1, time2, is_important=False):
+def is_time_compatible(time1, time2, is_important=False, is_continuing_member=False, is_circle_time=False):
     """
-    Compatibility Rules:
+    Sophisticated time matching that handles:
     - Exact matches: "Monday Evening" matches "Monday Evening"
-    - Day ranges: "Monday-Wednesday" matches "Tuesday"
-    - Time flexibility: "Evening" matches any day + "Evening"
-    - Cross-compatibility: Partial overlaps score proportionally
+    - Day ranges: "Monday-Wednesday" overlaps with "Tuesday-Thursday"
+    - "Varies" handling: "Varies" preference matches any offered time
+    - Abbreviations: Mon, Tue, Wed, etc.
+    - Case-insensitive matching
+    - Continuing member preferences vs. official circle times
     """
 ```
 
-#### **Location Preference Scoring**
+**Time Scoring Implementation**:
 ```python
-def calculate_preference_scores(df):
-    """
-    Location Scoring:
-    - Exact subregion match: 3 points
-    - Same region, different subregion: 2 points
-    - Different region: 1 point
-    - No preference specified: 0 points
-    """
+# Check first choice using is_time_compatible for consistent "Varies" handling
+if is_time_compatible(first_choice, time_slot, is_important=is_test_case):
+    time_score = 30
+elif is_time_compatible(second_choice, time_slot, is_important=is_test_case):
+    time_score = 20
+elif is_time_compatible(third_choice, time_slot, is_important=is_test_case):
+    time_score = 10
+else:
+    time_score = 0
 ```
+
+#### **Location Preference Scoring**
+**CRITICAL TECHNICAL DETAIL**: The system uses exact string matching against participant's ranked choices, NOT geographic proximity.
+
+```python
+# Actual implementation from optimizer_new.py
+if p_row['first_choice_location'] == subregion:
+    loc_score = 30
+elif p_row['second_choice_location'] == subregion:
+    loc_score = 20
+elif p_row['third_choice_location'] == subregion:
+    loc_score = 10
+else:
+    loc_score = 0
+```
+
+**Location Scoring**:
+- **1st Choice Match**: 30 points for exact match with `first_choice_location`
+- **2nd Choice Match**: 20 points for exact match with `second_choice_location`  
+- **3rd Choice Match**: 10 points for exact match with `third_choice_location`
+- **No Match**: 0 points if circle subregion doesn't match any participant preference
+
+This requires participants to enter location preferences that exactly match circle subregion identifiers.
 
 ### 5.2 Decision Trees
 
@@ -494,10 +549,40 @@ def calculate_class_vintage(gsb_class):
     """
 ```
 
-#### **Preference Score Aggregation**
+#### **Diversity Scoring System**
+```python
+def calculate_circle_diversity_score(participant_ids, results_df):
+    """
+    Calculate total diversity score for a circle across 5 demographic categories:
+    - Class_Vintage: GSB graduation year groupings  
+    - Employment_Category: Professional background categories
+    - Industry_Category: Industry sector groupings
+    - Racial_Identity_Category: Self-identified racial/ethnic categories
+    - Children_Category: Parental status categories
+    
+    Returns: Sum of unique demographic buckets across all categories
+    """
+    vintage_score = len(unique_vintages)
+    employment_score = len(unique_employment) 
+    industry_score = len(unique_industry)
+    racial_identity_score = len(unique_racial_identity)
+    children_score = len(unique_children)
+    
+    return vintage_score + employment_score + industry_score + racial_identity_score + children_score
 ```
-total_score = (location_weight * location_score) + (time_weight * time_score)
-final_objective = 1000 * matched_count + Σ(total_scores)
+
+#### **Complete Objective Function Assembly**
+```python
+# All components combined in the optimization
+total_obj = (
+    1000 * pulp.lpSum(x[(p_id, c_id)] for all participant-circle pairs) +  # Base matching
+    800 * pulp.lpSum(x[(p_id, c_id)] for very_small_circles) +              # Very small bonus
+    50 * pulp.lpSum(x[(p_id, c_id)] for small_circles_4_members) +          # Small bonus  
+    500 * pulp.lpSum(x[(p_id, c_id)] for existing_circles) +                # Existing bonus
+    pulp.lpSum(preference_scores[(p_id, c_id)] * x[(p_id, c_id)]) +        # Preference scores
+    - new_circle_penalty +                                                   # New circle penalty
+    pulp.lpSum(diversity_score * y[c_id] for activated_circles)             # Diversity bonus
+)
 ```
 
 ### 5.5 State Management
