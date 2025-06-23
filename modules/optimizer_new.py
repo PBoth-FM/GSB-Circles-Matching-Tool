@@ -4890,36 +4890,103 @@ def run_matching_algorithm_new(data_dict, config):
     Returns:
         Tuple of (all_results, all_circles, all_unmatched)
     """
-    print(f"\n🔧 NEW OPTIMIZER WRAPPER: Processing {len(data_dict)} regions")
+    import pandas as pd
     
+    print(f"\n🔧 NEW OPTIMIZER WRAPPER: Processing input data")
+    print(f"  Input keys: {list(data_dict.keys())}")
+    
+    # Handle the actual data structure - it's not organized by geographic regions
+    # Instead it's a single DataFrame with all participants
     all_results = []
     all_circles = []
     all_unmatched = []
     
-    # Process each region
-    for region, region_df in data_dict.items():
-        if region_df.empty:
-            print(f"  Skipping empty region: {region}")
-            continue
+    # Get the main dataframe (usually keyed by 'Status' or similar)
+    main_df = None
+    for key, df in data_dict.items():
+        if isinstance(df, pd.DataFrame) and not df.empty:
+            main_df = df
+            print(f"  Found main DataFrame with key '{key}': {len(df)} participants")
+            break
+    
+    if main_df is None:
+        print("  No valid DataFrame found in input")
+        return [], [], []
+    
+    # Group by actual geographic regions from the data
+    if 'Current_Region' in main_df.columns:
+        region_column = 'Current_Region'
+    elif 'Region' in main_df.columns:
+        region_column = 'Region'
+    else:
+        # Find any column that might contain region info
+        region_columns = [col for col in main_df.columns if 'region' in col.lower()]
+        if region_columns:
+            region_column = region_columns[0]
+            print(f"  Using region column: {region_column}")
+        else:
+            print("  No region column found - processing as single region")
+            region_column = None
+    
+    if region_column:
+        # Group by actual regions
+        regions = main_df[region_column].unique()
+        print(f"  Found {len(regions)} unique regions: {list(regions)}")
+        
+        for region in regions:
+            if pd.isna(region) or region == '':
+                continue
+                
+            region_df = main_df[main_df[region_column] == region].copy()
+            if region_df.empty:
+                continue
+                
+            print(f"  Processing region: {region} with {len(region_df)} participants")
             
-        print(f"  Processing region: {region} with {len(region_df)} participants")
-        
-        # Call the region optimizer
-        results, circles, unmatched, logs, eligibility_logs = optimize_region(
-            region=region,
-            region_df=region_df,
-            min_circle_size=config.get('min_circle_size', 5),
-            enable_host_requirement=config.get('enable_host_requirement', True),
-            debug_mode=config.get('debug_mode', True),
-            max_circle_size=8  # Use default max size
-        )
-        
-        print(f"    Results: {len(results)}, Circles: {len(circles)}, Unmatched: {len(unmatched)}")
-        
-        # Accumulate results
-        all_results.extend(results)
-        all_circles.extend(circles)
-        all_unmatched.extend(unmatched)
+            try:
+                # Call the region optimizer
+                results, circles, unmatched, logs, eligibility_logs = optimize_region(
+                    region=str(region),
+                    region_df=region_df,
+                    min_circle_size=config.get('min_circle_size', 5),
+                    enable_host_requirement=config.get('enable_host_requirement', True),
+                    debug_mode=config.get('debug_mode', True),
+                    max_circle_size=8  # Use default max size
+                )
+                
+                print(f"    Results: {len(results)}, Circles: {len(circles)}, Unmatched: {len(unmatched)}")
+                
+                # Accumulate results
+                all_results.extend(results)
+                all_circles.extend(circles)
+                all_unmatched.extend(unmatched)
+                
+            except Exception as e:
+                print(f"    Error processing region {region}: {str(e)}")
+                import traceback
+                print(f"    Traceback: {traceback.format_exc()}")
+                continue
+    else:
+        # Process as single region
+        print(f"  Processing all {len(main_df)} participants as single region")
+        try:
+            results, circles, unmatched, logs, eligibility_logs = optimize_region(
+                region="All_Participants",
+                region_df=main_df,
+                min_circle_size=config.get('min_circle_size', 5),
+                enable_host_requirement=config.get('enable_host_requirement', True),
+                debug_mode=config.get('debug_mode', True),
+                max_circle_size=8  # Use default max size
+            )
+            
+            all_results.extend(results)
+            all_circles.extend(circles)
+            all_unmatched.extend(unmatched)
+            
+        except Exception as e:
+            print(f"    Error processing all participants: {str(e)}")
+            import traceback
+            print(f"    Traceback: {traceback.format_exc()}")
     
     print(f"\n✅ NEW OPTIMIZER COMPLETE:")
     print(f"  Total results: {len(all_results)}")
