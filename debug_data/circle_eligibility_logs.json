@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-06-17 05:02:23",
+    "timestamp": "2025-06-23 23:25:01",
     "region": "all_regions",
     "total_logs": 184,
-    "added_logs": 125,
+    "added_logs": 39,
     "existing_logs": 184,
     "regions_processed": [
       "all_regions"
@@ -2228,13 +2228,13 @@
       "region": "Virtual-Only Americas",
       "subregion": "GMT-5 (Eastern Standard Time: Boston/Montreal/New York City/Toronto/Washington/D.C.)",
       "meeting_time": "M-Th (Evenings)",
-      "max_additions": 2,
+      "max_additions": 0,
       "current_members": 9,
-      "is_eligible": true,
-      "reason": "Has capacity",
+      "is_eligible": false,
+      "reason": "No capacity (max_additions=0)",
       "is_test_circle": false,
       "is_small_circle": false,
-      "has_none_preference": false,
+      "has_none_preference": true,
       "preference_overridden": false
     },
     "VO-AM-GMT-5-01": {
@@ -2508,7 +2508,7 @@
       "region": "Virtual-Only Americas",
       "subregion": "GMT-8 (Pacific Standard Time: Los Angeles/San Diego/San Francisco/Seattle)",
       "meeting_time": "Thursday (Evenings)",
-      "max_additions": 3,
+      "max_additions": 2,
       "current_members": 6,
       "is_eligible": true,
       "reason": "Has capacity",
