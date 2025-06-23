@@ -148,7 +148,16 @@ def run_optimization():
 
             # 🚀 CRITICAL DEBUG: About to call main algorithm
             print(f"\n🚀 ABOUT TO CALL run_matching_algorithm!")
-            print(f"  Data shape: {st.session_state.processed_data.shape}")
+            print(f"  Data type: {type(st.session_state.processed_data)}")
+            
+            # Debug the data structure being passed
+            if isinstance(st.session_state.processed_data, dict):
+                print(f"  Data dict keys: {list(st.session_state.processed_data.keys())}")
+                for key, value in st.session_state.processed_data.items():
+                    print(f"    {key}: {type(value)} with shape {getattr(value, 'shape', 'N/A')}")
+            else:
+                print(f"  Data shape: {getattr(st.session_state.processed_data, 'shape', 'N/A')}")
+            
             print(f"  Config: {st.session_state.config}")
 
             # CRITICAL FIX: Use the new optimizer that supports optimize mode properly
@@ -191,12 +200,10 @@ def run_optimization():
 
             # Convert results to DataFrame if it's a list
             if isinstance(results, list) and results:
-                import pandas as pd
                 results = pd.DataFrame(results)
                 print(f"  Converted {len(results)} result records to DataFrame")
             elif isinstance(results, list):
                 # Empty results
-                import pandas as pd
                 results = pd.DataFrame()
                 print(f"  No results to process")
             
