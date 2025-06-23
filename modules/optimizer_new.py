@@ -474,13 +474,13 @@ def get_unique_preferences(df, columns):
             values.extend(df[col].dropna().unique())
     return list(set(values))
 
-def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
+def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False):
     # 🔍 CRITICAL DEBUG: Function entry point logging
     print(f"\n🚀 OPTIMIZE_REGION_V2 CALLED!")
     print(f"  Region: {region}")
     print(f"  Participants: {len(region_df) if region_df is not None else 'None'}")
     print(f"  Min circle size: {min_circle_size}")
-    print(f"  Existing circle handling: {existing_circle_handling}")
+    print(f"  Mode: optimize (NEW participants can join existing circles)")
     print(f"  Debug mode: {debug_mode}")
     
     # Import or define is_time_compatible here to ensure it's available in this scope
@@ -511,11 +511,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if region == 'Seattle':
         debug_mode = True
         
-        # No longer forcing optimize mode - using the mode selected in the UI
-        print(f"\n🔄 Seattle region is using '{existing_circle_handling}' mode as selected in UI")
+        print(f"\n🔄 Seattle region using optimize mode")
         print(f"  'optimize' mode allows NEW participants to be matched with continuing circles like IP-SEA-01")
-        print(f"  'preserve' mode prevents NEW participants from joining existing circles")
-        print(f"  'dissolve' ignores current circles and creates all new ones")
         
         print(f"\n🔍 SEATTLE REGION DEEP DIAGNOSTICS:")
         print(f"  - Total participants in region_df: {len(region_df)}")
@@ -567,7 +564,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         region_df: DataFrame with participants from this region
         min_circle_size: Minimum number of participants per circle
         enable_host_requirement: Whether to enforce host requirements
-        existing_circle_handling: How to handle existing circles ('preserve', 'dissolve', 'optimize')
         debug_mode: Whether to print debug information
         
     Returns:

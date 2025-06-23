@@ -478,9 +478,11 @@ def run_matching_algorithm(data, config):
     sys.stdout = log_capture
     # Extract configuration parameters
     min_circle_size = config.get('min_circle_size', 5)
-    existing_circle_handling = config.get('existing_circle_handling', 'preserve')
     debug_mode = config.get('debug_mode', False)
     enable_host_requirement = config.get('enable_host_requirement', True)
+    
+    # Always use optimize mode - algorithm can freely assign new participants to existing circles
+    print(f"🔄 Using 'optimize' mode: NEW participants can join existing circles with capacity")
     
     # Copy data to avoid modifying original
     df = data.copy()
@@ -846,7 +848,7 @@ def run_matching_algorithm(data, config):
         
         # Run optimization for this region using the new circle ID-based optimizer
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
-            region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
+            region, region_df, min_circle_size, enable_host_requirement, debug_mode
         )
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
