@@ -2408,13 +2408,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
                     
                     if enable_detailed_debugging:
-                    print(f"\n🔍 NEW PARTICIPANT-CIRCLE COMPATIBILITY CHECK:")
-                    print(f"  NEW Participant {p_id} checking compatibility with existing circle {c_id}")
-                    print(f"  Circle meeting time: '{time_slot}'")
-                    print(f"  Participant time preferences:")
-                    print(f"    1️⃣ '{first_choice}'")
-                    print(f"    2️⃣ '{second_choice}'")
-                    print(f"    3️⃣ '{third_choice}'")
+                        print(f"\n🔍 NEW PARTICIPANT-CIRCLE COMPATIBILITY CHECK:")
+                        print(f"  NEW Participant {p_id} checking compatibility with existing circle {c_id}")
+                        print(f"  Circle meeting time: '{time_slot}'")
+                        print(f"  Participant time preferences:")
+                        print(f"    1️⃣ '{first_choice}'")
+                        print(f"    2️⃣ '{second_choice}'")
+                        print(f"    3️⃣ '{third_choice}'")
             
             # Check each time preference using enhanced is_time_compatible with continuing member handling
             if is_time_compatible(first_choice, time_slot, 
@@ -2672,8 +2672,31 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"  Location match: {loc_match} (circle: {subregion})")
                     print(f"  Time match: {time_match} (circle: {time_slot})")
     
+    # CRITICAL ANALYSIS: Check NEW participant compatibility with existing circles
+    new_participants = [p_id for p_id in participants if p_id in region_df['Encoded ID'].values and 
+                       region_df[region_df['Encoded ID'] == p_id]['Status'].iloc[0] == 'NEW']
+    
+    existing_with_capacity = [c_id for c_id in existing_circles if circle_metadata[c_id]['max_additions'] > 0]
+    
+    new_existing_compatible = sum(1 for p_id in new_participants for c_id in existing_with_capacity 
+                                 if compatibility.get((p_id, c_id), 0) == 1)
+    
+    print(f"\n🚨 CRITICAL COMPATIBILITY ANALYSIS:")
+    print(f"  NEW participants in region: {len(new_participants)}")
+    print(f"  Existing circles with capacity: {len(existing_with_capacity)}")
+    print(f"  NEW+existing compatible pairs: {new_existing_compatible}")
+    
+    if new_existing_compatible == 0 and new_participants and existing_with_capacity:
+        print(f"  ⚠️ CRITICAL ISSUE: No NEW participants compatible with existing circles!")
+        print(f"  This will force creation of {len(new_participants)} new circles instead of using existing capacity")
+        
+        # Show the specific issue
+        total_capacity = sum(circle_metadata[c_id]['max_additions'] for c_id in existing_with_capacity)
+        print(f"  Available capacity in existing circles: {total_capacity} slots")
+        print(f"  This represents a major efficiency loss - investigating compatibility failure...")
+    
     if debug_mode:
-        print(f"\n📊 COMPATIBILITY ANALYSIS:")
+        print(f"\n📊 DETAILED COMPATIBILITY ANALYSIS:")
         compatible_count = sum(1 for v in compatibility.values() if v == 1)
         print(f"  {compatible_count} compatible participant-circle pairs out of {len(compatibility)}")
         
