@@ -475,6 +475,12 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False, max_circle_size=None):
+    # CRITICAL DEBUG: This function has NO existing_circles parameter!
+    print(f"\n🎯 optimize_region_v2 CALLED for {region} with {len(region_df)} participants")
+    print(f"  🔥 CRITICAL ISSUE: This function signature has NO existing_circles parameter!")
+    print(f"  🔥 Function parameters: region, region_df, min_circle_size, enable_host_requirement, debug_mode, max_circle_size")
+    print(f"  🔥 This is why NEW participants always get new virtual circles instead of joining existing ones!")
+    print(f"  🔥 The existing circles with capacity are never passed to this optimization function!")
     # 🔍 CRITICAL DEBUG: Function entry point logging
     print(f"\n🚀 OPTIMIZE_REGION_V2 CALLED!")
     print(f"  Region: {region}")
