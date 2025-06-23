@@ -368,7 +368,7 @@ def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
     # Not a virtual circle or already in correct format
     return circle_id
 
-def reconstruct_circles_from_results(results, original_circles=None, use_standardized_metadata=False, max_circle_size=None):
+def reconstruct_circles_from_results(results, original_circles=None, use_standardized_metadata=False):
     """
     Reconstruct circles dataframe from individual participant results.
     This is crucial after post-processing to ensure that all circles, 
@@ -380,7 +380,6 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
         results: List of participant results with assignments
         original_circles: Original circles dataframe (optional)
         use_standardized_metadata: Whether to use standardized metadata from optimizer
-        max_circle_size: Maximum allowed circle size from configuration
         
     Returns:
         DataFrame: Updated circles dataframe with all assigned circles
@@ -1491,10 +1490,6 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 total_members = len(member_ids)
                 # CRITICAL FIX: For new circles, set consistent max additions
                 # Always set max_additions to configurable maximum for new circles
-                if max_circle_size is None:
-                    # Get from session state if not provided
-                    import streamlit as st
-                    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
                 max_additions = max_circle_size
                 
                 # CRITICAL FIX: For new circles, member_count should match new_members

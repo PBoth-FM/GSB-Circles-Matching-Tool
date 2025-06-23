@@ -234,12 +234,13 @@ def preprocess_continuing_members(participants_df, circle_ids):
     return preassigned, problem_participants
 
 
-def optimize_circle_capacity(viable_circles, min_circle_size=5):
+def optimize_circle_capacity(viable_circles, existing_circle_handling, min_circle_size=5):
     """
-    Optimize circle capacity for circles (always in optimize mode).
+    Optimize circle capacity for circles based on the circle handling mode.
     
     Args:
         viable_circles: Dict of circle IDs to circle info
+        existing_circle_handling: Mode (preserve, optimize, dissolve)
         min_circle_size: Minimum viable circle size
         
     Returns:
@@ -267,7 +268,7 @@ def optimize_circle_capacity(viable_circles, min_circle_size=5):
                 updated_info['max_additions'] = needed
         
         # In optimize mode, ensure all continuing circles can accept at least one new member
-        elif max_additions == 0 and current_members < max_circle_size:
+        elif existing_circle_handling == 'optimize' and max_additions == 0 and current_members < max_circle_size:
             print(f"✅ Optimize mode override: {circle_id} now allows 1 new member")
             updated_info['max_additions'] = 1
         
@@ -697,12 +698,8 @@ def post_process_continuing_members(results, unmatched_participants, participant
     # Import our circle reconstruction function
     from modules.circle_reconstruction import reconstruct_circles_from_results
     
-    # Get max_circle_size from session state
-    import streamlit as st
-    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
-    
     # Reconstruct the circles dataframe from the updated results
-    updated_circles = reconstruct_circles_from_results(updated_results, max_circle_size=max_circle_size)
+    updated_circles = reconstruct_circles_from_results(updated_results)
     print(f"  Reconstructed {len(updated_circles)} circles from {final_results_count} participants")
     
     # Return the updated results, unmatched, logs, and the reconstructed circles

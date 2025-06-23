@@ -49,7 +49,7 @@ if 'config' not in st.session_state:
     st.session_state.config = {
         'debug_mode': True,  # CRITICAL FIX: Force debug mode on to help diagnose compatibility issues
         'min_circle_size': 5,
-        # Mode is hardcoded to optimize - NEW participants can join existing circles with capacity
+        'existing_circle_handling': 'optimize',  # Always use optimize mode (no UI option to change this)
         'optimization_weight_location': 3,
         'optimization_weight_time': 2,
         'enable_host_requirement': True
@@ -133,7 +133,7 @@ def run_optimization():
     print(f"🔄 Using 'optimize' circle handling mode (fixed setting)")
 
     # Force the config to use optimize mode regardless of what's in session state
-    # Mode is hardcoded to optimize - no longer configurable
+    st.session_state.config['existing_circle_handling'] = 'optimize'
 
     # Update other config parameters from UI
     st.session_state.config['optimization_weight_location'] = st.session_state.get('location_weight', 5.0)
@@ -148,21 +148,11 @@ def run_optimization():
 
             # 🚀 CRITICAL DEBUG: About to call main algorithm
             print(f"\n🚀 ABOUT TO CALL run_matching_algorithm!")
-            print(f"  Data type: {type(st.session_state.processed_data)}")
-            
-            # Debug the data structure being passed
-            if isinstance(st.session_state.processed_data, dict):
-                print(f"  Data dict keys: {list(st.session_state.processed_data.keys())}")
-                for key, value in st.session_state.processed_data.items():
-                    print(f"    {key}: {type(value)} with shape {getattr(value, 'shape', 'N/A')}")
-            else:
-                print(f"  Data shape: {getattr(st.session_state.processed_data, 'shape', 'N/A')}")
-            
+            print(f"  Data shape: {st.session_state.processed_data.shape}")
             print(f"  Config: {st.session_state.config}")
 
-            # Use the original working optimizer 
             from modules.optimizer import run_matching_algorithm
-            print(f"  Using original optimizer (modules.optimizer)")
+            print(f"  ✅ Successfully imported run_matching_algorithm")
 
             results, matched_circles, unmatched_participants = run_matching_algorithm(
                 st.session_state.processed_data,
@@ -198,17 +188,8 @@ def run_optimization():
                     print(f"  Type of results: {type(results)}")
                     print(f"  Sample item type: {type(results[0]) if results and len(results) > 0 else 'No items'}")
 
-            # Convert results to DataFrame if it's a list
-            if isinstance(results, list) and results:
-                results = pd.DataFrame(results)
-                print(f"  Converted {len(results)} result records to DataFrame")
-            elif isinstance(results, list):
-                # Empty results
-                results = pd.DataFrame()
-                print(f"  No results to process")
-            
             # Check for duplicate Encoded IDs
-            if isinstance(results, pd.DataFrame) and 'Encoded ID' in results.columns:
+            if 'Encoded ID' in results.columns:
                 total_ids = len(results['Encoded ID'])
                 unique_ids = len(results['Encoded ID'].unique())
                 print(f"Total IDs: {total_ids}, Unique IDs: {unique_ids}")
@@ -222,7 +203,7 @@ def run_optimization():
                     print(f"✅ After de-duplication: {results.shape[0]} participants (was {total_ids})")
 
             # Count matched vs unmatched
-            if isinstance(results, pd.DataFrame) and 'proposed_NEW_circles_id' in results.columns:
+            if 'proposed_NEW_circles_id' in results.columns:
                 matched_in_results = len(results[results['proposed_NEW_circles_id'] != 'UNMATCHED'])
                 unmatched_in_results = len(results[results['proposed_NEW_circles_id'] == 'UNMATCHED'])
                 print(f"From results DataFrame - Matched: {matched_in_results}, Unmatched: {unmatched_in_results}")
@@ -652,7 +633,8 @@ def process_uploaded_file(uploaded_file):
             st.subheader("Configuration")
             # Keep only Debug Mode and set other options to fixed values
             st.session_state.config['min_circle_size'] = 5  # Fixed value
-            # Mode is hardcoded to optimize - NEW participants can join existing circles with capacity
+            # Always use 'optimize' mode (no UI option to change this)
+            st.session_state.config['existing_circle_handling'] = 'optimize'
             st.session_state.config['enable_host_requirement'] = True  # Fixed value
 
             # Initialize max_circle_size if not set

@@ -478,11 +478,9 @@ def run_matching_algorithm(data, config):
     sys.stdout = log_capture
     # Extract configuration parameters
     min_circle_size = config.get('min_circle_size', 5)
+    existing_circle_handling = config.get('existing_circle_handling', 'preserve')
     debug_mode = config.get('debug_mode', False)
     enable_host_requirement = config.get('enable_host_requirement', True)
-    
-    # Always use optimize mode - algorithm can freely assign new participants to existing circles
-    print(f"🔄 Using 'optimize' mode: NEW participants can join existing circles with capacity")
     
     # Copy data to avoid modifying original
     df = data.copy()
@@ -525,33 +523,13 @@ def run_matching_algorithm(data, config):
     direct_circles_list = []         # Track circle metadata
     direct_results = []              # Track direct assignments
 
-    # Process CURRENT-CONTINUING participants with circle IDs
-    if current_circle_col:
+    # Only proceed if we found the current circle column and are in preserve mode
+    if current_circle_col and existing_circle_handling == 'preserve':
         # Find all CURRENT-CONTINUING participants with circle IDs
         continuing_df = df[(df['Status'] == 'CURRENT-CONTINUING') & df[current_circle_col].notna()]
         
         if debug_mode:
             print(f"DIRECT CONTINUATION: Found {len(continuing_df)} CURRENT-CONTINUING participants with circle IDs")
-            
-            # Debug: Show total CURRENT-CONTINUING participants
-            all_continuing = df[df['Status'] == 'CURRENT-CONTINUING']
-            print(f"DIRECT CONTINUATION: Total CURRENT-CONTINUING participants: {len(all_continuing)}")
-            
-            # Debug: Show sample of circle ID values
-            if len(continuing_df) > 0:
-                sample_ids = continuing_df[current_circle_col].head(5).tolist()
-                print(f"DIRECT CONTINUATION: Sample circle IDs: {sample_ids}")
-            else:
-                print(f"DIRECT CONTINUATION: ⚠️ No CURRENT-CONTINUING participants have circle IDs!")
-                # Check what values are in the circle ID column
-                all_circle_values = df[current_circle_col].dropna().unique()[:10]
-                print(f"DIRECT CONTINUATION: Sample values in {current_circle_col}: {list(all_circle_values)}")
-                
-                # Check if continuing participants have any circle ID values
-                continuing_with_any_value = all_continuing[current_circle_col].dropna()
-                print(f"DIRECT CONTINUATION: CURRENT-CONTINUING with any circle ID value: {len(continuing_with_any_value)}")
-                if len(continuing_with_any_value) > 0:
-                    print(f"DIRECT CONTINUATION: Sample continuing circle values: {continuing_with_any_value.head(3).tolist()}")
         
         if not continuing_df.empty:
             # Group participants by their current circle ID
@@ -689,10 +667,10 @@ def run_matching_algorithm(data, config):
                 
                 # Set max_additions based on rules
                 if has_none_preference:
-                    # Respect co-leader preference - they said "None"
+                    # Any co-leader saying "None" means no new members
                     final_max_additions = 0
                     if debug_mode:
-                        print(f"  Circle {circle_id} has 'None' preference from co-leader - respecting preference")
+                        print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
                 elif max_additions is not None:
                     # Use the minimum valid value provided by co-leaders
                     # BUT cap it to respect the configured maximum circle size
@@ -713,14 +691,14 @@ def run_matching_algorithm(data, config):
                     if debug_mode:
                         print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                 else:
-                    # Use remaining capacity up to configured maximum
+                    # Default to configured maximum if no co-leader specified a value or no co-leaders exist
                     import streamlit as st
                     max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
                     final_max_additions = max(0, max_circle_size - len(member_ids))
                     if debug_mode:
                         message = "No co-leader preference specified" if has_co_leader else "No co-leaders found"
-                        print(f"  {message} for circle {circle_id} - using remaining capacity")
-                        print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more (capacity-based)")
+                        print(f"  {message} for circle {circle_id} - using default max total of 8")
+                        print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more")
                 
                 # Create circle metadata
                 circle_data = {
@@ -866,18 +844,9 @@ def run_matching_algorithm(data, config):
         # This will be used by the optimizer to determine if "Insufficient participants in region" is accurate
         globals()['all_regions_df'] = data
         
-        # CRITICAL DEBUG: Check what existing circles we have before calling optimizer
-        print(f"\n🚨 BEFORE CALLING optimize_region_v2 for {region}:")
-        print(f"  Debug mode: {debug_mode}")
-        print(f"  ⚠️ optimize_region_v2 doesn't accept existing_circles parameter - this is the ROOT CAUSE!")
-        print(f"  This function only creates NEW virtual circles, never uses existing ones with capacity")
-
         # Run optimization for this region using the new circle ID-based optimizer
-        # For now, pass empty dict - the existing circles logic will be handled inside optimize_region_v2
-        region_existing_circles = {}
-        
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
-            region, region_df, min_circle_size, enable_host_requirement, debug_mode, config.get('max_circle_size', 8), region_existing_circles
+            region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
@@ -991,12 +960,8 @@ def run_matching_algorithm(data, config):
     # Import our circle reconstruction function
     from modules.circle_reconstruction import reconstruct_circles_from_results
     
-    # Get max_circle_size from session state for reconstruction
-    import streamlit as st
-    max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
-    
     # Reconstruct circles from the final results
-    reconstructed_circles = reconstruct_circles_from_results(results_df, circles_df, max_circle_size=max_circle_size)
+    reconstructed_circles = reconstruct_circles_from_results(results_df, circles_df)
     
     # Check if reconstructed_circles is a DataFrame and not empty
     if isinstance(reconstructed_circles, pd.DataFrame) and not reconstructed_circles.empty:
@@ -1273,7 +1238,7 @@ def run_matching_algorithm(data, config):
     
     return results_df, circles_df, unmatched_df
 
-def optimize_region(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False):
+def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
     # Force debug mode to True for our critical test cases
     if region in ["London", "Singapore", "New York", "Houston"]:
         debug_mode = True
@@ -1306,6 +1271,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         region_df: DataFrame with participants from this region
         min_circle_size: Minimum number of participants per circle
         enable_host_requirement: Whether to enforce host requirements
+        existing_circle_handling: How to handle existing circles ('preserve', 'dissolve', 'optimize')
         debug_mode: Whether to print debug information
         
     Returns:
@@ -1336,81 +1302,82 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     small_circles = {}     # Maps circle_id to circle data for small circles (2-4 members)
     current_circle_members = {}  # Maps circle_id to list of members
     
-    # Step 1: Identify existing circles - always use optimize mode behavior
-    # Check for circle ID column (case-insensitive to handle column mapping issues)
-    # In our column mapping, it's now 'Current_Circle_ID' 
-    current_col = None
-    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
-    
-    # Print potential column names for debugging
-    if debug_mode:
-        print(f"Looking for circle ID column. Options: {potential_columns}")
-        print(f"Available columns: {region_df.columns.tolist()}")
-    
-    # First try direct matches
-    for col in potential_columns:
-        if col in region_df.columns:
-            current_col = col
-            break
-            
-    # If not found, try case-insensitive matching
-    if current_col is None:
-        for col in region_df.columns:
-            if col.lower() in [c.lower() for c in potential_columns]:
+    # Step 1: Identify existing circles if we're preserving them
+    if existing_circle_handling == 'preserve':
+        # Check for circle ID column (case-insensitive to handle column mapping issues)
+        # In our column mapping, it's now 'Current_Circle_ID' 
+        current_col = None
+        potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+        
+        # Print potential column names for debugging
+        if debug_mode:
+            print(f"Looking for circle ID column. Options: {potential_columns}")
+            print(f"Available columns: {region_df.columns.tolist()}")
+        
+        # First try direct matches
+        for col in potential_columns:
+            if col in region_df.columns:
                 current_col = col
                 break
+                
+        # If not found, try case-insensitive matching
+        if current_col is None:
+            for col in region_df.columns:
+                if col.lower() in [c.lower() for c in potential_columns]:
+                    current_col = col
+                    break
+                
+        if current_col is None and debug_mode:
+            print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
+            return [], [], []  # Return empty results if we can't find the critical column
             
-    if current_col is None and debug_mode:
-        print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
-        return [], [], []  # Return empty results if we can't find the critical column
-        
-    if current_col is not None:
-        if debug_mode:
-            print(f"Using column '{current_col}' for current circle IDs")
-            continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
-            circles_count = region_df[region_df['Status'] == 'CURRENT-CONTINUING'][current_col].notna().sum()
-            print(f"Found {continuing_count} CURRENT-CONTINUING participants, {circles_count} with circle IDs")
-            
-        # Group participants by their current circle
-        for _, row in region_df.iterrows():
-            # First, check if it's a CURRENT-CONTINUING participant
-            if row.get('Status') == 'CURRENT-CONTINUING':
-                # They must have a current circle ID - this is required for CURRENT-CONTINUING
-                if pd.notna(row.get(current_col)):
-                    circle_id = str(row[current_col]).strip()
-                    if circle_id:
-                        if circle_id not in current_circle_members:
-                            current_circle_members[circle_id] = []
-                        current_circle_members[circle_id].append(row)
+        if current_col is not None:
+            if debug_mode:
+                print(f"Using column '{current_col}' for current circle IDs")
+                continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
+                circles_count = region_df[region_df['Status'] == 'CURRENT-CONTINUING'][current_col].notna().sum()
+                print(f"Found {continuing_count} CURRENT-CONTINUING participants, {circles_count} with circle IDs")
+                
+            # Group participants by their current circle
+            for _, row in region_df.iterrows():
+                # First, check if it's a CURRENT-CONTINUING participant
+                if row.get('Status') == 'CURRENT-CONTINUING':
+                    # They must have a current circle ID - this is required for CURRENT-CONTINUING
+                    if pd.notna(row.get(current_col)):
+                        circle_id = str(row[current_col]).strip()
+                        if circle_id:
+                            if circle_id not in current_circle_members:
+                                current_circle_members[circle_id] = []
+                            current_circle_members[circle_id].append(row)
+                        else:
+                            # They're CURRENT-CONTINUING but have an empty circle ID
+                            # This shouldn't happen per the spec, but log for debugging
+                            if debug_mode:
+                                print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
                     else:
-                        # They're CURRENT-CONTINUING but have an empty circle ID
+                        # They're CURRENT-CONTINUING but circle ID is null
                         # This shouldn't happen per the spec, but log for debugging
                         if debug_mode:
-                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
-                else:
-                    # They're CURRENT-CONTINUING but circle ID is null
-                    # This shouldn't happen per the spec, but log for debugging
-                    if debug_mode:
-                        print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
-    
-    # Evaluate each existing circle in the region
-    # Note: By this point, direct continuation has already been done in the main function
-    # so we only need to handle edge cases here
-    for circle_id, members in current_circle_members.items():
-        # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
-        # and meets host requirements (for in-person circles)
-        if len(members) >= 2:
-            # Check if it's an in-person circle (IP prefix) or virtual circle (V prefix)
-            is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
-            is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
-            
-            # For in-person circles, check host requirements
-            host_requirement_met = True
-            if is_in_person and enable_host_requirement:
-                has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
-                host_requirement_met = has_host
-            
-            if host_requirement_met:
+                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
+        
+        # Evaluate each existing circle in the region
+        # Note: By this point, direct continuation has already been done in the main function
+        # so we only need to handle edge cases here
+        for circle_id, members in current_circle_members.items():
+            # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
+            # and meets host requirements (for in-person circles)
+            if len(members) >= 2:
+                # Check if it's an in-person circle (IP prefix) or virtual circle (V prefix)
+                is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
+                is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
+                
+                # For in-person circles, check host requirements
+                host_requirement_met = True
+                if is_in_person and enable_host_requirement:
+                    has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
+                    host_requirement_met = has_host
+                
+                if host_requirement_met:
                     # Get subregion and time if available
                     subregion = members[0].get('Current_Subregion', '')
                     
@@ -1996,24 +1963,6 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Get all viable circles with capacity for new members
     viable_circles = [circle for circle_id, circle in existing_circles.items() 
                      if circle.get('max_additions', 0) > 0]
-    
-    # CRITICAL DEBUG: This is where existing circles get filtered for optimization
-    if debug_mode:
-        print(f"\n🎯 EXISTING CIRCLES DEBUG AT OPTIMIZATION FILTER:")
-        print(f"  Total existing_circles dict: {len(existing_circles)}")
-        print(f"  Circles with max_additions > 0: {len(viable_circles)}")
-        
-        if len(existing_circles) > 0:
-            print(f"  Sample existing_circles keys: {list(existing_circles.keys())[:5]}")
-            for circle_id, circle_data in list(existing_circles.items())[:3]:
-                max_adds = circle_data.get('max_additions', 0)
-                print(f"    {circle_id}: max_additions={max_adds}, viable={max_adds > 0}")
-        
-        if len(viable_circles) == 0:
-            print(f"  ⚠️ CRITICAL: No viable circles found - this explains the issue!")
-            print(f"  All circles have max_additions <= 0")
-        else:
-            print(f"  ✅ Found {len(viable_circles)} viable circles - should be passed to optimization")
                      
     # Add extensive debug for region matching
     if debug_mode:
@@ -2052,25 +2001,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if circle.get('max_additions', 0) > 0:
                     print(f"    {circle_id}: region='{circle.get('region', 'unknown')}', max_additions={circle.get('max_additions', 0)}")
     
-    # Convert viable_circles list to dictionary for easier access by circle_id
-    existing_circles_dict = {}
-    for circle in viable_circles:
-        circle_id = circle.get('circle_id')
-        if circle_id:
-            existing_circles_dict[circle_id] = circle
-    
-    optimization_context['existing_circles'] = existing_circles_dict
-    
-    # CRITICAL DEBUG: Check what gets passed to optimize_region
-    if debug_mode:
-        print(f"\n🔍 FINAL CHECK BEFORE PASSING TO optimize_region:")
-        print(f"  viable_circles length: {len(viable_circles)}")
-        print(f"  optimization_context['existing_circles'] length: {len(optimization_context['existing_circles'])}")
-        
-        if len(viable_circles) > 0:
-            print(f"  Sample viable circle IDs: {[c.get('circle_id', 'NO_ID') for c in viable_circles[:3]]}")
-        else:
-            print(f"  ⚠️ NO VIABLE CIRCLES being passed to optimize_region - this is the root cause!")
+    optimization_context['existing_circles'] = viable_circles
     
     # More detailed debug output to help diagnose issues
     if debug_mode:
@@ -2725,34 +2656,6 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
             # Either one "Always" or two "Sometimes"
             prob += always_hosts + two_sometimes >= y[j], f"Host_requirement_{j}"
     
-    # Pre-solve debugging
-    if debug_mode and existing_circle_list:
-        print(f"\n🔍 PRE-SOLVE ANALYSIS:")
-        print(f"Existing circles available: {len(existing_circle_list)}")
-        print(f"NEW participants to assign: {len(participants)}")
-        
-        # Count compatible pairs
-        total_compatible_pairs = sum(1 for v in existing_circle_compatibility.values() if v == 1)
-        print(f"Total compatible participant-circle pairs: {total_compatible_pairs}")
-        
-        if total_compatible_pairs == 0:
-            print("⚠️ WARNING: NO compatible pairs found - this explains why no assignments happen!")
-            print("Checking sample participant preferences vs existing circles...")
-            
-            # Sample analysis
-            if len(participants) > 0 and len(existing_circle_list) > 0:
-                sample_p = participants[0]
-                sample_p_row = remaining_df[remaining_df['Encoded ID'] == sample_p].iloc[0]
-                circle_id, circle_data = existing_circle_list[0]
-                
-                print(f"Sample participant {sample_p}:")
-                print(f"  Location prefs: {sample_p_row['first_choice_location']}, {sample_p_row['second_choice_location']}, {sample_p_row['third_choice_location']}")
-                print(f"  Time prefs: {sample_p_row['first_choice_time']}, {sample_p_row['second_choice_time']}, {sample_p_row['third_choice_time']}")
-                
-                print(f"Sample circle {circle_id}:")
-                print(f"  Subregion: {circle_data['subregion']}")
-                print(f"  Time: {circle_data['meeting_time']}")
-        
     # Solve the problem
     start_time = time.time()
     solver = pulp.PULP_CBC_CMD(msg=debug_mode, timeLimit=60)
@@ -2762,31 +2665,6 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     if debug_mode:
         print(f"Optimization status: {pulp.LpStatus[prob.status]}")
         print(f"Optimization time: {solve_time:.2f} seconds")
-        
-        # Post-solve analysis
-        if existing_circle_list and prob.status == pulp.LpStatusOptimal:
-            assignments_to_existing = 0
-            for p in participants:
-                for e in range(len(existing_circle_list)):
-                    if (p, e) in z and z[p, e].value() and abs(z[p, e].value() - 1) < 1e-5:
-                        assignments_to_existing += 1
-            
-            print(f"🎯 RESULT: {assignments_to_existing} participants assigned to existing circles")
-            
-            if assignments_to_existing == 0:
-                print("❌ Still no assignments to existing circles - investigating why...")
-                # Check if any variables were set to 1
-                for p in participants[:3]:  # Check first 3 participants
-                    for e in range(len(existing_circle_list)):
-                        if (p, e) in z:
-                            val = z[p, e].value()
-                            compatible = existing_circle_compatibility.get((p, e), 0)
-                            circle_id, circle_data = existing_circle_list[e]
-                            max_additions = circle_data.get('max_additions', 0)
-                            print(f"  Participant {p} + Circle {circle_id}: z_value={val}, compatible={compatible}, max_additions={max_additions}")
-                            
-                            if compatible == 1 and max_additions > 0 and (val is None or val < 0.5):
-                                print(f"    ⚠️ This should have been assigned but wasn't - checking constraints...")
     
     # Process results - start with the results from previously processed participants (existing circles)
     results = []  # Initialize empty results list - we'll add entries for both existing circles and new circles
