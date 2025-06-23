@@ -83,7 +83,8 @@ The application follows a **modular, multi-layered architecture**:
 
 ```
 Changelog:
-- June 23, 2025. Initial setup
+- June 23, 2025: Initial setup
+- June 23, 2025: Completed code cleanup - removed Preserve and Dissolve modes, system now operates exclusively in Optimize mode
 ```
 
 ## User Preferences

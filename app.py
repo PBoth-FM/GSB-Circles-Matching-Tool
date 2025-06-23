@@ -633,8 +633,7 @@ def process_uploaded_file(uploaded_file):
             st.subheader("Configuration")
             # Keep only Debug Mode and set other options to fixed values
             st.session_state.config['min_circle_size'] = 5  # Fixed value
-            # Always use 'optimize' mode (no UI option to change this)
-            st.session_state.config['existing_circle_handling'] = 'optimize'
+            # Mode is hardcoded to optimize - NEW participants can join existing circles with capacity
             st.session_state.config['enable_host_requirement'] = True  # Fixed value
 
             # Initialize max_circle_size if not set
