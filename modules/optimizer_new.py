@@ -2681,19 +2681,36 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     new_existing_compatible = sum(1 for p_id in new_participants for c_id in existing_with_capacity 
                                  if compatibility.get((p_id, c_id), 0) == 1)
     
-    print(f"\n🚨 CRITICAL COMPATIBILITY ANALYSIS:")
+    print(f"\n🚨 CRITICAL COMPATIBILITY ANALYSIS FOR REGION {region}:")
     print(f"  NEW participants in region: {len(new_participants)}")
     print(f"  Existing circles with capacity: {len(existing_with_capacity)}")
     print(f"  NEW+existing compatible pairs: {new_existing_compatible}")
     
+    if len(new_participants) > 0:
+        print(f"  Sample NEW participants: {new_participants[:3]}")
+    if len(existing_with_capacity) > 0:
+        print(f"  Sample existing circles with capacity: {existing_with_capacity[:3]}")
+        for c_id in existing_with_capacity[:3]:
+            meta = circle_metadata[c_id]
+            print(f"    {c_id}: {meta['max_additions']} slots, subregion='{meta['subregion']}', time='{meta['meeting_time']}'")
+    
     if new_existing_compatible == 0 and new_participants and existing_with_capacity:
-        print(f"  ⚠️ CRITICAL ISSUE: No NEW participants compatible with existing circles!")
+        print(f"  🚨 CRITICAL ISSUE: No NEW participants compatible with existing circles!")
         print(f"  This will force creation of {len(new_participants)} new circles instead of using existing capacity")
         
         # Show the specific issue
         total_capacity = sum(circle_metadata[c_id]['max_additions'] for c_id in existing_with_capacity)
         print(f"  Available capacity in existing circles: {total_capacity} slots")
         print(f"  This represents a major efficiency loss - investigating compatibility failure...")
+        
+        # Show first incompatible pair for debugging
+        if new_participants and existing_with_capacity:
+            sample_new = new_participants[0]
+            sample_existing = existing_with_capacity[0]
+            compat_result = compatibility.get((sample_new, sample_existing), 'NOT_FOUND')
+            print(f"  🔍 Sample incompatibility: {sample_new} + {sample_existing} = {compat_result}")
+    else:
+        print(f"  ✅ Found {new_existing_compatible} NEW+existing compatible pairs - good!")
     
     if debug_mode:
         print(f"\n📊 DETAILED COMPATIBILITY ANALYSIS:")
