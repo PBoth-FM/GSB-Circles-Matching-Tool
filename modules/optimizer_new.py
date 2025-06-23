@@ -475,18 +475,44 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False, max_circle_size=None, existing_circles=None):
-    # FIXED: Now accepts existing_circles parameter!
+    # ARCHITECTURE FIX: This function now needs to identify existing circles from the data itself
     print(f"\n🎯 optimize_region_v2 CALLED for {region} with {len(region_df)} participants")
-    if existing_circles:
-        print(f"  ✅ FIXED: Received {len(existing_circles)} existing circles with capacity!")
-        for circle_id, circle_data in list(existing_circles.items())[:3]:
-            print(f"    {circle_id}: max_additions={circle_data.get('max_additions', 0)}")
-    else:
-        print(f"  ⚠️ No existing circles with capacity for region {region}")
+    print(f"  🔧 ARCHITECTURE CHANGE: Function will identify existing circles from CURRENT-CONTINUING participants")
     
     # Initialize existing_circles if None
     if existing_circles is None:
         existing_circles = {}
+        
+    # CRITICAL FIX: Extract existing circles from CURRENT-CONTINUING participants in this region
+    current_continuing = region_df[region_df['Status'] == 'CURRENT-CONTINUING']
+    if len(current_continuing) > 0 and 'Current_Circle_ID' in current_continuing.columns:
+        existing_circle_ids = current_continuing['Current_Circle_ID'].dropna().unique()
+        print(f"  📊 Found {len(existing_circle_ids)} existing circles in region {region}")
+        
+        # Build existing circles dictionary from the data
+        for circle_id in existing_circle_ids:
+            circle_members = current_continuing[current_continuing['Current_Circle_ID'] == circle_id]
+            member_count = len(circle_members)
+            
+            # Calculate max_additions (8 is typical max circle size)
+            max_additions = max(0, 8 - member_count)
+            
+            if max_additions > 0:
+                existing_circles[circle_id] = {
+                    'circle_id': circle_id,
+                    'member_count': member_count,
+                    'max_additions': max_additions,
+                    'region': region,
+                    'members': circle_members['Encoded ID'].tolist()
+                }
+                print(f"    ✅ {circle_id}: {member_count} members, can add {max_additions} more")
+            else:
+                print(f"    ❌ {circle_id}: {member_count} members, at capacity")
+    
+    if existing_circles:
+        print(f"  🎯 RESULT: {len(existing_circles)} existing circles with capacity available for NEW participants")
+    else:
+        print(f"  ⚠️ No existing circles with capacity found for region {region}")
     # 🔍 CRITICAL DEBUG: Function entry point logging
     print(f"\n🚀 OPTIMIZE_REGION_V2 CALLED!")
     print(f"  Region: {region}")
