@@ -151,8 +151,9 @@ def run_optimization():
             print(f"  Data shape: {st.session_state.processed_data.shape}")
             print(f"  Config: {st.session_state.config}")
 
-            from modules.optimizer import run_matching_algorithm
-            print(f"  ✅ Successfully imported run_matching_algorithm")
+            # CRITICAL FIX: Use the new optimizer that supports optimize mode properly
+            from modules.optimizer_new import run_matching_algorithm_new as run_matching_algorithm
+            print(f"  🔧 Using NEW optimizer (optimizer_new) instead of old optimizer")
 
             results, matched_circles, unmatched_participants = run_matching_algorithm(
                 st.session_state.processed_data,
