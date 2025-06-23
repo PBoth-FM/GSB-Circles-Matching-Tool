@@ -1783,6 +1783,23 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Prepare existing circle IDs (real IDs like IP-BOS-02)
     existing_circle_ids = list(viable_circles.keys())
     
+    print(f"\n🔍 EXISTING CIRCLES DEBUG:")
+    print(f"  Total viable circles found: {len(viable_circles)}")
+    print(f"  Existing circle IDs: {existing_circle_ids}")
+    
+    # Check capacity for each existing circle
+    circles_with_capacity = 0
+    for c_id, circle_data in viable_circles.items():
+        capacity = circle_data.get('max_additions', 0)
+        print(f"    {c_id}: max_additions={capacity}, member_count={circle_data.get('member_count', 0)}")
+        if capacity > 0:
+            circles_with_capacity += 1
+    
+    print(f"  Circles with capacity > 0: {circles_with_capacity}")
+    
+    if circles_with_capacity == 0:
+        print(f"  🚨 CRITICAL ISSUE: No existing circles have capacity! This will force all new circle creation.")
+    
     # Create synthetic IDs for potential new circles based on subregion and time
     # Include both existing circle patterns and new circle options from preferences
     new_circle_candidates = [(subregion, time_slot) for subregion in subregions for time_slot in time_slots]
@@ -1898,8 +1915,31 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             'current_members': 0
         }
     
+    print(f"\n🚨 CRITICAL DEBUG - CIRCLE INCLUSION ANALYSIS:")
+    print(f"  Region: {region}")
+    print(f"  Existing circles included: {len(existing_circle_ids)}")
+    print(f"  New circles to generate: {len(new_circle_ids)}")
+    print(f"  Total circles in optimization: {len(all_circle_ids)}")
+    
+    # Show existing circles with capacity
+    existing_with_capacity = [c_id for c_id in existing_circle_ids if circle_metadata[c_id]['max_additions'] > 0]
+    print(f"  Existing circles with capacity: {len(existing_with_capacity)}")
+    
+    if existing_with_capacity:
+        print(f"  Sample existing circles with capacity:")
+        for c_id in existing_with_capacity[:3]:
+            meta = circle_metadata[c_id]
+            print(f"    {c_id}: capacity={meta['max_additions']}, region={meta.get('region', 'N/A')}, subregion='{meta['subregion']}'")
+    else:
+        print(f"  ⚠️ NO EXISTING CIRCLES WITH CAPACITY FOUND!")
+        
+    # Check if we're creating new circles when existing capacity exists
+    total_existing_capacity = sum(circle_metadata[c_id]['max_additions'] for c_id in existing_circle_ids)
+    if new_circle_ids and total_existing_capacity > 0:
+        print(f"  🚨 INEFFICIENCY ALERT: Creating {len(new_circle_ids)} new circles despite {total_existing_capacity} existing capacity!")
+    
     if debug_mode:
-        print(f"\n🔄 REFACTORED CIRCLE SETUP:")
+        print(f"\n🔄 DETAILED CIRCLE SETUP:")
         print(f"  Existing circles: {len(existing_circle_ids)}")
         print(f"  Potential new circles: {len(new_circle_ids)}")
         print(f"  Total circles: {len(all_circle_ids)}")
