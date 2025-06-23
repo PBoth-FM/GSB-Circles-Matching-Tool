@@ -679,12 +679,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     current_circle_members = {}  # Maps circle_id to list of members
     
     # Step 1: Identify existing circles based on existing_circle_handling mode
-    # Print clear debug message about which mode we're using (especially for Seattle)
-    print(f"\n🔥 PROCESSING REGION '{region}' WITH existing_circle_handling='{existing_circle_handling}'") 
+    # Print clear debug message about mode
+    print(f"\n🔥 PROCESSING REGION '{region}' WITH optimize mode") 
     
     if region == "Seattle":
-        print(f"  This means NEW participants CAN be matched with existing circles: {existing_circle_handling == 'optimize'}")
-        print(f"  For Seattle region, we need 'optimize' mode to allow NEW participants to match with IP-SEA-01")
+        print(f"  This means NEW participants CAN be matched with existing circles")
+        print(f"  For Seattle region, optimize mode allows NEW participants to match with IP-SEA-01")
     
     # Check for circle ID column (case-insensitive to handle column mapping issues) for all modes
     # We need this column for both 'preserve' and 'optimize' modes
@@ -713,11 +713,9 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
         return [], [], [], {}, {}  # Return empty results if we can't find the critical column
         
-    # Now process based on the selected mode
-    if existing_circle_handling == 'preserve' or existing_circle_handling == 'optimize':
-            
-        if current_col is not None:
-            if debug_mode:
+    # Process existing circles - always use optimize mode behavior
+    if current_col is not None:
+        if debug_mode:
                 print(f"Using column '{current_col}' for current circle IDs")
                 continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
                 circles_count = region_df[region_df['Status'] == 'CURRENT-CONTINUING'][current_col].notna().sum()
@@ -1938,7 +1936,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # CRITICAL FIX 1: Apply capacity optimization for continuing circles in "optimize" mode
     print("\n🚨 APPLYING CRITICAL FIXES FOR CIRCLE CAPACITY IN OPTIMIZE MODE")
     # Update viable_circles with optimized capacity values
-    viable_circles = optimize_circle_capacity(viable_circles, existing_circle_handling, min_circle_size)
+    viable_circles = optimize_circle_capacity(viable_circles, min_circle_size)
     
     # CRITICAL FIX 2: Pre-process all CURRENT-CONTINUING members
     print("\n🚨 PRE-PROCESSING CURRENT-CONTINUING MEMBERS")

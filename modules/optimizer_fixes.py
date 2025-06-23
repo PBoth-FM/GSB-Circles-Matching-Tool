@@ -234,13 +234,12 @@ def preprocess_continuing_members(participants_df, circle_ids):
     return preassigned, problem_participants
 
 
-def optimize_circle_capacity(viable_circles, existing_circle_handling, min_circle_size=5):
+def optimize_circle_capacity(viable_circles, min_circle_size=5):
     """
-    Optimize circle capacity for circles based on the circle handling mode.
+    Optimize circle capacity for circles (always in optimize mode).
     
     Args:
         viable_circles: Dict of circle IDs to circle info
-        existing_circle_handling: Mode (preserve, optimize, dissolve)
         min_circle_size: Minimum viable circle size
         
     Returns:

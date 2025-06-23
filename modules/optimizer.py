@@ -525,8 +525,8 @@ def run_matching_algorithm(data, config):
     direct_circles_list = []         # Track circle metadata
     direct_results = []              # Track direct assignments
 
-    # Only proceed if we found the current circle column and are in preserve mode
-    if current_circle_col and existing_circle_handling == 'preserve':
+    # Process CURRENT-CONTINUING participants with circle IDs
+    if current_circle_col:
         # Find all CURRENT-CONTINUING participants with circle IDs
         continuing_df = df[(df['Status'] == 'CURRENT-CONTINUING') & df[current_circle_col].notna()]
         
@@ -1240,7 +1240,7 @@ def run_matching_algorithm(data, config):
     
     return results_df, circles_df, unmatched_df
 
-def optimize_region(region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode=False):
+def optimize_region(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False):
     # Force debug mode to True for our critical test cases
     if region in ["London", "Singapore", "New York", "Houston"]:
         debug_mode = True
