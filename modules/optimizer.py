@@ -873,8 +873,13 @@ def run_matching_algorithm(data, config):
         print(f"  This function only creates NEW virtual circles, never uses existing ones with capacity")
 
         # Run optimization for this region using the new circle ID-based optimizer
+        # Now pass existing circles with capacity to the optimizer
+        # Note: existing_circles is defined in the optimization_context preparation section above
+        region_existing_circles = {k: v for k, v in optimization_context.get('existing_circles', {}).items() 
+                                 if v.get('max_additions', 0) > 0 and v.get('region') == region}
+        
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
-            region, region_df, min_circle_size, enable_host_requirement, debug_mode, config.get('max_circle_size', 8)
+            region, region_df, min_circle_size, enable_host_requirement, debug_mode, config.get('max_circle_size', 8), region_existing_circles
         )
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
@@ -2049,7 +2054,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                 if circle.get('max_additions', 0) > 0:
                     print(f"    {circle_id}: region='{circle.get('region', 'unknown')}', max_additions={circle.get('max_additions', 0)}")
     
-    optimization_context['existing_circles'] = viable_circles
+    # Convert viable_circles list to dictionary for easier access by circle_id
+    existing_circles_dict = {}
+    for circle in viable_circles:
+        circle_id = circle.get('circle_id')
+        if circle_id:
+            existing_circles_dict[circle_id] = circle
+    
+    optimization_context['existing_circles'] = existing_circles_dict
     
     # CRITICAL DEBUG: Check what gets passed to optimize_region
     if debug_mode:

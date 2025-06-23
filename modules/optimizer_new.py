@@ -474,13 +474,19 @@ def get_unique_preferences(df, columns):
             values.extend(df[col].dropna().unique())
     return list(set(values))
 
-def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False, max_circle_size=None):
-    # CRITICAL DEBUG: This function has NO existing_circles parameter!
+def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False, max_circle_size=None, existing_circles=None):
+    # FIXED: Now accepts existing_circles parameter!
     print(f"\n🎯 optimize_region_v2 CALLED for {region} with {len(region_df)} participants")
-    print(f"  🔥 CRITICAL ISSUE: This function signature has NO existing_circles parameter!")
-    print(f"  🔥 Function parameters: region, region_df, min_circle_size, enable_host_requirement, debug_mode, max_circle_size")
-    print(f"  🔥 This is why NEW participants always get new virtual circles instead of joining existing ones!")
-    print(f"  🔥 The existing circles with capacity are never passed to this optimization function!")
+    if existing_circles:
+        print(f"  ✅ FIXED: Received {len(existing_circles)} existing circles with capacity!")
+        for circle_id, circle_data in list(existing_circles.items())[:3]:
+            print(f"    {circle_id}: max_additions={circle_data.get('max_additions', 0)}")
+    else:
+        print(f"  ⚠️ No existing circles with capacity for region {region}")
+    
+    # Initialize existing_circles if None
+    if existing_circles is None:
+        existing_circles = {}
     # 🔍 CRITICAL DEBUG: Function entry point logging
     print(f"\n🚀 OPTIMIZE_REGION_V2 CALLED!")
     print(f"  Region: {region}")
