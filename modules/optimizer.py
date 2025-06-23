@@ -2406,13 +2406,14 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"Participant {p} and Circle {circle_id} compatibility check:")
                     print(f"  Location match: {loc_match} (circle: {subregion} vs. participant prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']})")
                     print(f"  Time match: {time_match} (circle: {time_slot})")
-                    print(f"  Overall: {loc_match and time_match}")
+                    print(f"  Overall: {loc_match or time_match} (flexible compatibility)")
                 
-                # Both location and time must match for compatibility
-                is_compatible = (loc_match and time_match)
+                # More flexible compatibility: allow if EITHER location OR time matches well
+                # This allows the optimizer to utilize existing circle capacity more effectively
+                is_compatible = (loc_match or time_match)  # Changed from AND to OR
                 existing_circle_compatibility[(p, e)] = 1 if is_compatible else 0
                 
-                # Add compatibility constraint
+                # Add compatibility constraint - only block if neither location nor time match
                 if not is_compatible:
                     prob += z[p, e] == 0, f"Incompatible_existing_match_{p}_{e}"
                     
@@ -2582,8 +2583,8 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"  Variable z[{p}, {e}] exists: {(p, e) in z}")
                     print(f"  Is there a compatibility constraint restricting this match: {not is_compatible}")
                     
-                    # Compatibility should be determined by location AND time matches
-                    print(f"  Final compatibility (location AND time): {location_match and time_match} (should match {is_compatible})")
+                    # Compatibility should be determined by location OR time matches (flexible)
+                    print(f"  Final compatibility (location OR time): {location_match or time_match} (should match {is_compatible})")
                     
                     # Is this in the correct region?
                     print(f"  Same region: {p_row.get('Derived_Region', p_row.get('Requested_Region', 'Unknown')) == circle_data.get('region', 'Unknown')}")
