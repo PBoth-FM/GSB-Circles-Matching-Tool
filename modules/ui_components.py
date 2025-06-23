@@ -3699,7 +3699,115 @@ def render_debug_tab():
             </button>
             """, unsafe_allow_html=True)
         else:
-            st.info("No matched circles data available. Run the optimization first.")
+            st.info("No circle data available for analysis.")
+    
+    with debug_tab7:
+        st.write("### Small Circles Analysis")
+        st.write("This section analyzes whether small circles (2-4 members) are actually receiving new members despite the incentive bonuses.")
+        
+        if 'matched_circles' in st.session_state and st.session_state.matched_circles is not None:
+            circles_df = st.session_state.matched_circles
+            
+            if not circles_df.empty:
+                # Filter for small circles (2-4 current members)
+                small_circles = circles_df[
+                    (circles_df['member_count'] >= 2) & 
+                    (circles_df['member_count'] <= 4)
+                ].copy()
+                
+                st.write(f"**Total circles analyzed:** {len(circles_df)}")
+                st.write(f"**Small circles (2-4 members):** {len(small_circles)}")
+                
+                if len(small_circles) > 0:
+                    # Breakdown by size
+                    st.write("**Breakdown by current size:**")
+                    size_counts = small_circles['member_count'].value_counts().sort_index()
+                    for size, count in size_counts.items():
+                        st.write(f"- {size} members: {count} circles")
+                    
+                    # Check which have new members
+                    if 'new_members' in small_circles.columns:
+                        small_with_new = small_circles[small_circles['new_members'] > 0]
+                        st.write(f"**Small circles that received new members:** {len(small_with_new)}")
+                        
+                        if len(small_with_new) > 0:
+                            st.success("Some small circles did receive new members!")
+                            
+                            # Show details
+                            st.write("**Details of small circles with new members:**")
+                            display_cols = ['circle_id', 'member_count', 'new_members', 'region', 'subregion', 'meeting_time']
+                            available_cols = [col for col in display_cols if col in small_with_new.columns]
+                            st.dataframe(small_with_new[available_cols])
+                            
+                            # Summary statistics
+                            total_new_to_small = small_with_new['new_members'].sum()
+                            st.write(f"**Total new members assigned to small circles:** {total_new_to_small}")
+                            
+                        else:
+                            st.error("NO small circles received new members despite incentive bonuses!")
+                            
+                            # Show some examples of small circles that didn't get members
+                            st.write("**Examples of small circles that didn't get new members:**")
+                            display_cols = ['circle_id', 'member_count', 'new_members', 'region', 'subregion', 'meeting_time']
+                            available_cols = [col for col in display_cols if col in small_circles.columns]
+                            st.dataframe(small_circles[available_cols].head(10))
+                    
+                    # Analyze very small vs size-4 circles specifically
+                    very_small = small_circles[small_circles['member_count'] <= 3]
+                    size_4_circles = small_circles[small_circles['member_count'] == 4]
+                    
+                    st.write("**Analysis by incentive tier:**")
+                    st.write(f"- Very small circles (2-3 members, 800pt bonus): {len(very_small)}")
+                    st.write(f"- Size-4 circles (4 members, 50pt bonus): {len(size_4_circles)}")
+                    
+                    if 'new_members' in small_circles.columns:
+                        very_small_with_new = very_small[very_small['new_members'] > 0] if len(very_small) > 0 else pd.DataFrame()
+                        size_4_with_new = size_4_circles[size_4_circles['new_members'] > 0] if len(size_4_circles) > 0 else pd.DataFrame()
+                        
+                        st.write(f"- Very small circles that got new members: {len(very_small_with_new)}")
+                        st.write(f"- Size-4 circles that got new members: {len(size_4_with_new)}")
+                        
+                        if len(very_small_with_new) == 0:
+                            st.error("NO very small circles (800pt bonus) received new members!")
+                        if len(size_4_with_new) == 0:
+                            st.error("NO size-4 circles (50pt bonus) received new members!")
+                    
+                    # Check capacity constraints
+                    if 'circle_eligibility_logs' in st.session_state and st.session_state.circle_eligibility_logs:
+                        eligibility_logs = st.session_state.circle_eligibility_logs
+                        
+                        st.write("**Capacity Analysis for Small Circles:**")
+                        small_circle_ids = small_circles['circle_id'].tolist()
+                        
+                        circles_with_capacity = []
+                        circles_without_capacity = []
+                        
+                        for circle_id in small_circle_ids:
+                            if circle_id in eligibility_logs:
+                                log_data = eligibility_logs[circle_id]
+                                max_additions = log_data.get('max_additions', 0)
+                                if max_additions > 0:
+                                    circles_with_capacity.append((circle_id, max_additions))
+                                else:
+                                    circles_without_capacity.append(circle_id)
+                        
+                        st.write(f"- Small circles with capacity (max_additions > 0): {len(circles_with_capacity)}")
+                        st.write(f"- Small circles without capacity: {len(circles_without_capacity)}")
+                        
+                        if circles_with_capacity:
+                            st.write("**Small circles that SHOULD have been able to accept new members:**")
+                            for circle_id, max_adds in circles_with_capacity:
+                                circle_data = small_circles[small_circles['circle_id'] == circle_id]
+                                if not circle_data.empty:
+                                    current_size = circle_data['member_count'].iloc[0]
+                                    new_members = circle_data['new_members'].iloc[0] if 'new_members' in circle_data.columns else 0
+                                    st.write(f"  - {circle_id}: {current_size} members, could add {max_adds}, actually got {new_members} new")
+                else:
+                    st.info("No small circles (2-4 members) found in the results.")
+            else:
+                st.warning("Circles dataframe is empty.")
+        else:
+            st.info("No circle data available. Run the optimization to generate analysis.")
             
     # Original Houston Circles Debug section
     st.write("## Original Houston Circles Debug")
