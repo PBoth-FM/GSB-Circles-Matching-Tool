@@ -669,10 +669,10 @@ def run_matching_algorithm(data, config):
                 
                 # Set max_additions based on rules
                 if has_none_preference:
-                    # Any co-leader saying "None" means no new members
+                    # Respect co-leader preference - they said "None"
                     final_max_additions = 0
                     if debug_mode:
-                        print(f"  Circle {circle_id} has 'None' preference from co-leader - not accepting new members")
+                        print(f"  Circle {circle_id} has 'None' preference from co-leader - respecting preference")
                 elif max_additions is not None:
                     # Use the minimum valid value provided by co-leaders
                     # BUT cap it to respect the configured maximum circle size
@@ -693,14 +693,14 @@ def run_matching_algorithm(data, config):
                     if debug_mode:
                         print(f"  Circle {circle_id} can accept up to {final_max_additions} new members (co-leader preference)")
                 else:
-                    # Default to configured maximum if no co-leader specified a value or no co-leaders exist
+                    # Use remaining capacity up to configured maximum
                     import streamlit as st
                     max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
                     final_max_additions = max(0, max_circle_size - len(member_ids))
                     if debug_mode:
                         message = "No co-leader preference specified" if has_co_leader else "No co-leaders found"
-                        print(f"  {message} for circle {circle_id} - using default max total of 8")
-                        print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more")
+                        print(f"  {message} for circle {circle_id} - using remaining capacity")
+                        print(f"  Currently has {len(member_ids)} members, can accept {final_max_additions} more (capacity-based)")
                 
                 # Create circle metadata
                 circle_data = {
