@@ -2930,54 +2930,18 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # DEFENSIVE VERSION: Only use variables that exist in the model
     match_obj = 1000 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants for c_id in all_circle_ids if (p_id, c_id) in x)
     
-    # Component 2: Bonus for adding to small existing circles (size 2-4) - 50 points per assignment
-    # Identify small circles (those with 2-4 members) and prioritize by size
-    small_circles_ids = [c_id for c_id in existing_circle_ids 
-                        if viable_circles[c_id]['member_count'] >= 2 and 
-                           viable_circles[c_id]['member_count'] <= 4]
-    
-    # Split into very small (2-3 members) and small (4 members) circles
-    very_small_circles_ids = []
-    small_circles_ids_4 = []
-    
-    for c_id in small_circles_ids:
-        member_count = viable_circles[c_id]['member_count']
-        if member_count <= 3:
-            very_small_circles_ids.append(c_id)
-        else:
-            small_circles_ids_4.append(c_id)
-    
-    if debug_mode:
-        print(f"\n🔍 Very small circles (size 2-3) that need urgent filling: {len(very_small_circles_ids)}")
-        for c_id in very_small_circles_ids:
-            print(f"  Circle {c_id}: {viable_circles[c_id]['member_count']} current members - 800 point bonus")
-            
-        print(f"\n🔍 Small circles (size 4) that need filling: {len(small_circles_ids_4)}")
-        for c_id in small_circles_ids_4:
-            print(f"  Circle {c_id}: {viable_circles[c_id]['member_count']} current members - 50 point bonus")
-    
-    # Grant an extra high bonus for very small circles (2-3 members)
-    # DEFENSIVE FIX: Only use variables that exist in the model with "if (p_id, c_id) in x" check
-    very_small_circle_bonus = 800 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants 
-                                             for c_id in very_small_circles_ids if (p_id, c_id) in x)
-    
-    # Normal bonus for circles with 4 members
-    # DEFENSIVE FIX: Only use variables that exist in the model
-    small_circle_bonus = 50 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants 
-                                      for c_id in small_circles_ids_4 if (p_id, c_id) in x)
-    
-    # Component 3: SIGNIFICANTLY INCREASED bonus for adding to any existing circle - 500 points per assignment
+    # Component 2: Bonus for adding to any existing circle - 500 points per assignment
     # DEFENSIVE FIX: Only use variables that exist in the model
     existing_circle_bonus = 500 * pulp.lpSum(x[(p_id, c_id)] for p_id in participants 
                                           for c_id in existing_circle_ids if (p_id, c_id) in x)
     
-    # Component 4: Maximize preference satisfaction (weight: 1 per preference point)
+    # Component 3: Maximize preference satisfaction (weight: 1 per preference point)
     # DEFENSIVE FIX: Only use variables that exist in the model
     pref_obj = pulp.lpSum(preference_scores[(p_id, c_id)] * x[(p_id, c_id)] 
                         for p_id in participants for c_id in all_circle_ids
                         if (p_id, c_id) in x and (p_id, c_id) in preference_scores)
     
-    # Component 5: Higher penalty for creating new circles (weight: 100 per circle)
+    # Component 4: Higher penalty for creating new circles (weight: 100 per circle)
     new_circle_penalty = 100 * pulp.lpSum(y[c_id] for c_id in new_circle_ids)
     
     # Special bonus for our test cases
@@ -3071,14 +3035,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"🌈 Total diversity bonus variable created with {len(all_circle_ids)} circles evaluated")
 
     # Combined objective function
-    total_obj = match_obj + very_small_circle_bonus + small_circle_bonus + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus + diversity_bonus
+    total_obj = match_obj + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus + diversity_bonus
     
     # [DEBUG INFO] Log information about optimization objective function
     if debug_mode:
         print(f"\n🎯 OBJECTIVE FUNCTION COMPONENTS:")
         print(f"  Base assignment score: 1000 points per participant matched")
-        print(f"  Very small circle bonus: 800 points per participant assigned to 2-3 member circles")
-        print(f"  Small circle bonus: 50 points per participant assigned to 4-member circles") 
         print(f"  Existing circle bonus: 500 points per participant assigned to existing circles")
         print(f"  Preference satisfaction: Up to 60 points per participant for location/time matches")
         print(f"  New circle penalty: -100 points per new circle created")
@@ -3091,14 +3053,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if debug_mode:
         print(f"\n🎯 OBJECTIVE FUNCTION COMPONENTS:")
         print(f"  Match component weight: 1000 per participant")
-        print(f"  Very small circle (size 2-3) bonus: 800 per assignment")
-        print(f"  Small circle (size 4) bonus: 50 per assignment")
-        print(f"  Existing circle bonus: 500 per assignment (INCREASED from 20)")
+        print(f"  Existing circle bonus: 500 per assignment")
         print(f"  Preference component weight: 1 per preference point")
         print(f"  New circle penalty: 100 per circle")
         print(f"  Special test cases bonus: 1000 per test match")
-        print(f"  Very small circles that need URGENT filling: {len(very_small_circles_ids)}")
-        print(f"  Small circles (size 4) that need filling: {len(small_circles_ids_4)}")
         
         # Debug for test case
         if "IP-HOU-02" in existing_circle_ids:
