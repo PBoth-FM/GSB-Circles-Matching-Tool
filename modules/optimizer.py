@@ -1987,6 +1987,24 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     # Get all viable circles with capacity for new members
     viable_circles = [circle for circle_id, circle in existing_circles.items() 
                      if circle.get('max_additions', 0) > 0]
+    
+    # CRITICAL DEBUG: This is where existing circles get filtered for optimization
+    if debug_mode:
+        print(f"\n🎯 EXISTING CIRCLES DEBUG AT OPTIMIZATION FILTER:")
+        print(f"  Total existing_circles dict: {len(existing_circles)}")
+        print(f"  Circles with max_additions > 0: {len(viable_circles)}")
+        
+        if len(existing_circles) > 0:
+            print(f"  Sample existing_circles keys: {list(existing_circles.keys())[:5]}")
+            for circle_id, circle_data in list(existing_circles.items())[:3]:
+                max_adds = circle_data.get('max_additions', 0)
+                print(f"    {circle_id}: max_additions={max_adds}, viable={max_adds > 0}")
+        
+        if len(viable_circles) == 0:
+            print(f"  ⚠️ CRITICAL: No viable circles found - this explains the issue!")
+            print(f"  All circles have max_additions <= 0")
+        else:
+            print(f"  ✅ Found {len(viable_circles)} viable circles - should be passed to optimization")
                      
     # Add extensive debug for region matching
     if debug_mode:
@@ -2026,6 +2044,17 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     print(f"    {circle_id}: region='{circle.get('region', 'unknown')}', max_additions={circle.get('max_additions', 0)}")
     
     optimization_context['existing_circles'] = viable_circles
+    
+    # CRITICAL DEBUG: Check what gets passed to optimize_region
+    if debug_mode:
+        print(f"\n🔍 FINAL CHECK BEFORE PASSING TO optimize_region:")
+        print(f"  viable_circles length: {len(viable_circles)}")
+        print(f"  optimization_context['existing_circles'] length: {len(optimization_context['existing_circles'])}")
+        
+        if len(viable_circles) > 0:
+            print(f"  Sample viable circle IDs: {[c.get('circle_id', 'NO_ID') for c in viable_circles[:3]]}")
+        else:
+            print(f"  ⚠️ NO VIABLE CIRCLES being passed to optimize_region - this is the root cause!")
     
     # More detailed debug output to help diagnose issues
     if debug_mode:
