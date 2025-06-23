@@ -1304,80 +1304,80 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     current_circle_members = {}  # Maps circle_id to list of members
     
     # Step 1: Identify existing circles - always use optimize mode behavior
-        # Check for circle ID column (case-insensitive to handle column mapping issues)
-        # In our column mapping, it's now 'Current_Circle_ID' 
-        current_col = None
-        potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
-        
-        # Print potential column names for debugging
-        if debug_mode:
-            print(f"Looking for circle ID column. Options: {potential_columns}")
-            print(f"Available columns: {region_df.columns.tolist()}")
-        
-        # First try direct matches
-        for col in potential_columns:
-            if col in region_df.columns:
+    # Check for circle ID column (case-insensitive to handle column mapping issues)
+    # In our column mapping, it's now 'Current_Circle_ID' 
+    current_col = None
+    potential_columns = ['current_circles_id', 'Current_Circle_ID', 'Current Circle ID']
+    
+    # Print potential column names for debugging
+    if debug_mode:
+        print(f"Looking for circle ID column. Options: {potential_columns}")
+        print(f"Available columns: {region_df.columns.tolist()}")
+    
+    # First try direct matches
+    for col in potential_columns:
+        if col in region_df.columns:
+            current_col = col
+            break
+            
+    # If not found, try case-insensitive matching
+    if current_col is None:
+        for col in region_df.columns:
+            if col.lower() in [c.lower() for c in potential_columns]:
                 current_col = col
                 break
-                
-        # If not found, try case-insensitive matching
-        if current_col is None:
-            for col in region_df.columns:
-                if col.lower() in [c.lower() for c in potential_columns]:
-                    current_col = col
-                    break
-                
-        if current_col is None and debug_mode:
-            print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
-            return [], [], []  # Return empty results if we can't find the critical column
             
-        if current_col is not None:
-            if debug_mode:
-                print(f"Using column '{current_col}' for current circle IDs")
-                continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
-                circles_count = region_df[region_df['Status'] == 'CURRENT-CONTINUING'][current_col].notna().sum()
-                print(f"Found {continuing_count} CURRENT-CONTINUING participants, {circles_count} with circle IDs")
-                
-            # Group participants by their current circle
-            for _, row in region_df.iterrows():
-                # First, check if it's a CURRENT-CONTINUING participant
-                if row.get('Status') == 'CURRENT-CONTINUING':
-                    # They must have a current circle ID - this is required for CURRENT-CONTINUING
-                    if pd.notna(row.get(current_col)):
-                        circle_id = str(row[current_col]).strip()
-                        if circle_id:
-                            if circle_id not in current_circle_members:
-                                current_circle_members[circle_id] = []
-                            current_circle_members[circle_id].append(row)
-                        else:
-                            # They're CURRENT-CONTINUING but have an empty circle ID
-                            # This shouldn't happen per the spec, but log for debugging
-                            if debug_mode:
-                                print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
+    if current_col is None and debug_mode:
+        print(f"CRITICAL ERROR: Could not find current circles ID column. Available columns: {region_df.columns.tolist()}")
+        return [], [], []  # Return empty results if we can't find the critical column
+        
+    if current_col is not None:
+        if debug_mode:
+            print(f"Using column '{current_col}' for current circle IDs")
+            continuing_count = len(region_df[region_df['Status'] == 'CURRENT-CONTINUING'])
+            circles_count = region_df[region_df['Status'] == 'CURRENT-CONTINUING'][current_col].notna().sum()
+            print(f"Found {continuing_count} CURRENT-CONTINUING participants, {circles_count} with circle IDs")
+            
+        # Group participants by their current circle
+        for _, row in region_df.iterrows():
+            # First, check if it's a CURRENT-CONTINUING participant
+            if row.get('Status') == 'CURRENT-CONTINUING':
+                # They must have a current circle ID - this is required for CURRENT-CONTINUING
+                if pd.notna(row.get(current_col)):
+                    circle_id = str(row[current_col]).strip()
+                    if circle_id:
+                        if circle_id not in current_circle_members:
+                            current_circle_members[circle_id] = []
+                        current_circle_members[circle_id].append(row)
                     else:
-                        # They're CURRENT-CONTINUING but circle ID is null
+                        # They're CURRENT-CONTINUING but have an empty circle ID
                         # This shouldn't happen per the spec, but log for debugging
                         if debug_mode:
-                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
-        
-        # Evaluate each existing circle in the region
-        # Note: By this point, direct continuation has already been done in the main function
-        # so we only need to handle edge cases here
-        for circle_id, members in current_circle_members.items():
-            # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
-            # and meets host requirements (for in-person circles)
-            if len(members) >= 2:
-                # Check if it's an in-person circle (IP prefix) or virtual circle (V prefix)
-                is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
-                is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
-                
-                # For in-person circles, check host requirements
-                host_requirement_met = True
-                if is_in_person and enable_host_requirement:
-                    has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
-                    host_requirement_met = has_host
-                
-                if host_requirement_met:
+                            print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has empty circle ID")
+                else:
+                    # They're CURRENT-CONTINUING but circle ID is null
+                    # This shouldn't happen per the spec, but log for debugging
+                    if debug_mode:
+                        print(f"WARNING: CURRENT-CONTINUING participant {row['Encoded ID']} has null circle ID")
+    
+    # Evaluate each existing circle in the region
+    # Note: By this point, direct continuation has already been done in the main function
+    # so we only need to handle edge cases here
+    for circle_id, members in current_circle_members.items():
+        # Per PRD: An existing circle is maintained if it has at least 2 CURRENT-CONTINUING members
+        # and meets host requirements (for in-person circles)
+        if len(members) >= 2:
+            # Check if it's an in-person circle (IP prefix) or virtual circle (V prefix)
+            is_in_person = circle_id.startswith('IP-') and not circle_id.startswith('IP-NEW-')
+            is_virtual = circle_id.startswith('V-') and not circle_id.startswith('V-NEW-')
+            
+            # For in-person circles, check host requirements
+            host_requirement_met = True
+            if is_in_person and enable_host_requirement:
+                has_host = any(m.get('host', '').lower() in ['always', 'always host', 'sometimes', 'sometimes host'] for m in members)
+                host_requirement_met = has_host
+            
+            if host_requirement_met:
                     # Get subregion and time if available
                     subregion = members[0].get('Current_Subregion', '')
                     

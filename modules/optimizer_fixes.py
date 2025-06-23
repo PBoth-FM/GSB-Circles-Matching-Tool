@@ -267,7 +267,7 @@ def optimize_circle_capacity(viable_circles, min_circle_size=5):
                 updated_info['max_additions'] = needed
         
         # In optimize mode, ensure all continuing circles can accept at least one new member
-        elif existing_circle_handling == 'optimize' and max_additions == 0 and current_members < max_circle_size:
+        elif max_additions == 0 and current_members < max_circle_size:
             print(f"✅ Optimize mode override: {circle_id} now allows 1 new member")
             updated_info['max_additions'] = 1
         
