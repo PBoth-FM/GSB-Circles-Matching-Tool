@@ -475,6 +475,7 @@ def get_unique_preferences(df, columns):
     return list(set(values))
 
 def optimize_region_v2(region, region_df, min_circle_size, enable_host_requirement, debug_mode=False, max_circle_size=None, existing_circles=None):
+    print(f"🚨🚨🚨 FUNCTION ENTRY: optimize_region_v2 called for region {region} 🚨🚨🚨")
     # ARCHITECTURE FIX: This function now needs to identify existing circles from the data itself
     print(f"\n🎯 optimize_region_v2 CALLED for {region} with {len(region_df)} participants")
     print(f"  🔧 ARCHITECTURE CHANGE: Function will identify existing circles from CURRENT-CONTINUING participants")
