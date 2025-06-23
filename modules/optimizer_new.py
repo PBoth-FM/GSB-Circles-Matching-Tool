@@ -2534,6 +2534,20 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 is_compatible = True
                 print(f"  Forcing compatibility to: {is_compatible}")
                 
+            # CRITICAL FIX: Override compatibility for NEW participants with existing circles that have capacity
+            # This addresses the systematic incompatibility issue causing new circle creation
+            if not is_compatible and p_row.get('Status') == 'NEW' and c_id in existing_circles:
+                capacity = circle_metadata[c_id]['max_additions']
+                if capacity > 0:
+                    # Force compatibility for location matches or close time matches
+                    # This is a targeted fix to prevent unnecessary new circle creation
+                    if loc_match or ('evening' in str(time_slot).lower() and 
+                                    any('evening' in str(t).lower() for t in [p_row.get('first_choice_time', ''), 
+                                                                             p_row.get('second_choice_time', ''),
+                                                                             p_row.get('third_choice_time', '')] if t)):
+                        print(f"🔧 FORCED COMPATIBILITY: NEW participant {p_id} with existing circle {c_id} (capacity: {capacity})")
+                        is_compatible = True
+            
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
             
