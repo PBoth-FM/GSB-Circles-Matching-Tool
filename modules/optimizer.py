@@ -1273,7 +1273,6 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
         region_df: DataFrame with participants from this region
         min_circle_size: Minimum number of participants per circle
         enable_host_requirement: Whether to enforce host requirements
-        existing_circle_handling: How to handle existing circles ('preserve', 'dissolve', 'optimize')
         debug_mode: Whether to print debug information
         
     Returns:
@@ -1304,8 +1303,7 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
     small_circles = {}     # Maps circle_id to circle data for small circles (2-4 members)
     current_circle_members = {}  # Maps circle_id to list of members
     
-    # Step 1: Identify existing circles if we're preserving them
-    if existing_circle_handling == 'preserve':
+    # Step 1: Identify existing circles - always use optimize mode behavior
         # Check for circle ID column (case-insensitive to handle column mapping issues)
         # In our column mapping, it's now 'Current_Circle_ID' 
         current_col = None

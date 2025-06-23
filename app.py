@@ -49,7 +49,7 @@ if 'config' not in st.session_state:
     st.session_state.config = {
         'debug_mode': True,  # CRITICAL FIX: Force debug mode on to help diagnose compatibility issues
         'min_circle_size': 5,
-        'existing_circle_handling': 'optimize',  # Always use optimize mode (no UI option to change this)
+        # Mode is hardcoded to optimize - NEW participants can join existing circles with capacity
         'optimization_weight_location': 3,
         'optimization_weight_time': 2,
         'enable_host_requirement': True
