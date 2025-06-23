@@ -2537,6 +2537,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
             
+            # Track NEW participant + existing circle compatibility for debugging
+            if p_row.get('Status') == 'NEW' and c_id in existing_circles and is_compatible:
+                print(f"  ✓ NEW participant {p_id} is compatible with existing circle {c_id}")
+            
             # CRITICAL FIX: For NEW participants and existing circles, we need to compare directly against
             # the circle's meeting time, not against CURRENT-CONTINUING members whose time preferences are often empty
             if p_row.get('Status') == 'NEW' and c_id in existing_circle_ids:
@@ -3403,6 +3407,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         circle_vars = [x[(p_id, c_id)] for p_id in participants if (p_id, c_id) in x]
         if circle_vars:  # Only add constraint if there are variables for this circle
             prob += pulp.lpSum(circle_vars) <= max_additions, f"max_additions_{c_id}"
+            print(f"  Added capacity constraint for {c_id}: max {max_additions} additions, {len(circle_vars)} possible assignments")
         else:
             print(f"⚠️ WARNING: No valid variables created for circle {c_id}, skipping capacity constraint")
     
