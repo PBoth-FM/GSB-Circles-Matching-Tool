@@ -2393,21 +2393,21 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Check if this existing circle has capacity for new members
                 circle_capacity = circle_metadata[c_id]['max_additions']
                 if circle_capacity > 0:
-                # 🚨 CRITICAL FIX: ALWAYS force detailed debugging for Seattle IP-SEA-01
-                is_seattle_circle = region == "Seattle" and c_id == 'IP-SEA-01'
-                enable_detailed_debugging = is_test_case or is_seattle_circle
-                
-                # For debugging Seattle circles, add extra visibility
-                if is_seattle_circle:
-                    print(f"\n🚨 CRITICAL SEATTLE COMPATIBILITY CHECK")
-                    print(f"  NEW Participant: {p_id}")
-                    print(f"  Target Circle: {c_id}")
-                    print(f"  Circle subregion: {subregion}")
-                    print(f"  Circle meeting time: {time_slot}")
-                    print(f"  Participant location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
-                    print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
-                
-                if enable_detailed_debugging:
+                    # 🚨 CRITICAL FIX: ALWAYS force detailed debugging for Seattle IP-SEA-01
+                    is_seattle_circle = region == "Seattle" and c_id == 'IP-SEA-01'
+                    enable_detailed_debugging = is_test_case or is_seattle_circle
+                    
+                    # For debugging Seattle circles, add extra visibility
+                    if is_seattle_circle:
+                        print(f"\n🚨 CRITICAL SEATTLE COMPATIBILITY CHECK")
+                        print(f"  NEW Participant: {p_id}")
+                        print(f"  Target Circle: {c_id}")
+                        print(f"  Circle subregion: {subregion}")
+                        print(f"  Circle meeting time: {time_slot}")
+                        print(f"  Participant location prefs: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
+                        print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
+                    
+                    if enable_detailed_debugging:
                     print(f"\n🔍 NEW PARTICIPANT-CIRCLE COMPATIBILITY CHECK:")
                     print(f"  NEW Participant {p_id} checking compatibility with existing circle {c_id}")
                     print(f"  Circle meeting time: '{time_slot}'")
