@@ -4877,3 +4877,53 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     return updated_results, circles, updated_unmatched, circle_capacity_debug, final_logs
 
 # East Bay debug function was removed to focus exclusively on Seattle test case
+
+
+def run_matching_algorithm_new(data_dict, config):
+    """
+    Wrapper function to match the interface expected by app.py
+    
+    Args:
+        data_dict: Dictionary with region names as keys and DataFrames as values
+        config: Configuration dictionary
+        
+    Returns:
+        Tuple of (all_results, all_circles, all_unmatched)
+    """
+    print(f"\n🔧 NEW OPTIMIZER WRAPPER: Processing {len(data_dict)} regions")
+    
+    all_results = []
+    all_circles = []
+    all_unmatched = []
+    
+    # Process each region
+    for region, region_df in data_dict.items():
+        if region_df.empty:
+            print(f"  Skipping empty region: {region}")
+            continue
+            
+        print(f"  Processing region: {region} with {len(region_df)} participants")
+        
+        # Call the region optimizer
+        results, circles, unmatched, logs, eligibility_logs = optimize_region(
+            region=region,
+            region_df=region_df,
+            min_circle_size=config.get('min_circle_size', 5),
+            enable_host_requirement=config.get('enable_host_requirement', True),
+            debug_mode=config.get('debug_mode', True),
+            max_circle_size=8  # Use default max size
+        )
+        
+        print(f"    Results: {len(results)}, Circles: {len(circles)}, Unmatched: {len(unmatched)}")
+        
+        # Accumulate results
+        all_results.extend(results)
+        all_circles.extend(circles)
+        all_unmatched.extend(unmatched)
+    
+    print(f"\n✅ NEW OPTIMIZER COMPLETE:")
+    print(f"  Total results: {len(all_results)}")
+    print(f"  Total circles: {len(all_circles)}")
+    print(f"  Total unmatched: {len(all_unmatched)}")
+    
+    return all_results, all_circles, all_unmatched
