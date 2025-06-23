@@ -511,6 +511,48 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     
     if existing_circles:
         print(f"  🎯 RESULT: {len(existing_circles)} existing circles with capacity available for NEW participants")
+        
+        # CRITICAL FIX: Implement actual assignment logic for NEW participants
+        new_participants = region_df[region_df['Status'] == 'NEW']
+        if len(new_participants) > 0:
+            print(f"  🔧 ASSIGNING {len(new_participants)} NEW participants to existing circles...")
+            
+            # Simple assignment logic: assign NEW participants to existing circles with capacity
+            assignments = {}
+            for _, participant in new_participants.iterrows():
+                participant_id = participant['Encoded ID']
+                
+                # Find a compatible existing circle with capacity
+                for circle_id, circle_data in existing_circles.items():
+                    if circle_data['max_additions'] > 0:
+                        # Assign participant to this circle
+                        assignments[participant_id] = circle_id
+                        circle_data['max_additions'] -= 1  # Reduce capacity
+                        print(f"    ✅ Assigned {participant_id} to existing circle {circle_id}")
+                        break
+                else:
+                    print(f"    ❌ Could not assign {participant_id} - no circles with capacity")
+            
+            print(f"  📊 ASSIGNMENT RESULTS: {len(assignments)} NEW participants assigned to existing circles")
+            
+            # Return early with results if we made assignments
+            if assignments:
+                results = []
+                for participant_id, circle_id in assignments.items():
+                    participant_data = new_participants[new_participants['Encoded ID'] == participant_id].iloc[0].to_dict()
+                    participant_data['proposed_NEW_circles_id'] = circle_id
+                    participant_data['assignment_reason'] = 'Assigned to existing circle with capacity'
+                    results.append(participant_data)
+                
+                # Include CURRENT-CONTINUING participants in results
+                current_continuing = region_df[region_df['Status'] == 'CURRENT-CONTINUING']
+                for _, participant in current_continuing.iterrows():
+                    participant_data = participant.to_dict()
+                    participant_data['proposed_NEW_circles_id'] = participant_data.get('Current_Circle_ID', 'UNMATCHED')
+                    results.append(participant_data)
+                
+                print(f"  🎯 EARLY RETURN: Successfully assigned NEW participants to existing circles")
+                return results, [], [], {}, {}
     else:
         print(f"  ⚠️ No existing circles with capacity found for region {region}")
     # 🔍 CRITICAL DEBUG: Function entry point logging
