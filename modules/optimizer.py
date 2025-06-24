@@ -293,6 +293,7 @@ def run_matching_algorithm(data, config):
     print(f"\n🚀🚀🚀 RUN_MATCHING_ALGORITHM CALLED! 🚀🚀🚀")
     print(f"  Data shape: {data.shape if data is not None else 'None'}")
     print(f"  Config: {config}")
+    print(f"🔒 SAME-PERSON CONSTRAINT: This function will call optimize_region_v2 which should implement constraints")
     
     # Check data structure
     if data is not None and len(data) > 0:
@@ -845,9 +846,17 @@ def run_matching_algorithm(data, config):
         globals()['all_regions_df'] = data
         
         # Run optimization for this region using the new circle ID-based optimizer
+        print(f"🔍 ABOUT TO CALL optimize_region_v2 for region: {region}")
+        print(f"   Region DF shape: {region_df.shape if region_df is not None else 'None'}")
+        print(f"   Debug mode: {debug_mode}")
+        
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
         )
+        
+        print(f"🔍 RETURNED FROM optimize_region_v2 for region: {region}")
+        print(f"   Results count: {len(region_results) if region_results is not None else 'None'}")
+        print(f"   Circles count: {len(region_circles) if region_circles is not None else 'None'}")
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
         print(f"\n🔍 REGION {region} CIRCLES INSPECTION:")
