@@ -720,30 +720,7 @@ def determine_unmatched_reason(participant, context=None):
     if not has_location or not has_time:
         return "No location and/or time preferences"
 
-    # 2. Special context flags from optimizer - only if preferences exist
-    if context.get('no_preferences', False):
-        return "No location or time preferences"
-
-    if context.get('no_location_preferences', False):
-        return "No location preference"
-
-    if context.get('no_time_preferences', False):
-        return "No time preference"
-
-    # 3. PER CLIENT REQUEST: NEVER USE "Insufficient participants in region"
-    # We've verified all regions have more than 5 participants in total
-    # Adding debug logs to help diagnose why this was being triggered
-    region = participant.get('Requested_Region', '')
-    participant_count = context.get('region_participant_count', {}).get(region, 0)
-
-    if debug_mode:
-        print(f"  - Region: {region}")
-        print(f"  - Region participant count: {participant_count}")
-        print(f"  - Insufficient flag was: {context.get('insufficient_regional_participants', False)}")
-
-    # We'll never use this reason, even if the flag is set
-
-    # 4. No Compatible Options Check
+    # 2. No Compatible Options Check
     has_compatible_options = False
     compatible_options = []
     if p_id in context.get('participant_compatible_options', {}):
@@ -791,71 +768,6 @@ def determine_unmatched_reason(participant, context=None):
     if not has_compatible_options:
         return "No compatible location-time combinations"
 
-    # 4.5. Host Validation for Compatible Options (Solution 1 Implementation)
-    # Check if compatible location-time combinations have sufficient hosts
-    from utils.data_standardization import normalize_host_status
-
-    participant_host_status = normalize_host_status(participant.get('host', ''))
-    is_participant_host = participant_host_status in ['ALWAYS', 'SOMETIMES']
-
-    if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
-        print(f"  - Participant host status: {participant_host_status} (is_host: {is_participant_host})")
-
-    # Check if any compatible option has sufficient hosts for a new circle
-    has_viable_option_with_hosts = False
-
-    for option in compatible_options:
-        if isinstance(option, tuple) and len(option) == 2:
-            location, time = option
-
-            # Get count of similar participants for this location-time
-            similar_count = context.get('similar_participants', {}).get((location, time), 0)
-
-            # Get host count for this location-time combination
-            host_count = context.get('host_counts', {}).get((location, time), 0)
-
-            # GREENFIELD FIX: If no context data available, manually calculate host availability
-            if similar_count == 0 and host_count == 0:
-                # This indicates we're in a greenfield scenario without context data
-                # In this case, if the participant is a host, we have at least 1 host available
-                # If not, we need to assume no hosts are available for this specific check
-                if is_participant_host:
-                    effective_host_count = 1  # This participant can host
-                    # For greenfield, assume other compatible participants exist if prefs are common
-                    effective_similar_count = 5  # Assume minimum viable circle size
-                else:
-                    effective_host_count = 0  # No hosts available
-                    effective_similar_count = 5  # Still assume participants exist, but no hosts
-            else:
-                # Use context data if available
-                effective_host_count = host_count + (1 if is_participant_host else 0)
-                effective_similar_count = similar_count
-
-            if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
-                print(f"  - Option ({location}, {time}): {effective_similar_count} participants, {effective_host_count} hosts")
-
-            # Check if this option could form a viable circle (min 5 participants, min 1 host)
-            if effective_similar_count >= 4 and effective_host_count >= 1:  # 4 others + this participant = 5 total
-                has_viable_option_with_hosts = True
-                break
-
-    # If compatible options exist but none have sufficient hosts, return specific message
-    if not has_viable_option_with_hosts:
-        if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
-            print(f"  - No viable options with hosts found")
-        return "Insufficient hosts available"
-
-    # 5. Very Limited Options Check - if there are very few compatible options
-    # Only apply this if the participant has at least some preferences
-    if p_id in context.get('participant_compatible_count', {}):
-        option_count = context['participant_compatible_count'][p_id]
-
-        if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
-            print(f"  - Compatible option count: {option_count}")
-
-        if option_count < 2:
-            return "Very limited compatible options"
-
     # Note: Removed waitlist check as waitlisted participants should be treated the same as others
 
     # Get participant locations and times
@@ -875,7 +787,7 @@ def determine_unmatched_reason(participant, context=None):
     participant_locations = [loc for loc in participant_locations if loc]
     participant_times = [time for time in participant_times if time]
 
-    # 6. Location Match Check
+    # 3. Location Match Check
     # Check if any compatible locations have enough participants
     location_matches = []
     for location in participant_locations:
@@ -891,7 +803,7 @@ def determine_unmatched_reason(participant, context=None):
     if not location_matches:
         return "No location with sufficient participants"
 
-    # 7. Time Match at Location Check
+    # 4. Time Match at Location Check
     # Check if any compatible location-time combinations have enough participants
     time_location_matches = []
     for location in location_matches:
@@ -903,7 +815,7 @@ def determine_unmatched_reason(participant, context=None):
     if not time_location_matches:
         return "No time match with sufficient participants"
 
-    # 8. Host Requirement Check
+    # 5. Host Requirement Check
     is_host = False
     host_value = str(participant.get('host', '')).lower()
     if host_value in ['always', 'always host', 'sometimes', 'sometimes host']:
@@ -919,7 +831,7 @@ def determine_unmatched_reason(participant, context=None):
         location_strings = ', '.join(needs_host_locations)
         return f"Host requirement not met at {location_strings}"
 
-    # 9. Circle Capacity Check
+    # 6. Circle Capacity Check
     all_compatible_circles_full = True
     for location, time in time_location_matches:
         # Check if any circles at this location/time are not full
@@ -938,7 +850,7 @@ def determine_unmatched_reason(participant, context=None):
     if all_compatible_circles_full:
         return "All compatible circles at capacity"
 
-    # 10. Host Capacity for New Circles Check
+    # 7. Host Capacity for New Circles Check
     if not is_host:
         # Check if there are enough hosts among similar participants for each location-time pair
         hosts_available = False
@@ -953,7 +865,7 @@ def determine_unmatched_reason(participant, context=None):
         if not hosts_available:
             return "Insufficient hosts for compatible options"
 
-    # 11. Default Reason - per client request, use a simpler message
+    # 8. Default Reason - per client request, use a simpler message
     # This is our default if all other checks pass but participant is still unmatched
     return "Tool unable to find a match"
 
