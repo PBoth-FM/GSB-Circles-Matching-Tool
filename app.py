@@ -135,9 +135,9 @@ def run_optimization():
     # Force the config to use optimize mode regardless of what's in session state
     st.session_state.config['existing_circle_handling'] = 'optimize'
 
-    # Update other config parameters from UI
-    st.session_state.config['optimization_weight_location'] = st.session_state.get('location_weight', 5.0)
-    st.session_state.config['optimization_weight_time'] = st.session_state.get('time_weight', 5.0)
+    # Set fixed optimization weights (no UI configuration needed)
+    st.session_state.config['optimization_weight_location'] = 3.0
+    st.session_state.config['optimization_weight_time'] = 2.0
 
     try:
         with st.spinner("Running matching algorithm..."):
