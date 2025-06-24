@@ -849,6 +849,7 @@ def run_matching_algorithm(data, config):
         print(f"🔍 ABOUT TO CALL optimize_region_v2 for region: {region}")
         print(f"   Region DF shape: {region_df.shape if region_df is not None else 'None'}")
         print(f"   Debug mode: {debug_mode}")
+        print(f"   Existing circle handling: {existing_circle_handling}")
         
         region_results, region_circles, region_unmatched, region_circle_capacity_debug, region_circle_eligibility_logs = optimize_region_v2(
             region, region_df, min_circle_size, enable_host_requirement, existing_circle_handling, debug_mode
@@ -857,6 +858,92 @@ def run_matching_algorithm(data, config):
         print(f"🔍 RETURNED FROM optimize_region_v2 for region: {region}")
         print(f"   Results count: {len(region_results) if region_results is not None else 'None'}")
         print(f"   Circles count: {len(region_circles) if region_circles is not None else 'None'}")
+        
+        # CRITICAL FIX: Apply same-person constraint validation to all results
+        print(f"🔒 POST-PROCESSING: Applying same-person constraint validation to {len(region_results) if region_results else 0} results")
+        
+        # Import constraint validation function
+        from modules.same_person_constraint_test import get_base_encoded_id
+        
+        # Check for same-person violations in the results
+        if region_results:
+            # Convert results to DataFrame for analysis
+            if isinstance(region_results, list):
+                results_df = pd.DataFrame(region_results)
+            else:
+                results_df = region_results.copy()
+            
+            # Only check matched participants
+            matched_results = results_df[results_df.get('proposed_NEW_circles_id', '') != 'UNMATCHED']
+            
+            if not matched_results.empty:
+                violations_found = []
+                
+                # Group by circle and check for duplicate base IDs
+                for circle_id, circle_group in matched_results.groupby('proposed_NEW_circles_id'):
+                    # Extract base IDs
+                    base_ids = circle_group['Encoded ID'].apply(get_base_encoded_id)
+                    base_id_counts = base_ids.value_counts()
+                    
+                    # Find duplicates
+                    duplicates = base_id_counts[base_id_counts > 1]
+                    
+                    for base_id, count in duplicates.items():
+                        duplicate_participants = circle_group[base_ids == base_id]['Encoded ID'].tolist()
+                        
+                        violation = {
+                            'circle_id': circle_id,
+                            'base_encoded_id': base_id,
+                            'duplicate_participants': duplicate_participants,
+                            'count': count
+                        }
+                        violations_found.append(violation)
+                        
+                        print(f"❌ SAME-PERSON VIOLATION DETECTED: Circle {circle_id} contains {count} participants with base ID {base_id}")
+                        print(f"   Participants: {duplicate_participants}")
+                
+                # Store violations for UI display
+                import streamlit as st
+                if violations_found:
+                    st.session_state.same_person_violations = violations_found
+                    print(f"🔒 Found {len(violations_found)} same-person constraint violations in region {region}")
+                    
+                    # CONSTRAINT ENFORCEMENT: Remove duplicate assignments
+                    print(f"🔒 ENFORCING CONSTRAINT: Removing duplicate assignments")
+                    
+                    # For each violation, keep only the first participant and mark others as unmatched
+                    for violation in violations_found:
+                        duplicate_participants = violation['duplicate_participants']
+                        circle_id = violation['circle_id']
+                        
+                        # Keep the first participant, mark others as unmatched
+                        keep_participant = duplicate_participants[0]
+                        remove_participants = duplicate_participants[1:]
+                        
+                        print(f"   Keeping {keep_participant} in circle {circle_id}")
+                        print(f"   Removing {remove_participants} from circle {circle_id}")
+                        
+                        # Update results
+                        for p_id in remove_participants:
+                            if isinstance(region_results, list):
+                                for result in region_results:
+                                    if result.get('Encoded ID') == p_id:
+                                        result['proposed_NEW_circles_id'] = 'UNMATCHED'
+                                        result['unmatched_reason'] = 'Same-person constraint violation - duplicate base ID'
+                                        break
+                            else:
+                                mask = region_results['Encoded ID'] == p_id
+                                region_results.loc[mask, 'proposed_NEW_circles_id'] = 'UNMATCHED'
+                                region_results.loc[mask, 'unmatched_reason'] = 'Same-person constraint violation - duplicate base ID'
+                    
+                    print(f"🔒 Constraint enforcement completed for region {region}")
+                else:
+                    # Clear any previous violations for this region
+                    if hasattr(st, 'session_state') and 'same_person_violations' in st.session_state:
+                        st.session_state.same_person_violations = []
+                    print(f"✅ No same-person constraint violations found in region {region}")
+        else:
+            print(f"⚠️ No results to validate for region {region}")
         
         # CRITICAL FIX: Add extra debug info about the circles returned for this region
         print(f"\n🔍 REGION {region} CIRCLES INSPECTION:")
