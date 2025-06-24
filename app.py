@@ -8,7 +8,6 @@ from modules.data_loader import load_data, validate_data
 from modules.data_processor import process_data, normalize_data
 from modules.optimizer import run_matching_algorithm
 from modules.ui_components import (
-    render_match_tab, 
     render_debug_tab,
     render_demographics_tab,
     render_results_overview,
