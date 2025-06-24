@@ -1,8 +1,8 @@
 {
   "total_continuing_members": 174,
-  "matched_members": 50,
-  "unmatched_members": 124,
-  "matched_to_correct_circle": 50,
+  "matched_members": 41,
+  "unmatched_members": 133,
+  "matched_to_correct_circle": 41,
   "matched_to_wrong_circle": 0,
   "members": [
     {
@@ -165,7 +165,7 @@
     },
     {
       "participant_id": "58854681952",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -185,11 +185,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "71464273815",
@@ -613,7 +611,7 @@
     },
     {
       "participant_id": "55213532236",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -633,11 +631,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "57327068364",
@@ -823,7 +819,7 @@
     },
     {
       "participant_id": "46857376161",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -843,11 +839,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "228482488107",
@@ -1169,7 +1163,7 @@
     },
     {
       "participant_id": "44652432538",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -1189,11 +1183,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "59157395343",
@@ -1805,7 +1797,7 @@
     },
     {
       "participant_id": "57200052207",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -1825,11 +1817,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "53827100730",
@@ -2497,7 +2487,7 @@
     },
     {
       "participant_id": "71454432225",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -2517,11 +2507,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "251821619972",
@@ -2839,7 +2827,7 @@
     },
     {
       "participant_id": "62787093027",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -2859,11 +2847,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "251822504721",
@@ -3643,7 +3629,7 @@
     },
     {
       "participant_id": "58878689467",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -3663,11 +3649,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "50791705849",
@@ -3963,7 +3947,7 @@
     },
     {
       "participant_id": "65101765408",
-      "status": "MATCHED",
+      "status": "UNMATCHED",
       "region": "Virtual-Only Americas",
       "circle_id": "VO-AM-GMT-5-09",
       "circle_id_source": "Current_Circle_ID",
@@ -3983,11 +3967,9 @@
         "column": "Current_Circle_ID"
       },
       "expected_circle": "VO-AM-GMT-5-09",
-      "assigned_circle": "VO-AM-GMT-5-09",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
     },
     {
       "participant_id": "67247888134",
@@ -4630,9 +4612,9 @@
       "unmatched_reason": "Unknown (participant not found in unmatched list)"
     }
   ],
-  "match_rate": 0.28735632183908044,
-  "correct_match_rate": 0.28735632183908044,
+  "match_rate": 0.23563218390804597,
+  "correct_match_rate": 0.23563218390804597,
   "unmatched_reason_frequency": {
-    "Unknown (participant not found in unmatched list)": 124
+    "Unknown (participant not found in unmatched list)": 133
   }
 }
