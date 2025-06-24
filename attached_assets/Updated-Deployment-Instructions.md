@@ -127,7 +127,6 @@ Based on the current `pyproject.toml` and `uv.lock` files:
 - `plotly>=6.0.1` - Interactive data visualization
 - `pulp>=3.1.1` - Linear programming optimization
 - `streamlit>=1.44.1` - Web application framework
-- `openai>=1.76.0` - AI integration capabilities
 
 **Additional Dependencies (automatically installed):**
 - `altair>=5.5.0` - Statistical visualization (Streamlit dependency)
@@ -164,7 +163,7 @@ Based on the current `pyproject.toml` and `uv.lock` files:
 **1. Missing Dependencies**
 If you encounter import errors, ensure all packages are installed:
 ```bash
-pip install --upgrade numpy pandas plotly pulp streamlit openai
+pip install --upgrade numpy pandas plotly pulp streamlit
 ```
 
 **2. File Access Issues**
