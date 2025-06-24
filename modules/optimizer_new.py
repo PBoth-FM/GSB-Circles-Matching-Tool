@@ -3473,15 +3473,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         'constraints_added': same_person_constraints_added,
         'constraints_by_circle': constraints_by_circle
     }
-                
-                elif len(available_vars) == 1 and missing_vars:
-                    if debug_mode:
-                        print(f"  ⚠️ Only 1 variable exists for base ID {base_id} in circle {c_id} - no constraint needed")
-                        print(f"    Available: {[p_id for p_id in participant_list if (p_id, c_id) in x]}")
-                        print(f"    Missing variables: {missing_vars}")
-    
-    # Summary reporting
-    print(f"✅ Added {same_person_constraints_added} same-person constraints across {len(constraints_by_circle)} circles")
     
     if debug_mode and constraints_by_circle:
         print(f"\n🔍 Same-person constraints by circle:")

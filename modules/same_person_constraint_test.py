@@ -31,7 +31,8 @@ def get_base_encoded_id(encoded_id):
 
 def validate_same_person_constraint(results_df):
     """
-    Validate that no circle contains multiple participants with the same base Encoded ID.
+    Enhanced validation that checks for same-person constraint violations and provides
+    detailed debugging information about constraint implementation.
     
     Args:
         results_df: DataFrame with optimization results containing 'Encoded ID' and 'proposed_NEW_circles_id'
@@ -39,6 +40,8 @@ def validate_same_person_constraint(results_df):
     Returns:
         Dictionary with validation results including any violations found
     """
+    print("\n🔒 SAME-PERSON CONSTRAINT VALIDATION")
+    
     if results_df.empty:
         return {
             'valid': True,
@@ -56,8 +59,21 @@ def validate_same_person_constraint(results_df):
             'message': 'No matched participants to validate'
         }
     
+    print(f"🔍 Validating {len(matched_df)} matched participants across {matched_df['proposed_NEW_circles_id'].nunique()} circles")
+    
     # Add base ID column for analysis
     matched_df['base_encoded_id'] = matched_df['Encoded ID'].apply(get_base_encoded_id)
+    
+    # Debug: Show base ID groups in results
+    base_id_groups = matched_df.groupby('base_encoded_id')['Encoded ID'].apply(list).to_dict()
+    duplicate_base_ids = {k: v for k, v in base_id_groups.items() if len(v) > 1}
+    
+    if duplicate_base_ids:
+        print(f"🔍 Found {len(duplicate_base_ids)} base IDs with multiple participants in results:")
+        for base_id, participant_list in duplicate_base_ids.items():
+            print(f"  Base ID {base_id}: {participant_list}")
+    else:
+        print(f"ℹ️ No duplicate base IDs found in results")
     
     violations = []
     
@@ -78,14 +94,69 @@ def validate_same_person_constraint(results_df):
                 'duplicate_participants': duplicate_participants,
                 'count': count
             })
+            
+            print(f"❌ VIOLATION FOUND: Circle {circle_id} contains {count} participants with base ID {base_id}")
+            print(f"   Participants: {duplicate_participants}")
+    
+    # Check constraint implementation effectiveness
+    import streamlit as st
+    if hasattr(st, 'session_state') and 'same_person_constraint_info' in st.session_state:
+        constraint_info = st.session_state.same_person_constraint_info
+        print(f"\n🔍 CONSTRAINT IMPLEMENTATION ANALYSIS:")
+        
+        total_constraints = 0
+        total_regions = len(constraint_info)
+        
+        for region, info in constraint_info.items():
+            region_constraints = info.get('constraints_added', 0)
+            total_constraints += region_constraints
+            duplicate_groups = info.get('duplicate_groups', {})
+            
+            print(f"  Region {region}:")
+            print(f"    - {len(duplicate_groups)} base IDs with duplicates")
+            print(f"    - {region_constraints} constraints added")
+            
+            if violations:
+                # Check if violations occurred in circles that should have had constraints
+                for violation in violations:
+                    circle_id = violation['circle_id']
+                    base_id = violation['base_encoded_id']
+                    
+                    constraints_by_circle = info.get('constraints_by_circle', {})
+                    if circle_id in constraints_by_circle:
+                        circle_constraints = constraints_by_circle[circle_id]
+                        matching_constraints = [c for c in circle_constraints if c['base_id'] == base_id]
+                        
+                        if matching_constraints:
+                            print(f"    ⚠️ CONSTRAINT FAILURE: Circle {circle_id} had constraint for base ID {base_id} but violation occurred!")
+                            print(f"       Constraint participants: {matching_constraints[0]['participants']}")
+                            print(f"       Violation participants: {violation['duplicate_participants']}")
+                        else:
+                            print(f"    ⚠️ NO CONSTRAINT: Circle {circle_id} had no constraint for base ID {base_id}")
+                    else:
+                        print(f"    ⚠️ NO CONSTRAINTS: Circle {circle_id} had no same-person constraints at all")
+        
+        print(f"  Total constraints added across all regions: {total_constraints}")
+    else:
+        print(f"⚠️ No constraint implementation information available for analysis")
     
     # Prepare summary
     is_valid = len(violations) == 0
     
     if is_valid:
         message = f"✅ Validation passed: No same-person violations found across {matched_df['proposed_NEW_circles_id'].nunique()} circles"
+        print(message)
     else:
         message = f"❌ Validation failed: Found {len(violations)} same-person violations"
+        print(message)
+        
+        # Provide actionable debugging information
+        if violations:
+            print(f"\n🔧 DEBUGGING SUGGESTIONS:")
+            print(f"1. Check if optimization variables were created for all participant-circle pairs")
+            print(f"2. Verify constraint names are unique and properly formatted")
+            print(f"3. Ensure constraints are added to the optimization problem correctly")
+            print(f"4. Check if solver status indicates optimal solution was found")
     
     return {
         'valid': is_valid,
