@@ -3391,6 +3391,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             return match.group(1)
         return str(encoded_id)  # Return as-is if no pattern match
     
+    print("\n🔒 SAME-PERSON CONSTRAINT IMPLEMENTATION")
+    
     # Group participants by their base Encoded ID
     base_id_groups = {}
     for p_id in participants:
@@ -3399,26 +3401,103 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             base_id_groups[base_id] = []
         base_id_groups[base_id].append(p_id)
     
+    # Debug: Show groups with multiple participants
+    duplicate_groups = {k: v for k, v in base_id_groups.items() if len(v) > 1}
+    if duplicate_groups:
+        print(f"🔍 Found {len(duplicate_groups)} base IDs with multiple participants:")
+        for base_id, participant_list in duplicate_groups.items():
+            print(f"  Base ID {base_id}: {participant_list}")
+    else:
+        print(f"ℹ️ No duplicate base IDs found among {len(participants)} participants")
+    
     # Add constraints to prevent multiple participants with same base ID in same circle
     same_person_constraints_added = 0
+    constraints_by_circle = {}
+    
     for base_id, participant_list in base_id_groups.items():
         if len(participant_list) > 1:  # Only add constraints if there are multiple variants of the same person
             if debug_mode:
-                print(f"🔒 Adding same-person constraint for base ID {base_id}: {participant_list}")
+                print(f"🔒 Processing same-person constraint for base ID {base_id}: {participant_list}")
             
             # For each circle, ensure at most one participant from this group can be assigned
             for c_id in all_circle_ids:
                 # Get variables for all participants in this group for this circle
-                group_vars = [x[(p_id, c_id)] for p_id in participant_list if (p_id, c_id) in x]
+                available_vars = []
+                missing_vars = []
                 
-                if len(group_vars) > 1:  # Only add constraint if multiple variables exist
-                    prob += pulp.lpSum(group_vars) <= 1, f"same_person_{base_id}_{c_id}"
+                for p_id in participant_list:
+                    if (p_id, c_id) in x:
+                        available_vars.append(x[(p_id, c_id)])
+                    else:
+                        missing_vars.append(p_id)
+                
+                # Only add constraint if we have multiple variables for this circle
+                if len(available_vars) > 1:
+                    constraint_name = f"same_person_{base_id}_{c_id}"
+                    prob += pulp.lpSum(available_vars) <= 1, constraint_name
                     same_person_constraints_added += 1
+                    
+                    # Track constraints by circle for debugging
+                    if c_id not in constraints_by_circle:
+                        constraints_by_circle[c_id] = []
+                    constraints_by_circle[c_id].append({
+                        'base_id': base_id,
+                        'participants': [p_id for p_id in participant_list if (p_id, c_id) in x],
+                        'constraint_name': constraint_name
+                    })
+                    
+                    if debug_mode:
+                        print(f"  ✅ Added constraint {constraint_name}: max 1 of {[p_id for p_id in participant_list if (p_id, c_id) in x]} in circle {c_id}")
+                
+                elif len(available_vars) == 1 and missing_vars:
+                    if debug_mode:
+                        print(f"  ⚠️ Only 1 variable exists for base ID {base_id} in circle {c_id} - no constraint needed")
+                        print(f"    Available: {[p_id for p_id in participant_list if (p_id, c_id) in x]}")
+                        print(f"    Missing variables: {missing_vars}")
     
-    if debug_mode and same_person_constraints_added > 0:
-        print(f"✅ Added {same_person_constraints_added} same-person constraints to prevent duplicate base IDs in same circles")
-    elif debug_mode:
-        print(f"ℹ️ No same-person constraints needed (no participants with duplicate base Encoded IDs found)")
+    # Summary reporting
+    print(f"✅ Added {same_person_constraints_added} same-person constraints across {len(constraints_by_circle)} circles")
+    
+    if debug_mode and constraints_by_circle:
+        print(f"\n🔍 Same-person constraints by circle:")
+        for c_id, constraints in constraints_by_circle.items():
+            print(f"  Circle {c_id}: {len(constraints)} constraints")
+            for constraint in constraints:
+                print(f"    - Base ID {constraint['base_id']}: {constraint['participants']}")
+    
+    # Store constraint information for post-optimization validation
+    if 'same_person_constraint_info' not in st.session_state:
+        st.session_state.same_person_constraint_info = {}
+    st.session_state.same_person_constraint_info[region] = {
+        'duplicate_groups': duplicate_groups,
+        'constraints_added': same_person_constraints_added,
+        'constraints_by_circle': constraints_by_circle
+    }
+                
+                elif len(available_vars) == 1 and missing_vars:
+                    if debug_mode:
+                        print(f"  ⚠️ Only 1 variable exists for base ID {base_id} in circle {c_id} - no constraint needed")
+                        print(f"    Available: {[p_id for p_id in participant_list if (p_id, c_id) in x]}")
+                        print(f"    Missing variables: {missing_vars}")
+    
+    # Summary reporting
+    print(f"✅ Added {same_person_constraints_added} same-person constraints across {len(constraints_by_circle)} circles")
+    
+    if debug_mode and constraints_by_circle:
+        print(f"\n🔍 Same-person constraints by circle:")
+        for c_id, constraints in constraints_by_circle.items():
+            print(f"  Circle {c_id}: {len(constraints)} constraints")
+            for constraint in constraints:
+                print(f"    - Base ID {constraint['base_id']}: {constraint['participants']}")
+    
+    # Store constraint information for post-optimization validation
+    if 'same_person_constraint_info' not in st.session_state:
+        st.session_state.same_person_constraint_info = {}
+    st.session_state.same_person_constraint_info[region] = {
+        'duplicate_groups': duplicate_groups,
+        'constraints_added': same_person_constraints_added,
+        'constraints_by_circle': constraints_by_circle
+    }
 
     # Constraint 7: Host requirement for in-person circles (if enabled)
     if enable_host_requirement:
