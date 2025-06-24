@@ -482,6 +482,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     print(f"  Min circle size: {min_circle_size}")
     print(f"  Existing circle handling: {existing_circle_handling}")
     print(f"  Debug mode: {debug_mode}")
+    print(f"🔒 SAME-PERSON CONSTRAINT: Will be implemented in this function")
     
     # Import or define is_time_compatible here to ensure it's available in this scope
     # This fixes the "cannot access local variable" error in optimize mode
@@ -3391,7 +3392,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             return match.group(1)
         return str(encoded_id)  # Return as-is if no pattern match
     
-    print("\n🔒 SAME-PERSON CONSTRAINT IMPLEMENTATION")
+    print("\n🔒🔒🔒 SAME-PERSON CONSTRAINT IMPLEMENTATION REACHED! 🔒🔒🔒")
+    print("🔒 This confirms the constraint code is in the active execution path")
     
     # Group participants by their base Encoded ID
     base_id_groups = {}
@@ -3446,8 +3448,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         'constraint_name': constraint_name
                     })
                     
-                    if debug_mode:
-                        print(f"  ✅ Added constraint {constraint_name}: max 1 of {[p_id for p_id in participant_list if (p_id, c_id) in x]} in circle {c_id}")
+                    print(f"  ✅ CONSTRAINT ADDED: {constraint_name}")
+                    print(f"     Max 1 of {[p_id for p_id in participant_list if (p_id, c_id) in x]} in circle {c_id}")
                 
                 elif len(available_vars) == 1 and missing_vars:
                     if debug_mode:
@@ -3456,7 +3458,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"    Missing variables: {missing_vars}")
     
     # Summary reporting
+    print(f"🔒 SAME-PERSON CONSTRAINT SUMMARY:")
     print(f"✅ Added {same_person_constraints_added} same-person constraints across {len(constraints_by_circle)} circles")
+    
+    if same_person_constraints_added == 0:
+        print(f"⚠️ WARNING: No same-person constraints were added!")
+        if not duplicate_groups:
+            print(f"   Reason: No duplicate base IDs found")
+        else:
+            print(f"   Reason: Duplicate base IDs found but no constraints created - check variable availability")
+    
+    print(f"🔒 Same-person constraint implementation completed for region {region}")
     
     if debug_mode and constraints_by_circle:
         print(f"\n🔍 Same-person constraints by circle:")
