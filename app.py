@@ -322,28 +322,71 @@ def run_optimization():
             # Validate same-person constraint (prevent participants with same base ID in same circle)
             print("\n🔒 VALIDATING SAME-PERSON CONSTRAINT")
             try:
-                from modules.same_person_constraint_test import validate_same_person_constraint
+                from modules.same_person_constraint_test import validate_same_person_constraint, get_base_encoded_id
 
                 validation_result = validate_same_person_constraint(results)
                 print(f"  {validation_result['message']}")
 
                 if not validation_result['valid']:
                     print("  ⚠️ Same-person constraint violations found:")
-                    for violation in validation_result['violations']:
+                    violations_found = validation_result['violations']
+                    
+                    for violation in violations_found:
                         print(f"    Circle {violation['circle_id']}: Base ID {violation['base_encoded_id']} appears {violation['count']} times")
                         print(f"      Participants: {violation['duplicate_participants']}")
 
-                    # Store validation results for display in UI
-                    if 'same_person_violations' not in st.session_state:
+                    # CONSTRAINT ENFORCEMENT: Apply fixes to prevent violations
+                    print(f"\n🔒 ENFORCING SAME-PERSON CONSTRAINT: Fixing {len(violations_found)} violations")
+                    
+                    # Convert results to DataFrame if it's not already
+                    if not isinstance(results, pd.DataFrame):
+                        results = pd.DataFrame(results)
+                    
+                    # Track changes made
+                    participants_unmatched = 0
+                    
+                    # For each violation, keep only the first participant and mark others as unmatched
+                    for violation in violations_found:
+                        duplicate_participants = violation['duplicate_participants']
+                        circle_id = violation['circle_id']
+                        
+                        # Keep the first participant, mark others as unmatched
+                        keep_participant = duplicate_participants[0]
+                        remove_participants = duplicate_participants[1:]
+                        
+                        print(f"  ✓ Keeping {keep_participant} in circle {circle_id}")
+                        print(f"  ✗ Removing {len(remove_participants)} participants from circle {circle_id}: {remove_participants}")
+                        
+                        # Update results DataFrame
+                        for p_id in remove_participants:
+                            mask = results['Encoded ID'] == p_id
+                            if mask.any():
+                                results.loc[mask, 'proposed_NEW_circles_id'] = 'UNMATCHED'
+                                results.loc[mask, 'unmatched_reason'] = 'Same-person constraint violation - duplicate base ID'
+                                participants_unmatched += 1
+                    
+                    print(f"  🔒 Constraint enforcement completed: {participants_unmatched} participants marked as unmatched")
+                    
+                    # Re-validate to confirm fixes
+                    print(f"  🔍 Re-validating constraint after enforcement...")
+                    re_validation = validate_same_person_constraint(results)
+                    if re_validation['valid']:
+                        print(f"  ✅ Constraint enforcement successful - no violations remaining")
                         st.session_state.same_person_violations = []
-                    st.session_state.same_person_violations = validation_result['violations']
+                    else:
+                        print(f"  ⚠️ Some violations still exist after enforcement")
+                        st.session_state.same_person_violations = re_validation['violations']
+                
                 else:
+                    print("  ✅ No same-person constraint violations found")
                     # Clear any previous violations
                     if 'same_person_violations' in st.session_state:
                         st.session_state.same_person_violations = []
 
             except Exception as e:
                 print(f"  ⚠️ Error validating same-person constraint: {str(e)}")
+                import traceback
+                print(f"  Traceback: {traceback.format_exc()}")
 
             # Store results in session state
             st.session_state.results = results
