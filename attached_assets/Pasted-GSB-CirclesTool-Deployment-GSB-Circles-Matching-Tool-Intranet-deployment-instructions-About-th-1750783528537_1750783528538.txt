@@ -1,0 +1,78 @@
+GSB CirclesTool: Deployment
+GSB Circles Matching Tool
+Intranet deployment instructions
+
+About the Tool
+The Circles Matching Tool automates the first-round matching for GSB Women's circles. It does so using a mathematical algorithm that optimizes for matching as many participants to circles as possible based on location and day/time compatibility, taking into account minimum and maximum circle sizes and hosting requirements. Within those parameters, it also looks for matches that allow for better circle diversity across specified demographic and employment categories. The tool is built in the Python programming language and uses the standard PuLP code library for the mathematical optimization.
+
+Intranet Deployment Instructions
+On the server/machine where you want to host the application:
+
+ a. Install Python 3.11 or later
+ b. Install the required packages:
+pip install numpy==2.2.4 pandas==2.2.3 plotly==6.0.1 pulp==3.1.1 streamlit==1.44.1
+Copy all the code files maintaining the same directory structure:
+app.py
+modules/ (all Python files)
+utils/ (all Python files)
+.streamlit/config.toml
+debug_data/ (all JSON files)
+attached_assets/Appendix1-SubregionNormalization.csv
+attached_assets/Appendix2-RegionNormalizationCodes.csv
+pyproject.toml
+debug_null_id.py
+
+
+Run the application:
+streamlit run app.py --server.port 5000  
+
+
+The application will be accessible at:
+Within the intranet: http://<server-ip>:5000
+On the host machine: http://localhost:5000
+Important notes:
+The server IP address must be accessible to users within the intranet
+The port 5000 must be allowed through any firewalls
+Users need network access to reach the server
+Since the application is already configured with:
+[server]
+headless = true
+address = "0.0.0.0"
+port = 5000
+No additional configuration is needed for intranet access.
+
+Appendix
+1. FAQ
+Q: Is it AI?
+A: The application does NOT use generative AI. It is not probabilistic, it is not arbitrary. It is deterministic and results can be both explained and replicated. 
+
+Q: Was there any generative AI involved?
+Replit, a popular AI coding tool, was used in developing the Python code.
+
+Q: How does it work?
+A: While there are many granular details, fundamentally it is a systematic comparison of all viable circle match combinations, selecting for the scenario with the highest number of "points." The scoring system assigns 100 "points" given for each successful match + 30, 20 or 10 points given for 1st, 2nd or 3rd preference location and day/time + 1 point for each additional category of diversity in a circle. Thus, it will always prioritize additional matches, but within the maximized number of matches it will seek to prioritize for location and time preferences and all things being equal it will then seek to improve circle diversity.
+
+2. What do the files do?
+Modules folder:
+circle_reconstruction.py - Handles rebuilding circle data structures after matching, ensuring all assignments appear correctly in the UI
+data_loader.py - Manages loading and initial processing of participant data from uploaded files
+data_processor.py - Processes raw participant data, standardizing formats and calculating derived fields
+diagnostic_tools.py - Contains debugging utilities for troubleshooting matching issues
+optimizer.py - Main circle matching algorithm implementation
+optimizer_fixes.py - Contains fixes for specific matching scenarios, especially for continuing members
+optimizer_new.py - Updated version of the matching algorithm with improved region-based processing
+ui_components.py - Core UI components for the Streamlit interface
+ui_components_add.py - Additional UI components, particularly for demographic analysis
+
+
+Utils folder:
+circle_metadata_manager.py - Central manager for circle metadata like member counts and host status
+data_standardization.py - Standardizes data formats across the application
+debug_snapshot.py - Captures and manages debug state snapshots for troubleshooting
+feature_flags.py - Manages feature flags for enabling/disabling functionality
+helpers.py - General utility functions used across the application
+metadata_manager.py - Manages participant and circle metadata
+normalization.py - Normalizes region names and other data fields
+region_mapper.py - Maps circles to regions and handles region code conversions
+validators.py - Validates data formats and required fields
+
