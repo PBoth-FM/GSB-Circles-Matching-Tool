@@ -47,123 +47,6 @@ def load_subregion_normalization_table():
     return {}
 
 def normalize_subregion(subregion):
-
-def renumber_virtual_circles_by_gmt_offset(circles_df):
-    """
-    Renumber virtual circles when collapsing different GMT offsets into sequential numbers.
-    For example: VO-AE-GMT+3-NEW-01 and VO-AE-GMT+2-NEW-01 become V-AE-NEW-01 and V-AE-NEW-02
-    
-    Args:
-        circles_df: DataFrame containing circle information
-        
-    Returns:
-        DataFrame: Updated DataFrame with renumbered virtual circle IDs
-    """
-    print("\n🔄 RENUMBERING VIRTUAL CIRCLES: Handling GMT offset removal")
-    
-    if circles_df is None or circles_df.empty:
-        print("  ⚠️ No circles to renumber")
-        return circles_df
-    
-    # Create a mapping of old IDs to new IDs
-    circle_id_mapping = {}
-    
-    # Group virtual circles by region code, separating NEW and continuing
-    virtual_circles = {}
-    
-    for _, row in circles_df.iterrows():
-        circle_id = row['circle_id']
-        
-        if not isinstance(circle_id, str):
-            continue
-            
-        # Only process virtual circles (VO- or V- prefix)
-        if not (circle_id.startswith('VO-') or circle_id.startswith('V-')):
-            continue
-            
-        parts = circle_id.split('-')
-        
-        # Extract region code and determine if it's NEW
-        if circle_id.startswith('VO-') and 'GMT' in circle_id:
-            # Old format: VO-AM-GMT-5-NEW-01 or VO-AE-GMT+3-01
-            region_code = parts[1]  # AM, AE, etc.
-            is_new = 'NEW' in parts
-            
-            # Create grouping key
-            group_key = f"V-{region_code}-{'NEW' if is_new else 'CONTINUING'}"
-            
-            if group_key not in virtual_circles:
-                virtual_circles[group_key] = []
-            
-            # Store original GMT offset for sorting
-            gmt_part = None
-            for i, part in enumerate(parts):
-                if part.startswith('GMT'):
-                    if i + 1 < len(parts) and (parts[i + 1].startswith('+') or parts[i + 1].startswith('-')):
-                        gmt_part = parts[i + 1]
-                    break
-            
-            virtual_circles[group_key].append({
-                'circle_id': circle_id,
-                'gmt_offset': gmt_part,
-                'row_data': row
-            })
-    
-    # Renumber each group
-    for group_key, circles in virtual_circles.items():
-        if len(circles) <= 1:
-            # No renumbering needed for single circles
-            continue
-            
-        print(f"  📊 Processing group: {group_key} with {len(circles)} circles")
-        
-        # Sort by GMT offset first for consistent numbering
-        def sort_key(circle_info):
-            gmt_offset = circle_info['gmt_offset']
-            if gmt_offset is None:
-                return 0
-            try:
-                # Convert +3, -5 etc. to numbers for sorting
-                return int(gmt_offset)
-            except:
-                return 0
-        
-        sorted_circles = sorted(circles, key=sort_key)
-        
-        # Extract region and NEW status from group key
-        group_parts = group_key.split('-')
-        region_code = group_parts[1]
-        is_new_group = 'NEW' in group_key
-        
-        # Assign new sequential numbers
-        for idx, circle_info in enumerate(sorted_circles, start=1):
-            old_id = circle_info['circle_id']
-            
-            if is_new_group:
-                new_id = f"V-{region_code}-NEW-{str(idx).zfill(2)}"
-            else:
-                new_id = f"V-{region_code}-{str(idx).zfill(2)}"
-            
-            if old_id != new_id:
-                circle_id_mapping[old_id] = new_id
-                print(f"    🔄 Renumbering: {old_id} → {new_id}")
-    
-    # Apply the mapping to the dataframe
-    if circle_id_mapping:
-        print(f"  🔄 Applying {len(circle_id_mapping)} circle ID changes")
-        
-        updated_df = circles_df.copy()
-        
-        # Update circle IDs in the DataFrame
-        for old_id, new_id in circle_id_mapping.items():
-            updated_df.loc[updated_df['circle_id'] == old_id, 'circle_id'] = new_id
-        
-        return updated_df
-    else:
-        print("  ✅ No virtual circles needed renumbering")
-        return circles_df
-
-
     """
     Normalize a subregion value using the subregion normalization table.
     
@@ -312,9 +195,18 @@ def renumber_circles_sequentially(circles_df):
         
         # Extract the region code differently based on circle type
         if is_virtual:
-            # Handle new virtual circle format: V-AM-NEW-XX or V-AM-XX
-            if len(parts) >= 3:
-                region_code = parts[1]  # e.g., AM, AE, etc.
+            # Handle virtual circle format: VO-AM-GMT-5-NEW-XX or VO-AM-GMT-5-XX
+            if len(parts) >= 5 and 'GMT' in parts[2]:
+                # Format: VO-AM-GMT-5-NEW-XX or VO-AM-GMT-5-XX
+                # Region code is "AM-GMT-5"
+                region_code = f"{parts[1]}-{parts[2]}-{parts[3]}"
+                
+                # Check if this is a NEW circle
+                is_new = 'NEW' in parts
+            elif len(parts) >= 4:
+                # Alternate format: VO-AM-GMT+1-NEW-XX
+                # Region code is "AM-GMT+1"
+                region_code = f"{parts[1]}-{parts[2]}"
                 
                 # Check if this is a NEW circle
                 is_new = 'NEW' in parts
@@ -376,26 +268,13 @@ def renumber_circles_sequentially(circles_df):
                     print(f"    🔍 Found continuing circle with non-standard ID format: {old_id}")
             
             if is_continuing_circle:
-                # For virtual circles, update to new format
-                if format_prefix in ['VO', 'V']:
-                    # Convert VO- circles to V- format and remove GMT offset
-                    new_id = f"V-{region_code}-{str(idx).zfill(2)}"
-                    if old_id != new_id:
-                        circle_id_mapping[old_id] = new_id
-                        print(f"    🔄 Converting to new format: {old_id} → {new_id}")
-                    else:
-                        print(f"    ✅ Already in correct format: {old_id}")
-                else:
-                    # Preserve the original ID format for in-person circles
-                    new_id = old_id
-                    print(f"    ✅ Preserving original ID format for continuing circle: {old_id}")
+                # Preserve the original ID format for existing circles
+                new_id = old_id
+                print(f"    ✅ Preserving original ID format for continuing circle: {old_id}")
             else:
                 # Create a new ID with sequential numbering
-                # Format: IP-NYC-01 or V-AM-01
-                if format_prefix in ['VO', 'V']:
-                    new_id = f"V-{region_code}-{str(idx).zfill(2)}"
-                else:
-                    new_id = f"{format_prefix}-{region_code}-{str(idx).zfill(2)}"
+                # Format: IP-NYC-01 or VO-AM-GMT-5-01
+                new_id = f"{format_prefix}-{region_code}-{str(idx).zfill(2)}"
                 
                 # Only update if the IDs are different
                 if old_id != new_id:
@@ -407,11 +286,8 @@ def renumber_circles_sequentially(circles_df):
             old_id = circle_info['circle_id']
             
             # Create a new ID with sequential numbering
-            # Format: IP-NYC-NEW-01 or V-AM-NEW-01
-            if format_prefix in ['VO', 'V']:
-                new_id = f"V-{region_code}-NEW-{str(idx).zfill(2)}"
-            else:
-                new_id = f"{format_prefix}-{region_code}-NEW-{str(idx).zfill(2)}"
+            # Format: IP-NYC-NEW-01 or VO-AM-GMT-5-NEW-01
+            new_id = f"{format_prefix}-{region_code}-NEW-{str(idx).zfill(2)}"
             
             # Only update if the IDs are different
             if old_id != new_id:
@@ -451,56 +327,29 @@ def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
     if not isinstance(circle_id, str):
         return circle_id
         
-    # Check if this is an old virtual circle format that needs updating
-    if circle_id.startswith('VO-') or circle_id.startswith('V-VIR-'):
-        print(f"🔧 UPDATING VIRTUAL CIRCLE ID FORMAT: {circle_id}")
+    # Check if this is a virtual circle with old format (V-VIR-NEW-XX)
+    if circle_id.startswith('V-VIR-NEW-'):
+        print(f"🔧 FIXING VIRTUAL CIRCLE ID FORMAT: {circle_id}")
         
-        # Extract the parts
+        # Extract the index number
         parts = circle_id.split('-')
-        
-        # Handle different old formats
-        if circle_id.startswith('VO-') and 'GMT' in circle_id:
-            # Old format: VO-AM-GMT-5-NEW-01 or VO-AE-GMT+3-01
-            region_code = parts[1]  # AM, AE, etc.
+        if len(parts) >= 3:
+            index_str = parts[-1]
             
-            # Find NEW and number parts
-            is_new = 'NEW' in parts
-            if is_new:
-                new_idx = parts.index('NEW')
-                number_part = parts[new_idx + 1] if new_idx + 1 < len(parts) else '01'
-                new_id = f"V-{region_code}-NEW-{number_part}"
-            else:
-                # Find the number (last part that's numeric)
-                number_part = next((p for p in reversed(parts) if p.isdigit()), '01')
-                new_id = f"V-{region_code}-{number_part}"
+            # Determine the region code based on the provided region/subregion
+            from utils.normalization import get_region_code_with_subregion
             
-            print(f"  ✅ Converted {circle_id} to {new_id}")
-            return new_id
-            
-        elif circle_id.startswith('V-VIR-'):
-            # Old format: V-VIR-NEW-XX
-            if len(parts) >= 3:
-                index_str = parts[-1]
+            if region and subregion:
+                is_virtual = 'Virtual' in str(region) if region is not None else False
                 
-                # Determine the region code based on the provided region/subregion
-                from utils.normalization import get_region_code_with_subregion
-                
-                if region and subregion:
-                    is_virtual = 'Virtual' in str(region) if region is not None else False
+                if is_virtual:
+                    # Get proper region code with timezone
+                    region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
                     
-                    if is_virtual:
-                        # Get proper region code without timezone
-                        if 'Americas' in str(region):
-                            region_code = 'AM'
-                        elif 'APAC' in str(region) or 'EMEA' in str(region):
-                            region_code = 'AE'
-                        else:
-                            region_code = 'AM'  # Default fallback
-                        
-                        # Create new ID with proper format
-                        new_id = f"V-{region_code}-NEW-{index_str}"
-                        print(f"  ✅ Converted {circle_id} to {new_id}")
-                        return new_id
+                    # Create new ID with proper format
+                    new_id = f"VO-{region_code}-NEW-{index_str}"
+                    print(f"  ✅ Converted {circle_id} to {new_id}")
+                    return new_id
                 else:
                     # If we don't have proper region info, use Americas as default (most common)
                     # This is a fallback and should rarely be used
@@ -1879,9 +1728,6 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             print(f"    {i+1}. {row['circle_id']}: {row['member_count']} members "
                  f"({row.get('new_members', 0)} new, {row.get('continuing_members', 0)} continuing, "
                  f"max_additions={row.get('max_additions', 0)})")
-    
-    # Apply virtual circle renumbering first (for GMT offset removal)
-    circles_df = renumber_virtual_circles_by_gmt_offset(circles_df)
     
     # Apply sequential renumbering to ensure consistent circle IDs
     circles_df = renumber_circles_sequentially(circles_df)
