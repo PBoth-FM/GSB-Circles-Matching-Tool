@@ -188,14 +188,14 @@ def generate_proper_circle_name(group_df: pd.DataFrame) -> str:
         elif 'GMT-7' in str(subregion) or 'Mountain Standard Time' in str(subregion):
             base_name = f"VO-{region_code}-GMT-7-NEW"
         elif 'GMT-8' in str(subregion) or 'Pacific Standard Time' in str(subregion):
-            base_name = f"VO-{region_code}-GMT-8-NEW"
+            base_name = f"V-{region_code}-NEW"
         else:
-            base_name = f"VO-{region_code}-GMT-NEW"
+            base_name = f"V-{region_code}-NEW"
     else:
         # Fallback for unknown regions
-        base_name = "VO-AE-GMT-NEW"
+        base_name = "V-AE-NEW"
     
-    return base_name
+    return base_namen base_name
 
 
 def find_next_available_number(base_name: str, existing_ids: Set[str]) -> str:
