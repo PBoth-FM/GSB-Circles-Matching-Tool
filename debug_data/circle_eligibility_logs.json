@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "timestamp": "2025-06-24 02:31:29",
+    "timestamp": "2025-08-25 22:02:32",
     "region": "all_regions",
     "total_logs": 184,
-    "added_logs": 125,
+    "added_logs": 39,
     "existing_logs": 184,
     "regions_processed": [
       "all_regions"
