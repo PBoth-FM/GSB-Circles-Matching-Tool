@@ -394,7 +394,7 @@ def run_optimization():
             
             # Apply renaming to both results and matched_circles
             renamed_results, renamed_circles, circle_renaming_map = rename_virtual_circles_for_output(
-                results, st.session_state.matched_circles
+                results, matched_circles
             )
             
             # Store the renamed data (this affects both Circle Composition table and CSV download)
