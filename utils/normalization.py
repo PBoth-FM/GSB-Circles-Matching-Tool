@@ -264,14 +264,7 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
                 return 'AE'
             else:
                 print(f"⚠️ Using default fallback code AM for virtual circle")
-                return 'AM-GMT'
-            elif is_apac_emea:
-                print(f"⚠️ Using enhanced fallback code AE-GMT for virtual APAC+EMEA circle")
-                return 'AE-GMT'
-            else:
-                # Generic virtual fallback
-                print(f"⚠️ Using generic virtual fallback VO-GMT")
-                return 'VO-GMT'
+                return 'AM'
         
         # If legacy mapping exists, use it but ensure virtual format
         if region in REGION_CODE_MAPPING:
