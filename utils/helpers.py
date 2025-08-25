@@ -941,3 +941,122 @@ def normalize_string(s):
     s = re.sub(r'\s+', ' ', s)  # Replace multiple spaces with single space
 
     return s
+def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
+    """
+    Rename virtual circles from VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} format
+    to V-{REGION_CODE}-{NUMBER} format for final output only.
+    
+    This function:
+    1. Groups virtual circles by region code
+    2. Preserves distinction between continuing and new circles  
+    3. Numbers sequentially starting from 01 within each group
+    
+    Args:
+        results_df: DataFrame with participant results
+        matched_circles_df: Optional DataFrame with circle metadata
+        
+    Returns:
+        Tuple of (updated_results_df, updated_circles_df, renaming_map)
+    """
+    import re
+    import pandas as pd
+    
+    if results_df is None or results_df.empty:
+        return results_df, matched_circles_df, {}
+    
+    print("\n🔄 RENAMING VIRTUAL CIRCLES FOR OUTPUT")
+    
+    # Create copies to avoid modifying original data
+    updated_results = results_df.copy()
+    updated_circles = matched_circles_df.copy() if matched_circles_df is not None else None
+    
+    # Find all virtual circle IDs in the results
+    if 'proposed_NEW_circles_id' not in updated_results.columns:
+        print("  No circle assignment column found - skipping rename")
+        return updated_results, updated_circles, {}
+    
+    # Extract all virtual circle IDs (starting with VO-)
+    all_circle_ids = updated_results['proposed_NEW_circles_id'].dropna().unique()
+    virtual_circle_ids = [cid for cid in all_circle_ids if str(cid).startswith('VO-')]
+    
+    if not virtual_circle_ids:
+        print("  No virtual circles found - skipping rename")
+        return updated_results, updated_circles, {}
+    
+    print(f"  Found {len(virtual_circle_ids)} virtual circles to rename")
+    
+    # Parse virtual circle IDs and group by region
+    circle_groups = {}
+    renaming_map = {}
+    
+    # Pattern to match: VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} or VO-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER}
+    pattern = r'^VO-([^-]+)-GMT[^-]+-(?:(NEW)-)?(\d+)$'
+    
+    for circle_id in virtual_circle_ids:
+        match = re.match(pattern, circle_id)
+        if not match:
+            print(f"    ⚠️ Could not parse circle ID format: {circle_id}")
+            continue
+            
+        region_code = match.group(1)
+        is_new = match.group(2) == 'NEW'
+        old_number = match.group(3)
+        
+        # Create grouping key
+        group_key = f"{region_code}_{'NEW' if is_new else 'CONTINUING'}"
+        
+        if group_key not in circle_groups:
+            circle_groups[group_key] = []
+            
+        circle_groups[group_key].append({
+            'old_id': circle_id,
+            'region_code': region_code,
+            'is_new': is_new,
+            'old_number': old_number
+        })
+    
+    # Generate new sequential IDs for each group
+    for group_key, circles in circle_groups.items():
+        region_code = circles[0]['region_code']
+        is_new_group = circles[0]['is_new']
+        
+        # Sort by old number to maintain some consistency
+        circles.sort(key=lambda x: int(x['old_number']))
+        
+        print(f"    Processing group {group_key}: {len(circles)} circles")
+        
+        for idx, circle_info in enumerate(circles, start=1):
+            old_id = circle_info['old_id']
+            
+            # Generate new ID: V-{REGION_CODE}-{NUMBER} or V-{REGION_CODE}-NEW-{NUMBER}
+            if is_new_group:
+                new_id = f"V-{region_code}-NEW-{idx:02d}"
+            else:
+                new_id = f"V-{region_code}-{idx:02d}"
+            
+            renaming_map[old_id] = new_id
+            print(f"      {old_id} → {new_id}")
+    
+    # Apply renaming to results DataFrame
+    if renaming_map:
+        print(f"  Applying renaming to {len(updated_results)} participant records")
+        
+        # Update circle assignments in results
+        mask = updated_results['proposed_NEW_circles_id'].isin(renaming_map.keys())
+        updated_results.loc[mask, 'proposed_NEW_circles_id'] = updated_results.loc[mask, 'proposed_NEW_circles_id'].map(renaming_map)
+        
+        renamed_count = mask.sum()
+        print(f"    Updated {renamed_count} participant circle assignments")
+        
+        # Apply renaming to circles DataFrame if provided
+        if updated_circles is not None and not updated_circles.empty:
+            if 'circle_id' in updated_circles.columns:
+                circles_mask = updated_circles['circle_id'].isin(renaming_map.keys())
+                updated_circles.loc[circles_mask, 'circle_id'] = updated_circles.loc[circles_mask, 'circle_id'].map(renaming_map)
+                
+                circles_renamed = circles_mask.sum()
+                print(f"    Updated {circles_renamed} circle metadata records")
+    
+    print(f"  ✅ Successfully renamed {len(renaming_map)} virtual circles")
+    
+    return updated_results, updated_circles, renaming_map

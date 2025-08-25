@@ -388,8 +388,28 @@ def run_optimization():
                 import traceback
                 print(f"  Traceback: {traceback.format_exc()}")
 
-            # Store results in session state
-            st.session_state.results = results
+            # SOLUTION 1: Rename virtual circles for output before storing results
+            print("\n🎯 APPLYING VIRTUAL CIRCLE RENAMING FOR OUTPUT")
+            from utils.helpers import rename_virtual_circles_for_output
+            
+            # Apply renaming to both results and matched_circles
+            renamed_results, renamed_circles, circle_renaming_map = rename_virtual_circles_for_output(
+                results, st.session_state.matched_circles
+            )
+            
+            # Store the renamed data (this affects both Circle Composition table and CSV download)
+            if circle_renaming_map:
+                print(f"  ✅ Applied virtual circle renaming: {len(circle_renaming_map)} circles renamed")
+                st.session_state.results = renamed_results
+                if renamed_circles is not None:
+                    st.session_state.matched_circles = renamed_circles
+                # Store the renaming map for reference if needed
+                st.session_state.circle_renaming_map = circle_renaming_map
+            else:
+                print("  ℹ️ No virtual circles needed renaming")
+                st.session_state.results = results
+            
+            # Store other results in session state
             st.session_state.unmatched_participants = unmatched_participants
             st.session_state.exec_time = time.time() - start_time
 
