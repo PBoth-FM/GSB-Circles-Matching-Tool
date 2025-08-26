@@ -546,7 +546,13 @@ def run_optimization():
                     st.session_state.circle_eligibility_logs = {}
                     st.warning("Unable to load circle data. Please try running the optimization again.")
 
-            st.success(f"Matching completed in {st.session_state.exec_time:.2f} seconds!")
+            # Calculate and store execution time
+            end_time = time.time()
+            st.session_state.exec_time = end_time - start_time
+
+            # Display success message with fallback
+            exec_time_str = f"{st.session_state.exec_time:.2f}" if st.session_state.exec_time is not None else "unknown"
+            st.success(f"Matching completed in {exec_time_str} seconds!")
             st.session_state.active_tab = "Results"
 
     except Exception as e:
