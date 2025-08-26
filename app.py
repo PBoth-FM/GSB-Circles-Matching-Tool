@@ -214,7 +214,7 @@ def run_optimization():
             print(f"Matched circles length: {len(matched_circles)}")
 
             # Calculate total expected participants
-            total_in_circles = sum(circle.get('member_count', 0) if isinstance(circle, dict) else 0 
+            total_in_circles = sum(circle.get('member_count', 0) if isinstance(circle, dict) else 0
                                   for circle in matched_circles)
             print(f"Total participants in all circles (member_count): {total_in_circles}")
 
@@ -330,33 +330,33 @@ def run_optimization():
                 if not validation_result['valid']:
                     print("  ⚠️ Same-person constraint violations found:")
                     violations_found = validation_result['violations']
-                    
+
                     for violation in violations_found:
                         print(f"    Circle {violation['circle_id']}: Base ID {violation['base_encoded_id']} appears {violation['count']} times")
                         print(f"      Participants: {violation['duplicate_participants']}")
 
                     # CONSTRAINT ENFORCEMENT: Apply fixes to prevent violations
                     print(f"\n🔒 ENFORCING SAME-PERSON CONSTRAINT: Fixing {len(violations_found)} violations")
-                    
+
                     # Convert results to DataFrame if it's not already
                     if not isinstance(results, pd.DataFrame):
                         results = pd.DataFrame(results)
-                    
+
                     # Track changes made
                     participants_unmatched = 0
-                    
+
                     # For each violation, keep only the first participant and mark others as unmatched
                     for violation in violations_found:
                         duplicate_participants = violation['duplicate_participants']
                         circle_id = violation['circle_id']
-                        
+
                         # Keep the first participant, mark others as unmatched
                         keep_participant = duplicate_participants[0]
                         remove_participants = duplicate_participants[1:]
-                        
+
                         print(f"  ✓ Keeping {keep_participant} in circle {circle_id}")
                         print(f"  ✗ Removing {len(remove_participants)} participants from circle {circle_id}: {remove_participants}")
-                        
+
                         # Update results DataFrame
                         for p_id in remove_participants:
                             mask = results['Encoded ID'] == p_id
@@ -364,9 +364,9 @@ def run_optimization():
                                 results.loc[mask, 'proposed_NEW_circles_id'] = 'UNMATCHED'
                                 results.loc[mask, 'unmatched_reason'] = 'Same-person constraint violation - duplicate base ID'
                                 participants_unmatched += 1
-                    
+
                     print(f"  🔒 Constraint enforcement completed: {participants_unmatched} participants marked as unmatched")
-                    
+
                     # Re-validate to confirm fixes
                     print(f"  🔍 Re-validating constraint after enforcement...")
                     re_validation = validate_same_person_constraint(results)
@@ -376,7 +376,7 @@ def run_optimization():
                     else:
                         print(f"  ⚠️ Some violations still exist after enforcement")
                         st.session_state.same_person_violations = re_validation['violations']
-                
+
                 else:
                     print("  ✅ No same-person constraint violations found")
                     # Clear any previous violations
@@ -391,27 +391,33 @@ def run_optimization():
             # SOLUTION 1: Rename virtual circles for output before storing results
             print("\n🎯 APPLYING VIRTUAL CIRCLE RENAMING FOR OUTPUT")
             from utils.helpers import rename_virtual_circles_for_output
-            
-            # Apply renaming to both results and matched_circles
+
+            # Store the initial data first
+            st.session_state.results = results
+            st.session_state.matched_circles = matched_circles
+
+            # Apply post-processing to fix any invalid circle IDs
+            from utils.circle_id_postprocessor import has_unknown_circles, fix_unknown_circle_ids
+
+            if has_unknown_circles(results):
+                print("\n🔧 POST-PROCESSING: Applying circle ID corrections")
+                corrected_results = fix_unknown_circle_ids(results)
+
+                # Update session state with corrected data
+                st.session_state.results = corrected_results
+                print("✅ Post-processing completed - invalid circle IDs have been corrected")
+
+            # NOW apply renaming to both results and matched_circles (after post-processing)
             renamed_results, renamed_circles, circle_renaming_map = rename_virtual_circles_for_output(
-                results, matched_circles
+                st.session_state.results, st.session_state.matched_circles
             )
-            
-            # Store the renamed data (this affects both Circle Composition table and CSV download)
-            if circle_renaming_map:
-                print(f"  ✅ Applied virtual circle renaming: {len(circle_renaming_map)} circles renamed")
-                st.session_state.results = renamed_results
-                if renamed_circles is not None:
-                    st.session_state.matched_circles = renamed_circles
-                # Store the renaming map for reference if needed
-                st.session_state.circle_renaming_map = circle_renaming_map
-            else:
-                print("  ℹ️ No virtual circles needed renaming")
-                st.session_state.results = results
-            
-            # Store other results in session state
-            st.session_state.unmatched_participants = unmatched_participants
-            st.session_state.exec_time = time.time() - start_time
+
+            # Store the final renamed data (this affects both Circle Composition table and CSV download)
+            st.session_state.results = renamed_results
+            st.session_state.matched_circles = renamed_circles
+            st.session_state.circle_renaming_map = circle_renaming_map
+
+            print(f"✅ Virtual circle renaming completed - {len(circle_renaming_map)} circles renamed")
 
             # ENHANCED APPROACH: Use CircleMetadataManager for consistent circle data management
             # Note: We already initialized this earlier, so this code is now redundant
@@ -714,7 +720,7 @@ def process_uploaded_file(uploaded_file):
 
             # Only show Debug Mode as a configurable option
             st.session_state.config['debug_mode'] = st.checkbox(
-                "Debug Mode", 
+                "Debug Mode",
                 value=st.session_state.config['debug_mode'],
                 help="Enable to see detailed logs and diagnostic information"
             )
@@ -789,7 +795,7 @@ def process_uploaded_file(uploaded_file):
                         # Group by UNMATCHED, nan/null, and actual circles
                         unmatched_count = circle_values.get('UNMATCHED', 0)
                         null_count = results_df['proposed_NEW_circles_id'].isna().sum()
-                        circle_count = sum(v for k, v in circle_values.items() 
+                        circle_count = sum(v for k, v in circle_values.items()
                                            if k != 'UNMATCHED' and not (isinstance(k, str) and k.strip() == '') and
                                            not (hasattr(pd.isna(k), '__iter__') and pd.isna(k).all() if hasattr(pd.isna(k), '__iter__') else pd.isna(k)))
 
@@ -1054,7 +1060,7 @@ def process_uploaded_file(uploaded_file):
                     if all(col in results_df.columns for col in required_cols):
                         # Filter out unmatched participants
                         matched_results = results_df[
-                            (results_df['proposed_NEW_circles_id'].notna()) & 
+                            (results_df['proposed_NEW_circles_id'].notna()) &
                             (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
                         ].copy()
 
@@ -1129,8 +1135,8 @@ def process_uploaded_file(uploaded_file):
                     results_df = st.session_state.results.copy()
 
                     # Check if we have the required columns
-                    required_cols = ['proposed_NEW_circles_id', 'Derived_Region', 'proposed_NEW_Subregion', 
-                                   'proposed_NEW_DayTime', 'Encoded ID', 'Status', 'co_leader_max_new_members', 
+                    required_cols = ['proposed_NEW_circles_id', 'Derived_Region', 'proposed_NEW_Subregion',
+                                   'proposed_NEW_DayTime', 'Encoded ID', 'Status', 'co_leader_max_new_members',
                                    'host_status_standardized']
 
                     missing_cols = [col for col in required_cols if col not in results_df.columns]
@@ -1140,7 +1146,7 @@ def process_uploaded_file(uploaded_file):
                     else:
                         # Filter out unmatched participants
                         matched_results = results_df[
-                            (results_df['proposed_NEW_circles_id'].notna()) & 
+                            (results_df['proposed_NEW_circles_id'].notna()) &
                             (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
                         ].copy()
 
@@ -1197,7 +1203,7 @@ def process_uploaded_file(uploaded_file):
                                                     max_additions = int(stored_max_additions)
                                                     print(f"✅ Continuing circle {circle_id}: Using max_additions={max_additions} from matched_circles")
 
-                                    # Final fallback for continuing circles: if we still have 0 but there are new members assigned, 
+                                    # Final fallback for continuing circles: if we still have 0 but there are new members assigned,
                                     # set max_additions to at least match the new members count
                                     if max_additions == 0 and new_members > 0:
                                         max_additions = new_members
@@ -1293,7 +1299,7 @@ def process_uploaded_file(uploaded_file):
                             location_cols = []
                             for col in all_columns:
                                 if any(pattern in col.lower() for pattern in [
-                                    "location_choice_1", "meeting_location_1", "location_pref_1", 
+                                    "location_choice_1", "meeting_location_1", "location_pref_1",
                                     "1st_choice_location", "first_choice_location"
                                 ]):
                                     location_cols.append(col)
@@ -1301,7 +1307,7 @@ def process_uploaded_file(uploaded_file):
 
                             for col in all_columns:
                                 if any(pattern in col.lower() for pattern in [
-                                    "location_choice_2", "meeting_location_2", "location_pref_2", 
+                                    "location_choice_2", "meeting_location_2", "location_pref_2",
                                     "2nd_choice_location", "second_choice_location"
                                 ]):
                                     location_cols.append(col)
@@ -1309,7 +1315,7 @@ def process_uploaded_file(uploaded_file):
 
                             for col in all_columns:
                                 if any(pattern in col.lower() for pattern in [
-                                    "location_choice_3", "meeting_location_3", "location_pref_3", 
+                                    "location_choice_3", "meeting_location_3", "location_pref_3",
                                     "3rd_choice_location", "third_choice_location"
                                 ]):
                                     location_cols.append(col)
@@ -1319,7 +1325,7 @@ def process_uploaded_file(uploaded_file):
                             time_cols = []
                             for col in all_columns:
                                 if any(pattern in col.lower() for pattern in [
-                                    "time_choice_1", "meeting_time_1", "time_pref_1", 
+                                    "time_choice_1", "meeting_time_1", "time_pref_1",
                                     "1st_choice_time", "first_choice_time"
                                 ]):
                                     time_cols.append(col)
@@ -1327,7 +1333,7 @@ def process_uploaded_file(uploaded_file):
 
                             for col in all_columns:
                                 if any(pattern in col.lower() for pattern in [
-                                    "time_choice_2", "meeting_time_2", "time_pref_2", 
+                                    "time_choice_2", "meeting_time_2", "time_pref_2",
                                     "2nd_choice_time", "second_choice_time"
                                 ]):
                                     time_cols.append(col)
@@ -1335,7 +1341,7 @@ def process_uploaded_file(uploaded_file):
 
                             for col in all_columns:
                                 if any(pattern in col.lower() for pattern in [
-                                    "time_choice_3", "meeting_time_3", "time_pref_3", 
+                                    "time_choice_3", "meeting_time_3", "time_pref_3",
                                     "3rd_choice_time", "third_choice_time"
                                 ]):
                                     time_cols.append(col)
@@ -1408,7 +1414,7 @@ def match_tab_callback():
     st.subheader("Upload Participant Data")
 
     uploaded_file = st.file_uploader(
-        "Upload CSV with participant data", 
+        "Upload CSV with participant data",
         type=["csv", "xlsx"],
         help="Upload a CSV file with participant data following the required format"
     )
