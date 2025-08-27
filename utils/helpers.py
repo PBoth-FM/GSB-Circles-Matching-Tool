@@ -258,6 +258,17 @@ def generate_download_link(results_df):
         else:
             print(f"  ⚠️ Column not found for removal: '{col_to_remove}'")
 
+    # STEP 1.5: Explicitly remove Gender Identity column to prevent it from appearing anywhere in CSV
+    columns_to_remove_explicit = ['Gender Identity']
+    print(f"  Explicitly removing sensitive columns: {columns_to_remove_explicit}")
+    
+    for col_to_remove in columns_to_remove_explicit:
+        if col_to_remove in output_df.columns:
+            output_df = output_df.drop(columns=[col_to_remove])
+            print(f"  ✅ Explicitly removed column: '{col_to_remove}'")
+        else:
+            print(f"  ⚠️ Column not found for explicit removal: '{col_to_remove}'")
+
     # STEP 2: Define the exact column order as specified
     desired_column_order = [
         'Status',
