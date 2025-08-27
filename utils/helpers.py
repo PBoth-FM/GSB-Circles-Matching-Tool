@@ -302,7 +302,6 @@ def generate_download_link(results_df):
         'Relationship Status',
         'Children',
         'Sexual Orientation',
-        'Gender Identity',
         'Special Needs?',
         'Current_Circle_ID',
         'Current_Region',
