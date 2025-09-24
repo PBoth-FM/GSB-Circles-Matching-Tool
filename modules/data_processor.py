@@ -442,10 +442,12 @@ def standardize_time_preference(time_pref):
         'sun': 'Sunday'
     }
     
-    # Updated time mapping to use PLURAL forms (Evenings, Days) for consistency
+    # Updated time mapping to keep Mornings, Afternoons, and Evenings distinct
     time_mapping = {
-        'morning': 'Days',
-        'afternoon': 'Days',
+        'morning': 'Mornings',
+        'mornings': 'Mornings', 
+        'afternoon': 'Afternoons',
+        'afternoons': 'Afternoons',
         'evening': 'Evenings',  # Singular to plural
         'evenings': 'Evenings',
         'day': 'Days',  # Singular to plural
@@ -666,16 +668,19 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
         # Normal day matching will be done below
         day_match = None
     
-    # Check time period compatibility
+    # Check time period compatibility - now with distinct Mornings, Afternoons, Evenings, Days
     time_period_match = False
     if time_period1.lower() == 'varies' or time_period2.lower() == 'varies':
         time_period_match = True
         if is_important:
             print(f"  ✓ Time periods match: One is 'Varies' which matches any time period")
     else:
+        # Exact match required - Mornings != Afternoons != Evenings != Days
         time_period_match = time_period1.lower() == time_period2.lower()
         if is_important:
             print(f"  {'✓' if time_period_match else '✗'} Time periods {'' if time_period_match else 'do not '}match")
+            if not time_period_match:
+                print(f"    Note: '{time_period1}' and '{time_period2}' are treated as distinct time periods")
     
     if not time_period_match:
         if is_important:
@@ -721,6 +726,18 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
             if is_important:
                 print(f"    Day part 'Varies' expands to all days of the week")
             return all_days
+            
+        # Special case: Weekend expansion
+        if day_part.lower() == 'weekend':
+            if is_important:
+                print(f"    Day part 'Weekend' expands to Saturday and Sunday")
+            return ['Saturday', 'Sunday']
+            
+        # Special case: Monday-Friday expansion
+        if day_part.lower() in ['monday-friday', 'mon-fri', 'm-f', 'm-friday', 'monday-fri']:
+            if is_important:
+                print(f"    Day part '{day_part}' expands to Monday through Friday")
+            return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
             
         # Special case: M-Th format (handle case variations)
         if day_part.lower() in ['m-th', 'm-thu', 'm-thur', 'm-thurs', 'm-thursday']:
