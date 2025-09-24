@@ -1404,6 +1404,10 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
             circle_metadata[circle_id]['is_existing'] = continuing_members > 0
             circle_metadata[circle_id]['is_new_circle'] = continuing_members == 0
             
+            # Get configurable maximum circle size (default to 8 if not set) - moved outside conditional blocks
+            import streamlit as st
+            max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
+            
             # Calculate max_additions for continuing circles
             if continuing_members > 0:  # This is an existing circle
                 # CRITICAL FIX: Handle status values that might be floats
@@ -1431,10 +1435,6 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                 # Set member_count to the actual total of unique members
                 circle_metadata[circle_id]['member_count'] = total_members
                 print(f"  ✅ FIXED: Set member_count to match total unique members ({total_members}) for circle {circle_id}")
-                
-                # Get configurable maximum circle size (default to 8 if not set)
-                import streamlit as st
-                max_circle_size = st.session_state.get('max_circle_size', 8) if 'st' in globals() else 8
                 
                 # CRITICAL CHECK: Enforce configurable member limit for continuing circles
                 # Exception: preserve continuing-only circles that exceed the new limit
