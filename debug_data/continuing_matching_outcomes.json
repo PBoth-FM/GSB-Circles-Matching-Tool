@@ -1,11 +1,4620 @@
 {
-  "total_continuing_members": 0,
-  "matched_members": 0,
-  "unmatched_members": 0,
-  "matched_to_correct_circle": 0,
+  "total_continuing_members": 174,
+  "matched_members": 41,
+  "unmatched_members": 133,
+  "matched_to_correct_circle": 41,
   "matched_to_wrong_circle": 0,
-  "members": [],
-  "match_rate": 0,
-  "correct_match_rate": 0,
-  "unmatched_reason_frequency": {}
+  "members": [
+    {
+      "participant_id": "57197119612",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63625695905",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67037447105",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69065560220",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-08",
+      "assigned_circle": "VO-AM-GMT-5-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "66887009952",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58270737671",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58854681952",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "71464273815",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "54028932853",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-02",
+      "assigned_circle": "VO-AM-GMT-7-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "57254827117",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58997047013",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "50597488532",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "43104598956",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-08",
+      "assigned_circle": "VO-AM-GMT-5-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "50597230066",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65658441526",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64803545349",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-12",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-12",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "246165966370",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66817045194",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64714553517",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65440574570",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64811846084",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67965578629",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70262078862",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "55213532236",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57327068364",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69995113307",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65818392216",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "55353600926",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65442632357",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76101094209",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73843423522",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "46857376161",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "228482488107",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "52736145567",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "374122144330",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64912598119",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57326829780",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-02",
+      "assigned_circle": "VO-AM-GMT-6-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "55354843551",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "51580981485",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67924333420",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-09",
+      "assigned_circle": "VO-AM-GMT-8-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "54930014916",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-11",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-11",
+      "assigned_circle": "VO-AM-GMT-8-11",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "70500503806",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63003488715",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "54971180597",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "44652432538",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59157395343",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "74437557328",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "74449377177",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70607757255",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "41991584714",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "81545760027",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "47684606535",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "50599049269",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69985222012",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-12",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-12",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64565567750",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57065649887",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-09",
+      "assigned_circle": "VO-AM-GMT-8-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "58789130998",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73168230802",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67721288495",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72549860838",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-08",
+      "assigned_circle": "VO-AM-GMT-8-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "228645967852",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68987881246",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "69416338346",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "251675855089",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "28642123985",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-03",
+      "assigned_circle": "VO-AM-GMT-8-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "65820986817",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-09",
+      "assigned_circle": "VO-AM-GMT-8-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "54739088070",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-08",
+      "assigned_circle": "VO-AM-GMT-8-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "50624060825",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57200052207",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "53827100730",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76617469513",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "340709359761",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59873594688",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-02",
+      "assigned_circle": "VO-AM-GMT-6-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "64807611218",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68525008404",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59879917164",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-03",
+      "assigned_circle": "VO-AM-GMT-8-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "30835406815",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "55983482568",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76150172926",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-11",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-11",
+      "assigned_circle": "VO-AM-GMT-8-11",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "53909521561",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76628235616",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63844696135",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "39888546282",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65676623615",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "54830694385",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "60612051932",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-03",
+      "assigned_circle": "VO-AM-GMT-6-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "75398881851",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-11",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-11",
+      "assigned_circle": "VO-AM-GMT-8-11",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "50707714340",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-11",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-11",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-11",
+      "assigned_circle": "VO-AM-GMT-8-11",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "57327247302",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73704010938",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-03",
+      "assigned_circle": "VO-AM-GMT-8-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "53730484151",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "49558962203",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73840182756",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-12",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-12",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "47524138913",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "71454432225",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "251821619972",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "49803272219",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72035165563",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "42195902087",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72038714500",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "100918452774",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "53547758630",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "56449715468",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "43251318175",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-02",
+      "assigned_circle": "VO-AM-GMT-7-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "48084433555",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68705447495",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-12",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-12",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "42214760164",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62787093027",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "251822504721",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65850024478",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72534720695",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58115240549",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62776734505",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-09",
+      "assigned_circle": "VO-AM-GMT-8-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "73843552755",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "42205087571",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-03",
+      "assigned_circle": "VO-AM-GMT-6-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "75026730575",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76150242513",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-02",
+      "assigned_circle": "VO-AM-GMT-7-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "47200430130",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-02",
+      "assigned_circle": "VO-AM-GMT-6-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "78566820085",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-02",
+      "assigned_circle": "VO-AM-GMT-6-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "60616326562",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-08",
+      "assigned_circle": "VO-AM-GMT-5-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "51512010827",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "251820635813",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "59102759607",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65267939164",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "68662373142",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-03",
+      "assigned_circle": "VO-AM-GMT-6-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "66613115520",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72535038807",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "58087932622",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-02",
+      "assigned_circle": "VO-AM-GMT-7-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "251827912625",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75036035351",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "74442040719",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "45948251829",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-03",
+      "assigned_circle": "VO-AM-GMT-8-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "67259886921",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "64110031366",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-08",
+      "assigned_circle": "VO-AM-GMT-8-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "65335547905",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "45759362888",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72423570374",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-08",
+      "assigned_circle": "VO-AM-GMT-5-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "58878689467",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "50791705849",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63622087322",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-12",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-12",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67027317226",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-08",
+      "assigned_circle": "VO-AM-GMT-8-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "66743780024",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-03",
+      "assigned_circle": "VO-AM-GMT-6-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "73695441796",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65280713349",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73840113169",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-08",
+      "assigned_circle": "VO-AM-GMT-8-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "55700849997",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "251766069664",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-10",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-10",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-10",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66424067523",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66739684332",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "65101765408",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-09",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67247888134",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-08",
+      "assigned_circle": "VO-AM-GMT-5-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "62728172720",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73828611432",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-03",
+      "assigned_circle": "VO-AM-GMT-8-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "68665256032",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-04",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-04",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-04",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "45671126572",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-08",
+      "assigned_circle": "VO-AM-GMT-8-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "54770660686",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-07",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-07",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-07",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "47681753468",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66296176558",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-6-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-6-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-6-03",
+      "assigned_circle": "VO-AM-GMT-6-03",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "29899064025",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-09",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-09",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-09",
+      "assigned_circle": "VO-AM-GMT-8-09",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "54626635478",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-08",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-08",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-08",
+      "assigned_circle": "VO-AM-GMT-5-08",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "66303284373",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "82051538225",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "71283148795",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-02",
+      "assigned_circle": "VO-AM-GMT-7-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "48175075593",
+      "status": "MATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-7-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-7-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-7-02",
+      "assigned_circle": "VO-AM-GMT-7-02",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "54775999003",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "62778603413",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67850998663",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "72063567000",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76204729134",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63255532829",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66345185688",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-8-12",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-8-12",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-8-12",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67020477818",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-06",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-06",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-06",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "60727596175",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-05",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-05",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-05",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "240486881831",
+      "status": "UNMATCHED",
+      "region": "Virtual-Only Americas",
+      "circle_id": "VO-AM-GMT-5-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "VO-AM-GMT-5-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "VO-AM-GMT-5-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    }
+  ],
+  "match_rate": 0.23563218390804597,
+  "correct_match_rate": 0.23563218390804597,
+  "unmatched_reason_frequency": {
+    "Unknown (participant not found in unmatched list)": 133
+  }
 }
