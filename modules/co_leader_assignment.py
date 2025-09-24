@@ -7,6 +7,7 @@ after the optimization algorithm has completed circle assignments.
 
 import pandas as pd
 import numpy as np
+import re
 from typing import List, Dict, Any
 
 
@@ -33,15 +34,22 @@ def find_co_leader_columns(df: pd.DataFrame) -> Dict[str, str]:
             column_map['current_co_leader'] = col
             break
     
-    # Map for Co-Leader Response about 2025
-    co_leader_response_variations = [
-        'Co-Leader Response:  CL in 2025?', 'Co-Leader Response: CL in 2025?',
-        'Co-Leader Response CL in 2025', 'CL Response 2025'
-    ]
-    for col in co_leader_response_variations:
-        if col in df.columns:
-            column_map['co_leader_response_2025'] = col
-            break
+    # Map for Co-Leader Response about coming year (pattern-based matching)
+    co_leader_response_pattern = r'co-leader\s+response:?\s*cl\s+in\s+(20\d{2})\??'
+    matched_column = None
+    matched_year = None
+    
+    for col in df.columns:
+        match = re.search(co_leader_response_pattern, col.lower())
+        if match:
+            year = int(match.group(1))
+            # If this is the first match or this year is more recent
+            if matched_column is None or year > matched_year:
+                matched_column = col
+                matched_year = year
+    
+    if matched_column:
+        column_map['co_leader_response_coming_year'] = matched_column
     
     # Map for Non-CLs Volunteering to Co-Lead
     volunteering_variations = [
@@ -62,7 +70,7 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
     
     Business Rules:
     1. For CURRENT-CONTINUING participants who are current co-leaders:
-       - If "Co-Leader Response: CL in 2025?" is "No" → proposed_NEW_Coleader = "No"
+       - If "Co-Leader Response: CL in YYYY?" is "No" → proposed_NEW_Coleader = "No"
        - Otherwise → proposed_NEW_Coleader = "Yes"
     
     2. For non-CURRENT-CONTINUING participants:
@@ -92,6 +100,12 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
     
     if debug_mode:
         print(f"  Column mapping found: {column_map}")
+        if 'co_leader_response_coming_year' in column_map:
+            detected_col = column_map['co_leader_response_coming_year']
+            # Extract year for logging
+            year_match = re.search(r'(20\d{2})', detected_col)
+            detected_year = year_match.group(1) if year_match else 'unknown'
+            print(f"  Detected co-leader response column: '{detected_col}' (year: {detected_year})")
     
     # Initialize the co-leader column
     df['proposed_NEW_Coleader'] = 'No'
@@ -131,22 +145,22 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
                 is_current_co_leader = co_leader_value == 'yes'
             
             if is_current_co_leader:
-                # Check their 2025 response
-                response_2025_col = column_map.get('co_leader_response_2025')
-                response_2025 = ''
+                # Check their coming year response
+                response_coming_year_col = column_map.get('co_leader_response_coming_year')
+                response_coming_year = ''
                 
-                if response_2025_col and response_2025_col in df.columns:
-                    response_2025 = str(row.get(response_2025_col, '')).strip().lower()
+                if response_coming_year_col and response_coming_year_col in df.columns:
+                    response_coming_year = str(row.get(response_coming_year_col, '')).strip().lower()
                 
                 # If response is "No", set as "No", otherwise set as "Yes"
-                if response_2025 == 'no':
+                if response_coming_year == 'no':
                     df.at[idx, 'proposed_NEW_Coleader'] = 'No'
                     if debug_mode:
-                        print(f"  CURRENT-CONTINUING Co-Leader {participant_id}: Declined 2025 → No")
+                        print(f"  CURRENT-CONTINUING Co-Leader {participant_id}: Declined coming year → No")
                 else:
                     df.at[idx, 'proposed_NEW_Coleader'] = 'Yes'
                     if debug_mode:
-                        print(f"  CURRENT-CONTINUING Co-Leader {participant_id}: Accepts 2025 → Yes")
+                        print(f"  CURRENT-CONTINUING Co-Leader {participant_id}: Accepts coming year → Yes")
             else:
                 # Not a current co-leader, but CURRENT-CONTINUING, so they don't become co-leader
                 df.at[idx, 'proposed_NEW_Coleader'] = 'No'
