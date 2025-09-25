@@ -819,9 +819,16 @@ def run_matching_algorithm(data, config):
         
         # Skip regions with too few participants
         if len(region_df) < min_circle_size:
+            print(f"🔍 DEBUGGING: Region {region} has {len(region_df)} participants (< {min_circle_size}), marking all as unmatched")
+            
             # Mark all as unmatched due to insufficient participants
-            for _, participant in region_df.iterrows():
+            for i, (_, participant) in enumerate(region_df.iterrows()):
                 participant_dict = participant.to_dict()
+                
+                # DEBUGGING: Verify participant_dict structure
+                if debug_mode:
+                    print(f"  Participant {i}: type={type(participant_dict)}, keys={list(participant_dict.keys())[:5]}")
+                
                 participant_dict['proposed_NEW_circles_id'] = "UNMATCHED"
                 
                 # Set scores to 0 for unmatched participants
@@ -837,8 +844,14 @@ def run_matching_algorithm(data, config):
                 }
                 participant_dict['unmatched_reason'] = "Tool unable to find a match"
                 
+                # DEBUGGING: Verify what we're adding to lists
+                if debug_mode and not isinstance(participant_dict, dict):
+                    print(f"  ⚠️ WARNING: Adding non-dict to all_unmatched: {type(participant_dict)}")
+                
                 all_unmatched.append(participant_dict)
                 all_results.append(participant_dict)
+            
+            print(f"  Added {len(region_df)} participants to unmatched list")
             continue
         
         # Store the full dataset globally for accurate region participant counting
@@ -1035,6 +1048,16 @@ def run_matching_algorithm(data, config):
         # Add to overall results
         all_results.extend(region_results)
         all_circles.extend(region_circles)
+        
+        # DEBUGGING: Validate region_unmatched before adding to all_unmatched
+        if debug_mode and region_unmatched:
+            print(f"🔍 DEBUGGING: Adding {len(region_unmatched)} items from region {region} to all_unmatched")
+            for i, item in enumerate(region_unmatched[:3]):  # Check first 3 items
+                if not isinstance(item, dict):
+                    print(f"  ⚠️ WARNING: Region unmatched item {i} is not a dict: {type(item)} = {str(item)[:50]}")
+                else:
+                    print(f"  ✅ Region unmatched item {i}: dict with {len(item)} keys")
+        
         all_unmatched.extend(region_unmatched)
     
     # Deduplicate circles and merge member lists
@@ -1047,7 +1070,38 @@ def run_matching_algorithm(data, config):
     # Convert results to DataFrames
     results_df = pd.DataFrame(all_results)
     circles_df = pd.DataFrame(deduped_circles) if deduped_circles else pd.DataFrame()
-    unmatched_df = pd.DataFrame(all_unmatched) if all_unmatched else pd.DataFrame()
+    
+    # DEFENSIVE FIX: Validate all_unmatched data structure before creating DataFrame
+    if all_unmatched:
+        print(f"\n🔍 DEBUGGING: Validating {len(all_unmatched)} unmatched items before DataFrame creation")
+        
+        # Check for data corruption in all_unmatched
+        valid_unmatched = []
+        invalid_items = []
+        
+        for i, item in enumerate(all_unmatched):
+            if isinstance(item, dict):
+                valid_unmatched.append(item)
+            else:
+                invalid_items.append({
+                    'index': i,
+                    'type': type(item).__name__,
+                    'value': str(item)[:100],  # Truncate long values
+                    'repr': repr(item)[:100]
+                })
+        
+        if invalid_items:
+            print(f"⚠️ WARNING: Found {len(invalid_items)} non-dictionary items in all_unmatched:")
+            for invalid in invalid_items[:5]:  # Show first 5 for debugging
+                print(f"  Index {invalid['index']}: {invalid['type']} = {invalid['value']}")
+            
+            print(f"✅ Using {len(valid_unmatched)} valid dictionary items out of {len(all_unmatched)} total")
+            unmatched_df = pd.DataFrame(valid_unmatched) if valid_unmatched else pd.DataFrame()
+        else:
+            print(f"✅ All {len(all_unmatched)} unmatched items are valid dictionaries")
+            unmatched_df = pd.DataFrame(all_unmatched)
+    else:
+        unmatched_df = pd.DataFrame()
     
     # CRITICAL FIX: Reconstruct circles from results to ensure all circles appear in the UI
     # This ensures circles with post-processed participants are properly represented
