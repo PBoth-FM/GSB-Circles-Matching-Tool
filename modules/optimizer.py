@@ -1051,12 +1051,29 @@ def run_matching_algorithm(data, config):
         
         # DEBUGGING: Validate region_unmatched before adding to all_unmatched
         if debug_mode and region_unmatched:
-            print(f"🔍 DEBUGGING: Adding {len(region_unmatched)} items from region {region} to all_unmatched")
-            for i, item in enumerate(region_unmatched[:3]):  # Check first 3 items
-                if not isinstance(item, dict):
-                    print(f"  ⚠️ WARNING: Region unmatched item {i} is not a dict: {type(item)} = {str(item)[:50]}")
-                else:
-                    print(f"  ✅ Region unmatched item {i}: dict with {len(item)} keys")
+            # Check if region_unmatched is a list/tuple that can be safely accessed
+            try:
+                unmatched_count = len(region_unmatched) if hasattr(region_unmatched, '__len__') else 'unknown'
+                print(f"🔍 DEBUGGING: Adding {unmatched_count} items from region {region} to all_unmatched")
+                print(f"  region_unmatched type: {type(region_unmatched)}")
+                
+                # Safely iterate through first few items
+                items_to_check = []
+                if hasattr(region_unmatched, '__iter__'):
+                    try:
+                        items_to_check = list(region_unmatched)[:3] if isinstance(region_unmatched, (list, tuple)) else list(region_unmatched)[:3]
+                    except:
+                        items_to_check = []
+                
+                for i, item in enumerate(items_to_check):
+                    if not isinstance(item, dict):
+                        print(f"  ⚠️ WARNING: Region unmatched item {i} is not a dict: {type(item)} = {str(item)[:50]}")
+                    else:
+                        print(f"  ✅ Region unmatched item {i}: dict with {len(item)} keys")
+            except Exception as e:
+                print(f"  ⚠️ WARNING: Could not debug region_unmatched structure: {e}")
+                print(f"  region_unmatched type: {type(region_unmatched)}")
+                print(f"  region_unmatched repr: {repr(region_unmatched)[:100]}")
         
         all_unmatched.extend(region_unmatched)
     
