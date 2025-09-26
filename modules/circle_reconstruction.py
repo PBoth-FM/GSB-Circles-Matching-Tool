@@ -351,10 +351,12 @@ def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
                     print(f"  ✅ Converted {circle_id} to {new_id}")
                     return new_id
                 else:
-                    # If we don't have proper region info, use Americas as default (most common)
+                    # If we don't have proper region info, use appropriate defaults
                     # This is a fallback and should rarely be used
-                    if 'APAC' in str(region) or 'EMEA' in str(region):
-                        region_code = 'AE-GMT+1'  # Default for APAC+EMEA
+                    if 'APAC' in str(region):
+                        region_code = 'AP-GMT+8'  # Default for APAC
+                    elif 'EMEA' in str(region):
+                        region_code = 'EM-GMT+1'  # Default for EMEA
                     else:
                         region_code = 'AM-GMT-5'  # Default for Americas
                         
@@ -1007,8 +1009,10 @@ def reconstruct_circles_from_results(results, original_circles=None, use_standar
                     # Update region to include Virtual designation if not already there
                     if 'Americas' in extracted_props['region']:
                         extracted_props['region'] = 'Virtual-Only Americas'
-                    elif 'APAC' in extracted_props['region'] or 'EMEA' in extracted_props['region']:
-                        extracted_props['region'] = 'Virtual-Only APAC+EMEA'
+                    elif 'APAC' in extracted_props['region']:
+                        extracted_props['region'] = 'Virtual APAC'
+                    elif 'EMEA' in extracted_props['region']:
+                        extracted_props['region'] = 'Virtual EMEA'
                     else:
                         # Generic virtual designation as fallback
                         extracted_props['region'] = f"Virtual-Only {extracted_props['region']}"
