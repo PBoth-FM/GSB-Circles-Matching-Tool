@@ -260,13 +260,13 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
                 for pattern, offset in timezone_patterns.items():
                     if pattern in subregion:
                         if is_americas:
-                        region_prefix = 'AM'
-                    elif is_apac:
-                        region_prefix = 'AP'
-                    elif is_emea:
-                        region_prefix = 'EM'
-                    else:
-                        region_prefix = 'VO'
+                            region_prefix = 'AM'
+                        elif is_apac:
+                            region_prefix = 'AP'
+                        elif is_emea:
+                            region_prefix = 'EM'
+                        else:
+                            region_prefix = 'VO'
                         code = f"{region_prefix}-GMT{offset}"
                         print(f"✅ Matched timezone pattern '{pattern}' -> {code}")
                         return code
