@@ -29,8 +29,10 @@ def determine_region_code(region: str, subregion: str) -> str:
     subregion = str(subregion).strip()
     
     # Handle virtual regions
-    if 'Virtual-Only APAC+EMEA' in region or 'APAC+EMEA' in region:
-        return 'AE'
+    if 'Virtual APAC' in region or ('APAC' in region and 'EMEA' not in region):
+        return 'AP'
+    elif 'Virtual EMEA' in region or ('EMEA' in region and 'APAC' not in region):
+        return 'EM'
     elif 'Virtual-Only Americas' in region or 'Americas' in region:
         return 'AM'
     
@@ -168,7 +170,7 @@ def generate_proper_circle_name(group_df: pd.DataFrame) -> str:
         Properly formatted circle ID
     """
     # Extract region and subregion information
-    region = group_df['Derived_Region'].iloc[0] if 'Derived_Region' in group_df.columns else 'Virtual-Only APAC+EMEA'
+    region = group_df['Derived_Region'].iloc[0] if 'Derived_Region' in group_df.columns else 'Virtual EMEA'
     subregion = group_df['proposed_NEW_Subregion'].iloc[0] if 'proposed_NEW_Subregion' in group_df.columns else 'GMT'
     
     # Determine the proper region code

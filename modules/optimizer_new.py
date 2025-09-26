@@ -1830,8 +1830,10 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             if region_code in ['Invalid', 'Unknown', 'UNKNOWN']:
                 print(f"⚠️ WARNING: Invalid region code '{region_code}' for virtual circle, using fallback")
                 # Use enhanced fallback based on region type
-                if 'APAC+EMEA' in region:
-                    region_code = 'AE-GMT'
+                if 'APAC' in region and 'EMEA' not in region:
+                    region_code = 'AP-GMT'
+                elif 'EMEA' in region and 'APAC' not in region:
+                    region_code = 'EM-GMT'
                 elif 'Americas' in region:
                     region_code = 'AM-GMT'
                 else:

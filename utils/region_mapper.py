@@ -109,8 +109,10 @@ def extract_region_code_from_circle_id(circle_id):
         # Map to virtual region
         if region_prefix == 'AM':
             return f'Virtual-Only Americas'
-        elif region_prefix == 'AE':
-            return f'Virtual-Only APAC+EMEA'
+        elif region_prefix == 'EM':
+            return f'Virtual EMEA'
+        elif region_prefix == 'AP':
+            return f'Virtual APAC'
         
         # If we couldn't map it, we'll fall through to the standard pattern
     
@@ -338,8 +340,20 @@ def extract_subregion_from_circle_id(circle_id):
                 return "GMT-7 (Mountain Standard Time: Denver/Phoenix)"
             elif timezone == '-8':
                 return "GMT-8 (Pacific Standard Time: Los Angeles/San Diego/San Francisco/Seattle)"
-        elif region_prefix == 'AE':
-            # APAC+EMEA timezones
+        elif region_prefix == 'EM':
+            # EMEA timezones
+            if timezone == '0':
+                return "GMT (Western European Time / Greenwich Mean Time: London)"
+            elif timezone == '1' or timezone == '+1':
+                return "GMT+1 (Central European Time: Berlin/Madrid/Paris/Rome)"
+            elif timezone == '2' or timezone == '+2':
+                return "GMT+2 (Israel Standard Time: Jerusalem)"
+            elif timezone == '3' or timezone == '+3':
+                return "GMT+3 (Moscow Standard Time/Turkey Time/East Africa Time: Istanbul, Moscow, Nairobi)"
+            elif timezone == '10' or timezone == '+10':
+                return "GMT+10 (Australian Eastern Standard Time: Melbourne/ Sydney)"
+        elif region_prefix == 'AP':
+            # APAC timezones
             if timezone == '0':
                 return "GMT (Western European Time / Greenwich Mean Time: London)"
             elif timezone == '+1':

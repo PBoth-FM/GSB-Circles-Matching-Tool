@@ -99,7 +99,11 @@ def load_normalization_tables():
             'Shanghai': 'Shanghai',
             'Nairobi': 'Nairobi',
             'Virtual-Only Americas': 'Virtual-Only Americas',
-            'Virtual-Only APAC+EMEA': 'Virtual-Only APAC+EMEA'
+            'Virtual EMEA': 'Virtual EMEA',
+            'Virtual APAC': 'Virtual APAC',
+            'Tel Aviv': 'Tel Aviv',
+            'Toronto': 'Toronto',
+            'United Arab Emirates': 'United Arab Emirates'
         }
     
     if not subregion_mapping:
@@ -158,7 +162,11 @@ def load_normalization_tables():
             'Shanghai': 'SHA',
             'Nairobi': 'NBO',
             'Virtual-Only Americas': 'AM',
-            'Virtual-Only APAC+EMEA': 'AE'
+            'Virtual EMEA': 'EM',
+            'Virtual APAC': 'AP',
+            'Tel Aviv': 'TVL',
+            'Toronto': 'TOR',
+            'United Arab Emirates': 'UAE'
         }
     
     return region_mapping, subregion_mapping, region_code_mapping, region_subregion_mapping
@@ -191,11 +199,12 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
         
         # ENHANCED: Check if region starts with "Virtual-Only" and extract region type
         if isinstance(region, str) and region.startswith('Virtual'):
-            # Check if this is Americas or APAC+EMEA
+            # Check if this is Americas, APAC, or EMEA
             is_americas = 'Americas' in region
-            is_apac_emea = 'APAC+EMEA' in region or ('APAC' in region and 'EMEA' in region)
+            is_apac = 'APAC' in region and 'EMEA' not in region
+            is_emea = 'EMEA' in region and 'APAC' not in region
             
-            print(f"🔍 Virtual circle type: Americas={is_americas}, APAC+EMEA={is_apac_emea}")
+            print(f"🔍 Virtual circle type: Americas={is_americas}, APAC={is_apac}, EMEA={is_emea}")
             
             # Try to extract the timezone from the subregion
             if isinstance(subregion, str):
@@ -212,7 +221,14 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
                     else:
                         timezone = timezone_part
                     
-                    region_prefix = 'AM' if is_americas else 'AE' if is_apac_emea else 'VO'
+                    if is_americas:
+                        region_prefix = 'AM'
+                    elif is_apac:
+                        region_prefix = 'AP'
+                    elif is_emea:
+                        region_prefix = 'EM'
+                    else:
+                        region_prefix = 'VO'
                     code = f"{region_prefix}-GMT{timezone}"
                     print(f"✅ Extracted region code {code} from timezone pattern for virtual circle")
                     return code
@@ -243,14 +259,28 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
                 
                 for pattern, offset in timezone_patterns.items():
                     if pattern in subregion:
-                        region_prefix = 'AM' if is_americas else 'AE' if is_apac_emea else 'VO'
+                        if is_americas:
+                        region_prefix = 'AM'
+                    elif is_apac:
+                        region_prefix = 'AP'
+                    elif is_emea:
+                        region_prefix = 'EM'
+                    else:
+                        region_prefix = 'VO'
                         code = f"{region_prefix}-GMT{offset}"
                         print(f"✅ Matched timezone pattern '{pattern}' -> {code}")
                         return code
                 
                 # Last resort: look for any GMT occurrence
                 if 'GMT' in subregion:
-                    region_prefix = 'AM' if is_americas else 'AE' if is_apac_emea else 'VO'
+                    if is_americas:
+                        region_prefix = 'AM'
+                    elif is_apac:
+                        region_prefix = 'AP'
+                    elif is_emea:
+                        region_prefix = 'EM'
+                    else:
+                        region_prefix = 'VO'
                     print(f"🔍 Found GMT in subregion but couldn't extract offset, using base GMT")
                     return f"{region_prefix}-GMT"
             
@@ -259,9 +289,12 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
             if is_americas:
                 print(f"⚠️ Using enhanced fallback code AM-GMT for virtual Americas circle")
                 return 'AM-GMT'
-            elif is_apac_emea:
-                print(f"⚠️ Using enhanced fallback code AE-GMT for virtual APAC+EMEA circle")
-                return 'AE-GMT'
+            elif is_apac:
+                print(f"⚠️ Using enhanced fallback code AP-GMT for virtual APAC circle")
+                return 'AP-GMT'
+            elif is_emea:
+                print(f"⚠️ Using enhanced fallback code EM-GMT for virtual EMEA circle")
+                return 'EM-GMT'
             else:
                 # Generic virtual fallback
                 print(f"⚠️ Using generic virtual fallback VO-GMT")
@@ -290,9 +323,12 @@ def get_region_code_with_subregion(region, subregion, is_virtual=False):
     
     # Check if this might be a virtual circle case that slipped through
     if region and 'Virtual' in str(region):
-        if 'APAC+EMEA' in str(region):
-            print(f"🔧 CRITICAL FIX: Detected virtual APAC+EMEA circle, using AE-GMT fallback")
-            return 'AE-GMT'
+        if 'APAC' in str(region):
+            print(f"🔧 CRITICAL FIX: Detected virtual APAC circle, using AP-GMT fallback")
+            return 'AP-GMT'
+        elif 'EMEA' in str(region):
+            print(f"🔧 CRITICAL FIX: Detected virtual EMEA circle, using EM-GMT fallback")
+            return 'EM-GMT'
         elif 'Americas' in str(region):
             print(f"🔧 CRITICAL FIX: Detected virtual Americas circle, using AM-GMT fallback")
             return 'AM-GMT'

@@ -429,12 +429,14 @@ def generate_circle_id(region, subregion, index, is_new=True):
         # CRITICAL FIX: Never allow UNKNOWN or Invalid region codes for virtual circles
         if region_code in ['UNKNOWN', 'Invalid', 'Unknown']:
             print(f"⚠️ CRITICAL FIX: Invalid region code '{region_code}' for virtual circle, applying fallback")
-            if 'APAC+EMEA' in str(region):
-                region_code = 'AE-GMT'
+            if 'APAC' in str(region):
+                region_code = 'AP-GMT+8'
+            elif 'EMEA' in str(region):
+                region_code = 'EM-GMT+1'
             elif 'Americas' in str(region):
                 region_code = 'AM-GMT-5'
             else:
-                region_code = 'AE-GMT'
+                region_code = 'EM-GMT+1'  # Default to EMEA if unclear
             print(f"✅ Applied fallback region code: {region_code}")
     else:
         # For in-person circles, use the standard region code
