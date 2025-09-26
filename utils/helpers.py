@@ -261,7 +261,7 @@ def generate_download_link(results_df):
     # STEP 1.5: Explicitly remove Gender Identity column to prevent it from appearing anywhere in CSV
     columns_to_remove_explicit = ['Gender Identity']
     print(f"  Explicitly removing sensitive columns: {columns_to_remove_explicit}")
-    
+
     for col_to_remove in columns_to_remove_explicit:
         if col_to_remove in output_df.columns:
             output_df = output_df.drop(columns=[col_to_remove])
@@ -686,101 +686,34 @@ def determine_unmatched_reason(participant, context=None):
             - no_preferences: True if no preferences exist in the region
             - no_location_preferences: True if no location preferences exist in the region
             - no_time_preferences: True if no time preferences exist in the region
-            - insufficient_regional_participants: True if the region has too few participants
+            - insufficient_regional_participants: True if region has too few participants
+            - debug_mode: Boolean for debug output
 
     Returns:
-        Reason code string with the most specific explanation
+        String describing the reason for being unmatched
     """
-    # Initialize default context if none provided
     if context is None:
-        context = {
-            'existing_circles': [],
-            'similar_participants': {},
-            'full_circles': [],
-            'circles_needing_hosts': [],
-            'compatibility_matrix': {},
-            'participant_compatible_options': {}
-        }
+        context = {}
 
-    # Get participant ID
-    p_id = participant.get('Encoded ID', '')
-
-    # Debug logging for problematic IDs
     debug_mode = context.get('debug_mode', False)
-    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
-        print(f"\n🔍 HIERARCHICAL REASON DETERMINATION for {p_id}:")
 
-    # *** REARRANGED PRIORITY ORDER - PREFERENCES FIRST ***
+    # 1. Region-level issues (highest priority)
+    if context.get('insufficient_regional_participants', False):
+        # Per client request, NEVER use this reason
+        # Even in this case, choose a different reason
+        pass
 
-    # 1. No Preferences Check - most fundamental issue (MOVED TO TOP PRIORITY)
-    has_location = bool(participant.get('first_choice_location') or 
-                        participant.get('second_choice_location') or 
-                        participant.get('third_choice_location'))
+    if context.get('no_preferences', False):
+        return "No valid preferences found (both location and time)"
 
-    has_time = bool(participant.get('first_choice_time') or 
-                    participant.get('second_choice_time') or 
-                    participant.get('third_choice_time'))
+    if context.get('no_location_preferences', False):
+        return "No valid location preferences found"
 
-    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A', '55467117205'] and debug_mode:
-        print(f"  - Has location preferences: {has_location}")
-        print(f"  - Has time preferences: {has_time}")
+    if context.get('no_time_preferences', False):
+        return "No valid time preferences found"
 
-    # Per client request: Use "No location and/or time preferences" whenever either is missing
-    # (not just when both are missing)
-    if not has_location or not has_time:
-        return "No location and/or time preferences"
-
-    # 2. No Compatible Options Check
-    has_compatible_options = False
-    compatible_options = []
-    if p_id in context.get('participant_compatible_options', {}):
-        compatible_options = context['participant_compatible_options'][p_id]
-        has_compatible_options = bool(compatible_options)
-
-    # CRITICAL FIX: If context is empty (greenfield scenarios), manually check compatibility
-    if not has_compatible_options and has_location and has_time:
-        if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
-            print(f"  - Context missing compatibility data, performing manual analysis...")
-
-        # Manual compatibility analysis for greenfield scenarios
-        participant_locations = [
-            participant.get('first_choice_location', ''),
-            participant.get('second_choice_location', ''),
-            participant.get('third_choice_location', '')
-        ]
-        participant_times = [
-            participant.get('first_choice_time', ''),
-            participant.get('second_choice_time', ''),
-            participant.get('third_choice_time', '')
-        ]
-
-        # Filter out empty values
-        participant_locations = [loc for loc in participant_locations if loc and str(loc).strip()]
-        participant_times = [time for time in participant_times if time and str(time).strip()]
-
-        # Create compatible options from cross-product of preferences
-        from modules.data_processor import is_time_compatible
-
-        for location in participant_locations:
-            for time in participant_times:
-                # For greenfield, any location-time combination from preferences is potentially viable
-                compatible_options.append((location, time))
-
-        has_compatible_options = bool(compatible_options)
-
-        if debug_mode and p_id in ['66612429591', '71354564939', '65805240273', '76093270642A']:
-            print(f"  - Manual analysis found {len(compatible_options)} compatible options: {compatible_options}")
-
-    if p_id in ['66612429591', '71354564939', '65805240273', '76093270642A'] and debug_mode:
-        print(f"  - Has compatible options: {has_compatible_options}")
-        print(f"  - Compatible options: {compatible_options}")
-
-    if not has_compatible_options:
-        return "No compatible location-time combinations"
-
-    # Note: Removed waitlist check as waitlisted participants should be treated the same as others
-
-    # Get participant locations and times
+    # 2. Basic preference validation
+    # Check if participant has any valid preferences
     participant_locations = [
         participant.get('first_choice_location', ''),
         participant.get('second_choice_location', ''),
@@ -797,6 +730,16 @@ def determine_unmatched_reason(participant, context=None):
     participant_locations = [loc for loc in participant_locations if loc]
     participant_times = [time for time in participant_times if time]
 
+    if not participant_locations:
+        return "No valid location preferences found"
+
+    if not participant_times:
+        return "No valid time preferences found"
+
+    if not participant_locations or not participant_times:
+        return "No valid location and/or time preferences found"
+
+
     # 3. Location Match Check
     # Check if any compatible locations have enough participants
     location_matches = []
@@ -804,11 +747,14 @@ def determine_unmatched_reason(participant, context=None):
         # Check if this location has at least one potential circle
         has_potential = False
         for loc_time_key, count in context.get('similar_participants', {}).items():
-            loc, _ = loc_time_key  # Unpack the tuple
-            if loc == location and count >= 4:  # Need at least 4 others (5 total with this participant)
-                has_potential = True
-                location_matches.append(location)
-                break
+            if isinstance(loc_time_key, tuple) and len(loc_time_key) >= 2:
+                loc, _ = loc_time_key  # Unpack the tuple
+                if loc == location and count >= 4:  # Need at least 4 others (5 total with this participant)
+                    has_potential = True
+                    break
+
+        if has_potential:
+            location_matches.append(location)
 
     if not location_matches:
         return "No location with sufficient participants"
@@ -875,8 +821,26 @@ def determine_unmatched_reason(participant, context=None):
         if not hosts_available:
             return "Insufficient hosts for compatible options"
 
-    # 8. Default Reason - per client request, use a simpler message
-    # This is our default if all other checks pass but participant is still unmatched
+    # 8. Default Reason - per client request, never use "Insufficient participants in region"
+    # Use a more generic fallback instead
+    # But first, double-check location sufficiency one more time to ensure consistency
+    if context.get('similar_participants'):
+        # Re-check location sufficiency with more detailed logging
+        participant_region = participant.get('Derived_Region', participant.get('Current_Region', ''))
+
+        # Count total participants in each of the participant's preferred locations
+        for location in participant_locations:
+            total_at_location = 0
+            for loc_time_key, count in context.get('similar_participants', {}).items():
+                if isinstance(loc_time_key, tuple) and len(loc_time_key) >= 2:
+                    loc, _ = loc_time_key
+                    if loc == location:
+                        total_at_location += count
+
+            # If any location has insufficient participants, use that reason instead of generic fallback
+            if total_at_location < 4:  # Less than minimum needed for a circle
+                return "No location with sufficient participants"
+
     return "Tool unable to find a match"
 
 def is_valid_member_id(member_id):
@@ -932,7 +896,7 @@ def clean_member_list(member_list):
         return [member_id for member_id in member_list if is_valid_member_id(member_id)]
 
     # Handle single values
-    return [member_list] if is_valid_member_id(member_list) else []
+    return [member_id] if is_valid_member_id(member_list) else []
 
 def normalize_string(s):
     """
@@ -955,122 +919,122 @@ def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
     """
     Rename virtual circles from VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} format
     to V-{REGION_CODE}-{NUMBER} format for final output only.
-    
+
     This function:
     1. Groups virtual circles by region code
     2. Preserves distinction between continuing and new circles  
     3. Numbers sequentially starting from 01 within each group
-    
+
     Args:
         results_df: DataFrame with participant results
         matched_circles_df: Optional DataFrame with circle metadata
-        
+
     Returns:
         Tuple of (updated_results_df, updated_circles_df, renaming_map)
     """
     import re
     import pandas as pd
-    
+
     if results_df is None or results_df.empty:
         return results_df, matched_circles_df, {}
-    
+
     print("\n🔄 RENAMING VIRTUAL CIRCLES FOR OUTPUT")
-    
+
     # Create copies to avoid modifying original data
     updated_results = results_df.copy()
     updated_circles = matched_circles_df.copy() if matched_circles_df is not None else None
-    
+
     # Find all virtual circle IDs in the results
     if 'proposed_NEW_circles_id' not in updated_results.columns:
         print("  No circle assignment column found - skipping rename")
         return updated_results, updated_circles, {}
-    
+
     # Extract all virtual circle IDs (starting with VO-)
     all_circle_ids = updated_results['proposed_NEW_circles_id'].dropna().unique()
     virtual_circle_ids = [cid for cid in all_circle_ids if str(cid).startswith('VO-')]
-    
+
     if not virtual_circle_ids:
         print("  No virtual circles found - skipping rename")
         return updated_results, updated_circles, {}
-    
+
     print(f"  Found {len(virtual_circle_ids)} virtual circles to rename")
-    
+
     # Parse virtual circle IDs and group by region
     circle_groups = {}
     renaming_map = {}
-    
+
     # Enhanced pattern to match multiple GMT format variations:
     # - VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} (e.g., VO-AE-GMT+3-NEW-01)
     # - VO-{REGION_CODE}-GMT-{NUMBER} (e.g., VO-AE-GMT-NEW-01)
     # - VO-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER}
     # - VO-{REGION_CODE}-GMT-NEW-{NUMBER}
     pattern = r'^VO-([^-]+)-GMT(?:[+-]?\d+)?-(?:(NEW)-)?(\d+)$'
-    
+
     for circle_id in virtual_circle_ids:
         match = re.match(pattern, circle_id)
         if not match:
             print(f"    ⚠️ Could not parse circle ID format: {circle_id}")
             continue
-            
+
         region_code = match.group(1)
         is_new = match.group(2) == 'NEW'
         old_number = match.group(3)
-        
+
         # Create grouping key
         group_key = f"{region_code}_{'NEW' if is_new else 'CONTINUING'}"
-        
+
         if group_key not in circle_groups:
             circle_groups[group_key] = []
-            
+
         circle_groups[group_key].append({
             'old_id': circle_id,
             'region_code': region_code,
             'is_new': is_new,
             'old_number': old_number
         })
-    
+
     # Generate new sequential IDs for each group
     for group_key, circles in circle_groups.items():
         region_code = circles[0]['region_code']
         is_new_group = circles[0]['is_new']
-        
+
         # Sort by old number to maintain some consistency
         circles.sort(key=lambda x: int(x['old_number']))
-        
+
         print(f"    Processing group {group_key}: {len(circles)} circles")
-        
+
         for idx, circle_info in enumerate(circles, start=1):
             old_id = circle_info['old_id']
-            
+
             # Generate new ID: V-{REGION_CODE}-{NUMBER} or V-{REGION_CODE}-NEW-{NUMBER}
             if is_new_group:
                 new_id = f"V-{region_code}-NEW-{idx:02d}"
             else:
                 new_id = f"V-{region_code}-{idx:02d}"
-            
+
             renaming_map[old_id] = new_id
             print(f"      {old_id} → {new_id}")
-    
+
     # Apply renaming to results DataFrame
     if renaming_map:
         print(f"  Applying renaming to {len(updated_results)} participant records")
-        
+
         # Update circle assignments in results
         mask = updated_results['proposed_NEW_circles_id'].isin(renaming_map.keys())
         updated_results.loc[mask, 'proposed_NEW_circles_id'] = updated_results.loc[mask, 'proposed_NEW_circles_id'].map(renaming_map)
-        
+
         renamed_count = mask.sum()
         print(f"    Updated {renamed_count} participant circle assignments")
-        
+
         # Apply renaming to circles DataFrame if provided
         if updated_circles is not None and not updated_circles.empty:
             if 'circle_id' in updated_circles.columns:
                 circles_mask = updated_circles['circle_id'].isin(renaming_map.keys())
                 updated_circles.loc[circles_mask, 'circle_id'] = updated_circles.loc[circles_mask, 'circle_id'].map(renaming_map)
-                
+
                 circles_renamed = circles_mask.sum()
                 print(f"    Updated {circles_renamed} circle metadata records")
-    
+
     print(f"  ✅ Successfully renamed {len(renaming_map)} virtual circles")
-    
+
     return updated_results, updated_circles, renaming_map
