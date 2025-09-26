@@ -93,6 +93,9 @@ In Person,South Florida,Miami,SFL
 In Person,South Florida,Palm Beach,SFL
 In Person,South Florida,South Florida,SFL
 In Person,South Florida,West Palm Beach,SFL
+In Person,Tel Aviv,Tel Aviv,TVL
+In Person,Toronto,Toronto,TOR
+In Person,United Arab Emirates,United Arab Emirates,UAE
 In Person,Washington DC,Montgomery County MD,WDC
 In Person,Washington DC,n/a Meeting online only,WDC
 In Person,Washington DC,Northern VA,WDC
@@ -100,21 +103,21 @@ In Person,Washington DC,Northwest DC,WDC
 In Person,Washington DC,Varies,WDC
 Virtual,None of these.,Not valid - requested region does not exist,Invalid
 Virtual,Virtual Portland,Not valid - requested region does not exist,Invalid
-Virtual,Virtual-Only Americas,GMT-3 (Brasilia Time: Sao Paulo),AM-GMT-3
-Virtual,Virtual-Only Americas,GMT-4 (Atlantic Standard Time: San Juan),AM-GMT-4
-Virtual,Virtual-Only Americas,GMT-5 (Eastern Standard Time: Boston/Montreal/New York City/Toronto/Washington/D.C.),AM-GMT-5
-Virtual,Virtual-Only Americas,GMT-6 (Central Standard Time: Austin/Chicago/Houston/Mexico City),AM-GMT-6
-Virtual,Virtual-Only Americas,GMT-7 (Mountain Standard Time: Denver/Phoenix),AM-GMT-7
-Virtual,Virtual-Only Americas,GMT-8 (Pacific Standard Time: Los Angeles/San Diego/San Francisco/Seattle),AM-GMT-8
-Virtual,Virtual-Only APAC+EMEA,GMT (Western European Time / Greenwich Mean Time: London),AE-GMT
-Virtual,Virtual-Only APAC+EMEA,GMT+1 (Central European Time: Berlin/Madrid/Paris/Rome),AE-GMT+1
-Virtual,Virtual-Only APAC+EMEA,GMT+10 (Australian Eastern Standard Time: Melbourne/ Sydney),AE-GMT+10
-Virtual,Virtual-Only APAC+EMEA,GMT+12 (New Zealand Standard Time: Auckland),AE-GMT+12
-Virtual,Virtual-Only APAC+EMEA,GMT+2 (Israel Standard Time: Jerusalem),AE-GMT+2
-Virtual,Virtual-Only APAC+EMEA,"GMT+3 (Moscow Standard Time/Turkey Time/East Africa Time: Istanbul, Moscow, Nairobi)",AE-GMT+3
-Virtual,Virtual-Only APAC+EMEA,GMT+4 (UAE Standard Time: Dubai),AE-GMT+4
-Virtual,Virtual-Only APAC+EMEA,GMT+5:30 (Indian Standard Time: Mumbai),AE-GMT+530
-Virtual,Virtual-Only APAC+EMEA,GMT+7 (Indochina Time: Bangkok),AE-GMT+7
-Virtual,Virtual-Only APAC+EMEA,GMT+8 (Hong Kong Time / China Taiwan Time / Singapore Standard Time: Hong Kong/Shanghai/Singapore),AE-GMT+8
-Virtual,Virtual-Only APAC+EMEA,GMT+9 (Japan Standard Time: Tokyo),AE-GMT+9
-Virtual,Virtual-Only APAC+EMEA,Varies,AE-GMT+1
+Virtual,Virtual Americas,GMT-3 (Brasilia Time: Sao Paulo),AM
+Virtual,Virtual Americas,GMT-4 (Atlantic Standard Time: San Juan),AM
+Virtual,Virtual Americas,GMT-5 (Eastern Standard Time: Boston/Montreal/New York City/Toronto/Washington/D.C.),AM
+Virtual,Virtual Americas,GMT-6 (Central Standard Time: Austin/Chicago/Houston/Mexico City),AM
+Virtual,Virtual Americas,GMT-7 (Mountain Standard Time: Denver/Phoenix),AM
+Virtual,Virtual Americas,GMT-8 (Pacific Standard Time: Los Angeles/San Diego/San Francisco/Seattle),AM
+Virtual,Virtual EMEA,GMT (Western European Time / Greenwich Mean Time: London),EM
+Virtual,Virtual EMEA,GMT+1 (Central European Time: Berlin/Madrid/Paris/Rome),EM
+Virtual,Virtual EMEA,Varies,EM
+Virtual,Virtual EMEA,GMT+10 (Australian Eastern Standard Time: Melbourne/ Sydney),EM
+Virtual,Virtual APAC,GMT+12 (New Zealand Standard Time: Auckland),AP
+Virtual,Virtual APAC,GMT+2 (Israel Standard Time: Jerusalem),AP
+Virtual,Virtual APAC,"GMT+3 (Moscow Standard Time/Turkey Time/East Africa Time: Istanbul, Moscow, Nairobi)",AP
+Virtual,Virtual APAC,GMT+4 (UAE Standard Time: Dubai),AP
+Virtual,Virtual APAC,GMT+5:30 (Indian Standard Time: Mumbai),AP
+Virtual,Virtual APAC,GMT+7 (Indochina Time: Bangkok),AP
+Virtual,Virtual APAC,GMT+8 (Hong Kong Time / China Taiwan Time / Singapore Standard Time: Hong Kong/Shanghai/Singapore),AP
+Virtual,Virtual APAC,GMT+9 (Japan Standard Time: Tokyo),AP
