@@ -35,6 +35,10 @@ REGION_CODE_MAP = {
     'WAR': 'Warsaw',
     'IST': 'Istanbul',
     'EAB': 'East Bay',  # Handle this special case
+    'TVL': 'Tel Aviv',
+    
+    # Middle East / Africa regions
+    'UAE': 'United Arab Emirates',
     
     # North America regions
     'NYC': 'New York',
@@ -56,6 +60,12 @@ REGION_CODE_MAP = {
     'YYZ': 'Toronto',
     'YUL': 'Montreal',
     'YVR': 'Vancouver',
+    'TOR': 'Toronto',  # Alternative code for new region format
+    
+    # Virtual region codes
+    'AM': 'Virtual Americas',
+    'EM': 'Virtual EMEA',
+    'AP': 'Virtual APAC',
     
     # Special mapping for circle IDs that don't follow standard naming
     'V': 'Virtual',
