@@ -276,6 +276,7 @@ def generate_download_link(results_df):
         'Encoded ID',
         'Last (Family) Name',
         'First (Given) Name',
+        'Solo Joiner',
         'proposed_NEW_circles_id',
         'unmatched_reason',
         'proposed_NEW_Subregion',
@@ -339,6 +340,51 @@ def generate_download_link(results_df):
         'Completed Form? Y/P'
     ]
 
+    # SOLO JOINER ANALYSIS: Identify new members who are the only new joiner in continuing circles
+    # CRITICAL: This must happen BEFORE column checking to ensure Solo Joiner column is included
+    print("\n🔍 SOLO JOINER ANALYSIS: Analyzing circle composition for solo joiners")
+    
+    # Initialize Solo Joiner column with empty values
+    output_df['Solo Joiner'] = ''
+    
+    # Only analyze if we have the required columns
+    if 'proposed_NEW_circles_id' in output_df.columns and 'Status' in output_df.columns:
+        # Group participants by circle ID
+        circle_groups = output_df.groupby('proposed_NEW_circles_id')
+        
+        solo_joiner_count = 0
+        continuing_circles_analyzed = 0
+        
+        for circle_id, circle_participants in circle_groups:
+            # Skip unmatched participants
+            if pd.isna(circle_id) or circle_id == 'UNMATCHED':
+                continue
+                
+            # Count continuing vs new members in this circle
+            continuing_members = circle_participants[circle_participants['Status'] == 'CURRENT-CONTINUING']
+            new_members = circle_participants[circle_participants['Status'] != 'CURRENT-CONTINUING']
+            
+            # Check if this is a continuing circle (has at least one CURRENT-CONTINUING member)
+            if len(continuing_members) > 0:
+                continuing_circles_analyzed += 1
+                
+                # Check if exactly one new member joined this continuing circle
+                if len(new_members) == 1:
+                    # Flag the new member as "Solo"
+                    new_member_id = new_members.iloc[0]['Encoded ID']
+                    output_df.loc[output_df['Encoded ID'] == new_member_id, 'Solo Joiner'] = 'Solo'
+                    solo_joiner_count += 1
+                    
+                    print(f"  ✅ Solo joiner found: Circle {circle_id} - 1 new member joining {len(continuing_members)} continuing members")
+                elif len(new_members) > 1:
+                    print(f"  Multiple joiners: Circle {circle_id} - {len(new_members)} new members joining {len(continuing_members)} continuing members")
+                else:
+                    print(f"  No new joiners: Circle {circle_id} - {len(continuing_members)} continuing members only")
+        
+        print(f"  ✅ Analysis complete: {solo_joiner_count} solo joiners identified across {continuing_circles_analyzed} continuing circles")
+    else:
+        print("  ⚠️ Required columns not found - skipping Solo Joiner analysis")
+
     # STEP 3: Check which columns exist and log missing ones
     print(f"  Checking for expected columns:")
     ordered_columns = []
@@ -366,7 +412,7 @@ def generate_download_link(results_df):
         print(f"  Additional columns not in specified order: {remaining_columns}")
         # Add them at the end, sorted alphabetically
         ordered_columns.extend(sorted(remaining_columns))
-
+    
     # Create a new DataFrame with only the columns that exist
     final_columns = [col for col in ordered_columns if col in output_df.columns]
     final_df = output_df[final_columns]

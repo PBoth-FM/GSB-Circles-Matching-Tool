@@ -26,9 +26,7 @@ author = "agent"
 
 [workflows.workflow.metadata]
 agentRequireRestartOnSave = false
-
-[[workflows.workflow.tasks]]
-task = "packager.installForAll"
+outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
@@ -51,3 +49,7 @@ externalPort = 80
 [[ports]]
 localPort = 8080
 externalPort = 8080
+
+[[ports]]
+localPort = 42825
+externalPort = 3000
