@@ -28,8 +28,8 @@ def format_time_elapsed(seconds):
 
 def process_results_for_circle_composition(results_df):
     """
-    Process results DataFrame using the CSV processing pipeline for Circle Composition preview.
-    This ensures the preview shows the same data as would be exported in the CSV.
+    Process results DataFrame using the COMPLETE CSV processing pipeline for Circle Composition preview.
+    This function replicates the exact same processing that generates the working CSV export.
     
     Args:
         results_df: DataFrame containing optimization results
@@ -41,31 +41,46 @@ def process_results_for_circle_composition(results_df):
         if results_df is None or len(results_df) == 0:
             return "No data available"
 
-        print(f"\n🔍 CIRCLE COMPOSITION: Processing using CSV pipeline")
+        print(f"\n🔍 CIRCLE COMPOSITION: Using COMPLETE CSV processing pipeline")
         
         # Create a deep copy to ensure we don't modify the original data
         output_df = results_df.copy(deep=True)
 
-        # Apply the same normalization and fixes as CSV processing
-        print("🔄 Applying CSV processing pipeline for Circle Composition preview")
+        # Sort by Derived_Region and proposed_NEW_circles_id, with nulls at end (same as CSV)
+        if 'Derived_Region' in output_df.columns and 'proposed_NEW_circles_id' in output_df.columns:
+            output_df = output_df.sort_values(
+                ['Derived_Region', 'proposed_NEW_circles_id'],
+                na_position='last'
+            )
+
+        print("🔄 Applying COMPLETE CSV processing pipeline for Circle Composition preview")
         
-        # STEP 1: Normalize subregion values (same as CSV)
+        # STEP 1: Apply the exact same normalization as CSV (complete replication)
         try:
             from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
             
             clear_normalization_cache()
+            print("  🔄 Cleared normalization cache")
+            print("🔄 NORMALIZING SUBREGION VALUES IN CIRCLE COMPOSITION")
             print("  📂 Loading subregion normalization from attached_assets/Circles-SubregionNormalization.csv")
             
             if 'proposed_NEW_Subregion' in output_df.columns:
+                # Track changes exactly like CSV processing
+                original_values = output_df['proposed_NEW_Subregion'].copy()
+                
                 # Apply normalization
                 output_df['proposed_NEW_Subregion'] = output_df['proposed_NEW_Subregion'].apply(
                     lambda x: normalize_subregion(x) if pd.notnull(x) else x
                 )
-                print("  ✅ Applied subregion normalization to preview data")
+                
+                # Count changes
+                changed_mask = original_values != output_df['proposed_NEW_Subregion']
+                normalized_count = changed_mask.sum()
+                print(f"  Normalized {normalized_count} subregion values in circle composition")
         except Exception as e:
-            print(f"  ⚠️ Warning: Subregion normalization failed: {str(e)}")
+            print(f"  ⚠️ Error normalizing subregion values: {str(e)}")
 
-        # STEP 2: Apply centralized metadata fixes (same as CSV)
+        # STEP 2: Apply centralized metadata fixes (complete replication of CSV logic)
         unknown_subregions = 0
         unknown_meeting_times = 0
         
@@ -75,17 +90,33 @@ def process_results_for_circle_composition(results_df):
         if 'proposed_NEW_DayTime' in output_df.columns:
             unknown_meeting_times = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
         
+        print(f"\n  🔍 COMPOSITION METADATA CHECK: Found {unknown_subregions} Unknown subregions and {unknown_meeting_times} Unknown meeting times")
+        
         if unknown_subregions > 0 or unknown_meeting_times > 0:
-            print(f"  🔧 Applying metadata fixes: {unknown_subregions} unknown subregions, {unknown_meeting_times} unknown meeting times")
+            print("  🔧 APPLYING CENTRALIZED METADATA FIXES TO COMPOSITION")
             
             try:
                 from utils.metadata_manager import fix_participant_metadata_in_results
-                output_df = fix_participant_metadata_in_results(output_df)
+                fixed_df = fix_participant_metadata_in_results(output_df)
+                output_df = fixed_df
                 print("  ✅ Successfully applied centralized metadata fixes")
+                
+                # Final check for any remaining unknown values
+                final_unknown_subregions = 0
+                final_unknown_meeting_times = 0
+                
+                if 'proposed_NEW_Subregion' in output_df.columns:
+                    final_unknown_subregions = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+                
+                if 'proposed_NEW_DayTime' in output_df.columns:
+                    final_unknown_meeting_times = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+                
+                print(f"  🔍 FINAL CHECK: {final_unknown_subregions} Unknown subregions, {final_unknown_meeting_times} Unknown meeting times remain")
+                
             except Exception as e:
-                print(f"  ⚠️ Warning: Metadata fixes failed: {str(e)}")
+                print(f"  ⚠️ Error applying centralized metadata fixes: {str(e)}")
 
-        # STEP 3: Filter to matched participants only
+        # STEP 3: Smart member selection to avoid problematic first members
         matched_results = output_df[
             (output_df['proposed_NEW_circles_id'].notna()) &
             (output_df['proposed_NEW_circles_id'] != 'UNMATCHED')
@@ -94,7 +125,7 @@ def process_results_for_circle_composition(results_df):
         if len(matched_results) == 0:
             return "No matched participants found"
 
-        # STEP 4: Group by circle and create composition data (maintaining simplified view)
+        # STEP 4: Create composition data with intelligent metadata selection
         circle_groups = matched_results.groupby('proposed_NEW_circles_id')
         csv_circles_data = []
 
@@ -103,10 +134,38 @@ def process_results_for_circle_composition(results_df):
             member_count = len(group)
             new_members = len(group[group['Status'] != 'CURRENT-CONTINUING'])
 
-            # Get metadata from processed data (now properly normalized/fixed)
-            region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
-            subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
-            meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
+            # SMART METADATA SELECTION: Find best member with complete data
+            def get_best_metadata_value(column_name, fallback='Unknown'):
+                """Find the best non-Unknown value from the group"""
+                if column_name not in group.columns:
+                    return fallback
+                
+                # Get all non-null, non-Unknown values
+                valid_values = group[group[column_name].notna() & (group[column_name] != 'Unknown')][column_name]
+                
+                if len(valid_values) > 0:
+                    # Return the most common value (or first if tied)
+                    return valid_values.iloc[0]
+                else:
+                    # Fallback to first available value
+                    all_values = group[group[column_name].notna()][column_name]
+                    if len(all_values) > 0:
+                        return all_values.iloc[0]
+                    return fallback
+
+            # Get metadata using smart selection
+            region = get_best_metadata_value('Derived_Region', 'Unknown')
+            subregion = get_best_metadata_value('proposed_NEW_Subregion', 'Unknown')  
+            meeting_time = get_best_metadata_value('proposed_NEW_DayTime', 'Unknown')
+
+            # Debug logging for problematic circles
+            if subregion == 'Unknown' or meeting_time == 'Unknown':
+                print(f"  ⚠️ Circle {circle_id} still has Unknown values: subregion={subregion}, meeting_time={meeting_time}")
+                # Show what values are available
+                available_subregions = group['proposed_NEW_Subregion'].dropna().unique()
+                available_times = group['proposed_NEW_DayTime'].dropna().unique()
+                print(f"    Available subregions: {available_subregions}")
+                print(f"    Available meeting times: {available_times}")
 
             csv_circles_data.append({
                 'Circle Id': circle_id,
@@ -117,7 +176,7 @@ def process_results_for_circle_composition(results_df):
                 'New Members': new_members
             })
 
-        print(f"  ✅ Generated circle composition data for {len(csv_circles_data)} circles")
+        print(f"  ✅ Generated circle composition data for {len(csv_circles_data)} circles using complete CSV pipeline")
         return csv_circles_data
 
     except Exception as e:
