@@ -1134,114 +1134,27 @@ def process_uploaded_file(uploaded_file):
                 from modules.ui_components import render_same_person_constraint_validation
                 render_same_person_constraint_validation()
 
-                # Circle Composition from CSV - Direct from Results Data
+                # Circle Composition from CSV - Using CSV Processing Pipeline
                 st.subheader("Circle Composition from CSV")
 
                 if 'results' in st.session_state and st.session_state.results is not None:
                     results_df = st.session_state.results.copy()
 
-                    # Check if we have the required columns
-                    required_cols = ['proposed_NEW_circles_id', 'Derived_Region', 'proposed_NEW_Subregion',
-                                   'proposed_NEW_DayTime', 'Encoded ID', 'Status', 'co_leader_max_new_members',
-                                   'host_status_standardized']
-
-                    missing_cols = [col for col in required_cols if col not in results_df.columns]
-
-                    if missing_cols:
-                        st.warning(f"Missing required columns for CSV table: {missing_cols}")
+                    # Use the new CSV processing pipeline for circle composition
+                    from utils.helpers import process_results_for_circle_composition
+                    
+                    composition_data = process_results_for_circle_composition(results_df)
+                    
+                    if isinstance(composition_data, str):
+                        # Error message returned
+                        st.error(f"Circle Composition Error: {composition_data}")
+                    elif isinstance(composition_data, list) and len(composition_data) > 0:
+                        # Success - display the data
+                        csv_circles_df = pd.DataFrame(composition_data)
+                        csv_circles_df = csv_circles_df.sort_values('Circle Id')
+                        st.dataframe(csv_circles_df)
                     else:
-                        # Filter out unmatched participants
-                        matched_results = results_df[
-                            (results_df['proposed_NEW_circles_id'].notna()) &
-                            (results_df['proposed_NEW_circles_id'] != 'UNMATCHED')
-                        ].copy()
-
-                        if len(matched_results) > 0:
-                            # Group by circle ID and aggregate data
-                            circle_groups = matched_results.groupby('proposed_NEW_circles_id')
-
-                            csv_circles_data = []
-
-                            for circle_id, group in circle_groups:
-                                # Calculate aggregated values
-                                member_count = len(group)
-                                new_members = len(group[group['Status'] == 'NEW'])
-
-                                # Get first values for region, subregion, meeting time (should be same for all members)
-                                region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
-                                subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
-                                meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
-
-                                # SOLUTION 1: Use stored optimization results with new circle logic
-                                # Check if this is a new circle (contains "-NEW-" in the ID)
-                                is_new_circle = "-NEW-" in circle_id
-
-                                if is_new_circle:
-                                    # New circles always have max_additions = configured maximum circle size
-                                    max_additions = st.session_state.get('max_circle_size', 8)
-                                    print(f"✅ New circle {circle_id}: Setting max_additions={max_additions} (maximum capacity)")
-                                else:
-                                    # Continuing circle: use stored optimization results
-                                    max_additions = 0  # Default fallback
-
-                                    # Try to get from CircleMetadataManager
-                                    if 'circle_metadata_manager' in st.session_state and st.session_state.circle_metadata_manager:
-                                        manager = st.session_state.circle_metadata_manager
-                                        if hasattr(manager, 'circles') and circle_id in manager.circles:
-                                            stored_max_additions = manager.circles[circle_id].get('max_additions', None)
-                                            if stored_max_additions is not None:
-                                                max_additions = stored_max_additions
-                                                print(f"✅ Continuing circle {circle_id}: Using stored max_additions={max_additions}")
-                                            else:
-                                                print(f"⚠️ No max_additions found in manager for continuing circle {circle_id}")
-                                        else:
-                                            print(f"⚠️ Continuing circle {circle_id} not found in metadata manager")
-
-                                    # If we still don't have a value, try to get from matched_circles
-                                    if max_additions == 0 and 'matched_circles' in st.session_state:
-                                        matched_circles = st.session_state.matched_circles
-                                        if isinstance(matched_circles, pd.DataFrame) and not matched_circles.empty:
-                                            # Look for this circle in the matched_circles DataFrame
-                                            circle_row = matched_circles[matched_circles['circle_id'] == circle_id]
-                                            if not circle_row.empty and 'max_additions' in matched_circles.columns:
-                                                stored_max_additions = circle_row['max_additions'].iloc[0]
-                                                if pd.notna(stored_max_additions):
-                                                    max_additions = int(stored_max_additions)
-                                                    print(f"✅ Continuing circle {circle_id}: Using max_additions={max_additions} from matched_circles")
-
-                                    # Final fallback for continuing circles: if we still have 0 but there are new members assigned,
-                                    # set max_additions to at least match the new members count
-                                    if max_additions == 0 and new_members > 0:
-                                        max_additions = new_members
-                                        print(f"⚠️ Continuing circle {circle_id}: Fallback max_additions={max_additions} to match new_members")
-
-                                # Count host status
-                                always_hosts = len(group[group['host_status_standardized'] == 'ALWAYS'])
-                                sometimes_hosts = len(group[group['host_status_standardized'] == 'SOMETIMES'])
-
-                                csv_circles_data.append({
-                                    'Circle Id': circle_id,
-                                    'Region': region,
-                                    'Subregion': subregion,
-                                    'Meeting Time': meeting_time,
-                                    'Member Count': member_count,
-                                    'New Members': new_members,
-                                    'Max Additions': max_additions,
-                                    'Always Hosts': always_hosts,
-                                    'Sometimes Hosts': sometimes_hosts
-                                })
-
-                            # Create DataFrame and display
-                            if csv_circles_data:
-                                csv_circles_df = pd.DataFrame(csv_circles_data)
-                                csv_circles_df = csv_circles_df.sort_values('Circle Id')
-                                st.dataframe(csv_circles_df)
-
-
-                            else:
-                                st.warning("No circle data could be generated from CSV results.")
-                        else:
-                            st.warning("No matched participants found in results data.")
+                        st.warning("No circle composition data available.")
                 else:
                     st.warning("No results data available. Please run the matching algorithm first.")
 
