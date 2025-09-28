@@ -26,6 +26,105 @@ def format_time_elapsed(seconds):
         seconds = seconds % 60
         return f"{int(hours)} hr {int(minutes)} min {int(seconds)} sec"
 
+def process_results_for_circle_composition(results_df):
+    """
+    Process results DataFrame using the CSV processing pipeline for Circle Composition preview.
+    This ensures the preview shows the same data as would be exported in the CSV.
+    
+    Args:
+        results_df: DataFrame containing optimization results
+        
+    Returns:
+        List of dictionaries containing circle composition data, or error message string
+    """
+    try:
+        if results_df is None or len(results_df) == 0:
+            return "No data available"
+
+        print(f"\n🔍 CIRCLE COMPOSITION: Processing using CSV pipeline")
+        
+        # Create a deep copy to ensure we don't modify the original data
+        output_df = results_df.copy(deep=True)
+
+        # Apply the same normalization and fixes as CSV processing
+        print("🔄 Applying CSV processing pipeline for Circle Composition preview")
+        
+        # STEP 1: Normalize subregion values (same as CSV)
+        try:
+            from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
+            
+            clear_normalization_cache()
+            print("  📂 Loading subregion normalization from attached_assets/Circles-SubregionNormalization.csv")
+            
+            if 'proposed_NEW_Subregion' in output_df.columns:
+                # Apply normalization
+                output_df['proposed_NEW_Subregion'] = output_df['proposed_NEW_Subregion'].apply(
+                    lambda x: normalize_subregion(x) if pd.notnull(x) else x
+                )
+                print("  ✅ Applied subregion normalization to preview data")
+        except Exception as e:
+            print(f"  ⚠️ Warning: Subregion normalization failed: {str(e)}")
+
+        # STEP 2: Apply centralized metadata fixes (same as CSV)
+        unknown_subregions = 0
+        unknown_meeting_times = 0
+        
+        if 'proposed_NEW_Subregion' in output_df.columns:
+            unknown_subregions = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+        
+        if 'proposed_NEW_DayTime' in output_df.columns:
+            unknown_meeting_times = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+        
+        if unknown_subregions > 0 or unknown_meeting_times > 0:
+            print(f"  🔧 Applying metadata fixes: {unknown_subregions} unknown subregions, {unknown_meeting_times} unknown meeting times")
+            
+            try:
+                from utils.metadata_manager import fix_participant_metadata_in_results
+                output_df = fix_participant_metadata_in_results(output_df)
+                print("  ✅ Successfully applied centralized metadata fixes")
+            except Exception as e:
+                print(f"  ⚠️ Warning: Metadata fixes failed: {str(e)}")
+
+        # STEP 3: Filter to matched participants only
+        matched_results = output_df[
+            (output_df['proposed_NEW_circles_id'].notna()) &
+            (output_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+        ].copy()
+
+        if len(matched_results) == 0:
+            return "No matched participants found"
+
+        # STEP 4: Group by circle and create composition data (maintaining simplified view)
+        circle_groups = matched_results.groupby('proposed_NEW_circles_id')
+        csv_circles_data = []
+
+        for circle_id, group in circle_groups:
+            # Calculate basic metrics
+            member_count = len(group)
+            new_members = len(group[group['Status'] != 'CURRENT-CONTINUING'])
+
+            # Get metadata from processed data (now properly normalized/fixed)
+            region = group['Derived_Region'].iloc[0] if not group['Derived_Region'].isna().all() else 'Unknown'
+            subregion = group['proposed_NEW_Subregion'].iloc[0] if not group['proposed_NEW_Subregion'].isna().all() else 'Unknown'
+            meeting_time = group['proposed_NEW_DayTime'].iloc[0] if not group['proposed_NEW_DayTime'].isna().all() else 'Unknown'
+
+            csv_circles_data.append({
+                'Circle Id': circle_id,
+                'Region': region,
+                'Subregion': subregion,
+                'Meeting Time': meeting_time,
+                'Member Count': member_count,
+                'New Members': new_members
+            })
+
+        print(f"  ✅ Generated circle composition data for {len(csv_circles_data)} circles")
+        return csv_circles_data
+
+    except Exception as e:
+        error_msg = f"Error processing circle composition data: {str(e)}"
+        print(f"  ❌ {error_msg}")
+        return error_msg
+
 def generate_download_link(results_df):
     """
     Generate a CSV download link for the results DataFrame.
