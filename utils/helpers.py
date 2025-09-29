@@ -286,6 +286,7 @@ def generate_download_link(results_df):
         'host',
         'Current Co-Leader?',
         '(Non CLs) Volunteering to Co-Lead?',
+        'If only CL volunteer, willing to be sole Leader? (Y/N)',
         'Co-Leader Response:  CL in 2025?',
         'co_leader_max_new_members',
         'Derived_Region',
