@@ -220,7 +220,8 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
             circles_needing_adjustment += 1
             
             # Find all eligible people (those who would be co-leaders under Step 1 rules)
-            eligible_members = circle_members[circle_members['proposed_NEW_Coleader'] == 'Yes']
+            # This is the same as co_leaders since we're before any adjustments
+            eligible_members = co_leaders
             
             if debug_mode:
                 print(f"  Circle {circle_id}: Has {len(co_leaders)} co-leaders, {len(eligible_members)} eligible")
@@ -312,24 +313,39 @@ def validate_co_leader_assignments(results_df: pd.DataFrame) -> Dict[str, any]:
         validation_results['issues'].append("No matched participants found")
         return validation_results
     
-    # Check each circle has at least 2 co-leaders
+    # Check each circle has adequate leadership (2+ co-leaders OR 1 willing sole leader)
     circles = matched_df['proposed_NEW_circles_id'].unique()
     circles_with_insufficient_leaders = []
+    
+    # Find sole leader column for validation
+    column_map = find_co_leader_columns(results_df)
+    sole_leader_col = column_map.get('willing_sole_leader')
     
     for circle_id in circles:
         circle_members = matched_df[matched_df['proposed_NEW_circles_id'] == circle_id]
         co_leaders = circle_members[circle_members['proposed_NEW_Coleader'] == 'Yes']
         
         if len(co_leaders) < 2:
-            circles_with_insufficient_leaders.append({
-                'circle_id': circle_id,
-                'co_leaders': len(co_leaders),
-                'total_members': len(circle_members)
-            })
+            # Check if this is a valid sole leader scenario
+            is_valid_sole_leader = False
+            
+            if len(co_leaders) == 1 and sole_leader_col and sole_leader_col in results_df.columns:
+                sole_leader = co_leaders.iloc[0]
+                sole_leader_response = str(sole_leader.get(sole_leader_col, '')).strip().lower()
+                is_valid_sole_leader = sole_leader_response == 'yes' or sole_leader_response == 'y'
+            
+            if not is_valid_sole_leader:
+                circles_with_insufficient_leaders.append({
+                    'circle_id': circle_id,
+                    'co_leaders': len(co_leaders),
+                    'total_members': len(circle_members),
+                    'is_sole_leader_scenario': len(co_leaders) == 1,
+                    'sole_leader_willing': is_valid_sole_leader if len(co_leaders) == 1 else None
+                })
     
     if circles_with_insufficient_leaders:
         validation_results['valid'] = False
-        validation_results['issues'].append(f"Found {len(circles_with_insufficient_leaders)} circles with < 2 co-leaders")
+        validation_results['issues'].append(f"Found {len(circles_with_insufficient_leaders)} circles with insufficient leadership (neither 2+ co-leaders nor willing sole leader)")
         validation_results['insufficient_circles'] = circles_with_insufficient_leaders
     
     # Calculate statistics
