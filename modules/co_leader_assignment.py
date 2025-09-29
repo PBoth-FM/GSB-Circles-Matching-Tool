@@ -61,6 +61,11 @@ def find_co_leader_columns(df: pd.DataFrame) -> Dict[str, str]:
             column_map['volunteering_to_co_lead'] = col
             break
     
+    # Map for Sole Leader Willingness
+    sole_leader_column = 'If only CL volunteer, willing to be sole Leader? (Y/N)'
+    if sole_leader_column in df.columns:
+        column_map['willing_sole_leader'] = sole_leader_column
+    
     return column_map
 
 
