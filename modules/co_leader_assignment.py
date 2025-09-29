@@ -82,8 +82,10 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
        - If "(Non CLs) Volunteering to Co-Lead?" is "Yes" → proposed_NEW_Coleader = "Yes"
        - Otherwise → proposed_NEW_Coleader = "No"
     
-    3. Each circle must have at least 2 co-leaders:
-       - If fewer than 2, set ALL participants in that circle as co-leaders
+    3. Enhanced minimum co-leader rules for circles with < 2 co-leaders:
+       - If exactly 1 person eligible AND willing to be sole leader → Make only them co-leader
+       - If multiple people eligible → Make all eligible people co-leaders
+       - Otherwise → Safety net: make ALL participants in circle co-leaders
     
     Args:
         results_df: DataFrame with participant assignments and circle IDs
@@ -199,13 +201,16 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
         print(f"  Processed {continuing_processed} CURRENT-CONTINUING participants")
         print(f"  Processed {non_continuing_processed} non-CURRENT-CONTINUING participants")
     
-    # Step 2: Ensure each circle has at least 2 co-leaders
+    # Step 2: Enhanced co-leader assignment with sole leader logic
     matched_df = df[df['proposed_NEW_circles_id'] != 'UNMATCHED']
     circles = matched_df['proposed_NEW_circles_id'].unique()
     circles_needing_adjustment = 0
+    sole_leader_scenarios = 0
     
     if debug_mode:
         print(f"\n🔍 CO-LEADER VALIDATION: Checking {len(circles)} circles for minimum co-leaders")
+    
+    sole_leader_col = column_map.get('willing_sole_leader')
     
     for circle_id in circles:
         circle_members = df[df['proposed_NEW_circles_id'] == circle_id]
@@ -213,11 +218,46 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
         
         if len(co_leaders) < 2:
             circles_needing_adjustment += 1
-            # Set all members as co-leaders
-            df.loc[df['proposed_NEW_circles_id'] == circle_id, 'proposed_NEW_Coleader'] = 'Yes'
+            
+            # Find all eligible people (those who would be co-leaders under Step 1 rules)
+            eligible_members = circle_members[circle_members['proposed_NEW_Coleader'] == 'Yes']
             
             if debug_mode:
-                print(f"  Circle {circle_id}: Had {len(co_leaders)} co-leaders, set all {len(circle_members)} as co-leaders")
+                print(f"  Circle {circle_id}: Has {len(co_leaders)} co-leaders, {len(eligible_members)} eligible")
+            
+            if len(eligible_members) == 1:
+                # Exactly one eligible person - check sole leader willingness
+                eligible_person = eligible_members.iloc[0]
+                willing_sole_leader = False
+                
+                if sole_leader_col and sole_leader_col in df.columns:
+                    sole_leader_response = str(eligible_person.get(sole_leader_col, '')).strip().lower()
+                    willing_sole_leader = sole_leader_response == 'yes' or sole_leader_response == 'y'
+                
+                if willing_sole_leader:
+                    # Make only this person co-leader, others stay as "No"
+                    sole_leader_scenarios += 1
+                    if debug_mode:
+                        participant_id = eligible_person.get('Encoded ID', 'Unknown')
+                        print(f"  Circle {circle_id}: 👑 SOLE LEADER - {participant_id} willing to lead alone")
+                else:
+                    # Apply safety net: make all members co-leaders
+                    df.loc[df['proposed_NEW_circles_id'] == circle_id, 'proposed_NEW_Coleader'] = 'Yes'
+                    if debug_mode:
+                        participant_id = eligible_person.get('Encoded ID', 'Unknown')
+                        print(f"  Circle {circle_id}: {participant_id} not willing to be sole leader → all {len(circle_members)} members as co-leaders")
+                        
+            elif len(eligible_members) > 1:
+                # Multiple eligible people - make all eligible co-leaders (they already are)
+                if debug_mode:
+                    print(f"  Circle {circle_id}: Multiple eligible ({len(eligible_members)}) → all eligible remain co-leaders")
+                    
+            else:
+                # Zero eligible people - apply safety net: make all members co-leaders
+                df.loc[df['proposed_NEW_circles_id'] == circle_id, 'proposed_NEW_Coleader'] = 'Yes'
+                if debug_mode:
+                    print(f"  Circle {circle_id}: No eligible members → all {len(circle_members)} members as co-leaders")
+                    
         elif debug_mode and len(co_leaders) >= 2:
             print(f"  Circle {circle_id}: ✅ Has {len(co_leaders)} co-leaders (sufficient)")
     
@@ -228,6 +268,7 @@ def assign_co_leaders(results_df: pd.DataFrame, debug_mode: bool = False) -> pd.
     if debug_mode:
         print(f"\n📊 CO-LEADER ASSIGNMENT SUMMARY:")
         print(f"  Circles needing adjustment: {circles_needing_adjustment}")
+        print(f"  Sole leader scenarios: {sole_leader_scenarios}")
         print(f"  Total matched participants: {len(final_matched)}")
         print(f"  Total assigned co-leaders: {len(final_co_leaders)}")
         print(f"  Co-leader percentage: {len(final_co_leaders)/len(final_matched)*100:.1f}%")
