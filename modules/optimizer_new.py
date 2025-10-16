@@ -2372,6 +2372,31 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     safe_string_match(p_row['second_choice_location'], subregion) or
                     safe_string_match(p_row['third_choice_location'], subregion)
                 )
+                
+                # DIAGNOSTIC: Log for Moving Within Region participants
+                raw_status = p_row.get('Raw_Status', '')
+                if isinstance(raw_status, str) and 'moving' in raw_status.lower() and 'within' in raw_status.lower() and 'region' in raw_status.lower():
+                    print(f"\n🔍 MOVING WITHIN REGION COMPATIBILITY CHECK:")
+                    print(f"  Participant: {p_id}")
+                    print(f"  Raw Status: {raw_status}")
+                    print(f"  Circle: {c_id}")
+                    print(f"  Circle subregion: '{subregion}'")
+                    print(f"  Participant first_choice_location: '{p_row.get('first_choice_location')}'")
+                    print(f"  Participant second_choice_location: '{p_row.get('second_choice_location')}'")
+                    print(f"  Participant third_choice_location: '{p_row.get('third_choice_location')}'")
+                    print(f"  Participant Current_Subregion: '{p_row.get('Current_Subregion')}'")
+                    print(f"  Location match result: {loc_match}")
+                    
+                    # Detailed comparison for each preference
+                    if p_row.get('first_choice_location'):
+                        match1 = safe_string_match(p_row['first_choice_location'], subregion)
+                        print(f"    first_choice '{p_row['first_choice_location']}' vs '{subregion}': {match1}")
+                    if p_row.get('second_choice_location'):
+                        match2 = safe_string_match(p_row['second_choice_location'], subregion)
+                        print(f"    second_choice '{p_row['second_choice_location']}' vs '{subregion}': {match2}")
+                    if p_row.get('third_choice_location'):
+                        match3 = safe_string_match(p_row['third_choice_location'], subregion)
+                        print(f"    third_choice '{p_row['third_choice_location']}' vs '{subregion}': {match3}")
             
             # Check time compatibility using is_time_compatible function which properly handles "Varies"
             # Define if this is a special test case that needs detailed debugging
@@ -2500,42 +2525,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     result3 = is_time_compatible(third_choice, time_slot, is_important=True, is_circle_time=True)
                     print(f"  Third choice time '{third_choice}' ↔ Circle time '{time_slot}': {result3}")
                 
-                # Look for participants that should match with IP-SEA-01 based on Wednesday evenings
-                if (first_choice == 'Wednesday (Evenings)' or second_choice == 'Wednesday (Evenings)' or third_choice == 'Wednesday (Evenings)') and \
-                   (subregion == p_row.get('first_choice_location') or subregion == p_row.get('second_choice_location') or subregion == p_row.get('third_choice_location')):
-                    # This is a direct match that should work - extra debug trace
-                    print(f"\n🔍 SEATTLE CRITICAL MATCH CHECK - IP-SEA-01 with exact Wednesday match")
-                    
-                    # Force compatibility for exact Wednesday matches if needed
-                    if loc_match and not time_match and (first_choice == 'Wednesday (Evenings)' or second_choice == 'Wednesday (Evenings)' or third_choice == 'Wednesday (Evenings)'):
-                        print(f"  🔴 CRITICAL FIX: This is an exact Wednesday match that should work!")
-                        is_compatible = True
-                        print(f"  New compatibility after fix: {is_compatible}")
-                
-                # Also check Monday-thursday cases for compatibility with Wednesday
-                has_monday_thursday = ('monday-thursday' in first_choice.lower() or 
-                                     'monday-thursday' in second_choice.lower() or 
-                                     'monday-thursday' in third_choice.lower())
-                
-                if loc_match and has_monday_thursday:
-                    print(f"\n🔍 SEATTLE MONDAY-THURSDAY CHECK - IP-SEA-01 with range match")
-                    
-                    # Force compatibility for Monday-Thursday (Evenings) when circle is Wednesday (Evenings)
-                    if loc_match and time_slot == 'Wednesday (Evenings)' and not time_match and \
-                       (('monday-thursday' in first_choice.lower() and 'evening' in first_choice.lower()) or
-                        ('monday-thursday' in second_choice.lower() and 'evening' in second_choice.lower()) or
-                        ('monday-thursday' in third_choice.lower() and 'evening' in third_choice.lower())):
-                        print(f"  🔴 CRITICAL FIX: Monday-Thursday should include Wednesday!")
-                        is_compatible = True
-                        print(f"  New compatibility after fix: {is_compatible}")
-            
-            # CRITICAL DIRECT FIX: Force compatibility for Seattle IP-SEA-01 for testing
-            # This bypasses the normal compatibility checks just to see if matching works
-            if c_id == 'IP-SEA-01' and p_row.get('Status') == 'NEW' and 'Seattle' in str(p_row.get('Current_Region', '')):
-                print(f"\n🚨 SEATTLE EMERGENCY OVERRIDE: Forcing compatibility for {p_id} with IP-SEA-01")
-                print(f"  Original compatibility was: {is_compatible}")
-                is_compatible = True
-                print(f"  Forcing compatibility to: {is_compatible}")
+                # REMOVED: Debugging overrides that were forcing compatibility
                 
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
@@ -3134,20 +3124,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"    Has compatible location: {has_compatible_loc}")
                         print(f"    Current compatibility in matrix: {current_compat}")
                         
-                        # OVERRIDE: If participant has both compatible time and location
+                        # Log compatibility status without overriding
                         if has_compatible_time and has_compatible_loc:
                             if current_compat == 0:
-                                print(f"    🛠️ FIXING: Setting compatibility to 1 for this Seattle participant")
-                                compatibility[(p_id, 'IP-SEA-01')] = 1
-                                
-                                # Also update the compatible circles tracking for LP problem
-                                if p_id in participant_compatible_circles and 'IP-SEA-01' not in participant_compatible_circles[p_id]:
-                                    participant_compatible_circles[p_id].append('IP-SEA-01')
-                                    print(f"    ✅ Added IP-SEA-01 to compatible circles for participant {p_id}")
+                                print(f"    ⚠️ WARNING: Participant should be compatible but compatibility is 0")
                             else:
                                 print(f"    ✅ Already compatible")
                         else:
-                            print(f"    ❌ Not compatible and no override needed")
+                            print(f"    ❌ Not compatible (time: {has_compatible_time}, loc: {has_compatible_loc})")
                 print(f"🔴 END OF SEATTLE COMPATIBILITY DIAGNOSTICS")
             else:
                 # Removed East Bay specific debugging code to focus exclusively on Seattle test case
@@ -3659,6 +3643,29 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Check if this variable exists and is set to 1
                 if (p_id, c_id) in x and x[(p_id, c_id)].value() is not None and abs(x[(p_id, c_id)].value() - 1) < 1e-5:
                     circle_assignments[p_id] = c_id
+                    
+                    # DIAGNOSTIC: Log Moving Within Region participant assignments
+                    p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0] if not region_df[region_df['Encoded ID'] == p_id].empty else None
+                    if p_row is not None:
+                        raw_status = p_row.get('Raw_Status', '')
+                        if isinstance(raw_status, str) and 'moving' in raw_status.lower() and 'within' in raw_status.lower() and 'region' in raw_status.lower():
+                            meta = circle_metadata[c_id]
+                            print(f"\n🔍 MOVING WITHIN REGION ASSIGNMENT:")
+                            print(f"  Participant {p_id} assigned to circle {c_id}")
+                            print(f"  Raw Status: {raw_status}")
+                            print(f"  Participant first_choice_location: '{p_row.get('first_choice_location')}'")
+                            print(f"  Participant Current_Subregion: '{p_row.get('Current_Subregion')}'")
+                            print(f"  Assigned circle subregion: '{meta['subregion']}'")
+                            print(f"  Assigned circle meeting time: '{meta['meeting_time']}'")
+                            
+                            # Check if this is a match to their preference
+                            is_preference_match = (
+                                meta['subregion'] == p_row.get('first_choice_location') or
+                                meta['subregion'] == p_row.get('second_choice_location') or
+                                meta['subregion'] == p_row.get('third_choice_location')
+                            )
+                            if not is_preference_match:
+                                print(f"  ⚠️ WARNING: Assigned to circle subregion that doesn't match any location preference!")
                     
                     # Special debug for our test participants
                     if p_id in test_participants:
