@@ -323,24 +323,29 @@ def normalize_status_values(df):
     st.session_state.status_filter_counts['moving_out'] = moving_out_count
 
     # Handle region for 'Moving Within Region' status variations
-    if 'Current_Region' in normalized_df.columns and 'Requested_Region' in normalized_df.columns:
-        original_status_col = 'Alumna Circle Status' if 'Alumna Circle Status' in df.columns else 'Status'
+    if 'Current_Region' in normalized_df.columns and 'Requested_Region' in normalized_df.columns and 'Raw_Status' in normalized_df.columns:
+        # CRITICAL FIX: Use Raw_Status from normalized_df (which has been filtered)
+        # instead of the original df to avoid index mismatch
         
         # Use flexible matching to identify "Moving Within Region" participants
-        # Check if status was normalized from a moving-within variant to "NEW"
-        def is_moving_within_region(status_val):
-            if pd.isna(status_val):
+        # Check Raw_Status to see if it was a moving-within variant
+        def is_moving_within_region(raw_status_val):
+            if pd.isna(raw_status_val):
                 return False
-            # Normalize the status and check if it became "NEW" from a non-NEW original
-            normalized = normalize_moving_within_region_status(status_val)
-            original_str = str(status_val).strip()
-            # Only match if it was changed to NEW (not if it was already NEW)
-            return normalized == 'NEW' and original_str.upper() != 'NEW'
+            raw_str = str(raw_status_val).lower()
+            # Check if it contains the three keywords: moving, within, region
+            return 'moving' in raw_str and 'within' in raw_str and 'region' in raw_str
         
-        moving_within_mask = df[original_status_col].apply(is_moving_within_region)
+        # Create mask from normalized_df (after filtering) using Raw_Status
+        moving_within_mask = normalized_df['Raw_Status'].apply(is_moving_within_region)
+        
+        # Count how many participants this affects
+        moving_within_count = moving_within_mask.sum()
+        if moving_within_count > 0:
+            print(f"📍 Found {moving_within_count} 'Moving Within Region' participants")
         
         # For participants moving within region, use Current_Region as Requested_Region
-        normalized_df.loc[moving_within_mask, 'Requested_Region'] = df.loc[moving_within_mask, 'Current_Region']
+        normalized_df.loc[moving_within_mask, 'Requested_Region'] = normalized_df.loc[moving_within_mask, 'Current_Region']
         
         # For Moving Within Region participants with blank first_choice_location,
         # populate it with their Current_Subregion so they match in their current subregion
@@ -352,6 +357,16 @@ def normalize_status_values(df):
                 normalized_df['Current_Subregion'].notna() &
                 (normalized_df['Current_Subregion'].astype(str).str.strip() != '')
             )
+            
+            # Count how many will be updated
+            update_count = blank_location_mask.sum()
+            if update_count > 0:
+                print(f"📍 Populating first_choice_location for {update_count} Moving Within Region participants with blank location")
+                
+                # Log a few examples
+                examples = normalized_df[blank_location_mask].head(3)
+                for idx, row in examples.iterrows():
+                    print(f"   • Participant {row.get('Encoded ID', 'Unknown')}: Setting first_choice_location = '{row.get('Current_Subregion', '')}'")
             
             # Populate first_choice_location with Current_Subregion for these participants
             normalized_df.loc[blank_location_mask, 'first_choice_location'] = normalized_df.loc[blank_location_mask, 'Current_Subregion']
