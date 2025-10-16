@@ -350,6 +350,43 @@ def normalize_data(df, debug_mode=False):
     except Exception as e:
         print(f"⚠️ WARNING: Error while processing virtual region codes: {str(e)}")
     
+    # CRITICAL FIX: Handle "Current-MOVING INTO Region" participants
+    # When Raw_Status is "Current-MOVING INTO Region" (any capitalization) and first_choice_location is blank,
+    # use Current_Subregion as first_choice_location for the matching process
+    if 'Raw_Status' in normalized_df.columns and 'Current_Subregion' in normalized_df.columns:
+        # Use case-insensitive regex to match any variation of "MOVING INTO Region"
+        moving_into_mask = normalized_df['Raw_Status'].astype(str).str.contains(
+            r'moving.*into.*region', 
+            case=False, 
+            regex=True, 
+            na=False
+        )
+        
+        # Only apply when first_choice_location is blank
+        blank_first_choice_mask = (
+            (normalized_df['first_choice_location'].isna()) | 
+            (normalized_df['first_choice_location'] == '')
+        )
+        
+        # Only apply when Current_Subregion exists
+        has_subregion_mask = (
+            normalized_df['Current_Subregion'].notna() & 
+            (normalized_df['Current_Subregion'] != '')
+        )
+        
+        # Combine all conditions
+        final_mask = moving_into_mask & blank_first_choice_mask & has_subregion_mask
+        
+        if final_mask.any():
+            # Set first_choice_location to Current_Subregion for these participants
+            normalized_df.loc[final_mask, 'first_choice_location'] = normalized_df.loc[final_mask, 'Current_Subregion']
+            
+            if debug_mode:
+                affected_count = final_mask.sum()
+                print(f"\n🔄 MOVING INTO Region preprocessing:")
+                print(f"  Auto-filled first_choice_location for {affected_count} participants")
+                print(f"  Using Current_Subregion as first_choice_location")
+    
     # Handle small regions with no subregions
     # For NEW participants from small regions who didn't specify a first_choice_location,
     # set their first_choice_location to their Requested_Region
