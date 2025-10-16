@@ -322,13 +322,23 @@ def normalize_status_values(df):
     st.session_state.status_filter_counts['not_continuing'] = not_continuing_count
     st.session_state.status_filter_counts['moving_out'] = moving_out_count
 
-    # Handle region for 'Current-MOVING within Region'
+    # Handle region for 'Moving Within Region' status variations
     if 'Current_Region' in normalized_df.columns and 'Requested_Region' in normalized_df.columns:
         original_status_col = 'Alumna Circle Status' if 'Alumna Circle Status' in df.columns else 'Status'
-        moving_within_mask = df[original_status_col].apply(
-            lambda x: isinstance(x, str) and x.strip() == 'Current-MOVING within Region'
-        )
-
+        
+        # Use flexible matching to identify "Moving Within Region" participants
+        # Check if status was normalized from a moving-within variant to "NEW"
+        def is_moving_within_region(status_val):
+            if pd.isna(status_val):
+                return False
+            # Normalize the status and check if it became "NEW" from a non-NEW original
+            normalized = normalize_moving_within_region_status(status_val)
+            original_str = str(status_val).strip()
+            # Only match if it was changed to NEW (not if it was already NEW)
+            return normalized == 'NEW' and original_str.upper() != 'NEW'
+        
+        moving_within_mask = df[original_status_col].apply(is_moving_within_region)
+        
         # For participants moving within region, use Current_Region as Requested_Region
         normalized_df.loc[moving_within_mask, 'Requested_Region'] = df.loc[moving_within_mask, 'Current_Region']
 
