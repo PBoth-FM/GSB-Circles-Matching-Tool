@@ -341,6 +341,20 @@ def normalize_status_values(df):
         
         # For participants moving within region, use Current_Region as Requested_Region
         normalized_df.loc[moving_within_mask, 'Requested_Region'] = df.loc[moving_within_mask, 'Current_Region']
+        
+        # For Moving Within Region participants with blank first_choice_location,
+        # populate it with their Current_Subregion so they match in their current subregion
+        if 'first_choice_location' in normalized_df.columns and 'Current_Subregion' in normalized_df.columns:
+            # Find participants who are moving within region AND have blank first_choice_location AND have a Current_Subregion
+            blank_location_mask = (
+                moving_within_mask & 
+                (normalized_df['first_choice_location'].isna() | (normalized_df['first_choice_location'].astype(str).str.strip() == '')) &
+                normalized_df['Current_Subregion'].notna() &
+                (normalized_df['Current_Subregion'].astype(str).str.strip() != '')
+            )
+            
+            # Populate first_choice_location with Current_Subregion for these participants
+            normalized_df.loc[blank_location_mask, 'first_choice_location'] = normalized_df.loc[blank_location_mask, 'Current_Subregion']
 
     return normalized_df
 
