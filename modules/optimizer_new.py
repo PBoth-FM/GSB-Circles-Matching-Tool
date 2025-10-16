@@ -491,7 +491,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # Import our new fixes module for CURRENT-CONTINUING members and optimize mode
     from modules.optimizer_fixes import (
         preprocess_continuing_members,
-        preprocess_moving_into_region,
         optimize_circle_capacity,
         find_current_circle_id,
         force_compatibility,
@@ -1420,10 +1419,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"\n🔧 No existing circles found, but insufficient participants ({len(region_df)}) to create new circles (min: {min_circle_size})")
     else:
         print(f"\n🔧 Existing circles found ({len(existing_circles)}), skipping new circle generation")
-    
-    # STEP 1.5: Preprocess MOVING INTO Region participants
-    # Auto-fill first_choice_location with Current_Subregion if blank
-    region_df = preprocess_moving_into_region(region_df, debug_mode=debug_mode)
     
     # For continuing participants not in circles, we need to handle them separately
     remaining_participants = []
