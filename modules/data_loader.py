@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import io
 from utils.validators import validate_required_columns, validate_data_types
+from utils.normalization import normalize_moving_within_region_status
 
 def deduplicate_encoded_ids(df):
     """
@@ -239,15 +240,24 @@ def normalize_status_values(df):
     # Create a copy of the DataFrame
     normalized_df = df.copy()
 
-    # Define detailed status mapping for Raw_Status column
+    # FIRST: Store original status values in Raw_Status before any normalization
+    # This preserves the exact original value from the input file
+    normalized_df['Raw_Status'] = normalized_df['Status'].astype(str)
+
+    # SECOND: Apply moving within region normalization to Status column
+    # This handles any variation with "Moving", "within", and "Region" words
+    normalized_df['Status'] = normalized_df['Status'].apply(normalize_moving_within_region_status)
+
+    # Define detailed status mapping for Raw_Status column (for backwards compatibility)
     detailed_status_mapping = {
         # Current variations
         'CURRENT-CONTINUING': 'Current-CONTINUING',
         'Current-CONTINUING': 'Current-CONTINUING',
         'Current-CONTINUING ': 'Current-CONTINUING',
 
-        # Moving within region
+        # Moving within region (already handled by normalize_moving_within_region_status)
         'Current-MOVING within Region': 'Current-MOVING within Region',
+        'Current-MOVING WITHIN Region': 'Current-MOVING WITHIN Region',
 
         # Moving out variations
         'Current-MOVING OUT of Region': 'Current-MOVING OUT of Region',
@@ -284,12 +294,12 @@ def normalize_status_values(df):
         'NEW to Circles (Waitlist) Requesting 2nd Circle': 'NEW',
     }
 
-    # Create Raw_Status column with detailed status mapping
-    normalized_df['Raw_Status'] = normalized_df['Status'].apply(
+    # Normalize Raw_Status with detailed mapping (for display purposes)
+    normalized_df['Raw_Status'] = normalized_df['Raw_Status'].apply(
         lambda x: detailed_status_mapping.get(x.strip() if isinstance(x, str) else x, x)
     )
 
-    # Apply binary mapping to maintain compatibility with existing code
+    # Apply binary mapping to Status for algorithm compatibility
     normalized_df['Status'] = normalized_df['Status'].apply(
         lambda x: binary_status_mapping.get(x.strip() if isinstance(x, str) else x, x)
     )

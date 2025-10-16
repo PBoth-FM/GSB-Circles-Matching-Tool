@@ -422,6 +422,38 @@ def normalize_subregions(subregion, region=None):
     
     return normalized
 
+def normalize_moving_within_region_status(status_value):
+    """
+    Normalize status values containing 'Moving', 'within', and 'Region' to 'NEW'.
+    
+    Checks if status contains all three words as whole words (case-insensitive, any order).
+    
+    Args:
+        status_value: The status value to check
+        
+    Returns:
+        'NEW' if all three words are found, otherwise the original status unchanged
+    """
+    # Handle null values and empty strings
+    if pd.isna(status_value) or not status_value:
+        return status_value
+    
+    # Convert to string
+    status_str = str(status_value).strip()
+    
+    # Check for all three words using word boundaries (case-insensitive)
+    # \b ensures we match whole words only
+    has_moving = bool(re.search(r'\bmoving\b', status_str, re.IGNORECASE))
+    has_within = bool(re.search(r'\bwithin\b', status_str, re.IGNORECASE))
+    has_region = bool(re.search(r'\bregion\b', status_str, re.IGNORECASE))
+    
+    # If all three words are present, normalize to NEW
+    if has_moving and has_within and has_region:
+        return 'NEW'
+    
+    # Otherwise return unchanged
+    return status_value
+
 def get_region_code(region):
     """
     Get the region code for a given region name
