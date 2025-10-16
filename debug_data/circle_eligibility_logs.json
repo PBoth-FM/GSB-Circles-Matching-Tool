@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "timestamp": "2025-10-16 02:17:23",
+    "timestamp": "2025-10-16 02:32:14",
     "region": "all_regions",
     "total_logs": 207,
     "added_logs": 145,
@@ -1759,8 +1759,7 @@
       "max_additions": 3,
       "current_members": 5,
       "is_eligible": true,
-      "original_preference": "Default",
-      "preference_value": 8,
+      "reason": "Has capacity",
       "is_test_circle": false,
       "is_small_circle": false,
       "has_none_preference": false,
@@ -2915,8 +2914,7 @@
       "max_additions": 4,
       "current_members": 4,
       "is_eligible": true,
-      "original_preference": "Default",
-      "preference_value": 8,
+      "reason": "Has capacity",
       "is_test_circle": false,
       "is_small_circle": true,
       "has_none_preference": false,
