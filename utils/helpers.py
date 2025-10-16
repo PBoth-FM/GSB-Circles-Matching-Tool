@@ -98,89 +98,113 @@ def generate_download_link(results_df):
             adjusted_matched = matched_count - test_participants
             print(f"  Adjusted matched count (removing test participants): {adjusted_matched}")
 
-        # CRITICAL FIX: Apply the same metadata fixes to the CSV output
-        # Check if we have unknown values in subregion or meeting time columns
-        if 'proposed_NEW_Subregion' in output_df.columns or 'proposed_NEW_DayTime' in output_df.columns:
+    # CRITICAL FIX: For all matched participants, ensure their proposed_NEW_Subregion 
+    # comes from their assigned circle, not their preferences
+    # This is especially critical for "MOVING INTO Region" participants
+    if 'proposed_NEW_circles_id' in output_df.columns and 'matched_circles' in st.session_state:
+        import streamlit as st
+        circles_df = st.session_state.matched_circles
 
-            # ENHANCED FIX: Normalize all subregion values using standardized normalization tables
-            try:
-                # Import normalize_subregion function from circle_reconstruction
-                from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
+        if circles_df is not None and not circles_df.empty:
+            # Create a mapping of circle_id to subregion and meeting_time
+            if 'circle_id' in circles_df.columns and 'subregion' in circles_df.columns:
+                circle_subregion_map = dict(zip(circles_df['circle_id'], circles_df['subregion']))
+                circle_time_map = dict(zip(circles_df['circle_id'], circles_df['meeting_time']))
 
-                # Clear the normalization cache to ensure fresh data
-                clear_normalization_cache()
-                print("\n🔄 NORMALIZING SUBREGION VALUES IN CSV EXPORT")
+                # Update matched participants with their circle's metadata
+                matched_mask = (output_df['proposed_NEW_circles_id'].notna()) & (output_df['proposed_NEW_circles_id'] != 'UNMATCHED')
+                for idx in output_df[matched_mask].index:
+                    circle_id = output_df.at[idx, 'proposed_NEW_circles_id']
+                    if circle_id in circle_subregion_map:
+                        output_df.at[idx, 'proposed_NEW_Subregion'] = circle_subregion_map[circle_id]
+                    if circle_id in circle_time_map:
+                        output_df.at[idx, 'proposed_NEW_DayTime'] = circle_time_map[circle_id]
 
-                # Track special problem regions for enhanced logging
-                problem_subregions = ['Napa Valley', 'North Spokane', 'Unknown']
-                normalized_count = 0
-                problem_fixed = 0
+                print(f"  ✅ Updated {matched_mask.sum()} matched participants with circle metadata")
 
-                # Apply normalization to proposed_NEW_Subregion column
-                if 'proposed_NEW_Subregion' in output_df.columns:
-                    # Create a separate Series for comparison
-                    original_values = output_df['proposed_NEW_Subregion'].copy()
+    # CRITICAL FIX: Apply the same metadata fixes to the CSV output
+    # Check if we have unknown values in subregion or meeting time columns
+    if 'proposed_NEW_Subregion' in output_df.columns or 'proposed_NEW_DayTime' in output_df.columns:
 
-                    # Apply normalization
-                    output_df['proposed_NEW_Subregion'] = output_df['proposed_NEW_Subregion'].apply(
-                        lambda x: normalize_subregion(x) if pd.notnull(x) else x
-                    )
+        # ENHANCED FIX: Normalize all subregion values using standardized normalization tables
+        try:
+            # Import normalize_subregion function from circle_reconstruction
+            from modules.circle_reconstruction import normalize_subregion, clear_normalization_cache
 
-                    # Count changes
-                    changed_mask = original_values != output_df['proposed_NEW_Subregion']
-                    normalized_count = changed_mask.sum()
+            # Clear the normalization cache to ensure fresh data
+            clear_normalization_cache()
+            print("\n🔄 NORMALIZING SUBREGION VALUES IN CSV EXPORT")
 
-                    # Count problem region fixes
-                    if normalized_count > 0:
-                        for problem in problem_subregions:
-                            problem_mask = (original_values == problem) & changed_mask
-                            problem_count = problem_mask.sum()
-                            if problem_count > 0:
-                                problem_fixed += problem_count
-                                print(f"  ✅ Fixed {problem_count} instances of '{problem}' in CSV export")
+            # Track special problem regions for enhanced logging
+            problem_subregions = ['Napa Valley', 'North Spokane', 'Unknown']
+            normalized_count = 0
+            problem_fixed = 0
 
-                    print(f"  Normalized {normalized_count} subregion values in CSV export")
-
-            except Exception as e:
-                print(f"  ⚠️ Error normalizing subregion values in CSV: {str(e)}")
-
-            # Check for unknown values
-            unknown_subregions = 0
-            unknown_meeting_times = 0
-
+            # Apply normalization to proposed_NEW_Subregion column
             if 'proposed_NEW_Subregion' in output_df.columns:
-                unknown_subregions = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+                # Create a separate Series for comparison
+                original_values = output_df['proposed_NEW_Subregion'].copy()
+
+                # Apply normalization
+                output_df['proposed_NEW_Subregion'] = output_df['proposed_NEW_Subregion'].apply(
+                    lambda x: normalize_subregion(x) if pd.notnull(x) else x
+                )
+
+                # Count changes
+                changed_mask = original_values != output_df['proposed_NEW_Subregion']
+                normalized_count = changed_mask.sum()
+
+                # Count problem region fixes
+                if normalized_count > 0:
+                    for problem in problem_subregions:
+                        problem_mask = (original_values == problem) & changed_mask
+                        problem_count = problem_mask.sum()
+                        if problem_count > 0:
+                            problem_fixed += problem_count
+                            print(f"  ✅ Fixed {problem_count} instances of '{problem}' in CSV export")
+
+                print(f"  Normalized {normalized_count} subregion values in CSV export")
+
+        except Exception as e:
+            print(f"  ⚠️ Error normalizing subregion values in CSV: {str(e)}")
+
+        # Check for unknown values
+        unknown_subregions = 0
+        unknown_meeting_times = 0
+
+        if 'proposed_NEW_Subregion' in output_df.columns:
+            unknown_subregions = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+
+        if 'proposed_NEW_DayTime' in output_df.columns:
+            unknown_meeting_times = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+
+        print(f"\n  🔍 CSV METADATA CHECK: Found {unknown_subregions} Unknown subregions and {unknown_meeting_times} Unknown meeting times")
+
+        if unknown_subregions > 0 or unknown_meeting_times > 0:
+            print("  🔧 APPLYING CENTRALIZED METADATA FIXES TO CSV OUTPUT")
+
+            # Use our centralized metadata fix function
+            try:
+                from utils.metadata_manager import fix_participant_metadata_in_results
+                # Apply the centralized fix function
+                fixed_df = fix_participant_metadata_in_results(output_df)
+                # Update with fixed data
+                output_df = fixed_df
+                print("  ✅ Successfully applied centralized metadata fixes")
+            except Exception as e:
+                print(f"  ⚠️ Error applying centralized metadata fixes: {str(e)}")
+                print("  Continuing with original metadata")
+
+            # Final check for any remaining unknown values
+            if 'proposed_NEW_Subregion' in output_df.columns:
+                remaining_unknown = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
+                print(f"  Remaining unknown subregions: {remaining_unknown}")
 
             if 'proposed_NEW_DayTime' in output_df.columns:
-                unknown_meeting_times = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
-
-            print(f"\n  🔍 CSV METADATA CHECK: Found {unknown_subregions} Unknown subregions and {unknown_meeting_times} Unknown meeting times")
-
-            if unknown_subregions > 0 or unknown_meeting_times > 0:
-                print("  🔧 APPLYING CENTRALIZED METADATA FIXES TO CSV OUTPUT")
-
-                # Use our centralized metadata fix function
-                try:
-                    from utils.metadata_manager import fix_participant_metadata_in_results
-                    # Apply the centralized fix function
-                    fixed_df = fix_participant_metadata_in_results(output_df)
-                    # Update with fixed data
-                    output_df = fixed_df
-                    print("  ✅ Successfully applied centralized metadata fixes")
-                except Exception as e:
-                    print(f"  ⚠️ Error applying centralized metadata fixes: {str(e)}")
-                    print("  Continuing with original metadata")
-
-                # Final check for any remaining unknown values
-                if 'proposed_NEW_Subregion' in output_df.columns:
-                    remaining_unknown = output_df[output_df['proposed_NEW_Subregion'] == 'Unknown'].shape[0]
-                    print(f"  Remaining unknown subregions: {remaining_unknown}")
-
-                if 'proposed_NEW_DayTime' in output_df.columns:
-                    remaining_unknown = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
-                    print(f"  Remaining unknown meeting times: {remaining_unknown}")
-            else:
-                print("  ✅ No Unknown metadata values found in CSV - no fixes needed")
+                remaining_unknown = output_df[output_df['proposed_NEW_DayTime'] == 'Unknown'].shape[0]
+                print(f"  Remaining unknown meeting times: {remaining_unknown}")
+        else:
+            print("  ✅ No Unknown metadata values found in CSV - no fixes needed")
 
 
     # Only keep columns that don't start with "Unnamed:"
@@ -261,7 +285,7 @@ def generate_download_link(results_df):
     # STEP 1.5: Explicitly remove Gender Identity column to prevent it from appearing anywhere in CSV
     columns_to_remove_explicit = ['Gender Identity']
     print(f"  Explicitly removing sensitive columns: {columns_to_remove_explicit}")
-    
+
     for col_to_remove in columns_to_remove_explicit:
         if col_to_remove in output_df.columns:
             output_df = output_df.drop(columns=[col_to_remove])
@@ -344,44 +368,44 @@ def generate_download_link(results_df):
     # SOLO JOINER ANALYSIS: Identify new members who are the only new joiner in continuing circles
     # CRITICAL: This must happen BEFORE column checking to ensure Solo Joiner column is included
     print("\n🔍 SOLO JOINER ANALYSIS: Analyzing circle composition for solo joiners")
-    
+
     # Initialize Solo Joiner column with empty values
     output_df['Solo Joiner'] = ''
-    
+
     # Only analyze if we have the required columns
     if 'proposed_NEW_circles_id' in output_df.columns and 'Status' in output_df.columns:
         # Group participants by circle ID
         circle_groups = output_df.groupby('proposed_NEW_circles_id')
-        
+
         solo_joiner_count = 0
         continuing_circles_analyzed = 0
-        
+
         for circle_id, circle_participants in circle_groups:
             # Skip unmatched participants
             if pd.isna(circle_id) or circle_id == 'UNMATCHED':
                 continue
-                
+
             # Count continuing vs new members in this circle
             continuing_members = circle_participants[circle_participants['Status'] == 'CURRENT-CONTINUING']
             new_members = circle_participants[circle_participants['Status'] != 'CURRENT-CONTINUING']
-            
+
             # Check if this is a continuing circle (has at least one CURRENT-CONTINUING member)
             if len(continuing_members) > 0:
                 continuing_circles_analyzed += 1
-                
+
                 # Check if exactly one new member joined this continuing circle
                 if len(new_members) == 1:
                     # Flag the new member as "Solo"
                     new_member_id = new_members.iloc[0]['Encoded ID']
                     output_df.loc[output_df['Encoded ID'] == new_member_id, 'Solo Joiner'] = 'Solo'
                     solo_joiner_count += 1
-                    
+
                     print(f"  ✅ Solo joiner found: Circle {circle_id} - 1 new member joining {len(continuing_members)} continuing members")
                 elif len(new_members) > 1:
                     print(f"  Multiple joiners: Circle {circle_id} - {len(new_members)} new members joining {len(continuing_members)} continuing members")
                 else:
                     print(f"  No new joiners: Circle {circle_id} - {len(continuing_members)} continuing members only")
-        
+
         print(f"  ✅ Analysis complete: {solo_joiner_count} solo joiners identified across {continuing_circles_analyzed} continuing circles")
     else:
         print("  ⚠️ Required columns not found - skipping Solo Joiner analysis")
@@ -413,7 +437,7 @@ def generate_download_link(results_df):
         print(f"  Additional columns not in specified order: {remaining_columns}")
         # Add them at the end, sorted alphabetically
         ordered_columns.extend(sorted(remaining_columns))
-    
+
     # Create a new DataFrame with only the columns that exist
     final_columns = [col for col in ordered_columns if col in output_df.columns]
     final_df = output_df[final_columns]
@@ -1004,122 +1028,122 @@ def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
     """
     Rename virtual circles from VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} format
     to V-{REGION_CODE}-{NUMBER} format for final output only.
-    
+
     This function:
     1. Groups virtual circles by region code
     2. Preserves distinction between continuing and new circles  
     3. Numbers sequentially starting from 01 within each group
-    
+
     Args:
         results_df: DataFrame with participant results
         matched_circles_df: Optional DataFrame with circle metadata
-        
+
     Returns:
         Tuple of (updated_results_df, updated_circles_df, renaming_map)
     """
     import re
     import pandas as pd
-    
+
     if results_df is None or results_df.empty:
         return results_df, matched_circles_df, {}
-    
+
     print("\n🔄 RENAMING VIRTUAL CIRCLES FOR OUTPUT")
-    
+
     # Create copies to avoid modifying original data
     updated_results = results_df.copy()
     updated_circles = matched_circles_df.copy() if matched_circles_df is not None else None
-    
+
     # Find all virtual circle IDs in the results
     if 'proposed_NEW_circles_id' not in updated_results.columns:
         print("  No circle assignment column found - skipping rename")
         return updated_results, updated_circles, {}
-    
+
     # Extract all virtual circle IDs (starting with VO-)
     all_circle_ids = updated_results['proposed_NEW_circles_id'].dropna().unique()
     virtual_circle_ids = [cid for cid in all_circle_ids if str(cid).startswith('VO-')]
-    
+
     if not virtual_circle_ids:
         print("  No virtual circles found - skipping rename")
         return updated_results, updated_circles, {}
-    
+
     print(f"  Found {len(virtual_circle_ids)} virtual circles to rename")
-    
+
     # Parse virtual circle IDs and group by region
     circle_groups = {}
     renaming_map = {}
-    
+
     # Enhanced pattern to match multiple GMT format variations:
     # - VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} (e.g., VO-AE-GMT+3-NEW-01)
     # - VO-{REGION_CODE}-GMT-{NUMBER} (e.g., VO-AE-GMT-NEW-01)
     # - VO-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER}
     # - VO-{REGION_CODE}-GMT-NEW-{NUMBER}
     pattern = r'^VO-([^-]+)-GMT(?:[+-]?\d+)?-(?:(NEW)-)?(\d+)$'
-    
+
     for circle_id in virtual_circle_ids:
         match = re.match(pattern, circle_id)
         if not match:
             print(f"    ⚠️ Could not parse circle ID format: {circle_id}")
             continue
-            
+
         region_code = match.group(1)
         is_new = match.group(2) == 'NEW'
         old_number = match.group(3)
-        
+
         # Create grouping key
         group_key = f"{region_code}_{'NEW' if is_new else 'CONTINUING'}"
-        
+
         if group_key not in circle_groups:
             circle_groups[group_key] = []
-            
+
         circle_groups[group_key].append({
             'old_id': circle_id,
             'region_code': region_code,
             'is_new': is_new,
             'old_number': old_number
         })
-    
+
     # Generate new sequential IDs for each group
     for group_key, circles in circle_groups.items():
         region_code = circles[0]['region_code']
         is_new_group = circles[0]['is_new']
-        
+
         # Sort by old number to maintain some consistency
         circles.sort(key=lambda x: int(x['old_number']))
-        
+
         print(f"    Processing group {group_key}: {len(circles)} circles")
-        
+
         for idx, circle_info in enumerate(circles, start=1):
             old_id = circle_info['old_id']
-            
+
             # Generate new ID: V-{REGION_CODE}-{NUMBER} or V-{REGION_CODE}-NEW-{NUMBER}
             if is_new_group:
                 new_id = f"V-{region_code}-NEW-{idx:02d}"
             else:
                 new_id = f"V-{region_code}-{idx:02d}"
-            
+
             renaming_map[old_id] = new_id
             print(f"      {old_id} → {new_id}")
-    
+
     # Apply renaming to results DataFrame
     if renaming_map:
         print(f"  Applying renaming to {len(updated_results)} participant records")
-        
+
         # Update circle assignments in results
         mask = updated_results['proposed_NEW_circles_id'].isin(renaming_map.keys())
         updated_results.loc[mask, 'proposed_NEW_circles_id'] = updated_results.loc[mask, 'proposed_NEW_circles_id'].map(renaming_map)
-        
+
         renamed_count = mask.sum()
         print(f"    Updated {renamed_count} participant circle assignments")
-        
+
         # Apply renaming to circles DataFrame if provided
         if updated_circles is not None and not updated_circles.empty:
             if 'circle_id' in updated_circles.columns:
                 circles_mask = updated_circles['circle_id'].isin(renaming_map.keys())
                 updated_circles.loc[circles_mask, 'circle_id'] = updated_circles.loc[circles_mask, 'circle_id'].map(renaming_map)
-                
+
                 circles_renamed = circles_mask.sum()
                 print(f"    Updated {circles_renamed} circle metadata records")
-    
+
     print(f"  ✅ Successfully renamed {len(renaming_map)} virtual circles")
-    
+
     return updated_results, updated_circles, renaming_map
