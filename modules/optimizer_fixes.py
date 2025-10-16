@@ -1,3 +1,92 @@
+
+"""
+Critical fixes for the circle optimizer algorithm. 
+This module contains targeted fixes for issues with CURRENT-CONTINUING participants
+and improving the "optimize" mode for continuing circles.
+"""
+
+import pandas as pd
+import streamlit as st
+import re
+
+def preprocess_moving_into_region(region_df, debug_mode=False):
+    """
+    Pre-process participants with 'MOVING INTO Region' status.
+    Sets first_choice_location to Current_Subregion if first_choice_location is blank.
+    
+    Args:
+        region_df: DataFrame with participants from this region
+        debug_mode: Whether to print debug information
+        
+    Returns:
+        DataFrame with updated first_choice_location values
+    """
+    if debug_mode:
+        print("\n🔄 PREPROCESSING: Checking for 'MOVING INTO Region' participants")
+    
+    # Create a copy to avoid modifying the original
+    df = region_df.copy()
+    
+    # Find participants with status containing "moving", "into", and "region" (case-insensitive, any order)
+    # Using regex to match any order and any capitalization
+    moving_into_mask = df['Raw_Status'].astype(str).apply(
+        lambda x: bool(
+            re.search(r'\bmoving\b', x, re.IGNORECASE) and
+            re.search(r'\binto\b', x, re.IGNORECASE) and
+            re.search(r'\bregion\b', x, re.IGNORECASE)
+        )
+    ) if 'Raw_Status' in df.columns else pd.Series([False] * len(df))
+    
+    moving_into_participants = df[moving_into_mask]
+    
+    if debug_mode:
+        print(f"  Found {len(moving_into_participants)} participants with 'MOVING INTO Region' status")
+    
+    # Track statistics
+    auto_filled = 0
+    already_has_preference = 0
+    both_blank_warnings = 0
+    
+    # Process each matching participant
+    for idx in moving_into_participants.index:
+        first_choice = df.loc[idx, 'first_choice_location']
+        current_subregion = df.loc[idx, 'Current_Subregion']
+        
+        # Check if first_choice_location is blank
+        first_choice_blank = pd.isna(first_choice) or first_choice == ''
+        
+        # Check if Current_Subregion exists
+        subregion_exists = pd.notna(current_subregion) and current_subregion != ''
+        
+        if first_choice_blank and subregion_exists:
+            # Auto-fill first_choice_location with Current_Subregion
+            df.loc[idx, 'first_choice_location'] = current_subregion
+            auto_filled += 1
+            
+            if debug_mode:
+                p_id = df.loc[idx, 'Encoded ID']
+                print(f"  ✅ Auto-filled first_choice_location for {p_id}: {current_subregion}")
+        
+        elif not first_choice_blank:
+            # They already have a preference - use it
+            already_has_preference += 1
+            
+        elif first_choice_blank and not subregion_exists:
+            # Both are blank - log warning
+            both_blank_warnings += 1
+            p_id = df.loc[idx, 'Encoded ID']
+            print(f"  ⚠️ WARNING: Participant {p_id} has blank first_choice_location and blank Current_Subregion")
+    
+    # Print summary
+    if debug_mode and len(moving_into_participants) > 0:
+        print(f"\n📊 MOVING INTO Region preprocessing summary:")
+        print(f"  - Auto-filled: {auto_filled}")
+        print(f"  - Already had preference: {already_has_preference}")
+        print(f"  - Warnings (both blank): {both_blank_warnings}")
+    
+    return df
+
+
 """
 Critical fixes for the circle optimizer algorithm. 
 This module contains targeted fixes for issues with CURRENT-CONTINUING participants
