@@ -1,11 +1,612 @@
 {
-  "total_continuing_members": 0,
+  "total_continuing_members": 23,
   "matched_members": 0,
-  "unmatched_members": 0,
+  "unmatched_members": 23,
   "matched_to_correct_circle": 0,
   "matched_to_wrong_circle": 0,
-  "members": [],
-  "match_rate": 0,
-  "correct_match_rate": 0,
-  "unmatched_reason_frequency": {}
+  "members": [
+    {
+      "participant_id": "67792565465",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "53161322137",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "77541604755",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "29618668179",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "70722128460",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "49558544681",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "39887383185",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "76110100755",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "63632654605",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66802481629",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67971582993",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75031889954",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66603015464",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "75398225745",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73689198848",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "66116105284",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "48142339880",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67547678871",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "73178132038",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "78920669980",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-02",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "45678254269",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-01",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "67900932306",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    },
+    {
+      "participant_id": "57190707667",
+      "status": "UNMATCHED",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SEA-03",
+      "assigned_circle": "UNMATCHED",
+      "matched_correctly": false,
+      "unmatched_reason": "Unknown (participant not found in unmatched list)"
+    }
+  ],
+  "match_rate": 0.0,
+  "correct_match_rate": 0.0,
+  "unmatched_reason_frequency": {
+    "Unknown (participant not found in unmatched list)": 23
+  }
 }

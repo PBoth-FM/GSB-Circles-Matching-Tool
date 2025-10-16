@@ -1,9 +1,518 @@
 {
-  "total_continuing_members": 0,
-  "members": [],
-  "standard_method_success_rate": 0,
-  "hybrid_method_success_rate": 0,
-  "aggressive_method_success_rate": 0,
-  "any_method_success_rate": 0,
-  "column_frequency": {}
+  "total_continuing_members": 23,
+  "members": [
+    {
+      "participant_id": "67792565465",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "53161322137",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "77541604755",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "29618668179",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "70722128460",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "49558544681",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "39887383185",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "76110100755",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "63632654605",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "66802481629",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "67971582993",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "75031889954",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "66603015464",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "75398225745",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "73689198848",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "66116105284",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "48142339880",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "67547678871",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "73178132038",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "78920669980",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-02",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-02",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "45678254269",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "67900932306",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "57190707667",
+      "status": "CURRENT-CONTINUING",
+      "region": "Seattle",
+      "circle_id": "IP-SEA-03",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SEA-03",
+        "column": "Current_Circle_ID"
+      }
+    }
+  ],
+  "standard_method_success_rate": 1.0,
+  "hybrid_method_success_rate": 0.0,
+  "aggressive_method_success_rate": 1.0,
+  "any_method_success_rate": 1.0,
+  "column_frequency": {
+    "Current_Circle_ID": 23
+  }
 }
