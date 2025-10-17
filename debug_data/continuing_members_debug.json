@@ -1,140 +1,8 @@
 {
-  "total_continuing_members": 9,
+  "total_continuing_members": 4,
   "members": [
     {
-      "participant_id": "65337585810",
-      "status": "CURRENT-CONTINUING",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "77025308979",
-      "status": "CURRENT-CONTINUING",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "2194895205988",
-      "status": "CURRENT-CONTINUING",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "324951502903",
-      "status": "CURRENT-CONTINUING",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "2177633464709",
-      "status": "CURRENT-CONTINUING",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "243970963747",
-      "status": "CURRENT-CONTINUING",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      }
-    },
-    {
-      "participant_id": "78896155474",
+      "participant_id": "66883222431",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -178,7 +46,29 @@
       }
     },
     {
-      "participant_id": "63289381934",
+      "participant_id": "67938698165",
+      "status": "CURRENT-CONTINUING",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SIN-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SIN-01",
+        "column": "Current_Circle_ID"
+      }
+    },
+    {
+      "participant_id": "58244483490",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -205,6 +95,6 @@
   "aggressive_method_success_rate": 1.0,
   "any_method_success_rate": 1.0,
   "column_frequency": {
-    "Current_Circle_ID": 9
+    "Current_Circle_ID": 4
   }
 }

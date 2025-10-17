@@ -1,180 +1,12 @@
 {
-  "total_continuing_members": 9,
-  "matched_members": 9,
+  "total_continuing_members": 4,
+  "matched_members": 4,
   "unmatched_members": 0,
-  "matched_to_correct_circle": 9,
+  "matched_to_correct_circle": 4,
   "matched_to_wrong_circle": 0,
   "members": [
     {
-      "participant_id": "65337585810",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-SIN-02",
-      "assigned_circle": "IP-SIN-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "77025308979",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-SIN-02",
-      "assigned_circle": "IP-SIN-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "2194895205988",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-SIN-02",
-      "assigned_circle": "IP-SIN-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "324951502903",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "2177633464709",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-01",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-01",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-SIN-01",
-      "assigned_circle": "IP-SIN-01",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "243970963747",
-      "status": "MATCHED",
-      "region": "Singapore",
-      "circle_id": "IP-SIN-02",
-      "circle_id_source": "Current_Circle_ID",
-      "standard_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "hybrid_method": {
-        "found": false,
-        "value": null,
-        "column": null
-      },
-      "aggressive_method": {
-        "found": true,
-        "value": "IP-SIN-02",
-        "column": "Current_Circle_ID"
-      },
-      "expected_circle": "IP-SIN-02",
-      "assigned_circle": "IP-SIN-02",
-      "matched_correctly": true,
-      "location_score": 3,
-      "time_score": 3,
-      "total_score": 6
-    },
-    {
-      "participant_id": "78896155474",
+      "participant_id": "66883222431",
       "status": "MATCHED",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -230,7 +62,35 @@
       "total_score": 6
     },
     {
-      "participant_id": "63289381934",
+      "participant_id": "67938698165",
+      "status": "MATCHED",
+      "region": "Singapore",
+      "circle_id": "IP-SIN-01",
+      "circle_id_source": "Current_Circle_ID",
+      "standard_method": {
+        "found": true,
+        "value": "IP-SIN-01",
+        "column": "Current_Circle_ID"
+      },
+      "hybrid_method": {
+        "found": false,
+        "value": null,
+        "column": null
+      },
+      "aggressive_method": {
+        "found": true,
+        "value": "IP-SIN-01",
+        "column": "Current_Circle_ID"
+      },
+      "expected_circle": "IP-SIN-01",
+      "assigned_circle": "IP-SIN-01",
+      "matched_correctly": true,
+      "location_score": 3,
+      "time_score": 3,
+      "total_score": 6
+    },
+    {
+      "participant_id": "58244483490",
       "status": "MATCHED",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
