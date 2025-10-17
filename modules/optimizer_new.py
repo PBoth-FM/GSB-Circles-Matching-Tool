@@ -2494,14 +2494,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Normal case: Both location and time must match for compatibility
                 is_compatible = (loc_match and time_match)
             
-            # DEBUG: Show compatibility result for specific participant
-            if is_debug_participant:
-                print(f"  is_continuing_member: {is_continuing_member}")
-                print(f"  current_circle: {current_circle}")
-                print(f"  loc_match: {loc_match}")
-                print(f"  time_match: {time_match}")
-                print(f"  ⭐ FINAL is_compatible: {is_compatible}")
-            
             # SEATTLE ENHANCED COMPATIBILITY: Print detailed debug whenever a NEW member tries to match with IP-SEA-01
             if c_id == 'IP-SEA-01' and p_row.get('Status') == 'NEW' and region == 'Seattle':
                 # Always print debug info for any NEW participants being checked against IP-SEA-01
