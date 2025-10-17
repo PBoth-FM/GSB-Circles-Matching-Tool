@@ -2248,8 +2248,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         p_row = matching_rows.iloc[0]
         participant_compatible_circles[p_id] = []
         
-        # DEBUG: Track specific participant
-        is_debug_participant = (p_id == '76211339899')
+        # DEBUG: Track specific participant (IDs are stored with .0 suffix)
+        is_debug_participant = (p_id == '76211339899.0' or p_id == '76211339899')
         if is_debug_participant:
             print(f"\n{'='*80}")
             print(f"🔍 DEBUG PARTICIPANT 76211339899 - START OF PROCESSING")
@@ -3673,8 +3673,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 if (p_id, c_id) in x and x[(p_id, c_id)].value() is not None and abs(x[(p_id, c_id)].value() - 1) < 1e-5:
                     circle_assignments[p_id] = c_id
                     
-                    # DEBUG: Track specific participant assignment
-                    if p_id == '76211339899':
+                    # DEBUG: Track specific participant assignment (IDs are stored with .0 suffix)
+                    if p_id == '76211339899.0' or p_id == '76211339899':
                         meta = circle_metadata[c_id]
                         print(f"\n{'='*80}")
                         print(f"🔍 DEBUG PARTICIPANT 76211339899 - ASSIGNMENT RESULT")

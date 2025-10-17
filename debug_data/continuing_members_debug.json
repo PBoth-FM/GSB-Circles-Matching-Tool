@@ -2,7 +2,7 @@
   "total_continuing_members": 9,
   "members": [
     {
-      "participant_id": "65337585810",
+      "participant_id": "65337585810.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-02",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "participant_id": "77025308979",
+      "participant_id": "77025308979.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-02",
@@ -46,7 +46,7 @@
       }
     },
     {
-      "participant_id": "2194895205988",
+      "participant_id": "2194900000000.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-02",
@@ -68,7 +68,7 @@
       }
     },
     {
-      "participant_id": "324951502903",
+      "participant_id": "324952000000.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -90,7 +90,7 @@
       }
     },
     {
-      "participant_id": "2177633464709",
+      "participant_id": "2177630000000.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -112,7 +112,7 @@
       }
     },
     {
-      "participant_id": "243970963747",
+      "participant_id": "243971000000.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-02",
@@ -134,7 +134,7 @@
       }
     },
     {
-      "participant_id": "78896155474",
+      "participant_id": "78896155474.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -156,7 +156,7 @@
       }
     },
     {
-      "participant_id": "64567903885",
+      "participant_id": "64567903885.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
@@ -178,7 +178,7 @@
       }
     },
     {
-      "participant_id": "63289381934",
+      "participant_id": "63289381934.0",
       "status": "CURRENT-CONTINUING",
       "region": "Singapore",
       "circle_id": "IP-SIN-01",
