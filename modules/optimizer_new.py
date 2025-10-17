@@ -2398,6 +2398,27 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         match3 = safe_string_match(p_row['third_choice_location'], subregion)
                         print(f"    third_choice '{p_row['third_choice_location']}' vs '{subregion}': {match3}")
             
+            # DIAGNOSTIC: Log compatibility decisions for problematic participants
+            problematic_ids = ['76211339899.0', '65235789970.0', '71442701845.0', '58871849454.0', '59871825509.0']
+            if p_id in problematic_ids:
+                print(f"\n🚨 DIAGNOSTIC - Problematic Participant {p_id} vs Circle {c_id}:")
+                print(f"  Status: {p_row.get('Status')}")
+                print(f"  Raw_Status: {p_row.get('Raw_Status')}")
+                print(f"  Circle subregion: '{subregion}'")
+                print(f"  Participant preferences:")
+                print(f"    1st: '{p_row.get('first_choice_location')}'")
+                print(f"    2nd: '{p_row.get('second_choice_location')}'")
+                print(f"    3rd: '{p_row.get('third_choice_location')}'")
+                print(f"  Location match result: {loc_match}")
+                if loc_match:
+                    # Show which preference matched
+                    if safe_string_match(p_row['first_choice_location'], subregion):
+                        print(f"  ✅ Matched via 1st choice location")
+                    elif safe_string_match(p_row['second_choice_location'], subregion):
+                        print(f"  ✅ Matched via 2nd choice location")
+                    elif safe_string_match(p_row['third_choice_location'], subregion):
+                        print(f"  ✅ Matched via 3rd choice location")
+            
             # Check time compatibility using is_time_compatible function which properly handles "Varies"
             # Define if this is a special test case that needs detailed debugging
             is_test_case = (p_id == '73177784103' and c_id == 'IP-SIN-01') or (p_id == '50625303450' and c_id == 'IP-LON-04')
@@ -3674,6 +3695,60 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                         print(f"  Circle type: {'Existing' if meta['is_existing'] else 'New'}")
                         print(f"  Circle subregion: {meta['subregion']}")
                         print(f"  Circle meeting time: {meta['meeting_time']}")
+        
+        # VALIDATION: Check all assignments for location compatibility
+        print(f"\n🔍 POST-OPTIMIZATION VALIDATION - Checking {len(circle_assignments)} assignments")
+        incompatible_assignments = []
+        
+        for p_id, c_id in circle_assignments.items():
+            # Skip pre-assigned participants as they have different rules
+            if 'pre_assigned_participants' in locals() and p_id in pre_assigned_participants:
+                continue
+                
+            # Get participant data
+            p_rows = region_df[region_df['Encoded ID'] == p_id]
+            if p_rows.empty:
+                continue
+            p_row = p_rows.iloc[0]
+            
+            # Get circle metadata
+            if c_id not in circle_metadata:
+                print(f"  ⚠️ Circle {c_id} not found in metadata for participant {p_id}")
+                continue
+                
+            circle_subregion = circle_metadata[c_id]['subregion']
+            
+            # Check if assigned circle's subregion matches ANY of participant's preferences
+            prefs = [
+                p_row.get('first_choice_location'),
+                p_row.get('second_choice_location'),
+                p_row.get('third_choice_location')
+            ]
+            
+            matches_any_pref = any(
+                safe_string_match(pref, circle_subregion) 
+                for pref in prefs if pref and not pd.isna(pref)
+            )
+            
+            if not matches_any_pref:
+                incompatible_assignments.append({
+                    'participant_id': p_id,
+                    'circle_id': c_id,
+                    'circle_subregion': circle_subregion,
+                    'preferences': prefs,
+                    'status': p_row.get('Status'),
+                    'raw_status': p_row.get('Raw_Status')
+                })
+        
+        if incompatible_assignments:
+            print(f"\n🚨 VALIDATION FAILED: Found {len(incompatible_assignments)} INCOMPATIBLE ASSIGNMENTS!")
+            for item in incompatible_assignments[:10]:  # Show first 10
+                print(f"\n  ❌ Participant {item['participant_id']}:")
+                print(f"     Status: {item['status']}, Raw: {item['raw_status']}")
+                print(f"     Assigned to: {item['circle_id']} (subregion: '{item['circle_subregion']}')")
+                print(f"     But wanted: {item['preferences']}")
+        else:
+            print(f"  ✅ All assignments are compatible with location preferences")
         
         # Check which new circles are active
         active_new_circles = []
