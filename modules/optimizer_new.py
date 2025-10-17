@@ -2329,12 +2329,6 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             subregion = meta['subregion']
             time_slot = meta['meeting_time']
             
-            # DEBUG: Track specific participant compatibility
-            if is_debug_participant:
-                print(f"\n🔍 DEBUG 76211339899 - Checking circle {c_id}:")
-                print(f"  Circle subregion: '{subregion}'")
-                print(f"  Circle time: '{time_slot}'")
-            
             # Debug Houston circles and participant compatibility
             is_houston_circle = 'HOU' in c_id if c_id is not None else False
             # Use our safe string comparison for Houston participants
