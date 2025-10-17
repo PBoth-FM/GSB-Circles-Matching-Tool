@@ -242,11 +242,14 @@ def normalize_status_values(df):
 
     # FIRST: Store original status values in Raw_Status before any normalization
     # This preserves the exact original value from the input file
-    normalized_df['Raw_Status'] = normalized_df['Status'].astype(str)
+    # CRITICAL: Only create Raw_Status if it doesn't already exist (don't overwrite CSV's Raw_Status!)
+    if 'Raw_Status' not in normalized_df.columns:
+        normalized_df['Raw_Status'] = normalized_df['Status'].astype(str)
 
     # SECOND: Apply moving within region normalization to Status column
     # This handles any variation with "Moving", "within", and "Region" words
-    normalized_df['Status'] = normalized_df['Status'].apply(normalize_moving_within_region_status)
+    # CRITICAL: Check Raw_Status first (if it exists), then fall back to Status
+    normalized_df['Status'] = normalized_df['Raw_Status'].apply(normalize_moving_within_region_status)
 
     # Define detailed status mapping for Raw_Status column (for backwards compatibility)
     detailed_status_mapping = {
