@@ -2494,16 +2494,35 @@ def optimize_region(region, region_df, min_circle_size, enable_host_requirement,
                     (p_row['third_choice_location'] == subregion)
                 )
                 
+                # DIAGNOSTIC: Track relaxed matching attempts
+                relaxed_match_applied = False
+                
                 # If no match, try a more flexible approach for circles that aren't at capacity
                 # This allows more participants to get matched to existing circles
                 # Relaxed matching is only applied if the circle has max_additions > 1
                 if not loc_match and circle_data.get('max_additions', 0) > 1:
+                    original_loc_match = loc_match
                     if p_row['first_choice_location'].startswith(subregion) or subregion.startswith(p_row['first_choice_location']):
                         loc_match = True
+                        relaxed_match_applied = True
+                        print(f"🚨 RELAXED LOCATION MATCH: Participant {p} matched to circle {circle_id}")
+                        print(f"   Participant 1st choice: '{p_row['first_choice_location']}'")
+                        print(f"   Circle subregion: '{subregion}'")
+                        print(f"   Match type: prefix/substring match (SHOULD BE EXACT MATCH ONLY!)")
                     elif p_row['second_choice_location'].startswith(subregion) or subregion.startswith(p_row['second_choice_location']):
                         loc_match = True
+                        relaxed_match_applied = True
+                        print(f"🚨 RELAXED LOCATION MATCH: Participant {p} matched to circle {circle_id}")
+                        print(f"   Participant 2nd choice: '{p_row['second_choice_location']}'")
+                        print(f"   Circle subregion: '{subregion}'")
+                        print(f"   Match type: prefix/substring match (SHOULD BE EXACT MATCH ONLY!)")
                     elif p_row['third_choice_location'].startswith(subregion) or subregion.startswith(p_row['third_choice_location']):
                         loc_match = True
+                        relaxed_match_applied = True
+                        print(f"🚨 RELAXED LOCATION MATCH: Participant {p} matched to circle {circle_id}")
+                        print(f"   Participant 3rd choice: '{p_row['third_choice_location']}'")
+                        print(f"   Circle subregion: '{subregion}'")
+                        print(f"   Match type: prefix/substring match (SHOULD BE EXACT MATCH ONLY!)")
                 
                 # Check time compatibility using our improved compatibility function
                 from modules.data_processor import is_time_compatible
