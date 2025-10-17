@@ -2248,6 +2248,21 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         p_row = matching_rows.iloc[0]
         participant_compatible_circles[p_id] = []
         
+        # DEBUG: Track specific participant
+        is_debug_participant = (p_id == '76211339899')
+        if is_debug_participant:
+            print(f"\n{'='*80}")
+            print(f"🔍 DEBUG PARTICIPANT 76211339899 - START OF PROCESSING")
+            print(f"{'='*80}")
+            print(f"Status: {p_row.get('Status', 'MISSING')}")
+            print(f"Raw_Status: {p_row.get('Raw_Status', 'MISSING')}")
+            print(f"Current_Circle_ID: {p_row.get('Current_Circle_ID', 'MISSING')}")
+            print(f"Current_Subregion: {p_row.get('Current_Subregion', 'MISSING')}")
+            print(f"first_choice_location: {p_row.get('first_choice_location', 'MISSING')}")
+            print(f"second_choice_location: {p_row.get('second_choice_location', 'MISSING')}")
+            print(f"third_choice_location: {p_row.get('third_choice_location', 'MISSING')}")
+            print(f"{'='*80}\n")
+        
         # CRITICAL FIX: Fast-track CURRENT-CONTINUING members to their existing circles
         # This is the first round of assignment that takes priority over everything else
         status = p_row.get('Status', '')
@@ -2328,6 +2343,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             meta = circle_metadata[c_id]
             subregion = meta['subregion']
             time_slot = meta['meeting_time']
+            
+            # DEBUG: Track specific participant compatibility
+            if is_debug_participant:
+                print(f"\n🔍 DEBUG 76211339899 - Checking circle {c_id}:")
+                print(f"  Circle subregion: '{subregion}'")
+                print(f"  Circle time: '{time_slot}'")
             
             # Debug Houston circles and participant compatibility
             is_houston_circle = 'HOU' in c_id if c_id is not None else False
@@ -2493,6 +2514,14 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             else:
                 # Normal case: Both location and time must match for compatibility
                 is_compatible = (loc_match and time_match)
+            
+            # DEBUG: Show compatibility result for specific participant
+            if is_debug_participant:
+                print(f"  is_continuing_member: {is_continuing_member}")
+                print(f"  current_circle: {current_circle}")
+                print(f"  loc_match: {loc_match}")
+                print(f"  time_match: {time_match}")
+                print(f"  ⭐ FINAL is_compatible: {is_compatible}")
             
             # SEATTLE ENHANCED COMPATIBILITY: Print detailed debug whenever a NEW member tries to match with IP-SEA-01
             if c_id == 'IP-SEA-01' and p_row.get('Status') == 'NEW' and region == 'Seattle':
@@ -3643,6 +3672,17 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 # Check if this variable exists and is set to 1
                 if (p_id, c_id) in x and x[(p_id, c_id)].value() is not None and abs(x[(p_id, c_id)].value() - 1) < 1e-5:
                     circle_assignments[p_id] = c_id
+                    
+                    # DEBUG: Track specific participant assignment
+                    if p_id == '76211339899':
+                        meta = circle_metadata[c_id]
+                        print(f"\n{'='*80}")
+                        print(f"🔍 DEBUG PARTICIPANT 76211339899 - ASSIGNMENT RESULT")
+                        print(f"{'='*80}")
+                        print(f"Assigned to circle: {c_id}")
+                        print(f"Circle subregion: '{meta['subregion']}'")
+                        print(f"Circle meeting time: '{meta['meeting_time']}'")
+                        print(f"{'='*80}\n")
                     
                     # DIAGNOSTIC: Log Moving Within Region participant assignments
                     p_row = region_df[region_df['Encoded ID'] == p_id].iloc[0] if not region_df[region_df['Encoded ID'] == p_id].empty else None
