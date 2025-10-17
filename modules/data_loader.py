@@ -101,13 +101,6 @@ def load_data(uploaded_file):
             validation_errors.append("The uploaded file is empty")
             return df, validation_errors, []
 
-        # CRITICAL: Convert Encoded ID to string IMMEDIATELY after loading
-        # This prevents Excel scientific notation issues and ensures consistency
-        if 'Encoded ID' in df.columns:
-            df['Encoded ID'] = df['Encoded ID'].astype(str).str.strip()
-            # Remove any '.0' suffix that pandas might add to numeric values
-            df['Encoded ID'] = df['Encoded ID'].str.replace(r'\.0$', '', regex=True)
-
         # SUPER DETAILED DIAGNOSTICS
         print("\n🔬🔬🔬 SUPER DETAILED DATA ANALYSIS IN LOAD_DATA 🔬🔬🔬")
         print(f"🔬 Raw DataFrame shape: {df.shape}")

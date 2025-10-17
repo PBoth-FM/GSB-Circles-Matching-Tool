@@ -432,18 +432,9 @@ def generate_download_link(results_df):
             st.session_state.results = fix_unknown_circle_ids(st.session_state.results)
             print("✅ Session state updated - Circle Composition table will now show corrected data")
 
-    # Convert to CSV with Excel-friendly formatting for Encoded ID
+    # Convert to CSV and return
     csv_buffer = io.StringIO()
-    
-    # Add single quote prefix to Encoded ID column to force Excel text interpretation
-    if 'Encoded ID' in final_df.columns:
-        final_df_copy = final_df.copy()
-        # Prefix with ' to force Excel to treat as text (quote is invisible but preserved)
-        final_df_copy['Encoded ID'] = "'" + final_df_copy['Encoded ID'].astype(str)
-        final_df_copy.to_csv(csv_buffer, index=False)
-    else:
-        final_df.to_csv(csv_buffer, index=False)
-    
+    final_df.to_csv(csv_buffer, index=False)
     return csv_buffer.getvalue()
 
 def generate_circle_id(region, subregion, index, is_new=True):
