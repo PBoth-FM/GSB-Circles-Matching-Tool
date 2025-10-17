@@ -450,12 +450,17 @@ def safe_string_match(value1, value2):
     if str1 == str2:
         return True
         
-    # Prefix match
+    # DIAGNOSTIC: Log prefix matches to identify false positives
+    prefix_match = False
     try:
-        return str1.startswith(str2) or str2.startswith(str1)
+        prefix_match = str1.startswith(str2) or str2.startswith(str1)
+        if prefix_match and str1 != str2:
+            print(f"⚠️ PREFIX MATCH: '{str1}' ≈ '{str2}' (this may be a false positive!)")
     except (AttributeError, TypeError):
         # Extra safety in case conversion fails
-        return False
+        pass
+    
+    return prefix_match
 
 def get_unique_preferences(df, columns):
     """
