@@ -1,10 +1,10 @@
 {
   "metadata": {
-    "timestamp": "2025-11-06 02:31:25",
+    "timestamp": "2025-11-06 15:58:24",
     "region": "all_regions",
     "total_logs": 255,
     "added_logs": 48,
-    "existing_logs": 207,
+    "existing_logs": 255,
     "regions_processed": [
       "all_regions"
     ]
