@@ -3023,7 +3023,43 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             else:
                 print(f"❌ ERROR: Variable for Seattle test participant DOES NOT exist in the model!")
     
-    # Component 6: Diversity bonus - 1 point per unique demographic bucket in each circle
+    # Component 6: Small Circle Growth Priority - HIGH PRIORITY BONUSES
+    # Ensure circles with 2-4 members are prioritized to reach minimum viable size of 5
+    small_circle_growth_bonus = 0
+    
+    if debug_mode:
+        print(f"\n🎯 CALCULATING SMALL CIRCLE GROWTH PRIORITY BONUSES:")
+    
+    # Identify small existing circles that need to grow
+    very_small_circles = []  # 2-3 members
+    small_circles_4 = []      # exactly 4 members
+    
+    for c_id in existing_circle_ids:
+        if c_id in circle_metadata:
+            current_members = circle_metadata[c_id].get('current_members', 0)
+            if 2 <= current_members <= 3:
+                very_small_circles.append(c_id)
+            elif current_members == 4:
+                small_circles_4.append(c_id)
+    
+    # Very high priority for circles with 2-3 members (need 3-2 members to reach 5)
+    for c_id in very_small_circles:
+        for p_id in participants:
+            if (p_id, c_id) in x:
+                small_circle_growth_bonus += 1200 * x[(p_id, c_id)]  # Higher than base matching score
+    
+    # High priority for circles with 4 members (need 1 member to reach 5)
+    for c_id in small_circles_4:
+        for p_id in participants:
+            if (p_id, c_id) in x:
+                small_circle_growth_bonus += 800 * x[(p_id, c_id)]  # Still higher priority
+    
+    if debug_mode and (very_small_circles or small_circles_4):
+        print(f"  Very small circles (2-3 members): {len(very_small_circles)} circles")
+        print(f"  Small circles (4 members): {len(small_circles_4)} circles")
+        print(f"  Combined small circle growth bonus created")
+    
+    # Component 7: Diversity bonus - 1 point per unique demographic bucket in each circle
     # This encourages demographic diversity when preference scores are equal
     diversity_bonus = 0
     
@@ -3054,7 +3090,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         print(f"🌈 Total diversity bonus variable created with {len(all_circle_ids)} circles evaluated")
 
     # Combined objective function
-    total_obj = match_obj + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus + diversity_bonus
+    # Note: small_circle_growth_bonus has highest weight to ensure small circles reach viable size first
+    total_obj = match_obj + small_circle_growth_bonus + existing_circle_bonus + pref_obj - new_circle_penalty + special_test_bonus + diversity_bonus
     
     # [DEBUG INFO] Log information about optimization objective function
     if debug_mode:
@@ -3072,6 +3109,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     if debug_mode:
         print(f"\n🎯 OBJECTIVE FUNCTION COMPONENTS:")
         print(f"  Match component weight: 1000 per participant")
+        print(f"  Small circle growth bonus: 1200 per assignment to very small circles (2-3 members), 800 for 4-member circles")
         print(f"  Existing circle bonus: 500 per assignment")
         print(f"  Preference component weight: 1 per preference point")
         print(f"  New circle penalty: 100 per circle")
