@@ -1585,26 +1585,70 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     else:
         print(f"  ⚠️ WARNING: No viable circles found with max_additions > 0!")
         print(f"  This will prevent any circles from being used in optimization")
+    
+    # CRITICAL FIX: ALWAYS look for small circles (<5 members) that need promotion
+    # This must run regardless of whether other viable circles exist
+    print(f"\n🚨 SMALL CIRCLE OVERRIDE: Checking ALL existing circles for size < 5")
+    
+    # Helper function to get actual member count (robust to different data structures)
+    def get_actual_member_count(circle_data):
+        # Try member_count first
+        member_count = circle_data.get('member_count', 0)
+        if member_count > 0:
+            return member_count
         
-        # Look for small circles that should be eligible regardless of preference
-        small_circles_to_promote = {circle_id: circle_data for circle_id, circle_data in existing_circles.items()
-                                  if len(circle_data.get('members', [])) < 5}
+        # Fallback to counting various list fields that might contain members
+        # Try members list
+        members = circle_data.get('members', [])
+        if members and len(members) > 0:
+            return len(members)
         
-        if small_circles_to_promote:
-            print(f"  🔍 Found {len(small_circles_to_promote)} small circles that should receive new members")
-            print(f"  Small circle IDs: {list(small_circles_to_promote.keys())}")
-            print(f"  ✅ CRITICAL FIX: Adding these small circles to viable circles regardless of preference")
+        # Try participant_ids (for circles from matched_circles CSV)
+        participant_ids = circle_data.get('participant_ids', [])
+        if participant_ids and len(participant_ids) > 0:
+            return len(participant_ids)
+        
+        # Try participants
+        participants = circle_data.get('participants', [])
+        if participants and len(participants) > 0:
+            return len(participants)
+        
+        # If all else fails, return 0
+        return 0
+    
+    # Find all circles with < 5 members using robust counting
+    small_circles_to_promote = {}
+    for circle_id, circle_data in existing_circles.items():
+        actual_count = get_actual_member_count(circle_data)
+        if actual_count < 5:
+            small_circles_to_promote[circle_id] = circle_data
+    
+    if small_circles_to_promote:
+        print(f"  🔍 Found {len(small_circles_to_promote)} small circles that should receive new members")
+        print(f"  Small circle IDs: {list(small_circles_to_promote.keys())}")
+        print(f"  ✅ CRITICAL FIX: Adding these small circles to viable circles regardless of co-leader preference")
+        
+        # Add small circles to viable circles with a reasonable max_additions
+        for small_id, small_data in small_circles_to_promote.items():
+            current_members = get_actual_member_count(small_data)
+            current_max_additions = small_data.get('max_additions', 0)
+            needed = 5 - current_members  # How many needed to reach viable size
             
-            # Add small circles to viable circles with a reasonable max_additions
-            for small_id, small_data in small_circles_to_promote.items():
-                if small_data.get('max_additions', 0) == 0:
-                    small_data['max_additions'] = 5 - len(small_data.get('members', []))  # Add enough to reach 5
-                    small_data['preference_overridden'] = True
-                    small_data['override_reason'] = 'Small circle needs to reach viable size'
-                    small_data['original_preference'] = 'None'
-                    existing_circles[small_id] = small_data
-                    viable_circles[small_id] = small_data
-                    print(f"    Added {small_id} with max_additions={small_data['max_additions']}")
+            if current_max_additions < needed:
+                print(f"    🎯 OVERRIDING {small_id}: {current_members} members, was max_additions={current_max_additions}, now {needed}")
+                small_data['max_additions'] = needed
+                small_data['preference_overridden'] = True
+                small_data['override_reason'] = 'Small circle needs to reach viable size'
+                small_data['original_max_additions'] = current_max_additions
+                # Ensure member_count is set correctly
+                if small_data.get('member_count', 0) == 0 and current_members > 0:
+                    small_data['member_count'] = current_members
+                existing_circles[small_id] = small_data
+                viable_circles[small_id] = small_data
+            else:
+                print(f"    ✅ {small_id}: {current_members} members, already has sufficient max_additions={current_max_additions}")
+    else:
+        print(f"  No small circles found needing promotion")
     
     # ***************************************************************
     # TWO-PHASE MATCHING: PRIORITIZE SMALL CIRCLES
