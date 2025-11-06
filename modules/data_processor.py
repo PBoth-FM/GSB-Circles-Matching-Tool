@@ -668,19 +668,29 @@ def is_time_compatible(time1, time2, is_important=False, is_continuing_member=Fa
         # Normal day matching will be done below
         day_match = None
     
-    # Check time period compatibility - now with distinct Mornings, Afternoons, Evenings, Days
+    # Check time period compatibility - with special handling for "Days"
     time_period_match = False
     if time_period1.lower() == 'varies' or time_period2.lower() == 'varies':
         time_period_match = True
         if is_important:
             print(f"  ✓ Time periods match: One is 'Varies' which matches any time period")
     else:
-        # Exact match required - Mornings != Afternoons != Evenings != Days
-        time_period_match = time_period1.lower() == time_period2.lower()
-        if is_important:
-            print(f"  {'✓' if time_period_match else '✗'} Time periods {'' if time_period_match else 'do not '}match")
-            if not time_period_match:
-                print(f"    Note: '{time_period1}' and '{time_period2}' are treated as distinct time periods")
+        # Exact match
+        if time_period1.lower() == time_period2.lower():
+            time_period_match = True
+            if is_important:
+                print(f"  ✓ Time periods match exactly")
+        # Special case: "Days" is compatible with "Mornings" and "Afternoons"
+        elif (time_period1.lower() == 'days' and time_period2.lower() in ['mornings', 'afternoons']) or \
+             (time_period2.lower() == 'days' and time_period1.lower() in ['mornings', 'afternoons']):
+            time_period_match = True
+            if is_important:
+                print(f"  ✓ Time periods match: 'Days' encompasses '{time_period1}' and '{time_period2}'")
+        else:
+            time_period_match = False
+            if is_important:
+                print(f"  ✗ Time periods do not match")
+                print(f"    Note: '{time_period1}' and '{time_period2}' are incompatible time periods")
     
     if not time_period_match:
         if is_important:
