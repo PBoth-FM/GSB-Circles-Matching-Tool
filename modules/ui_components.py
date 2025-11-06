@@ -2909,7 +2909,7 @@ def render_debug_tab():
         with col1:
             if st.button("Test File Backup"):
                 try:
-                    from modules.optimizer_new import save_circle_eligibility_logs_to_file
+                    from modules.optimizer_core import save_circle_eligibility_logs_to_file
                     
                     # Create test circle eligibility logs
                     test_logs = {
@@ -2973,7 +2973,7 @@ def render_debug_tab():
         with col2:
             if st.button("Load From File"):
                 try:
-                    from modules.optimizer_new import load_circle_eligibility_logs_from_file
+                    from modules.optimizer_core import load_circle_eligibility_logs_from_file
                     file_logs = load_circle_eligibility_logs_from_file()
                     if file_logs and len(file_logs) > 0:
                         st.success(f"✅ Loaded {len(file_logs)} logs from file")
@@ -3001,7 +3001,7 @@ def render_debug_tab():
                 
                 # Try to load logs from file as a backup
                 try:
-                    from modules.optimizer_new import load_circle_eligibility_logs_from_file
+                    from modules.optimizer_core import load_circle_eligibility_logs_from_file
                     print("🔄 Attempting to load circle eligibility logs from file...")
                     
                     file_logs = load_circle_eligibility_logs_from_file()

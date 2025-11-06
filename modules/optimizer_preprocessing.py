@@ -215,8 +215,8 @@ def run_matching_algorithm(data, config):
         print(f"  ❌ CRITICAL: Data is empty or None!")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     
-    # Import the new optimizer implementation
-    from modules.optimizer_new import optimize_region_v2, update_session_state_eligibility_logs
+    # Import the core optimizer implementation
+    from modules.optimizer_core import optimize_region_v2, update_session_state_eligibility_logs
     
     # Get debug mode early to control verbose logging
     debug_mode = config.get('debug_mode', False)
@@ -1018,7 +1018,7 @@ def run_matching_algorithm(data, config):
                 print(f"✅ Added 3 test circles as fallback to ensure Circle Eligibility Debug tab works")
     
     # Update session state with the aggregated logs
-    from modules.optimizer_new import update_session_state_eligibility_logs, save_circle_eligibility_logs_to_file
+    from modules.optimizer_core import update_session_state_eligibility_logs, save_circle_eligibility_logs_to_file
     
     update_session_state_eligibility_logs(all_eligibility_logs)
     

@@ -6,7 +6,7 @@ import time
 import os
 from modules.data_loader import load_data, validate_data
 from modules.data_processor import process_data, normalize_data
-from modules.optimizer import run_matching_algorithm
+from modules.optimizer_preprocessing import run_matching_algorithm
 from modules.ui_components import (
     render_debug_tab,
     render_demographics_tab,
@@ -109,8 +109,8 @@ def run_optimization():
 
     # Reset debug logs at the start of each optimization run
     # We're no longer importing the global circle_eligibility_logs variable
-    from modules.optimizer_new import debug_eligibility_logs
-    from modules.optimizer_new import update_session_state_eligibility_logs
+    from modules.optimizer_core import debug_eligibility_logs
+    from modules.optimizer_core import update_session_state_eligibility_logs
 
     # We now manage logs through session state directly instead of a global variable
     # Initialize the logs dictionary in session state if needed
@@ -150,7 +150,7 @@ def run_optimization():
             print(f"  Data shape: {st.session_state.processed_data.shape}")
             print(f"  Config: {st.session_state.config}")
 
-            from modules.optimizer import run_matching_algorithm
+            from modules.optimizer_preprocessing import run_matching_algorithm
             print(f"  ✅ Successfully imported run_matching_algorithm")
 
             results, matched_circles, unmatched_participants = run_matching_algorithm(
@@ -529,7 +529,7 @@ def run_optimization():
 
                 # Try loading from file
                 try:
-                    from modules.optimizer_new import load_circle_eligibility_logs_from_file
+                    from modules.optimizer_core import load_circle_eligibility_logs_from_file
                     file_logs = load_circle_eligibility_logs_from_file()
                     if file_logs and len(file_logs) > 0:
                         print(f"✅ Loaded {len(file_logs)} logs from file")

@@ -493,8 +493,8 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     # This fixes the "cannot access local variable" error in optimize mode
     from modules.data_processor import is_time_compatible
     
-    # Import our new fixes module for CURRENT-CONTINUING members and optimize mode
-    from modules.optimizer_fixes import (
+    # Import helper functions for CURRENT-CONTINUING members and optimize mode
+    from modules.optimizer_helpers import (
         preprocess_continuing_members,
         optimize_circle_capacity,
         find_current_circle_id,
@@ -1702,7 +1702,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             cc_member_count += 1
             
             # Import utility to find circle ID
-            from modules.optimizer_fixes import find_current_circle_id
+            from modules.optimizer_helpers import find_current_circle_id
             
             # Get their current circle ID using all possible methods
             current_circle = find_current_circle_id(participant)
