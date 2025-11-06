@@ -3220,6 +3220,51 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         else:
             print(f"⚠️ WARNING: No valid variables created for participant {p_id}, skipping constraint")
     
+    # CRITICAL FIX: Before applying incompatibility constraints, check for small circles needing growth
+    # This ensures small circles (2-4 members) can reach viable size (5) even if initially marked incompatible
+    for p_id in participants:
+        for c_id in all_circle_ids:
+            # Check if this is a small existing circle that needs members
+            if c_id in existing_circle_ids and c_id in circle_metadata:
+                current_members = circle_metadata[c_id].get('current_members', 0)
+                
+                # Only override for small circles (2-4 members)
+                if 2 <= current_members <= 4:
+                    # Get participant data
+                    matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+                    if not matching_rows.empty:
+                        p_row = matching_rows.iloc[0]
+                        
+                        # Get circle metadata
+                        circle_subregion = circle_metadata[c_id].get('subregion', '')
+                        circle_time = circle_metadata[c_id].get('meeting_time', '')
+                        
+                        # Check for location match (at least one preference must match)
+                        loc_prefs = [p_row.get('first_choice_location', ''), 
+                                   p_row.get('second_choice_location', ''),
+                                   p_row.get('third_choice_location', '')]
+                        
+                        has_location_match = any(safe_string_match(loc, circle_subregion) for loc in loc_prefs if loc)
+                        
+                        # Check for time match (at least one preference must match)
+                        time_prefs = [p_row.get('first_choice_time', ''),
+                                    p_row.get('second_choice_time', ''),
+                                    p_row.get('third_choice_time', '')]
+                        
+                        has_time_match = any(is_time_compatible(time, circle_time, is_important=debug_mode) 
+                                           for time in time_prefs if time)
+                        
+                        # BOTH location AND time must match to override incompatibility
+                        if has_location_match and has_time_match and (p_id, c_id) in compatibility:
+                            if compatibility[(p_id, c_id)] == 0:  # Was incompatible
+                                if debug_mode:
+                                    print(f"  🔷 SMALL CIRCLE OVERRIDE: Allowing {p_id} to match with small circle {c_id}")
+                                    print(f"    Circle has {current_members} members (needs to reach 5)")
+                                    print(f"    Both location AND time match requirements met")
+                                
+                                # Override compatibility to allow this match
+                                compatibility[(p_id, c_id)] = 1
+    
     # Constraint 2: Only assign participants to compatible circles
     for p_id in participants:
         for c_id in all_circle_ids:
