@@ -1605,10 +1605,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     existing_circles[small_id] = small_data
                     viable_circles[small_id] = small_data
                     print(f"    Added {small_id} with max_additions={small_data['max_additions']}")
-                    
-                    # No special logging for specific circles needed
-                else:
-                    print(f"    {small_id} already has max_additions={small_data.get('max_additions', 0)}")
+    
+    # ***************************************************************
+    # TWO-PHASE MATCHING: PRIORITIZE SMALL CIRCLES
+    # ***************************************************************
+    # Separate small circles (<5 members) from regular circles
+    small_viable_circles = {circle_id: circle_data for circle_id, circle_data in viable_circles.items()
+                           if circle_data.get('member_count', 0) < 5}
+    regular_viable_circles = {circle_id: circle_data for circle_id, circle_data in viable_circles.items()
+                             if circle_data.get('member_count', 0) >= 5}
+    
+    print(f"\n🎯 TWO-PHASE MATCHING STRATEGY:")
+    print(f"  Phase 1: {len(small_viable_circles)} small circles (<5 members) will be matched FIRST")
+    print(f"  Phase 2: {len(regular_viable_circles)} regular circles (5+ members) will be matched after")
+    print(f"  This ensures small circles reach viable size before general optimization")
+    
+    if small_viable_circles:
+        print(f"\n📋 SMALL CIRCLES TO BE PRIORITIZED:")
+        for circle_id, circle_data in list(small_viable_circles.items())[:10]:  # Show first 10
+            print(f"    {circle_id}: {circle_data.get('member_count', 0)} members, " +
+                  f"max_additions={circle_data.get('max_additions', 0)}, " +
+                  f"type={'Virtual' if circle_id.startswith('V') else 'In-Person'}")
+        if len(small_viable_circles) > 10:
+            print(f"    ... and {len(small_viable_circles) - 10} more small circles")
+    
+    # Flag to track if we're using two-phase matching
+    use_two_phase_matching = len(small_viable_circles) > 0 and len(remaining_participants) > 0
+    
+    if use_two_phase_matching:
+        print(f"\n🚀 ENABLING TWO-PHASE MATCHING to prioritize {len(small_viable_circles)} small circles")
     
     # REGION MAPPING VERIFICATION
     print("\n🔍 REGION MAPPING VERIFICATION:")
@@ -1976,6 +2001,190 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             
         if len(problem_participants) > 5:
             print(f"  ... and {len(problem_participants) - 5} more problematic participants")
+    
+    # ***************************************************************
+    # PHASE 1: SMALL CIRCLE PRIORITY MATCHING
+    # ***************************************************************
+    
+    # Track Phase 1 assignments
+    phase1_assignments = {}
+    phase1_matched_participants = []
+    
+    if use_two_phase_matching:
+        print(f"\n" + "="*80)
+        print(f"🎯 PHASE 1: PRIORITIZING SMALL CIRCLES (<5 MEMBERS)")
+        print(f"="*80)
+        print(f"  Matching {len(remaining_participants)} participants to {len(small_viable_circles)} small circles")
+        
+        # Create Phase 1 optimization problem with ONLY small circles
+        prob_phase1 = pulp.LpProblem(f"CircleMatching_{region}_Phase1_SmallCircles", pulp.LpMaximize)
+        
+        # Create decision variables for Phase 1 (participants x small circles only)
+        x_phase1 = {}
+        for p_id in remaining_participants:
+            for c_id in small_viable_circles.keys():
+                x_phase1[(p_id, c_id)] = pulp.LpVariable(f"x1_{p_id}_{c_id}", cat=pulp.LpBinary)
+        
+        print(f"  Created {len(x_phase1)} decision variables for Phase 1")
+        
+        # Calculate compatibility for Phase 1
+        compatibility_phase1 = {}
+        for p_id in remaining_participants:
+            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+            
+            for c_id in small_viable_circles.keys():
+                circle_data = small_viable_circles[c_id]
+                subregion = circle_data.get('subregion', '')
+                time_slot = circle_data.get('meeting_time', '')
+                
+                # Check location compatibility
+                loc_match = (
+                    safe_string_match(p_row.get('first_choice_location'), subregion) or
+                    safe_string_match(p_row.get('second_choice_location'), subregion) or
+                    safe_string_match(p_row.get('third_choice_location'), subregion)
+                )
+                
+                # Check time compatibility
+                time_match = (
+                    is_time_compatible(p_row.get('first_choice_time'), time_slot) or
+                    is_time_compatible(p_row.get('second_choice_time'), time_slot) or
+                    is_time_compatible(p_row.get('third_choice_time'), time_slot)
+                )
+                
+                compatibility_phase1[(p_id, c_id)] = 1 if (loc_match and time_match) else 0
+        
+        # Calculate preference scores for Phase 1
+        pref_scores_phase1 = {}
+        for p_id in remaining_participants:
+            p_row = remaining_df[remaining_df['Encoded ID'] == p_id].iloc[0]
+            
+            for c_id in small_viable_circles.keys():
+                if compatibility_phase1[(p_id, c_id)] == 1:
+                    circle_data = small_viable_circles[c_id]
+                    subregion = circle_data.get('subregion', '')
+                    time_slot = circle_data.get('meeting_time', '')
+                    
+                    # Location score
+                    loc_score = 0
+                    if p_row.get('first_choice_location') == subregion:
+                        loc_score = 30
+                    elif p_row.get('second_choice_location') == subregion:
+                        loc_score = 20
+                    elif p_row.get('third_choice_location') == subregion:
+                        loc_score = 10
+                    
+                    # Time score
+                    time_score = 0
+                    if is_time_compatible(p_row.get('first_choice_time'), time_slot):
+                        time_score = 30
+                    elif is_time_compatible(p_row.get('second_choice_time'), time_slot):
+                        time_score = 20
+                    elif is_time_compatible(p_row.get('third_choice_time'), time_slot):
+                        time_score = 10
+                    
+                    pref_scores_phase1[(p_id, c_id)] = loc_score + time_score
+                else:
+                    pref_scores_phase1[(p_id, c_id)] = 0
+        
+        # Build Phase 1 objective function - VERY HIGH PRIORITY for small circles
+        match_obj_p1 = 2000 * pulp.lpSum(x_phase1[(p_id, c_id)] 
+                                         for p_id in remaining_participants 
+                                         for c_id in small_viable_circles.keys() 
+                                         if (p_id, c_id) in x_phase1)
+        
+        pref_obj_p1 = pulp.lpSum(pref_scores_phase1.get((p_id, c_id), 0) * x_phase1[(p_id, c_id)]
+                                for p_id in remaining_participants
+                                for c_id in small_viable_circles.keys()
+                                if (p_id, c_id) in x_phase1)
+        
+        total_obj_p1 = match_obj_p1 + pref_obj_p1
+        prob_phase1 += total_obj_p1, "Maximize_Phase1_Small_Circle_Matching"
+        
+        # Add Phase 1 constraints
+        # 1. Each participant can be assigned to at most one circle
+        for p_id in remaining_participants:
+            prob_phase1 += (pulp.lpSum(x_phase1[(p_id, c_id)] 
+                                       for c_id in small_viable_circles.keys() 
+                                       if (p_id, c_id) in x_phase1) <= 1,
+                           f"p1_one_circle_{p_id}")
+        
+        # 2. Compatibility constraints
+        for p_id in remaining_participants:
+            for c_id in small_viable_circles.keys():
+                if compatibility_phase1[(p_id, c_id)] == 0 and (p_id, c_id) in x_phase1:
+                    prob_phase1 += (x_phase1[(p_id, c_id)] == 0, f"p1_compat_{p_id}_{c_id}")
+        
+        # 3. Circle capacity constraints
+        for c_id, circle_data in small_viable_circles.items():
+            max_additions = circle_data.get('max_additions', 0)
+            prob_phase1 += (pulp.lpSum(x_phase1[(p_id, c_id)] 
+                                       for p_id in remaining_participants 
+                                       if (p_id, c_id) in x_phase1) <= max_additions,
+                           f"p1_capacity_{c_id}")
+        
+        print(f"  Phase 1 optimization constraints added")
+        
+        # Solve Phase 1
+        print(f"  Solving Phase 1 optimization...")
+        solver_p1 = pulp.PULP_CBC_CMD(msg=False, timeLimit=30)
+        prob_phase1.solve(solver_p1)
+        
+        print(f"  Phase 1 Status: {pulp.LpStatus[prob_phase1.status]}")
+        
+        # Process Phase 1 results
+        if prob_phase1.status == pulp.LpStatusOptimal:
+            for p_id in remaining_participants:
+                for c_id in small_viable_circles.keys():
+                    if (p_id, c_id) in x_phase1 and x_phase1[(p_id, c_id)].value() is not None and abs(x_phase1[(p_id, c_id)].value() - 1) < 1e-5:
+                        phase1_assignments[p_id] = c_id
+                        phase1_matched_participants.append(p_id)
+                        print(f"    ✅ Phase 1 Match: Participant {p_id} → Small Circle {c_id} " +
+                              f"(currently {small_viable_circles[c_id].get('member_count', 0)} members)")
+            
+            print(f"\n🎉 PHASE 1 COMPLETE: Matched {len(phase1_matched_participants)} participants to small circles")
+            
+            # CRITICAL: Update circle capacities to reflect Phase 1 matches
+            print(f"\n  📊 Updating circle capacities after Phase 1:")
+            for c_id in small_viable_circles.keys():
+                phase1_matches_to_this_circle = sum(1 for p_id, assigned_c_id in phase1_assignments.items() if assigned_c_id == c_id)
+                if phase1_matches_to_this_circle > 0:
+                    old_capacity = small_viable_circles[c_id].get('max_additions', 0)
+                    new_capacity = max(0, old_capacity - phase1_matches_to_this_circle)
+                    small_viable_circles[c_id]['max_additions'] = new_capacity
+                    # Also update in viable_circles
+                    if c_id in viable_circles:
+                        viable_circles[c_id]['max_additions'] = new_capacity
+                    # CRITICAL: Also update in circle_metadata for Phase 2 constraints
+                    if c_id in circle_metadata:
+                        circle_metadata[c_id]['max_additions'] = new_capacity
+                    print(f"    Circle {c_id}: max_additions {old_capacity} → {new_capacity} (matched {phase1_matches_to_this_circle})")
+            
+            # Update remaining participants for Phase 2
+            remaining_participants = [p_id for p_id in remaining_participants if p_id not in phase1_matched_participants]
+            remaining_df = remaining_df[remaining_df['Encoded ID'].isin(remaining_participants)].copy()
+            
+            print(f"  {len(remaining_participants)} participants remaining for Phase 2")
+            print(f"  Phase 1 matched participants will be excluded from Phase 2 optimization")
+        else:
+            print(f"  ⚠️ Phase 1 optimization did not reach optimal solution")
+            print(f"  Proceeding to Phase 2 with all participants")
+    else:
+        print(f"\n✅ Skipping two-phase matching (no small circles or no participants)")
+    
+    # ***************************************************************
+    # PHASE 2 / MAIN OPTIMIZATION: GENERAL MATCHING
+    # ***************************************************************
+    
+    # CRITICAL: Redefine participants from remaining_df after Phase 1
+    # This ensures Phase 2 only optimizes for participants not matched in Phase 1
+    participants = remaining_df['Encoded ID'].tolist()
+    
+    if use_two_phase_matching:
+        print(f"\n" + "="*80)
+        print(f"🎯 PHASE 2: GENERAL CIRCLE MATCHING")
+        print(f"="*80)
+        print(f"  Matching {len(participants)} remaining participants to {len(viable_circles)} total circles")
+        print(f"  {len(phase1_matched_participants)} participants already matched in Phase 1")
     
     # ***************************************************************
     # STEP 2: DEFINE DECISION VARIABLES
@@ -3735,6 +3944,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         for p_id, c_id in pre_assigned_participants.items():
             circle_assignments[p_id] = c_id
             print(f"  Pre-assigned participant {p_id} → circle {c_id}")
+    
+    # ADD PHASE 1 ASSIGNMENTS (Small Circle Priority Matching)
+    if phase1_assignments:
+        print(f"\n🎯 PHASE 1 RESULTS: Adding {len(phase1_assignments)} participants matched to small circles")
+        
+        # Add Phase 1 assignments to circle_assignments dictionary
+        for p_id, c_id in phase1_assignments.items():
+            circle_assignments[p_id] = c_id
+            print(f"  Phase 1: Participant {p_id} → Small Circle {c_id}")
     
     # [SEATTLE FOCUS] Check if Seattle test participant was matched to IP-SEA-01
     # This is the key compatibility case we're testing
