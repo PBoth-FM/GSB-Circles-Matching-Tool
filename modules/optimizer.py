@@ -215,167 +215,16 @@ def run_matching_algorithm(data, config):
         print(f"  ❌ CRITICAL: Data is empty or None!")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     
-    # CRITICAL FIX: Check for Seattle specific participants that should match with IP-SEA-01
-    # This fix was determined after analyzing the core compatibility issue 
-    print("\n🔴 CRITICAL COMPATIBILITY FIX FOR SEATTLE PARTICIPANTS")
-    
-    # Set debug mode to True regardless of config setting
-    config['debug_mode'] = True
-    
-    # Find all Seattle participants
-    if 'Current_Region' in data.columns:
-        seattle_participants = data[data['Current_Region'] == 'Seattle']
-        print(f"  Found {len(seattle_participants)} Seattle participants")
-        
-        # Find NEW Seattle participants
-        seattle_new = seattle_participants[seattle_participants['Status'] == 'NEW']
-        print(f"  Of which {len(seattle_new)} are NEW participants")
-        
-        # Find all with Wednesday Evenings time preference
-        wednesday_evening_pattern = 'wednesday.*evening|evening.*wednesday|m-th.*evening|monday-thursday.*evening'
-        for idx, row in seattle_new.iterrows():
-            # Check if any of the time preferences match the pattern for IP-SEA-01
-            time_prefs = [
-                str(row.get('first_choice_time', '')).lower(),
-                str(row.get('second_choice_time', '')).lower(),
-                str(row.get('third_choice_time', '')).lower()
-            ]
-            
-            has_compatible_time = any(
-                t and (('wednesday' in t and 'evening' in t) or 
-                      ('monday-thursday' in t and 'evening' in t) or
-                      ('m-th' in t and 'evening' in t))
-                for t in time_prefs
-            )
-            
-            if has_compatible_time:
-                print(f"  ✅ Found participant with compatible time for IP-SEA-01: {row.get('Encoded ID')}")
-                print(f"    Time preferences: {time_prefs}")
-                print(f"    This participant SHOULD match with IP-SEA-01")
-    
-    print("🔴 END OF SEATTLE COMPATIBILITY FIX\n")
     # Import the new optimizer implementation
     from modules.optimizer_new import optimize_region_v2, update_session_state_eligibility_logs
     
-    # 🔬 SUPER DIAGNOSTICS: Analyze data structure before processing
-    print("\n🔬🔬🔬 SUPER DETAILED DATA ANALYSIS BEFORE OPTIMIZATION 🔬🔬🔬")
-    print(f"🔬 Total records in data: {len(data)}")
-    
-    # Check Status distribution
-    if 'Status' in data.columns:
-        status_counts = data['Status'].value_counts().to_dict()
-        print(f"🔬 Status counts: {status_counts}")
-        
-        # Check continuing participants specifically
-        continuing = data[data['Status'] == 'CURRENT-CONTINUING']
-        print(f"🔬 CURRENT-CONTINUING participants: {len(continuing)}")
-        
-        # Check circle ID columns
-        circle_columns = ['Current_Circle_ID', 'current_circles_id', 'Current Circle ID']
-        found_col = None
-        
-        for col in circle_columns:
-            if col in data.columns:
-                found_col = col
-                with_circles = continuing[~continuing[col].isna()]
-                print(f"🔬 Found {len(with_circles)} CURRENT-CONTINUING participants with non-null '{col}' values")
-                if len(with_circles) > 0:
-                    unique_circles = with_circles[col].unique()
-                    print(f"🔬 Found {len(unique_circles)} unique circle IDs")
-                    print(f"🔬 Sample circle IDs: {list(unique_circles)[:5]}{'...' if len(unique_circles) > 5 else ''}")
-                    
-                    # Check how many members each circle has
-                    print("\n🔬 TOP 5 CIRCLES BY MEMBER COUNT:")
-                    circle_counts = with_circles[col].value_counts().head(5)
-                    for circle_id, count in circle_counts.items():
-                        print(f"   Circle {circle_id}: {count} members")
-                        
-                    # Add special debugging for a sample circle
-                    if len(unique_circles) > 0:
-                        sample_circle = unique_circles[0]
-                        members = with_circles[with_circles[col] == sample_circle]
-                        print(f"\n🔬 INSPECTING SAMPLE CIRCLE: {sample_circle}")
-                        print(f"   Members: {len(members)}")
-                        
-                        # Check if these members have region and time information
-                        region_col = None
-                        for potential_col in ['Current_Region', 'current_region', 'Current Region']:
-                            if potential_col in members.columns:
-                                region_col = potential_col
-                                break
-                                
-                        time_col = None
-                        for potential_col in ['Current_Meeting_Time', 'current_meeting_time', 'Current Meeting Time']:
-                            if potential_col in members.columns:
-                                time_col = potential_col
-                                break
-                                
-                        # Display region and time information if available
-                        if region_col:
-                            regions = members[region_col].unique()
-                            print(f"   Regions: {list(regions)}")
-                            
-                        if time_col:
-                            times = members[time_col].unique()
-                            print(f"   Meeting times: {list(times)}")
-                break
-                
-        if not found_col:
-            print(f"🔬 Could not find any circle ID columns. Available columns:")
-            print(f"   {list(data.columns)}")
-            
-    # Check if data is being properly passed to region-specific processors
-    print("\n🔬 CHECKING REGION DISTRIBUTION:")
-    if 'Current_Region' in data.columns:
-        region_counts = data['Current_Region'].value_counts().head(10)
-        for region, count in region_counts.items():
-            print(f"   Region {region}: {count} participants")
-            
-            # Check continuing participants in this region
-            if 'Status' in data.columns:
-                region_continuing = data[(data['Current_Region'] == region) & (data['Status'] == 'CURRENT-CONTINUING')]
-                print(f"      CURRENT-CONTINUING: {len(region_continuing)}")
-                
-                # Check if they have circle IDs
-                if found_col:
-                    region_circles = region_continuing[~region_continuing[found_col].isna()]
-                    print(f"      With circle IDs: {len(region_circles)}")
-                    if len(region_circles) > 0:
-                        unique_region_circles = region_circles[found_col].unique()
-                        print(f"      Unique circles: {len(unique_region_circles)}")
-    else:
-        print("   'Current_Region' column not found")
-        
-    print("🔬🔬🔬 END OF SUPER DETAILED DATA ANALYSIS 🔬🔬🔬\n")
+    # Get debug mode early to control verbose logging
+    debug_mode = config.get('debug_mode', False)
     
     # CRITICAL FIX: Initialize a dictionary to collect all eligibility logs across regions
     # This is the key fix for the issue where logs weren't being aggregated across regions
     all_eligibility_logs = {}
-    # Critical debugging - look for our test participants and circles
-    print("\n🔍🔍🔍 MATCHING ALGORITHM START - CHECKING FOR TEST CASES 🔍🔍🔍")
     
-    # Check for our example participants
-    example_participants = ['73177784103', '50625303450', '72549701782']
-    for p_id in example_participants:
-        if p_id in data['Encoded ID'].values:
-            p_row = data[data['Encoded ID'] == p_id].iloc[0]
-            print(f"  Found example participant {p_id}:")
-            print(f"    Status: {p_row.get('Status', 'Unknown')}")
-            print(f"    Region: {p_row.get('Current_Region', 'Unknown')}")
-            print(f"    Current Circle ID: {p_row.get('Current_Circle_ID', 'Unknown')}")
-            
-    # Check for current circles that should be matching
-    example_circles = ['IP-SIN-01', 'IP-LON-04']
-    circle_ids = data['Current_Circle_ID'].unique()
-    for c_id in example_circles:
-        if c_id in circle_ids:
-            members = data[data['Current_Circle_ID'] == c_id]
-            print(f"  Found example circle {c_id} with {len(members)} members")
-            print(f"    Region from first member: {members.iloc[0].get('Current_Region', 'Unknown')}")
-            print(f"    Members: {members['Encoded ID'].tolist()}")
-            
-    # Debug is already embedded in the workflow
-    debug_mode = config.get('debug_mode', False)
     # Initialize optimization logs
     import streamlit as st
     if 'optimization_logs' not in st.session_state:
@@ -392,7 +241,6 @@ def run_matching_algorithm(data, config):
     # Extract configuration parameters
     min_circle_size = config.get('min_circle_size', 5)
     existing_circle_handling = config.get('existing_circle_handling', 'preserve')
-    debug_mode = config.get('debug_mode', False)
     enable_host_requirement = config.get('enable_host_requirement', True)
     
     # Copy data to avoid modifying original
@@ -1092,46 +940,28 @@ def run_matching_algorithm(data, config):
     if 'optimization_logs' in st.session_state:
         st.session_state.optimization_logs = logs
     
-    # CRITICAL FIX: If we still have very few eligibility logs, check circle data directly and add any real circles
-    # Ensure all_eligibility_logs exists and has a usable length
-    if isinstance(all_eligibility_logs, dict) and len(all_eligibility_logs) < 5:  # Changed from 0 to 5 to be more proactive
-        print(f"\n🚨 CRITICAL ROOT CAUSE FIX: Only {len(all_eligibility_logs)} circle eligibility logs found across all regions")
-        print(f"🔧 Checking circles_df for actual circles that should be included in debug logs")
-        
-        # Extract real circles from the circles_df DataFrame
+    # If we have very few eligibility logs, reconstruct from circle results
+    if isinstance(all_eligibility_logs, dict) and len(all_eligibility_logs) < 5:
         if not circles_df.empty and 'circle_id' in circles_df.columns:
-            real_circles_added = 0
-            print(f"Found {len(circles_df)} circles in the matching results - adding to eligibility logs!")
-            
-            # Loop through all circles in the result and add missing ones to eligibility logs
             for _, circle_row in circles_df.iterrows():
                 circle_id = circle_row['circle_id']
-                
-                # Skip if already in logs
-                if circle_id in all_eligibility_logs:
-                    continue
-                    
-                # Add this circle to the eligibility logs
-                all_eligibility_logs[circle_id] = {
-                    'circle_id': circle_id,
-                    'region': circle_row.get('region', 'Unknown'),
-                    'subregion': circle_row.get('subregion', 'Unknown'),
-                    'meeting_time': circle_row.get('meeting_time', 'Unknown'),
-                    'max_additions': circle_row.get('max_additions', 0),
-                    'current_members': circle_row.get('member_count', 0) - circle_row.get('new_members', 0),  # Original count
-                    'is_eligible': True,  # Must be eligible since it received members
-                    'reason': "Has capacity (reconstructed from results)",
-                    'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02', 'IP-TEST-01', 'IP-TEST-02', 'IP-TEST-03'],
-                    'is_small_circle': (circle_row.get('member_count', 0) - circle_row.get('new_members', 0)) < 5,
-                    'has_none_preference': False,
-                    'preference_overridden': False
-                }
-                real_circles_added += 1
-                print(f"  ✅ Added circle {circle_id} from matching results to eligibility logs")
-                
-            print(f"✅ Added {real_circles_added} real circles from matching results to eligibility logs")
+                if circle_id not in all_eligibility_logs:
+                    all_eligibility_logs[circle_id] = {
+                        'circle_id': circle_id,
+                        'region': circle_row.get('region', 'Unknown'),
+                        'subregion': circle_row.get('subregion', 'Unknown'),
+                        'meeting_time': circle_row.get('meeting_time', 'Unknown'),
+                        'max_additions': circle_row.get('max_additions', 0),
+                        'current_members': circle_row.get('member_count', 0) - circle_row.get('new_members', 0),
+                        'is_eligible': True,
+                        'reason': "Has capacity (reconstructed from results)",
+                        'is_test_circle': circle_id in ['IP-SIN-01', 'IP-LON-04', 'IP-HOU-02', 'IP-TEST-01', 'IP-TEST-02', 'IP-TEST-03'],
+                        'is_small_circle': (circle_row.get('member_count', 0) - circle_row.get('new_members', 0)) < 5,
+                        'has_none_preference': False,
+                        'preference_overridden': False
+                    }
         
-        # As a final fallback, if we still have no eligibility logs, add the test circles
+        # Final fallback: add test circles if no logs exist
         if len(all_eligibility_logs) == 0:
             print(f"\n🚨 FINAL FALLBACK: No circle eligibility logs found at all, adding test circles")
             
@@ -1184,77 +1014,20 @@ def run_matching_algorithm(data, config):
                 'preference_overridden': True
             }
             
-            print(f"✅ Added 3 test circles as fallback to ensure Circle Eligibility Debug tab works")
+            if debug_mode:
+                print(f"✅ Added 3 test circles as fallback to ensure Circle Eligibility Debug tab works")
     
-    # CRITICAL FIX: Update session state with the aggregated logs from all regions
-    print(f"\n🚨 FINAL AGGREGATION: Collected {len(all_eligibility_logs)} circle eligibility logs across all regions")
+    # Update session state with the aggregated logs
+    from modules.optimizer_new import update_session_state_eligibility_logs, save_circle_eligibility_logs_to_file
     
-    # Calculate statistics for all logs
-    print(f"📊 AGGREGATED STATISTICS:")
-    print(f"  Total circles: {len(all_eligibility_logs)}")
-    
-    # Only calculate percentages if we have logs
-    if len(all_eligibility_logs) > 0:
-        eligible_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_eligible', False))
-        small_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_small_circle', False))
-        test_circles = sum(1 for log in all_eligibility_logs.values() if log.get('is_test_circle', False))
-        
-        print(f"  Eligible circles: {eligible_circles} ({eligible_circles/len(all_eligibility_logs):.1%})")
-        print(f"  Small circles: {small_circles} ({small_circles/len(all_eligibility_logs):.1%})")
-        print(f"  Test circles: {test_circles} ({test_circles/len(all_eligibility_logs):.1%})")
-    else:
-        print("  No circle eligibility logs found to calculate statistics")
-    
-    # Log breakdown by region
-    print(f"📊 CIRCLES BY REGION:")
-    
-    if len(all_eligibility_logs) > 0:
-        regions = {}
-        for circle_id, log in all_eligibility_logs.items():
-            region = log.get('region', 'Unknown')
-            if region not in regions:
-                regions[region] = 0
-            regions[region] += 1
-        
-        for region, count in regions.items():
-            print(f"  {region}: {count} circles")
-    else:
-        print("  No circles to show region breakdown")
-    
-    # Import the session state update function from optimizer_new
-    from modules.optimizer_new import update_session_state_eligibility_logs
-    
-    # Update session state with all logs at once
-    print(f"🔄 Updating session state with {len(all_eligibility_logs)} aggregated eligibility logs")
     update_session_state_eligibility_logs(all_eligibility_logs)
     
-    # Save to file for backup
-    from modules.optimizer_new import save_circle_eligibility_logs_to_file
-    
-    # Debug mode automatically enables file backup
+    # Save to file for backup in debug mode
     if debug_mode:
         try:
-            saved = save_circle_eligibility_logs_to_file(all_eligibility_logs, "all_regions")
-            if saved:
-                print(f"✅ Successfully saved {len(all_eligibility_logs)} eligibility logs to file")
-            else:
-                print(f"❌ Failed to save logs to file")
+            save_circle_eligibility_logs_to_file(all_eligibility_logs, "all_regions")
         except Exception as e:
             print(f"❌ ERROR during file-based backup: {str(e)}")
-    
-    # FINAL CHECK: Ensure circle eligibility logs were captured
-    # This should now always succeed since we set it directly above
-    import streamlit as st
-    if 'circle_eligibility_logs' in st.session_state:
-        log_count = len(st.session_state.circle_eligibility_logs)
-        print(f"🏁 FINAL LOGS CHECK: Found {log_count} circle eligibility logs in session state")
-        
-        if log_count == 0:
-            print("⚠️ CRITICAL WARNING: Session state update failed - no logs found")
-            print("⚠️ This should never happen with the new implementation")
-        else:
-            print(f"✅ Session state has {log_count} logs - fix successful!")
-            print(f"💡 Sample log keys: {list(st.session_state.circle_eligibility_logs.keys())[:10]}{'...' if log_count > 10 else ''}")
     
     # IMPORTANT: Make sure the logs saved in session state persist
     # We don't need to return them since they're already in session state
