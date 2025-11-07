@@ -2762,6 +2762,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     st.session_state.seattle_debug_logs.append(f"  ⚠️ CONTINUING MEMBER COMPATIBILITY: Member has empty time preference")
                     st.session_state.seattle_debug_logs.append(f"  This member's time match = {time_match} for circle {c_id} with time '{time_slot}'")
             
+            # Calculate location score to check for zero compatibility
+            loc_score = 0
+            if safe_string_match(p_row.get('first_choice_location'), subregion):
+                loc_score = 30
+            elif safe_string_match(p_row.get('second_choice_location'), subregion):
+                loc_score = 20
+            elif safe_string_match(p_row.get('third_choice_location'), subregion):
+                loc_score = 10
+            
             # CRITICAL FIX: For CURRENT-CONTINUING members, force compatibility with their current circle
             # regardless of location or time match - this bypasses all normal compatibility requirements
             if is_continuing_member and current_circle == c_id:
@@ -2770,8 +2779,15 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     print(f"✅ CRITICAL FIX: Forcing OVERALL compatibility for CURRENT-CONTINUING member {p_id} with their circle {c_id}")
                     print(f"  (Bypassing normal requirement that both location and time must match)")
             else:
-                # Normal case: Both location and time must match for compatibility
-                is_compatible = (loc_match and time_match)
+                # CRITICAL: Enforce that loc_score must be > 0 (location must match at least one preference)
+                # This prevents participants from being matched to circles that don't match ANY of their location preferences
+                if loc_score == 0:
+                    is_compatible = False
+                    if debug_mode and (loc_match or time_match):
+                        print(f"⚠️ LOCATION SCORE ZERO: Blocking {p_id} from {c_id} despite loc_match={loc_match}, time_match={time_match}")
+                else:
+                    # Normal case: Both location and time must match for compatibility
+                    is_compatible = (loc_match and time_match)
             
             # SEATTLE ENHANCED COMPATIBILITY: Print detailed debug whenever a NEW member tries to match with IP-SEA-01
             if c_id == 'IP-SEA-01' and p_row.get('Status') == 'NEW' and region == 'Seattle':
@@ -3519,8 +3535,36 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                                 compatibility[(p_id, c_id)] = 1
     
     # Constraint 2: Only assign participants to compatible circles
+    # Also enforce loc_score > 0 requirement (except for CURRENT-CONTINUING with their circle)
     for p_id in participants:
+        # Get participant data for loc_score calculation
+        matching_rows = remaining_df[remaining_df['Encoded ID'] == p_id]
+        if not matching_rows.empty:
+            p_row = matching_rows.iloc[0]
+            is_continuing = p_row.get('Status') == 'CURRENT-CONTINUING'
+            current_circle = find_current_circle_id(p_row) if is_continuing else None
+        else:
+            is_continuing = False
+            current_circle = None
+            
         for c_id in all_circle_ids:
+            # Calculate loc_score for this pair
+            if not matching_rows.empty and c_id in circle_metadata:
+                subregion = circle_metadata[c_id]['subregion']
+                loc_score = 0
+                if safe_string_match(p_row.get('first_choice_location'), subregion):
+                    loc_score = 30
+                elif safe_string_match(p_row.get('second_choice_location'), subregion):
+                    loc_score = 20
+                elif safe_string_match(p_row.get('third_choice_location'), subregion):
+                    loc_score = 10
+                
+                # CRITICAL: Block assignment if loc_score = 0 (unless CURRENT-CONTINUING with their circle)
+                if loc_score == 0 and not (is_continuing and current_circle == c_id) and (p_id, c_id) in x:
+                    prob += x[(p_id, c_id)] == 0, f"loc_zero_{p_id}_{c_id}"
+                    if debug_mode:
+                        print(f"🚫 HARD CONSTRAINT: Blocking {p_id} from {c_id} (loc_score=0)")
+            
             # DEFENSIVE FIX: Only add constraint if the variable and compatibility value exist
             if (p_id, c_id) in compatibility and compatibility[(p_id, c_id)] == 0 and (p_id, c_id) in x:
                 # [REMOVED] - Removed special debug for Houston test pair
