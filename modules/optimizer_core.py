@@ -2605,8 +2605,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 print(f"  Participant choices: {p_row['first_choice_location']}, {p_row['second_choice_location']}, {p_row['third_choice_location']}")
                 print(f"  Participant time prefs: {p_row['first_choice_time']}, {p_row['second_choice_time']}, {p_row['third_choice_time']}")
             
-            # Enhanced location compatibility checking with proper type handling
-            # Using the module-level safe_string_match function
+            # EXACT location compatibility checking - no prefix matching allowed
             
             # Determine if this is a continuing member looking at their current circle
             is_continuing_member = p_row.get('Status') == 'CURRENT-CONTINUING'
@@ -2624,11 +2623,11 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 if debug_mode:
                     print(f"✅ CRITICAL FIX: Forcing location compatibility for CURRENT-CONTINUING member {p_id} with their circle {c_id}")
             else:
-                # First try exact match with participant preferences (normal case)
+                # EXACT string comparison for location - no prefix matching
                 loc_match = (
-                    safe_string_match(p_row['first_choice_location'], subregion) or
-                    safe_string_match(p_row['second_choice_location'], subregion) or
-                    safe_string_match(p_row['third_choice_location'], subregion)
+                    str(p_row.get('first_choice_location', '')).strip() == str(subregion).strip() or
+                    str(p_row.get('second_choice_location', '')).strip() == str(subregion).strip() or
+                    str(p_row.get('third_choice_location', '')).strip() == str(subregion).strip()
                 )
                 
                 # DIAGNOSTIC: Log for Moving Within Region participants
@@ -2762,13 +2761,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                     st.session_state.seattle_debug_logs.append(f"  ⚠️ CONTINUING MEMBER COMPATIBILITY: Member has empty time preference")
                     st.session_state.seattle_debug_logs.append(f"  This member's time match = {time_match} for circle {c_id} with time '{time_slot}'")
             
-            # Calculate location score to check for zero compatibility
+            # Calculate location score using EXACT comparison
             loc_score = 0
-            if safe_string_match(p_row.get('first_choice_location'), subregion):
+            if str(p_row.get('first_choice_location', '')).strip() == str(subregion).strip():
                 loc_score = 30
-            elif safe_string_match(p_row.get('second_choice_location'), subregion):
+            elif str(p_row.get('second_choice_location', '')).strip() == str(subregion).strip():
                 loc_score = 20
-            elif safe_string_match(p_row.get('third_choice_location'), subregion):
+            elif str(p_row.get('third_choice_location', '')).strip() == str(subregion).strip():
                 loc_score = 10
             
             # CRITICAL FIX: For CURRENT-CONTINUING members, force compatibility with their current circle
@@ -3091,12 +3090,12 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
                 loc_score = 0
                 time_score = 0
                 
-                # Location score (30 for first choice, 20 for second, 10 for third)
-                if p_row['first_choice_location'] == subregion:
+                # Location score (30 for first choice, 20 for second, 10 for third) - EXACT comparison
+                if str(p_row.get('first_choice_location', '')).strip() == str(subregion).strip():
                     loc_score = 30
-                elif p_row['second_choice_location'] == subregion:
+                elif str(p_row.get('second_choice_location', '')).strip() == str(subregion).strip():
                     loc_score = 20
-                elif p_row['third_choice_location'] == subregion:
+                elif str(p_row.get('third_choice_location', '')).strip() == str(subregion).strip():
                     loc_score = 10
                 
                 # Time score (30 for first choice, 20 for second, 10 for third) - using is_time_compatible()
