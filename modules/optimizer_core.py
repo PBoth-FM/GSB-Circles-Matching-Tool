@@ -319,9 +319,42 @@ def generate_circle_options_from_preferences(remaining_df, region, debug_mode=Fa
     location_preferences = {loc for loc in location_preferences if loc and str(loc).strip()}
     time_preferences = {time for time in time_preferences if time and str(time).strip()}
     
+    # CRITICAL FIX: Filter out "Varies" from preferences for NEW circles
+    # "Varies" should only be used in continuing circles, not when creating new circles
+    # Participants with "Varies" preferences can still match to any circle via compatibility logic
+    location_preferences_before = len(location_preferences)
+    time_preferences_before = len(time_preferences)
+    
+    location_preferences = {loc for loc in location_preferences 
+                           if 'varies' not in str(loc).lower()}
+    time_preferences = {time for time in time_preferences 
+                       if 'varies' not in str(time).lower()}
+    
+    # Log if we filtered out "Varies" preferences
+    locations_filtered = location_preferences_before - len(location_preferences)
+    times_filtered = time_preferences_before - len(time_preferences)
+    
+    if locations_filtered > 0:
+        print(f"🔧 FILTERED OUT {locations_filtered} 'Varies' location preferences from NEW circle generation")
+    if times_filtered > 0:
+        print(f"🔧 FILTERED OUT {times_filtered} 'Varies' time preferences from NEW circle generation")
+    
+    # FALLBACK: If all preferences were "Varies", provide default options so NEW circles can still be created
+    if not time_preferences:
+        print(f"  ⚠️ WARNING: All time preferences were 'Varies' - using default time slots for NEW circles")
+        time_preferences = {
+            "Monday-Thursday (Evenings)",
+            "Monday-Friday (Afternoons)", 
+            "Weekend (Mornings)"
+        }
+    
+    if not location_preferences:
+        print(f"  ⚠️ WARNING: All location preferences were 'Varies' - using region as default location")
+        location_preferences = {region} if region else {"Unknown"}
+    
     if debug_mode:
-        print(f"🔧 Found {len(location_preferences)} unique location preferences: {list(location_preferences)}")
-        print(f"🔧 Found {len(time_preferences)} unique time preferences: {list(time_preferences)}")
+        print(f"🔧 Found {len(location_preferences)} unique location preferences (after filtering 'Varies'): {list(location_preferences)}")
+        print(f"🔧 Found {len(time_preferences)} unique time preferences (after filtering 'Varies'): {list(time_preferences)}")
     
     # Generate circle options as cross-product of locations and times
     circle_options = []
@@ -5299,6 +5332,35 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             print(f"  ✅ Added {circles_added} missing circles to CircleMetadataManager")
     
     print(f"  ✅ Post-processing complete: All circles should now be visible in both Results CSV and UI")
+    
+    # VALIDATION: Check for NEW circles with "Varies" in their meeting time
+    print(f"\n🔍 VALIDATION: Checking for NEW circles with 'Varies' in meeting time...")
+    new_circles_with_varies = []
+    
+    for circle in circles:
+        if isinstance(circle, dict):
+            circle_id = circle.get('circle_id', '')
+            meeting_time = circle.get('meeting_time', '')
+            
+            # Check if this is a NEW circle (contains '-NEW-' in ID)
+            if '-NEW-' in str(circle_id):
+                # Check if meeting time contains "Varies"
+                if 'varies' in str(meeting_time).lower():
+                    new_circles_with_varies.append({
+                        'circle_id': circle_id,
+                        'meeting_time': meeting_time,
+                        'region': circle.get('region', ''),
+                        'subregion': circle.get('subregion', '')
+                    })
+                    print(f"  ⚠️ WARNING: NEW circle {circle_id} has 'Varies' in meeting time: {meeting_time}")
+    
+    if new_circles_with_varies:
+        print(f"  ❌ VALIDATION FAILED: Found {len(new_circles_with_varies)} NEW circles with 'Varies'")
+        print(f"  This should NOT happen - NEW circles should have concrete meeting times")
+        for circle_info in new_circles_with_varies:
+            print(f"    - {circle_info['circle_id']}: {circle_info['meeting_time']}")
+    else:
+        print(f"  ✅ VALIDATION PASSED: No NEW circles have 'Varies' in meeting time")
     
     # Return the final logs copy with updated results
     print(f"\n🚨 FINAL UPDATE: Returning {len(final_logs)} logs from {region} region")
