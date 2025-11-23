@@ -1885,7 +1885,7 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     counter = 1
     
     # Determine format based on whether it's virtual or in-person
-    format_prefix = "VO" if is_virtual else "IP"
+    format_prefix = "V" if is_virtual else "IP"
     
     if debug_mode:
         print(f"Creating new circle IDs for region {region} (is_virtual: {is_virtual})")

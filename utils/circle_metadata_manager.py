@@ -204,9 +204,9 @@ class CircleMetadataManager:
                 
                 # Create proper virtual circle ID
                 if 'NEW' in circle_id:
-                    corrected_id = f"VO-{region_code}-NEW-{number}"
+                    corrected_id = f"V-{region_code}-NEW-{number}"
                 else:
-                    corrected_id = f"VO-{region_code}-{number}"
+                    corrected_id = f"V-{region_code}-{number}"
                 
                 return corrected_id
         

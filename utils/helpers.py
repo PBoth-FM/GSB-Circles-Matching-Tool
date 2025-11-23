@@ -464,7 +464,7 @@ def generate_circle_id(region, subregion, index, is_new=True):
     index_str = str(index).zfill(2)
 
     # Set the format prefix
-    format_prefix = "VO" if is_virtual else "IP"
+    format_prefix = "V" if is_virtual else "IP"
 
     # Get the appropriate region code
     if is_virtual and subregion:
@@ -1034,9 +1034,9 @@ def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
         print("  No circle assignment column found - skipping rename")
         return updated_results, updated_circles, {}
     
-    # Extract all virtual circle IDs (starting with VO-)
+    # Extract all virtual circle IDs (starting with V-)
     all_circle_ids = updated_results['proposed_NEW_circles_id'].dropna().unique()
-    virtual_circle_ids = [cid for cid in all_circle_ids if str(cid).startswith('VO-')]
+    virtual_circle_ids = [cid for cid in all_circle_ids if str(cid).startswith('V-')]
     
     if not virtual_circle_ids:
         print("  No virtual circles found - skipping rename")
@@ -1049,11 +1049,11 @@ def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
     renaming_map = {}
     
     # Enhanced pattern to match multiple GMT format variations:
-    # - VO-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} (e.g., VO-AE-GMT+3-NEW-01)
-    # - VO-{REGION_CODE}-GMT-{NUMBER} (e.g., VO-AE-GMT-NEW-01)
-    # - VO-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER}
-    # - VO-{REGION_CODE}-GMT-NEW-{NUMBER}
-    pattern = r'^VO-([^-]+)-GMT(?:[+-]?\d+)?-(?:(NEW)-)?(\d+)$'
+    # - V-{REGION_CODE}-GMT±{OFFSET}-{NUMBER} (e.g., V-AE-GMT+3-NEW-01)
+    # - V-{REGION_CODE}-GMT-{NUMBER} (e.g., V-AE-GMT-NEW-01)
+    # - V-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER}
+    # - V-{REGION_CODE}-GMT-NEW-{NUMBER}
+    pattern = r'^V-([^-]+)-GMT(?:[+-]?\d+)?-(?:(NEW)-)?(\d+)$'
     
     for circle_id in virtual_circle_ids:
         match = re.match(pattern, circle_id)
