@@ -1048,17 +1048,18 @@ def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
     circle_groups = {}
     renaming_map = {}
     
-    # Pattern to match virtual circle IDs:
+    # Pattern to match virtual circle IDs after GMT removal:
     # - VO-{REGION_CODE}-{NUMBER} (e.g., VO-AM-01, VO-AP-02)
     # - VO-{REGION_CODE}-NEW-{NUMBER} (e.g., VO-AM-NEW-05, VO-AP-NEW-01)
-    # - VO-{REGION_CODE}-GMT-NEW-{NUMBER} (e.g., VO-AP-GMT-NEW-01)
-    # - VO-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER} (e.g., VO-EM-GMT+1-NEW-01)
-    # Region code may include GMT timezone information
-    pattern = r'^VO-([A-Z]{2})(?:-GMT[+-]?\d*)?-(?:(NEW)-)?(\d+)$'
+    # Region code is 2 uppercase letters (AM, AP, EM)
+    pattern = r'^VO-([A-Z]{2})-(?:(NEW)-)?(\d+)$'
     
     for circle_id in virtual_circle_ids:
-        # Preprocess: remove GMT timezone info for matching
-        clean_id = re.sub(r'-GMT[+-]?\d*', '', circle_id)
+        # Preprocess: remove ALL GMT timezone info (including when followed by NEW)
+        # This handles: -GMT, -GMT+1, -GMT-5, etc.
+        clean_id = re.sub(r'-GMT[+-]?\d*-?', '-', circle_id)
+        # Clean up any double dashes that might result
+        clean_id = re.sub(r'--+', '-', clean_id)
         match = re.match(pattern, clean_id)
         if not match:
             print(f"    ⚠️ Could not parse circle ID format: {circle_id}")
