@@ -1888,6 +1888,22 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
 
     # Combine all circle IDs (existing + potential new)
     all_circle_ids = existing_circle_ids + new_circle_ids
+    
+    # CRITICAL FIX: Validate that all circle IDs are strings, not lists
+    validated_circle_ids = []
+    for cid in all_circle_ids:
+        if isinstance(cid, list):
+            print(f"⚠️ WARNING: Found list in all_circle_ids: {cid}, using first element")
+            validated_circle_ids.append(str(cid[0]) if cid else "UNKNOWN")
+        elif not isinstance(cid, str):
+            validated_circle_ids.append(str(cid))
+        else:
+            validated_circle_ids.append(cid)
+    
+    all_circle_ids = validated_circle_ids
+    
+    if debug_mode:
+        print(f"Validated {len(all_circle_ids)} circle IDs to ensure all are strings")
 
     # Create a mapping from circle ID to its metadata
     circle_metadata = {}
@@ -2342,6 +2358,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
         ])
 
         for c_id in all_circle_ids:
+            # CRITICAL FIX: Ensure c_id is always a string, not a list
+            if isinstance(c_id, list):
+                print(f"⚠️ WARNING: circle_id is a list: {c_id}, using first element")
+                c_id = str(c_id[0]) if c_id else "UNKNOWN"
+            elif not isinstance(c_id, str):
+                c_id = str(c_id)
+            
             # For debug logging only
             is_test_case = (p_id in test_participants and c_id in test_circles)
 
@@ -2546,6 +2569,13 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
             elif loc_score > 0 and time_match: # Must have at least one location match and a time match
                 is_compatible = True
 
+            # CRITICAL FIX: Ensure c_id is a string before using as dict key
+            if isinstance(c_id, list):
+                print(f"⚠️ WARNING: circle_id is a list when setting compatibility: {c_id}")
+                c_id = str(c_id[0]) if c_id else "UNKNOWN"
+            elif not isinstance(c_id, str):
+                c_id = str(c_id)
+            
             # Update compatibility matrix
             compatibility[(p_id, c_id)] = 1 if is_compatible else 0
 
