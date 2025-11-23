@@ -1515,6 +1515,37 @@ def optimize_region_v2(region, region_df, min_circle_size, enable_host_requireme
     subregions = [s for s in subregions if s]
     time_slots = [t for t in time_slots if t]
     
+    # CRITICAL FIX: Filter out "Varies" from time_slots for NEW circle creation
+    # "Varies" should only exist in continuing circles, NOT in new circles
+    # Participants with "Varies" preferences can still match to any circle via compatibility logic
+    time_slots_before = len(time_slots)
+    subregions_before = len(subregions)
+    
+    time_slots = [t for t in time_slots if 'varies' not in str(t).lower()]
+    subregions = [s for s in subregions if 'varies' not in str(s).lower()]
+    
+    # Log if we filtered out "Varies" preferences
+    times_filtered = time_slots_before - len(time_slots)
+    locs_filtered = subregions_before - len(subregions)
+    
+    if times_filtered > 0:
+        print(f"🔧 FILTERED OUT {times_filtered} 'Varies' time preferences from NEW circle creation for {region}")
+    if locs_filtered > 0:
+        print(f"🔧 FILTERED OUT {locs_filtered} 'Varies' location preferences from NEW circle creation for {region}")
+    
+    # FALLBACK: If all preferences were "Varies", provide defaults
+    if not time_slots:
+        print(f"  ⚠️ WARNING: All time preferences were 'Varies' in {region} - using default time slots for NEW circles")
+        time_slots = [
+            "Monday-Thursday (Evenings)",
+            "Monday-Friday (Afternoons)",
+            "Weekend (Mornings)"
+        ]
+    
+    if not subregions:
+        print(f"  ⚠️ WARNING: All location preferences were 'Varies' in {region} - using region as default location")
+        subregions = [region] if region else ["Unknown"]
+    
     # Store for use in unmatched reason determination
     optimization_context['subregions'] = subregions
     optimization_context['time_slots'] = time_slots
