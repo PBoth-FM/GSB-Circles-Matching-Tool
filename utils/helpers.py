@@ -1051,11 +1051,15 @@ def rename_virtual_circles_for_output(results_df, matched_circles_df=None):
     # Pattern to match virtual circle IDs:
     # - VO-{REGION_CODE}-{NUMBER} (e.g., VO-AM-01, VO-AP-02)
     # - VO-{REGION_CODE}-NEW-{NUMBER} (e.g., VO-AM-NEW-05, VO-AP-NEW-01)
-    # Note: We explicitly do NOT match GMT offsets as they should not appear in circle IDs
-    pattern = r'^VO-([^-]+)-(?:(NEW)-)?(\d+)$'
+    # - VO-{REGION_CODE}-GMT-NEW-{NUMBER} (e.g., VO-AP-GMT-NEW-01)
+    # - VO-{REGION_CODE}-GMT±{OFFSET}-NEW-{NUMBER} (e.g., VO-EM-GMT+1-NEW-01)
+    # Region code may include GMT timezone information
+    pattern = r'^VO-([A-Z]{2})(?:-GMT[+-]?\d*)?-(?:(NEW)-)?(\d+)$'
     
     for circle_id in virtual_circle_ids:
-        match = re.match(pattern, circle_id)
+        # Preprocess: remove GMT timezone info for matching
+        clean_id = re.sub(r'-GMT[+-]?\d*', '', circle_id)
+        match = re.match(pattern, clean_id)
         if not match:
             print(f"    ⚠️ Could not parse circle ID format: {circle_id}")
             continue
