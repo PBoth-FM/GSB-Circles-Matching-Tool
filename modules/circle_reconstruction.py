@@ -191,7 +191,7 @@ def renumber_circles_sequentially(circles_df):
             continue
 
         # Determine if this is a virtual circle or in-person circle
-        is_virtual = parts[0] in ['VO', 'V']
+        is_virtual = parts[0] == 'V'
 
         # Extract the region code differently based on circle type
         if is_virtual:
@@ -327,8 +327,8 @@ def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
     if not isinstance(circle_id, str):
         return circle_id
 
-    # Check if this is a virtual circle with old format (V-VIR-NEW-XX)
-    if circle_id.startswith('V-VIR-NEW-'):
+    # Check if this is a virtual circle with old format (V-VIR-NEW-XX or VO-)
+    if circle_id.startswith('V-VIR-NEW-') or circle_id.startswith('VO-'):
         print(f"🔧 FIXING VIRTUAL CIRCLE ID FORMAT: {circle_id}")
 
         # Extract the index number
@@ -346,8 +346,8 @@ def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
                     # Get proper region code with timezone
                     region_code = get_region_code_with_subregion(region, subregion, is_virtual=True)
 
-                    # Create new ID with proper format
-                    new_id = f"VO-{region_code}-NEW-{index_str}"
+                    # Create new ID with proper format (V- prefix for virtual circles)
+                    new_id = f"V-{region_code}-NEW-{index_str}"
                     print(f"  ✅ Converted {circle_id} to {new_id}")
                     return new_id
                 else:
@@ -360,7 +360,7 @@ def fix_virtual_circle_id_format(circle_id, region=None, subregion=None):
                     else:
                         region_code = 'AM-GMT-5'  # Default for Americas
 
-                    new_id = f"VO-{region_code}-NEW-{index_str}"
+                    new_id = f"V-{region_code}-NEW-{index_str}"
                     print(f"  ⚠️ Limited region info - converted {circle_id} to {new_id} using default code")
                     return new_id
 
